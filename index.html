@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🔐 Генератор</title>
+  <title>🔐 ID Forge</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔐</text></svg>">
   <style>
     /* Цветовые схемы */
@@ -15,7 +15,6 @@
       --border: #e2e8f0;
       --primary: #3b82f6;
       --primary-hover: #2563eb;
-      --success: #10b981;
       --card-bg: #ffffff;
       --shadow: 0 4px 12px rgba(0,0,0,0.06);
       --radius: 16px;
@@ -58,14 +57,29 @@
       position: relative;
     }
 
-    h1 {
+    /* Анимированный заголовок */
+    .glow-title {
       font-size: 28px;
-      font-weight: 700;
-      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      font-weight: 800;
+      background: linear-gradient(90deg, 
+        #ff8a00, 
+        #e52e71, 
+        #3b82f6, 
+        #00c9ff
+      );
+      background-size: 300% 300%;
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
+      animation: gradientShift 8s ease infinite;
       margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
     .subtitle {
@@ -200,10 +214,6 @@
       background: #334155;
     }
 
-    .warning {
-      color: #ef4444;
-    }
-
     #theme-toggle {
       position: absolute;
       top: 24px;
@@ -243,7 +253,7 @@
 <body>
   <div class="container">
     <header>
-      <h1>Генератор</h1>
+      <h1 class="glow-title">ID Forge</h1>
       <p class="subtitle">Пароли и юзернеймы за один клик</p>
       <button id="theme-toggle" aria-label="Переключить тему">🌓</button>
     </header>
