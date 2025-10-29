@@ -102,7 +102,7 @@
     input[type="number"] {
       width: 100%;
       padding: 12px 16px;
-      border: 1px solid var(--border);
+      border: 1px solid(var(--border));
       border-radius: 12px;
       font-size: 16px;
       background: #f1f5f9;
@@ -165,6 +165,11 @@
       color: var(--text);
     }
 
+    .warning {
+      color: #ef4444;
+      font-weight: 600;
+    }
+
     @media (max-width: 480px) {
       .btn-group {
         flex-direction: column;
@@ -207,6 +212,10 @@
   </div>
 
   <script>
+    // === Отслеживание уникальности ===
+    const usedPasswords = new Set();
+    const usedUsernames = new Set();
+
     // === Генератор паролей ===
     const passChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
     let currentPassword = "";
@@ -219,11 +228,33 @@
       return result;
     }
 
+    function generateUniquePassword(length) {
+      let attempt;
+      let tries = 0;
+      const maxTries = 100;
+      do {
+        attempt = generatePassword(length);
+        tries++;
+        if (tries > maxTries) {
+          return "⚠️ Не удалось создать уникальный пароль";
+        }
+      } while (usedPasswords.has(attempt));
+      usedPasswords.add(attempt);
+      return attempt;
+    }
+
     document.getElementById("gen-pass").onclick = () => {
       const length = parseInt(document.getElementById("pass-length").value) || 12;
-      currentPassword = generatePassword(Math.min(50, Math.max(4, length)));
-      document.getElementById("pass-result").textContent = currentPassword;
-      document.getElementById("copy-pass").disabled = false;
+      const clampedLength = Math.min(50, Math.max(4, length));
+      currentPassword = generateUniquePassword(clampedLength);
+      const resultEl = document.getElementById("pass-result");
+      if (currentPassword.startsWith("⚠️")) {
+        resultEl.innerHTML = `<span class="warning">${currentPassword}</span>`;
+        document.getElementById("copy-pass").disabled = true;
+      } else {
+        resultEl.textContent = currentPassword;
+        document.getElementById("copy-pass").disabled = false;
+      }
     };
 
     document.getElementById("copy-pass").onclick = () => {
@@ -235,21 +266,56 @@
     };
 
     // === Генератор юзернеймов ===
-    const adjectives = ["cool", "neon", "swift", "silent", "wild", "golden", "dark", "lucky", "fuzzy", "epic", "cosmic", "brave", "sly", "happy", "mystic"];
-    const nouns = ["panda", "wolf", "dragon", "phoenix", "tiger", "eagle", "shark", "fox", "owl", "lion", "ghost", "ninja", "wizard", "robot", "pixel"];
+    const adjectives = [
+      "cool", "neon", "swift", "silent", "wild", "golden", "dark", "lucky", "fuzzy", "epic",
+      "cosmic", "brave", "sly", "happy", "mystic", "quick", "clever", "fierce", "noble", "wise",
+      "sunny", "stormy", "velvet", "crimson", "azure", "quantum", "stealth", "vivid", "ancient", "modern",
+      "shadow", "ember", "frost", "thunder", "echo", "nova", "zen", "pixel", "galaxy", "phantom",
+      "raven", "serene", "blaze", "mirage", "zenith", "orbit", "cipher", "glitch", "aura", "vortex"
+    ];
+
+    const nouns = [
+      "panda", "wolf", "dragon", "phoenix", "tiger", "eagle", "shark", "fox", "owl", "lion",
+      "ghost", "ninja", "wizard", "robot", "pixel", "samurai", "knight", "sphinx", "mermaid", "unicorn",
+      "comet", "nebula", "vortex", "cipher", "raven", "tempest", "oracle", "lighthouse", "quasar", "sprite",
+      "drifter", "warden", "spectre", "chronos", "anomaly", "beacon", "sentinel", "voyager", "mirage", "echo",
+      "zenith", "horizon", "apex", "cipher", "vector", "matrix", "pulse", "flux", "nova", "arc"
+    ];
+
     let currentUsername = "";
 
     function generateUsername() {
       const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
       const noun = nouns[Math.floor(Math.random() * nouns.length)];
-      const number = Math.floor(Math.random() * 900) + 100;
+      const number = Math.floor(Math.random() * 9000) + 1000; // 1000–9999
       return `${adj}_${noun}_${number}`;
     }
 
+    function generateUniqueUsername() {
+      let attempt;
+      let tries = 0;
+      const maxTries = 100;
+      do {
+        attempt = generateUsername();
+        tries++;
+        if (tries > maxTries) {
+          return "⚠️ Все юзернеймы исчерпаны!";
+        }
+      } while (usedUsernames.has(attempt));
+      usedUsernames.add(attempt);
+      return attempt;
+    }
+
     document.getElementById("gen-user").onclick = () => {
-      currentUsername = generateUsername();
-      document.getElementById("user-result").textContent = currentUsername;
-      document.getElementById("copy-user").disabled = false;
+      currentUsername = generateUniqueUsername();
+      const resultEl = document.getElementById("user-result");
+      if (currentUsername.startsWith("⚠️")) {
+        resultEl.innerHTML = `<span class="warning">${currentUsername}</span>`;
+        document.getElementById("copy-user").disabled = true;
+      } else {
+        resultEl.textContent = currentUsername;
+        document.getElementById("copy-user").disabled = false;
+      }
     };
 
     document.getElementById("copy-user").onclick = () => {
