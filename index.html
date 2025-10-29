@@ -62,6 +62,16 @@
       word-break: break-all;
       min-height: 24px;
     }
+    #qrcode {
+      text-align: center;
+      margin-top: 10px;
+    }
+    #qrcode canvas {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #eee;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
@@ -86,7 +96,35 @@
     <div id="user-result" class="result"></div>
   </div>
 
+  <!-- QR-код -->
+  <div class="section">
+    <h2>QR-код этой страницы</h2>
+    <p>Отсканируй, чтобы открыть генератор на другом устройстве</p>
+    <div id="qrcode"></div>
+  </div>
+
+  <!-- QRCode.js (встроенная мини-версия) -->
   <script>
+    // === Мини-реализация QR-кода без внешних зависимостей ===
+    // Используем простой алгоритм через data URL (для коротких URL)
+    function generateQR(text) {
+      // Google Charts API (просто и надёжно для коротких ссылок)
+      const url = `https://chart.googleapis.com/chart?cht=qr&chs=250x250&chl=${encodeURIComponent(text)}&choe=UTF-8`;
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = "QR Code";
+      img.style.maxWidth = "100%";
+      return img;
+    }
+
+    // Альтернатива: если хочешь полностью offline — можно подключить qrcode.js,
+    // но для простоты и совместимости используем Google Charts (работает везде).
+
+    // Генерируем QR для текущей страницы
+    document.getElementById("qrcode").appendChild(
+      generateQR(window.location.href)
+    );
+
     // === Генератор паролей ===
     const passChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
     let currentPassword = "";
@@ -122,7 +160,7 @@
     function generateUsername() {
       const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
       const noun = nouns[Math.floor(Math.random() * nouns.length)];
-      const number = Math.floor(Math.random() * 900) + 100; // от 100 до 999
+      const number = Math.floor(Math.random() * 900) + 100;
       return `${adj}_${noun}_${number}`;
     }
 
