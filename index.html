@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🔐 Генератор паролей</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 20px;
+      max-width: 500px;
+      margin: 0 auto;
+      background: #f9f9f9;
+      color: #333;
+    }
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    button:disabled {
+      background: #bdc3c7;
+      cursor: not-allowed;
+    }
+    #result {
+      font-family: monospace;
+      font-size: 18px;
+      padding: 12px;
+      background: white;
+      border: 1px dashed #aaa;
+      border-radius: 6px;
+      word-break: break-all;
+      min-height: 24px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🔐 Генератор паролей</h2>
+  <label for="length">Длина пароля (4–50):</label>
+  <input id="length" type="number" value="12" min="4" max="50" />
+
+  <button id="generate">Сгенерировать</button>
+  <button id="copy" disabled>Копировать</button>
+
+  <p id="result"></p>
+
+  <script>
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+    let currentPassword = "";
+
+    function generatePassword(length) {
+      let result = "";
+      for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+
+    document.getElementById("generate").onclick = () => {
+      const length = parseInt(document.getElementById("length").value) || 12;
+      currentPassword = generatePassword(Math.min(50, Math.max(4, length)));
+      document.getElementById("result").textContent = currentPassword;
+      document.getElementById("copy").disabled = false;
+    };
+
+    document.getElementById("copy").onclick = () => {
+      navigator.clipboard.writeText(currentPassword).then(() => {
+        const btn = document.getElementById("copy");
+        btn.textContent = "Скопировано!";
+        setTimeout(() => {
+          btn.textContent = "Копировать";
+        }, 1000);
+      });
+    };
+  </script>
+</body>
+</html>
