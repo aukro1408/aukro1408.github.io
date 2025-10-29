@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🔐 Генератор паролей</title>
+  <title>🔐 Генератор паролей и юзернеймов</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -16,6 +16,19 @@
     h2 {
       text-align: center;
       color: #2c3e50;
+      margin-top: 30px;
+    }
+    .section {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      margin-bottom: 25px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
     }
     input, button {
       width: 100%;
@@ -24,6 +37,7 @@
       border: 1px solid #ccc;
       border-radius: 8px;
       font-size: 16px;
+      box-sizing: border-box;
     }
     button {
       background: #3498db;
@@ -38,11 +52,11 @@
       background: #bdc3c7;
       cursor: not-allowed;
     }
-    #result {
+    .result {
       font-family: monospace;
       font-size: 18px;
       padding: 12px;
-      background: white;
+      background: #f1f1f1;
       border: 1px dashed #aaa;
       border-radius: 6px;
       word-break: break-all;
@@ -51,41 +65,78 @@
   </style>
 </head>
 <body>
-  <h2>🔐 Генератор паролей</h2>
-  <label for="length">Длина пароля (4–50):</label>
-  <input id="length" type="number" value="12" min="4" max="50" />
+  <h1 style="text-align:center; margin-top: 10px;">🔐 Генератор</h1>
 
-  <button id="generate">Сгенерировать</button>
-  <button id="copy" disabled>Копировать</button>
+  <!-- Пароли -->
+  <div class="section">
+    <h2>Пароль</h2>
+    <label for="pass-length">Длина (4–50):</label>
+    <input id="pass-length" type="number" value="12" min="4" max="50" />
 
-  <p id="result"></p>
+    <button id="gen-pass">Сгенерировать</button>
+    <button id="copy-pass" disabled>Копировать</button>
+    <div id="pass-result" class="result"></div>
+  </div>
+
+  <!-- Юзернеймы -->
+  <div class="section">
+    <h2>Юзернейм</h2>
+    <button id="gen-user">Сгенерировать</button>
+    <button id="copy-user" disabled>Копировать</button>
+    <div id="user-result" class="result"></div>
+  </div>
 
   <script>
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+    // === Генератор паролей ===
+    const passChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
     let currentPassword = "";
 
     function generatePassword(length) {
       let result = "";
       for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
+        result += passChars.charAt(Math.floor(Math.random() * passChars.length));
       }
       return result;
     }
 
-    document.getElementById("generate").onclick = () => {
-      const length = parseInt(document.getElementById("length").value) || 12;
+    document.getElementById("gen-pass").onclick = () => {
+      const length = parseInt(document.getElementById("pass-length").value) || 12;
       currentPassword = generatePassword(Math.min(50, Math.max(4, length)));
-      document.getElementById("result").textContent = currentPassword;
-      document.getElementById("copy").disabled = false;
+      document.getElementById("pass-result").textContent = currentPassword;
+      document.getElementById("copy-pass").disabled = false;
     };
 
-    document.getElementById("copy").onclick = () => {
+    document.getElementById("copy-pass").onclick = () => {
       navigator.clipboard.writeText(currentPassword).then(() => {
-        const btn = document.getElementById("copy");
+        const btn = document.getElementById("copy-pass");
         btn.textContent = "Скопировано!";
-        setTimeout(() => {
-          btn.textContent = "Копировать";
-        }, 1000);
+        setTimeout(() => btn.textContent = "Копировать", 1000);
+      });
+    };
+
+    // === Генератор юзернеймов ===
+    const adjectives = ["cool", "neon", "swift", "silent", "wild", "golden", "dark", "lucky", "fuzzy", "epic", "cosmic", "brave", "sly", "happy", "mystic"];
+    const nouns = ["panda", "wolf", "dragon", "phoenix", "tiger", "eagle", "shark", "fox", "owl", "lion", "ghost", "ninja", "wizard", "robot", "pixel"];
+    let currentUsername = "";
+
+    function generateUsername() {
+      const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+      const noun = nouns[Math.floor(Math.random() * nouns.length)];
+      const number = Math.floor(Math.random() * 900) + 100; // от 100 до 999
+      return `${adj}_${noun}_${number}`;
+    }
+
+    document.getElementById("gen-user").onclick = () => {
+      currentUsername = generateUsername();
+      document.getElementById("user-result").textContent = currentUsername;
+      document.getElementById("copy-user").disabled = false;
+    };
+
+    document.getElementById("copy-user").onclick = () => {
+      navigator.clipboard.writeText(currentUsername).then(() => {
+        const btn = document.getElementById("copy-user");
+        btn.textContent = "Скопировано!";
+        setTimeout(() => btn.textContent = "Копировать", 1000);
       });
     };
   </script>
