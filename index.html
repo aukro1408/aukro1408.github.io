@@ -6,6 +6,7 @@
   <title>🔐 Генератор</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔐</text></svg>">
   <style>
+    /* Цветовые схемы */
     :root {
       --bg: #ffffff;
       --bg-alt: #f8fafc;
@@ -18,6 +19,16 @@
       --card-bg: #ffffff;
       --shadow: 0 4px 12px rgba(0,0,0,0.06);
       --radius: 16px;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --bg-alt: #1e293b;
+      --text: #f1f5f6;
+      --text-muted: #94a8c8;
+      --border: #334155;
+      --card-bg: #1e293b;
+      --shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
     * {
@@ -33,6 +44,7 @@
       line-height: 1.6;
       padding: 24px 16px;
       min-height: 100vh;
+      transition: background-color 0.3s, color 0.3s;
     }
 
     .container {
@@ -43,6 +55,7 @@
     header {
       text-align: center;
       margin-bottom: 32px;
+      position: relative;
     }
 
     h1 {
@@ -66,12 +79,12 @@
       padding: 24px;
       margin-bottom: 24px;
       box-shadow: var(--shadow);
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s;
     }
 
     .card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
     }
 
     .card h2 {
@@ -81,6 +94,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      color: var(--text);
     }
 
     .card h2::before {
@@ -102,17 +116,26 @@
     input[type="number"] {
       width: 100%;
       padding: 12px 16px;
-      border: 1px solid(var(--border));
+      border: 1px solid var(--border);
       border-radius: 12px;
       font-size: 16px;
       background: #f1f5f9;
-      transition: border-color 0.2s;
+      color: var(--text);
+      transition: border-color 0.2s, background-color 0.3s, color 0.3s;
+    }
+
+    [data-theme="dark"] input[type="number"] {
+      background: #334155;
     }
 
     input[type="number"]:focus {
       outline: none;
       border-color: var(--primary);
       background: white;
+    }
+
+    [data-theme="dark"] input[type="number"]:focus {
+      background: #0f172a;
     }
 
     .btn-group {
@@ -149,8 +172,16 @@
       background: #94a3b8;
     }
 
+    [data-theme="dark"] button.copy {
+      background: #64748b;
+    }
+
     button.copy:hover:not(:disabled) {
       background: #64748b;
+    }
+
+    [data-theme="dark"] button.copy:hover:not(:disabled) {
+      background: #475569;
     }
 
     .result {
@@ -165,9 +196,38 @@
       color: var(--text);
     }
 
+    [data-theme="dark"] .result {
+      background: #334155;
+    }
+
     .warning {
       color: #ef4444;
-      font-weight: 600;
+    }
+
+    #theme-toggle {
+      position: absolute;
+      top: 24px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--text);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s;
+    }
+
+    #theme-toggle:hover {
+      background: var(--border);
+    }
+
+    [data-theme="dark"] #theme-toggle:hover {
+      background: #334155;
     }
 
     @media (max-width: 480px) {
@@ -185,6 +245,7 @@
     <header>
       <h1>Генератор</h1>
       <p class="subtitle">Пароли и юзернеймы за один клик</p>
+      <button id="theme-toggle" aria-label="Переключить тему">🌓</button>
     </header>
 
     <!-- Пароли -->
@@ -212,10 +273,6 @@
   </div>
 
   <script>
-    // === Отслеживание уникальности ===
-    const usedPasswords = new Set();
-    const usedUsernames = new Set();
-
     // === Генератор паролей ===
     const passChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
     let currentPassword = "";
@@ -228,33 +285,11 @@
       return result;
     }
 
-    function generateUniquePassword(length) {
-      let attempt;
-      let tries = 0;
-      const maxTries = 100;
-      do {
-        attempt = generatePassword(length);
-        tries++;
-        if (tries > maxTries) {
-          return "⚠️ Не удалось создать уникальный пароль";
-        }
-      } while (usedPasswords.has(attempt));
-      usedPasswords.add(attempt);
-      return attempt;
-    }
-
     document.getElementById("gen-pass").onclick = () => {
       const length = parseInt(document.getElementById("pass-length").value) || 12;
-      const clampedLength = Math.min(50, Math.max(4, length));
-      currentPassword = generateUniquePassword(clampedLength);
-      const resultEl = document.getElementById("pass-result");
-      if (currentPassword.startsWith("⚠️")) {
-        resultEl.innerHTML = `<span class="warning">${currentPassword}</span>`;
-        document.getElementById("copy-pass").disabled = true;
-      } else {
-        resultEl.textContent = currentPassword;
-        document.getElementById("copy-pass").disabled = false;
-      }
+      currentPassword = generatePassword(Math.min(50, Math.max(4, length)));
+      document.getElementById("pass-result").textContent = currentPassword;
+      document.getElementById("copy-pass").disabled = false;
     };
 
     document.getElementById("copy-pass").onclick = () => {
@@ -266,56 +301,21 @@
     };
 
     // === Генератор юзернеймов ===
-    const adjectives = [
-      "cool", "neon", "swift", "silent", "wild", "golden", "dark", "lucky", "fuzzy", "epic",
-      "cosmic", "brave", "sly", "happy", "mystic", "quick", "clever", "fierce", "noble", "wise",
-      "sunny", "stormy", "velvet", "crimson", "azure", "quantum", "stealth", "vivid", "ancient", "modern",
-      "shadow", "ember", "frost", "thunder", "echo", "nova", "zen", "pixel", "galaxy", "phantom",
-      "raven", "serene", "blaze", "mirage", "zenith", "orbit", "cipher", "glitch", "aura", "vortex"
-    ];
-
-    const nouns = [
-      "panda", "wolf", "dragon", "phoenix", "tiger", "eagle", "shark", "fox", "owl", "lion",
-      "ghost", "ninja", "wizard", "robot", "pixel", "samurai", "knight", "sphinx", "mermaid", "unicorn",
-      "comet", "nebula", "vortex", "cipher", "raven", "tempest", "oracle", "lighthouse", "quasar", "sprite",
-      "drifter", "warden", "spectre", "chronos", "anomaly", "beacon", "sentinel", "voyager", "mirage", "echo",
-      "zenith", "horizon", "apex", "cipher", "vector", "matrix", "pulse", "flux", "nova", "arc"
-    ];
-
+    const adjectives = ["cool", "neon", "swift", "silent", "wild", "golden", "dark", "lucky", "fuzzy", "epic", "cosmic", "brave", "sly", "happy", "mystic"];
+    const nouns = ["panda", "wolf", "dragon", "phoenix", "tiger", "eagle", "shark", "fox", "owl", "lion", "ghost", "ninja", "wizard", "robot", "pixel"];
     let currentUsername = "";
 
     function generateUsername() {
       const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
       const noun = nouns[Math.floor(Math.random() * nouns.length)];
-      const number = Math.floor(Math.random() * 9000) + 1000; // 1000–9999
+      const number = Math.floor(Math.random() * 900) + 100;
       return `${adj}_${noun}_${number}`;
     }
 
-    function generateUniqueUsername() {
-      let attempt;
-      let tries = 0;
-      const maxTries = 100;
-      do {
-        attempt = generateUsername();
-        tries++;
-        if (tries > maxTries) {
-          return "⚠️ Все юзернеймы исчерпаны!";
-        }
-      } while (usedUsernames.has(attempt));
-      usedUsernames.add(attempt);
-      return attempt;
-    }
-
     document.getElementById("gen-user").onclick = () => {
-      currentUsername = generateUniqueUsername();
-      const resultEl = document.getElementById("user-result");
-      if (currentUsername.startsWith("⚠️")) {
-        resultEl.innerHTML = `<span class="warning">${currentUsername}</span>`;
-        document.getElementById("copy-user").disabled = true;
-      } else {
-        resultEl.textContent = currentUsername;
-        document.getElementById("copy-user").disabled = false;
-      }
+      currentUsername = generateUsername();
+      document.getElementById("user-result").textContent = currentUsername;
+      document.getElementById("copy-user").disabled = false;
     };
 
     document.getElementById("copy-user").onclick = () => {
@@ -324,6 +324,26 @@
         btn.textContent = "Скопировано!";
         setTimeout(() => btn.textContent = "Копировать", 1200);
       });
+    };
+
+    // === Тема ===
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
+    }
+
+    const savedTheme = localStorage.getItem('theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (savedTheme) {
+      setTheme(savedTheme);
+    } else {
+      setTheme(systemPrefersDark ? 'dark' : 'light');
+    }
+
+    document.getElementById('theme-toggle').onclick = () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      setTheme(current === 'dark' ? 'light' : 'dark');
     };
   </script>
 </body>
