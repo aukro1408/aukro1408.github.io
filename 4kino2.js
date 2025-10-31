@@ -1,193 +1,295 @@
 (function () {
     'use strict';
 
-    const API_URL = 'https://v4.fanfilm4k.media';
+    const API_URL = 'https://4kino.cc'; // ← УБРАН ПРОБЕЛ!
 
-    class PluginFanFilm4K {
+    class Plugin4kino {
         constructor() {
-            this.network = new Lampa.Request();
+            this.network = new Lampa.Reguest();
+        }
+
+        // Поиск фильма на 4kino.cc
+        searchMovie(card) {
+            return new Promise((resolve, reject) => {
+                const searchQuery = this.buildSearchQuery(card);
+                const searchUrl = `${API_URL}/index.php?do=search`;
+
+                Lampa.Noty.show(`Поиск: ${searchQuery}`);
+
+                this.network.silent(
+                    searchUrl,
+                    (data) => {
+                        try {
+                            const results = this.parseSearchResults(data, card);
+                            if (results && results.length > 0) {
+                                resolve(results[0]);
+                            } else {
+                                // Fallback: парсим главную, если поиск не дал результатов
+                                this.parseMainPage(card).then(resolve).catch(reject);
+                            }
+                        } catch (e) {
+                            reject(e);
+                        }
+                    },
+                    (error) => {
+                        console.error('[4Kino] Search error:', error);
+                        // При ошибке тоже пробуем главную
+                        this.parseMainPage(card).then(resolve).catch(reject);
+                    },
+                    {
+                        method: 'POST',
+                        data: {
+                            do: 'search',
+                            subaction: 'search',
+                            story: searchQuery,
+                        },
+                    }
+                );
+            });
         }
 
         buildSearchQuery(card) {
             let query = card.title || card.name || card.original_title || '';
-            if (card.release_date) query += ' ' + card.release_date.split('-')[0];
-            else if (card.first_air_date) query += ' ' + card.first_air_date.split('-')[0];
+            const year =
+                (card.release_date && card.release_date.split('-')[0]) ||
+                (card.first_air_date && card.first_air_date.split('-')[0]) ||
+                '';
+            if (year) query += ' ' + year;
             return query.trim();
         }
 
-        async searchMovie(card) {
-            const query = this.buildSearchQuery(card);
-            const url = API_URL + '/index.php?do=search';
+        parseSearchResults(html, card) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const results = [];
 
-            try {
-                const html = await Lampa.Utils.request(url, {
-                    method: 'POST',
-                    body: Lampa.Utils.makeFormData({
-                        do: 'search',
-                        subaction: 'search',
-                        story: query
-                    }),
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'Referer': API_URL + '/',
-                        'User-Agent': 'Mozilla/5.0 (LampaPlugin)'
-                    }
-                });
+            // На основе структуры из Knowledge Base: картинки с alt/title
+            const images = doc.querySelectorAll('img[src*="/uploads/"]');
+            images.forEach((img) => {
+                const alt = img.alt || img.title || '';
+                const parentLink = img.closest('a[href]');
+                if (parentLink && alt && this.isMatch(alt, card)) {
+                    results.push({
+                        url: new URL(parentLink.href, API_URL).href,
+                        title: alt,
+                    });
+                }
+            });
 
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-
-                // !!! Обновите селектор под актуальный на сайте !!!
-                const items = doc.querySelectorAll('.movie-item a'); 
-                const results = [];
-
-                items.forEach(item => {
-                    const url = item.href.startsWith('http') ? item.href : API_URL + item.href;
-                    const title = item.textContent.trim();
-                    results.push({ title, url });
-                });
-
-                return results;
-
-            } catch (err) {
-                console.error('[FanFilm4K] Ошибка поиска:', err);
-                return [];
-            }
+            return results;
         }
 
-        async getPlayerLinks(movieUrl) {
-            try {
-                const html = await Lampa.Utils.request(movieUrl, {
-                    headers: {
-                        'Referer': API_URL + '/',
-                        'User-Agent': 'Mozilla/5.0 (LampaPlugin)'
-                    }
+        // Парсим главную страницу как fallback
+        parseMainPage(card) {
+            return new Promise((resolve, reject) => {
+                this.network.silent(
+                    API_URL,
+                    (data) => {
+                        try {
+                            const results = this.parseSearchResults(data, card);
+                            resolve(results.length > 0 ? results[0] : null);
+                        } catch (e) {
+                            reject(e);
+                        }
+                    },
+                    reject
+                );
+            });
+        }
+
+        // Простая проверка соответствия названия
+        isMatch(title, card) {
+            const query = (card.title || card.name || card.original_title || '')
+                .toLowerCase()
+                .replace(/[^a-z0-9а-яё]/g, '');
+            const candidate = title.toLowerCase().replace(/[^a-z0-9а-яё]/g, '');
+            return candidate.includes(query) || query.includes(candidate);
+        }
+
+        getPlayerLinks(movieUrl) {
+            return new Promise((resolve, reject) => {
+                this.network.silent(
+                    movieUrl,
+                    (data) => {
+                        try {
+                            const links = this.parsePlayerLinks(data);
+                            resolve(links);
+                        } catch (e) {
+                            reject(e);
+                        }
+                    },
+                    reject
+                );
+            });
+        }
+
+        parsePlayerLinks(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const links = [];
+
+            // Ищем iframe
+            doc.querySelectorAll('iframe[src*="http"]').forEach((iframe) => {
+                links.push({
+                    url: iframe.src,
+                    quality: '4K',
+                    source: '4Kino (iframe)',
                 });
+            });
 
-                const links = [];
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
+            // Ищем в скриптах
+            const urlRegexes = [
+                /file\s*:\s*["']([^"']+)["']/g,
+                /src\s*:\s*["']([^"']+)["']/g,
+                /pl\s*:\s*["']([^"']+)["']/g,
+            ];
 
-                // iframe
-                doc.querySelectorAll('iframe').forEach(frame => {
-                    if (frame.src && frame.src.startsWith('http')) {
-                        links.push({ url: frame.src, quality: 'HD', source: 'FanFilm4K' });
-                    }
-                });
-
-                // ссылки из скриптов
-                doc.querySelectorAll('script').forEach(script => {
-                    const regex = /['"](https?:\/\/[^'"]+)['"]/g;
+            doc.querySelectorAll('script').forEach((script) => {
+                const text = script.textContent || '';
+                urlRegexes.forEach((regex) => {
                     let match;
-                    while ((match = regex.exec(script.textContent)) !== null) {
-                        if (match[1].includes('player') || match[1].includes('video')) {
-                            links.push({ url: match[1], quality: 'HD', source: 'FanFilm4K' });
+                    while ((match = regex.exec(text)) !== null) {
+                        const url = match[1];
+                        if (url && url.startsWith('http')) {
+                            links.push({
+                                url,
+                                quality: '4K',
+                                source: '4Kino (script)',
+                            });
                         }
                     }
                 });
+            });
 
-                return links;
-
-            } catch (err) {
-                console.error('[FanFilm4K] Ошибка плееров:', err);
-                return [];
-            }
+            return links;
         }
 
         async playMovie(card) {
             try {
-                Lampa.Noty.show('Поиск на FanFilm4K...');
-                Lampa.Loading.start();
+                Lampa.Loading.start(() => {
+                    Lampa.Loading.stop();
+                    Lampa.Controller.toggle('content');
+                });
 
-                const searchResults = await this.searchMovie(card);
-                if (!searchResults.length) {
-                    Lampa.Noty.show('Фильм не найден');
+                const searchResult = await this.searchMovie(card);
+                if (!searchResult) {
+                    Lampa.Noty.show('Фильм не найден на 4Kino');
                     Lampa.Loading.stop();
                     return;
                 }
 
-                const movieUrl = searchResults[0].url;
-                const links = await this.getPlayerLinks(movieUrl);
-
-                if (!links.length) {
-                    Lampa.Noty.show('Плееры не найдены');
+                const playerLinks = await this.getPlayerLinks(searchResult.url);
+                if (playerLinks.length === 0) {
+                    Lampa.Noty.show('Плеер не найден');
                     Lampa.Loading.stop();
                     return;
                 }
 
-                if (links.length === 1) this.openPlayer(links[0], card);
-                else this.showQualitySelector(links, card);
-
-            } catch (err) {
-                console.error('[FanFilm4K] Ошибка:', err);
-                Lampa.Noty.show('Ошибка загрузки');
+                if (playerLinks.length === 1) {
+                    this.openPlayer(playerLinks[0], card);
+                } else {
+                    this.showQualitySelector(playerLinks, card);
+                }
+            } catch (error) {
+                console.error('[4Kino] Play error:', error);
+                Lampa.Noty.show('Ошибка: ' + (error.message || 'неизвестно'));
                 Lampa.Loading.stop();
             }
         }
 
         showQualitySelector(links, card) {
-            const items = links.map(link => ({ title: `${link.quality} - ${link.source}`, url: link.url }));
+            const items = links.map((link) => ({
+                title: `${link.quality} — ${link.source}`,
+                url: link.url,
+            }));
+
             Lampa.Select.show({
-                title: 'Выберите качество',
+                title: '4Kino — качество',
                 items,
-                onSelect: (item) => this.openPlayer({ url: item.url, quality: item.title }, card),
-                onBack: () => Lampa.Controller.toggle('content')
+                onSelect: (item) => {
+                    this.openPlayer({ url: item.url, quality: item.title }, card);
+                },
+                onBack: () => Lampa.Controller.toggle('content'),
             });
             Lampa.Loading.stop();
         }
 
         openPlayer(link, card) {
             Lampa.Loading.stop();
-            Lampa.Player.play({ title: card.title || card.name, url: link.url, quality: link.quality });
-            Lampa.Player.playlist([{ title: card.title || card.name, url: link.url }]);
+            const title = card.title || card.name || '4Kino';
+            Lampa.Player.play({
+                title,
+                url: link.url,
+                quality: link.quality,
+            });
+            Lampa.Player.playlist([{ title, url: link.url }]);
         }
     }
 
-    // --- Добавление кнопки рядом с uTorrent ---
-    function addFanFilm4KButton(e, plugin) {
-        const container = document.querySelector('.full-start__buttons');
-        if (!container) return;
-
-        // Проверка, чтобы кнопка не дублировалась
-        if (container.querySelector('.view--fanfilm4k')) return;
-
-        const button = document.createElement('div');
-        button.className = 'full-start__button selector view--fanfilm4k';
-        button.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
-                <rect width="48" height="48" rx="8" fill="currentColor" fill-opacity="0.3"/>
-                <text x="50%" y="55%" text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">4K</text>
-            </svg>
-            <span>FanFilm4K</span>
-        `;
-
-        button.addEventListener('click', () => {
-            const movie = e.data?.movie || e.data?.card || e.data?.data;
-            if (!movie) {
-                Lampa.Noty.show('Ошибка: нет данных фильма');
-                return;
-            }
-            plugin.playMovie(movie);
-        });
-
-        // Вставляем после кнопки uTorrent, если есть
-        const uTorrentButton = container.querySelector('.view--torrent');
-        if (uTorrentButton) uTorrentButton.after(button);
-        else container.appendChild(button);
-
-        console.log('[FanFilm4K] Кнопка добавлена рядом с uTorrent');
-    }
-
-    // --- Инициализация плагина ---
     function startPlugin() {
-        const plugin = new PluginFanFilm4K();
+        console.log('[4Kino] Plugin starting...');
+        const plugin = new Plugin4kino();
 
-        Lampa.Listener.follow('full', (e) => {
-            if (e.type === 'complite') addFanFilm4KButton(e, plugin);
+        // Регистрация как источник (опционально)
+        Lampa.Component.add('online_4kino', {
+            name: '4Kino',
+            component: plugin,
         });
+
+        // Добавление в манифест
+        if (Lampa.Manifest?.plugins) {
+            Lampa.Manifest.plugins.push({
+                author: '@custom',
+                name: '4Kino',
+                descr: 'Источник 4kino.cc',
+                version: '1.1.0',
+            });
+        }
+
+        // Добавление кнопки
+        Lampa.Listener.follow('full', (e) => {
+            if (e.type !== 'complite') return;
+
+            setTimeout(() => {
+                try {
+                    const movie = e.data.movie || e.data.card || e.data.item;
+                    if (!movie) return;
+
+                    const button = $(`
+                        <div class="full-start__button selector view--online_4kino">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 48 48" width="48" height="48">
+                                <rect width="48" height="48" rx="8" fill="currentColor" fill-opacity="0.3"/>
+                                <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">4K</text>
+                            </svg>
+                            <span>4Kino</span>
+                        </div>
+                    `);
+
+                    button.on('click', () => {
+                        console.log('[4Kino] Play requested for:', movie);
+                        plugin.playMovie(movie);
+                    });
+
+                    // Надёжная вставка
+                    const container = $('.full-start__buttons, .full-start').first();
+                    if (container.length) {
+                        container.append(button);
+                        console.log('[4Kino] Button added');
+                    }
+                } catch (err) {
+                    console.error('[4Kino] Button error:', err);
+                }
+            }, 500);
+        });
+
+        console.log('[4Kino] Plugin ready');
     }
 
-    if (window.appready) startPlugin();
-    else Lampa.Listener.follow('app', (e) => { if (e.type === 'ready') startPlugin(); });
-
+    if (window.appready) {
+        startPlugin();
+    } else {
+        Lampa.Listener.follow('app', (e) => {
+            if (e.type === 'ready') startPlugin();
+        });
+    }
 })();
