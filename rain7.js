@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         aukro1408
-// @namespace    lampa.rainstorm.aukro140
-// @version      8.0
-// @description  Дождь с локальными молниями, стекущими каплями и накоплением воды внизу для Lampa
+// @name         Lampa Rainstorm Effect
+// @namespace    lampa.rainstorm
+// @version      1.0
+// @description  Дождь с ветром и молниями для Lampa
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -15,8 +15,9 @@
       return;
     }
 
+    // Canvas поверх интерфейса
     const canvas = document.createElement('canvas');
-    canvas.id = 'rainstormAukroEffect';
+    canvas.id = 'rainstormEffect';
     canvas.style.position = 'fixed';
     canvas.style.top = '0';
     canvas.style.left = '0';
@@ -35,168 +36,70 @@
       H = canvas.height = window.innerHeight;
     });
 
-    // обычный дождь
+    // Настройки дождя
     const drops = [];
-    const splashes = [];
-    const dropCount = 250;
+    const dropCount = 200; // больше капель
+    const wind = -1; // отрицательное = влево, положительное = вправо
 
-    function random(min, max) { return Math.random() * (max - min) + min; }
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
 
+    // создаём капли
     for (let i = 0; i < dropCount; i++) {
       drops.push({
         x: random(0, W),
         y: random(0, H),
         length: random(15, 25),
-        speed: random(4, 10),
-        opacity: random(0.2, 0.5),
-        blur: random(0, 2)
+        speed: random(5, 12),
+        opacity: random(0.1, 0.5),
+        angle: random(-0.3, 0.3) // угол падения для ветра
       });
     }
 
-    // стекущие капли
-    const glassDrops = [];
-    const glassCount = 20;
-
-    for (let i = 0; i < glassCount; i++) {
-      glassDrops.push({
-        x: random(0, W),
-        y: random(0, H/2),
-        radius: random(3,6),
-        speed: random(0.5,1.5),
-        opacity: random(0.3,0.6),
-        path: []
-      });
-    }
-
-    // локальные молнии
-    const localFlashes = [];
-
-    function generateFlash() {
-      if (Math.random() < 0.005) { // вероятность появления локальной молнии
-        localFlashes.push({
-          x: random(0, W),
-          y: random(0, H/2),
-          width: random(50, 150),
-          height: random(30, 100),
-          opacity: 0.6
-        });
-      }
-    }
-
-    function updateFlashes() {
-      for (let i = localFlashes.length-1; i>=0; i--) {
-        const f = localFlashes[i];
-        f.opacity -= 0.03;
-        if (f.opacity <= 0) localFlashes.splice(i,1);
-      }
-    }
-
-    function drawFlashes() {
-      for (let f of localFlashes) {
-        const gradient = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.width);
-        gradient.addColorStop(0, `rgba(255,255,255,${f.opacity})`);
-        gradient.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.ellipse(f.x, f.y, f.width, f.height, 0, 0, Math.PI*2);
-        ctx.fill();
-      }
-    }
-
-    // накопление воды
-    let waterLevel = 0; // высота воды
-    const waterMax = 40; // максимальная высота слоя воды
-    const waterRiseRate = 0.02; // скорость накопления воды
-    const waterFadeRate = 0.005; // постепенное испарение
-
-    function drawWater() {
-      if (waterLevel > 0) {
-        const gradient = ctx.createLinearGradient(0, H - waterLevel, 0, H);
-        gradient.addColorStop(0, 'rgba(173,216,230,0.2)');
-        gradient.addColorStop(1, 'rgba(173,216,230,0.5)');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, H - waterLevel, W, waterLevel);
+    // Молнии
+    let lightningTime = 0;
+    function lightning() {
+      if (Math.random() < 0.002 && lightningTime <= 0) {
+        lightningTime = random(5, 20); // кадры молнии
       }
     }
 
     function draw() {
       ctx.clearRect(0, 0, W, H);
 
-      // фон ночь
+      // фон затемнённый (ночь)
       ctx.fillStyle = 'rgba(10,10,20,0.2)';
       ctx.fillRect(0, 0, W, H);
 
-      // обычный дождь
+      // рисуем дождь
+      ctx.strokeStyle = 'rgba(173,216,230,0.6)';
+      ctx.lineWidth = 2;
       for (let i = 0; i < drops.length; i++) {
         const d = drops[i];
         ctx.beginPath();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = `rgba(173,216,230,${d.opacity})`;
-        ctx.shadowBlur = d.blur;
-        ctx.shadowColor = 'rgba(173,216,230,0.5)';
         ctx.moveTo(d.x, d.y);
-        ctx.lineTo(d.x, d.y + d.length);
+        ctx.lineTo(d.x + wind * d.angle * 10, d.y + d.length);
         ctx.stroke();
 
         d.y += d.speed;
+        d.x += wind + d.angle; // добавляем ветер
 
         if (d.y > H) {
           d.y = -20;
           d.x = random(0, W);
-          splashes.push({ x: d.x, y: H-2, radius: random(1,3), opacity:1 });
-
-          // накапливаем воду
-          waterLevel += waterRiseRate;
-          if (waterLevel > waterMax) waterLevel = waterMax;
         }
+        if (d.x > W) d.x = 0;
+        if (d.x < 0) d.x = W;
       }
 
-      // брызги
-      for (let i = splashes.length-1; i>=0; i--) {
-        const s = splashes[i];
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.radius, 0, Math.PI*2);
-        ctx.fillStyle = `rgba(173,216,230,${s.opacity})`;
-        ctx.fill();
-        s.opacity -= 0.05;
-        if (s.opacity <= 0) splashes.splice(i,1);
+      // молния
+      lightning();
+      if (lightningTime > 0) {
+        ctx.fillStyle = `rgba(255,255,255,${0.3 + Math.random()*0.3})`;
+        ctx.fillRect(0, 0, W, H);
+        lightningTime--;
       }
-
-      // стекущие капли
-      for (let i = 0; i < glassDrops.length; i++) {
-        const g = glassDrops[i];
-        g.y += g.speed;
-        g.path.push({x: g.x, y: g.y});
-        if (g.path.length > 10) g.path.shift();
-
-        ctx.beginPath();
-        for (let j = 0; j < g.path.length; j++) {
-          const p = g.path[j];
-          if (j===0) ctx.moveTo(p.x,p.y);
-          else ctx.lineTo(p.x,p.y);
-        }
-        ctx.strokeStyle = `rgba(173,216,230,${g.opacity})`;
-        ctx.lineWidth = g.radius/2;
-        ctx.shadowBlur = g.radius/2;
-        ctx.shadowColor = 'rgba(173,216,230,0.5)';
-        ctx.stroke();
-
-        if (g.y > H) {
-          g.y = -10;
-          g.x = random(0, W);
-          g.path = [];
-        }
-      }
-
-      // локальные молнии
-      generateFlash();
-      updateFlashes();
-      drawFlashes();
-
-      // накопление воды
-      waterLevel -= waterFadeRate; // медленное испарение
-      if (waterLevel < 0) waterLevel = 0;
-      drawWater();
 
       requestAnimationFrame(draw);
     }
