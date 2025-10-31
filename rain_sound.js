@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lampa Rainstorm Effect with Sound
 // @namespace    lampa.rainstorm
-// @version      1.1
+// @version      1.2
 // @description  Дождь с ветром, молниями и звуком дождя для Lampa
 // @match        *://*/lampa/*
 // ==/UserScript==
@@ -17,13 +17,18 @@
 
     // --- Звук дождя ---
     const audio = document.createElement('audio');
-    audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; // здесь можно заменить на реальный звук дождя
+    audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; // замените на реальный звук дождя
     audio.loop = true;
-    audio.volume = 0.3; // громкость дождя
-    audio.autoplay = true;
+    audio.volume = 0.3;
     audio.style.display = 'none';
     document.body.appendChild(audio);
-    audio.play().catch(e => console.log('Автоплей заблокирован', e));
+
+    // Запуск через таймаут для обхода политики автозапуска
+    setTimeout(() => {
+      audio.play().catch(() => {
+        console.log('Автоплей заблокирован, дождь без звука');
+      });
+    }, 1000);
 
     // Canvas поверх интерфейса
     const canvas = document.createElement('canvas');
