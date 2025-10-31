@@ -15,86 +15,129 @@
         constructor() {
             this.name = PLUGIN_NAME;
             this.id = PLUGIN_ID;
-            // Иконка в формате base64 или используем SVG (в данном случае используем текстовую)
-            // В реальных условиях лучше использовать SVG или PNG
-            this.icon = 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z';
+            // Используем простой текстовый символ для иконки
+            this.icon = 'YT';
             this.iconColor = '#FF0000'; // Красный цвет для иконки
         }
 
         // --- Инициализация ---
         init() {
             console.log(`[${PLUGIN_NAME}] Initializing plugin...`);
-            // Добавляем элемент в меню
-            this.addToMenu();
-        }
-
-        // --- Добавление в меню ---
-        addToMenu() {
-            // Проверяем наличие Lampa.Menu
-            if (typeof Lampa !== 'undefined' && Lampa.Menu && typeof Lampa.Menu.add === 'function') {
-                console.log(`[${PLUGIN_NAME}] Adding menu item via Lampa.Menu.add`);
-                // Используем правильную структуру для добавления пункта меню
-                // Проверяем, есть ли уже меню, если нет, ждем его
-                const menuItems = [
-                    {
-                        name: this.name,
-                        icon: this.icon,
-                        color: this.iconColor,
-                        handler: () => {
-                            this.openSearch();
-                        }
+            
+            // Попробуем добавить элемент в меню после задержки
+            setTimeout(() => {
+                this.attemptToAddToMenu();
+            }, 2000); // Задержка для уверенности, что Lampa полностью загружена
+            
+            // Также добавим слушатель готовности Lampa
+            if (typeof Lampa !== 'undefined' && Lampa.Listener) {
+                Lampa.Listener.follow('app', (e) => {
+                    if (e.type === 'ready') {
+                        setTimeout(() => {
+                            this.attemptToAddToMenu();
+                        }, 1000);
                     }
-                ];
-
-                // Добавляем в существующее меню
-                try {
-                    Lampa.Menu.add(menuItems[0]);
-                    console.log(`[${PLUGIN_NAME}] Menu item added successfully`);
-                } catch (e) {
-                    console.error(`[${PLUGIN_NAME}] Failed to add menu item:`, e);
-                }
-            } else {
-                console.warn(`[${PLUGIN_NAME}] Lampa.Menu not available. Trying alternative method.`);
-                // Альтернативный способ: добавление через Lampa.Listener
-                // Но это может быть неэффективно, так как Lampa может не поддерживать динамическое изменение меню таким образом
-                // Мы можем попробовать вызвать метод добавления после готовности Lampa
-                this.scheduleMenuAdd();
+                });
             }
         }
 
-        // --- Планировщик добавления меню ---
-        scheduleMenuAdd() {
-            const checkInterval = setInterval(() => {
-                if (typeof Lampa !== 'undefined' && Lampa.Menu && typeof Lampa.Menu.add === 'function') {
-                    clearInterval(checkInterval);
-                    console.log(`[${PLUGIN_NAME}] Lampa.Menu now available, adding menu item`);
+        // --- Попытка добавления в меню ---
+        attemptToAddToMenu() {
+            console.log(`[${PLUGIN_NAME}] Attempting to add menu item...`);
+            
+            // Проверим, есть ли объекты, которые могут быть использованы для меню
+            if (typeof Lampa !== 'undefined') {
+                console.log(`[${PLUGIN_NAME}] Lampa object found`);
+                
+                // Проверим, есть ли методы, которые могут быть использованы для меню
+                if (Lampa.Menu && typeof Lampa.Menu.add === 'function') {
+                    console.log(`[${PLUGIN_NAME}] Lampa.Menu.add is available`);
+                    
                     try {
-                        Lampa.Menu.add({
+                        // Попробуем добавить элемент
+                        const menuItem = {
                             name: this.name,
                             icon: this.icon,
                             color: this.iconColor,
                             handler: () => {
                                 this.openSearch();
                             }
-                        });
-                        console.log(`[${PLUGIN_NAME}] Menu item added via scheduled method`);
+                        };
+                        
+                        Lampa.Menu.add(menuItem);
+                        console.log(`[${PLUGIN_NAME}] Menu item added via Lampa.Menu.add`);
+                        return true;
                     } catch (e) {
-                        console.error(`[${PLUGIN_NAME}] Failed to add menu item after delay:`, e);
+                        console.error(`[${PLUGIN_NAME}] Error adding menu item via Lampa.Menu.add:`, e);
+                    }
+                } else {
+                    console.warn(`[${PLUGIN_NAME}] Lampa.Menu.add not available`);
+                }
+                
+                // Попробуем другие способы добавления, если Lampa.Menu не работает
+                // Например, если есть какой-то объект меню, который можно модифицировать
+                if (typeof Lampa.Menu !== 'undefined') {
+                    console.log(`[${PLUGIN_NAME}] Lampa.Menu exists but add method might be different`);
+                }
+                
+            } else {
+                console.warn(`[${PLUGIN_NAME}] Lampa object not found`);
+            }
+            
+            // Если ничего не помогло, попробуем создать кнопку вручную
+            // (Это более сложный путь и зависит от структуры DOM Lampa)
+            this.createManualButton();
+            return false;
+        }
+
+        // --- Создание кнопки вручную (альтернативный способ) ---
+        createManualButton() {
+            console.log(`[${PLUGIN_NAME}] Trying manual button creation...`);
+            
+            // Попробуем создать кнопку и добавить ее в DOM
+            // Сначала дождемся готовности DOM
+            const checkDOM = setInterval(() => {
+                const menuContainer = document.querySelector('.menu'); // Попробуем найти контейнер меню
+                if (menuContainer) {
+                    clearInterval(checkDOM);
+                    console.log(`[${PLUGIN_NAME}] Found menu container`);
+                    
+                    // Проверим, есть ли уже наша кнопка
+                    if (!document.getElementById(`menu-item-${this.id}`)) {
+                        // Создаем элемент
+                        const button = document.createElement('div');
+                        button.id = `menu-item-${this.id}`;
+                        button.className = 'menu__item';
+                        button.innerHTML = `
+                            <div class="menu__item-icon" style="color: ${this.iconColor};">${this.icon}</div>
+                            <div class="menu__item-title">${this.name}</div>
+                        `;
+                        
+                        // Добавляем обработчик клика
+                        button.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            this.openSearch();
+                        });
+                        
+                        // Добавляем кнопку в конец меню
+                        menuContainer.appendChild(button);
+                        console.log(`[${PLUGIN_NAME}] Manual button created and added`);
                     }
                 }
-            }, 500); // Проверяем каждые 500 мс
-
-            // Ограничиваем время ожидания
+            }, 500);
+            
+            // Таймаут
             setTimeout(() => {
-                clearInterval(checkInterval);
-                console.warn(`[${PLUGIN_NAME}] Timeout waiting for Lampa.Menu`);
-            }, 10000); // Через 10 секунд прекращаем ожидание
+                clearInterval(checkDOM);
+                console.warn(`[${PLUGIN_NAME}] Timeout waiting for menu container`);
+            }, 10000);
         }
 
         // --- Открытие экрана поиска ---
         openSearch() {
             console.log(`[${PLUGIN_NAME}] Opening search screen...`);
-            // Проверяем, есть ли Lampa.Search
+            
+            // Проверим, есть ли Lampa.Search
             if (typeof Lampa !== 'undefined' && Lampa.Search && typeof Lampa.Search.start === 'function') {
                 Lampa.Search.start({
                     title: this.name,
@@ -226,9 +269,6 @@
                 Lampa.Noty.show(`Ошибка открытия страницы: ${error.message}`);
             }
         }
-
-        // --- Другие методы ---
-        // Например, получение плейлистов, каналов и т.д.
     }
 
     // --- Запуск ---
@@ -286,6 +326,8 @@
             setTimeout(() => {
                 clearInterval(interval);
                 console.warn(`[${PLUGIN_NAME}] Lampa not loaded after timeout`);
+                // Попробуем запустить сразу
+                startPlugin();
             }, 10000);
         }
     }
