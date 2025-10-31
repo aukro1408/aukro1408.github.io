@@ -1,57 +1,58 @@
 (function() {
     'use strict';
 
-    const API_URL = 'https://4kino.cc';
+    // НАСТРОЙКИ - ВСТАВЬТЕ ВАШ ТОКЕН СЮДА
+    const VOKINO_CONFIG = {
+        baseUrl: 'http://web.vokino.tv',
+        token: 'ВАШ_ТОКЕН_ЗДЕСЬ', // <-- Замените на ваш токен
+        apiUrl: 'http://web.vokino.tv/api' // Возможный API endpoint
+    };
 
-    class Plugin4kino {
+    class PluginVokino {
         constructor() {
             this.network = new Lampa.Reguest();
+            this.token = VOKINO_CONFIG.token;
         }
 
-        // Поиск фильма на 4kino.cc
+        // Поиск фильма на vokino.tv
         searchMovie(card) {
             return new Promise((resolve, reject) => {
                 const searchQuery = this.buildSearchQuery(card);
-                console.log('[4Kino] Searching for:', searchQuery);
                 
-                const searchUrl = `${API_URL}/index.php?do=search`;
+                // Вариант 1: Если есть API поиска
+                const searchUrl = `${VOKINO_CONFIG.apiUrl}/search?query=${encodeURIComponent(searchQuery)}&token=${this.token}`;
                 
                 this.network.silent(searchUrl, (data) => {
                     try {
-                        console.log('[4Kino] Search response received');
-                        const results = this.parseSearchResults(data, card);
-                        console.log('[4Kino] Parse results:', results);
-                        resolve(results);
+                        // Если API возвращает JSON
+                        if (typeof data === 'string') {
+                            data = JSON.parse(data);
+                        }
+                        resolve(data);
                     } catch (e) {
-                        console.error('[4Kino] Parse error:', e);
-                        reject(e);
+                        // Если API возвращает HTML, парсим его
+                        const results = this.parseSearchResults(data, card);
+                        resolve(results);
                     }
                 }, (error) => {
-                    console.error('[4Kino] Network error:', error);
                     reject(error);
                 }, {
-                    method: 'POST',
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    data: `do=search&subaction=search&story=${encodeURIComponent(searchQuery)}`
+                        'Authorization': `Bearer ${this.token}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
             });
         }
 
-        // Формирование поискового запроса
         buildSearchQuery(card) {
             let query = '';
             
-            if (card.title) {
-                query = card.title;
-            } else if (card.name) {
-                query = card.name;
-            } else if (card.original_title) {
-                query = card.original_title;
-            }
+            if (card.title) query = card.title;
+            else if (card.name) query = card.name;
+            else if (card.original_title) query = card.original_title;
             
-            // Добавляем год для более точного поиска
+            // Добавляем год
             if (card.release_date) {
                 const year = card.release_date.split('-')[0];
                 query += ' ' + year;
@@ -63,21 +64,18 @@
             return query;
         }
 
-        // Парсинг результатов поиска
+        // Парсинг HTML результатов (если нет API)
         parseSearchResults(html, card) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             
-            // Различные селекторы для поиска элементов фильмов
             const selectors = [
-                '.short-item a',
                 '.movie-item a',
-                'article a',
-                '.eBlock a',
-                '.short a',
-                '.story a',
                 '.film-item a',
-                '.item a'
+                '.video-item a',
+                'article a',
+                '.item a',
+                '.card a'
             ];
             
             let results = [];
@@ -85,39 +83,39 @@
             for (let selector of selectors) {
                 const items = doc.querySelectorAll(selector);
                 items.forEach(link => {
-                    if (link.href && link.href.includes(API_URL)) {
-                        const titleEl = link.querySelector('.title, h2, h3, .eTitle, .name') || link;
+                    if (link.href) {
+                        const titleEl = link.querySelector('.title, h2, h3, .name') || link;
                         results.push({
                             url: link.href,
                             title: titleEl.textContent.trim()
                         });
                     }
                 });
-                
                 if (results.length > 0) break;
             }
             
-            console.log('[4Kino] Found results:', results.length);
             return results.length > 0 ? results[0] : null;
         }
 
         // Получение ссылок на плеер
         getPlayerLinks(movieUrl) {
             return new Promise((resolve, reject) => {
-                console.log('[4Kino] Getting player from:', movieUrl);
+                // Добавляем токен в URL
+                const urlWithToken = movieUrl.includes('?') 
+                    ? `${movieUrl}&token=${this.token}`
+                    : `${movieUrl}?token=${this.token}`;
                 
-                this.network.silent(movieUrl, (data) => {
+                this.network.silent(urlWithToken, (data) => {
                     try {
                         const links = this.parsePlayerLinks(data);
-                        console.log('[4Kino] Found links:', links.length);
                         resolve(links);
                     } catch (e) {
-                        console.error('[4Kino] Parse player error:', e);
                         reject(e);
                     }
-                }, (error) => {
-                    console.error('[4Kino] Network error:', error);
-                    reject(error);
+                }, reject, {
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`
+                    }
                 });
             });
         }
@@ -128,47 +126,71 @@
             const doc = parser.parseFromString(html, 'text/html');
             const links = [];
             
-            // Ищем iframe с плеером
+            // Ищем iframe
             const iframes = doc.querySelectorAll('iframe');
             iframes.forEach(iframe => {
-                const src = iframe.src || iframe.getAttribute('data-src');
-                if (src && (src.includes('http') || src.startsWith('//'))) {
-                    const fullUrl = src.startsWith('//') ? 'https:' + src : src;
-                    links.push({
-                        url: fullUrl,
-                        quality: '1080p',
-                        source: '4Kino'
-                    });
-                    console.log('[4Kino] Found iframe:', fullUrl);
+                let src = iframe.src || iframe.getAttribute('data-src');
+                if (src) {
+                    // Добавляем токен если его нет
+                    if (!src.includes('token=')) {
+                        src += (src.includes('?') ? '&' : '?') + `token=${this.token}`;
+                    }
+                    if (src.includes('http') || src.startsWith('//')) {
+                        const fullUrl = src.startsWith('//') ? 'https:' + src : src;
+                        links.push({
+                            url: fullUrl,
+                            quality: '1080p',
+                            source: 'Vokino'
+                        });
+                    }
                 }
             });
             
-            // Ищем data-атрибуты или скрипты с плеером
+            // Ищем video элементы
+            const videos = doc.querySelectorAll('video source, video');
+            videos.forEach(video => {
+                let src = video.src || video.getAttribute('data-src');
+                if (src) {
+                    if (!src.includes('token=')) {
+                        src += (src.includes('?') ? '&' : '?') + `token=${this.token}`;
+                    }
+                    const quality = video.getAttribute('data-quality') || 
+                                  video.getAttribute('label') || '1080p';
+                    links.push({
+                        url: src,
+                        quality: quality,
+                        source: 'Vokino'
+                    });
+                }
+            });
+            
+            // Ищем в скриптах
             const scripts = doc.querySelectorAll('script');
             scripts.forEach(script => {
                 const content = script.textContent;
                 
-                // Ищем различные форматы ссылок
-                const urlPatterns = [
+                // Различные паттерны для поиска ссылок
+                const patterns = [
                     /file["']?\s*:\s*["']([^"']+)["']/g,
                     /src["']?\s*:\s*["']([^"']+)["']/g,
-                    /iframe\.src\s*=\s*["']([^"']+)["']/g,
-                    /pl:\s*["']([^"']+)["']/g,
-                    /player_iframe\s*=\s*["']([^"']+)["']/g,
-                    /video_url\s*=\s*["']([^"']+)["']/g
+                    /url["']?\s*:\s*["']([^"']+)["']/g,
+                    /"(https?:\/\/[^"]+\.m3u8[^"]*)"/g,
+                    /"(https?:\/\/[^"]+\.mp4[^"]*)"/g
                 ];
                 
-                urlPatterns.forEach(pattern => {
+                patterns.forEach(pattern => {
                     let match;
                     while ((match = pattern.exec(content)) !== null) {
-                        if (match[1] && (match[1].includes('http') || match[1].startsWith('//'))) {
-                            const fullUrl = match[1].startsWith('//') ? 'https:' + match[1] : match[1];
+                        if (match[1]) {
+                            let url = match[1];
+                            if (!url.includes('token=')) {
+                                url += (url.includes('?') ? '&' : '?') + `token=${this.token}`;
+                            }
                             links.push({
-                                url: fullUrl,
+                                url: url,
                                 quality: '1080p',
-                                source: '4Kino'
+                                source: 'Vokino'
                             });
-                            console.log('[4Kino] Found script url:', fullUrl);
                         }
                     }
                 });
@@ -177,39 +199,29 @@
             return links;
         }
 
-        // Воспроизведение фильма
+        // Воспроизведение
         async playMovie(card) {
-            console.log('[4Kino] playMovie called for:', card.title || card.name);
-            
             try {
-                Lampa.Noty.show('Поиск на 4Kino...');
-                
-                Lampa.Loading.start(() => {
-                    console.log('[4Kino] Loading cancelled');
-                    Lampa.Loading.stop();
-                    Lampa.Controller.toggle('content');
-                });
+                Lampa.Noty.show('🔍 Ищу на Vokino...');
                 
                 const searchResult = await this.searchMovie(card);
                 
                 if (!searchResult) {
-                    Lampa.Noty.show('Фильм не найден на 4Kino');
-                    Lampa.Loading.stop();
+                    Lampa.Noty.show('❌ Фильм не найден');
                     return;
                 }
                 
-                console.log('[4Kino] Movie found:', searchResult.url);
-                Lampa.Noty.show('Загрузка плеера...');
+                Lampa.Noty.show('⏳ Загружаю плеер...');
                 
-                const playerLinks = await this.getPlayerLinks(searchResult.url);
+                const playerLinks = await this.getPlayerLinks(searchResult.url || searchResult);
                 
                 if (playerLinks.length === 0) {
-                    Lampa.Noty.show('Не удалось найти плеер');
-                    Lampa.Loading.stop();
+                    Lampa.Noty.show('❌ Плеер не найден');
                     return;
                 }
                 
-                // Показываем список качеств или открываем первую ссылку
+                Lampa.Noty.show('✅ Запускаю...');
+                
                 if (playerLinks.length === 1) {
                     this.openPlayer(playerLinks[0], card);
                 } else {
@@ -217,15 +229,12 @@
                 }
                 
             } catch (error) {
-                console.error('[4Kino] Error:', error);
-                Lampa.Noty.show('Ошибка при загрузке: ' + error.message);
-                Lampa.Loading.stop();
+                Lampa.Noty.show('❌ Ошибка: ' + error.message);
             }
         }
 
-        // Показ селектора качества
         showQualitySelector(links, card) {
-            const items = links.map((link, index) => ({
+            const items = links.map((link) => ({
                 title: `${link.quality} - ${link.source}`,
                 url: link.url
             }));
@@ -240,15 +249,9 @@
                     Lampa.Controller.toggle('content');
                 }
             });
-            
-            Lampa.Loading.stop();
         }
 
-        // Открытие плеера
         openPlayer(link, card) {
-            console.log('[4Kino] Opening player:', link.url);
-            Lampa.Loading.stop();
-            
             try {
                 Lampa.Player.play({
                     title: card.title || card.name,
@@ -261,76 +264,87 @@
                     url: link.url
                 }]);
             } catch (e) {
-                console.error('[4Kino] Player error:', e);
-                Lampa.Noty.show('Ошибка запуска плеера');
+                Lampa.Noty.show('❌ Ошибка плеера');
             }
         }
     }
 
-    // Инициализация плагина
+    window.PluginVokino_instance = null;
+
     function startPlugin() {
-        console.log('[4Kino] Starting plugin...');
-        
-        const plugin = new Plugin4kino();
-        
-        // Перехватываем создание карточки
-        Lampa.Listener.follow('full', (e) => {
-            if (e.type === 'complite') {
-                console.log('[4Kino] Full card loaded');
-                console.log('[4Kino] Movie data:', e.data.movie);
-                
-                setTimeout(() => {
-                    try {
-                        // Создаем кнопку
-                        const button = $('<div class="full-start__button selector view--online_4kino">' +
-                            '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 48 48" width="48" height="48">' +
-                            '<rect width="48" height="48" rx="8" fill="currentColor" fill-opacity="0.3"/>' +
-                            '<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">4K</text>' +
-                            '</svg>' +
-                            '<span>4Kino</span>' +
-                            '</div>');
-                        
-                        // Добавляем обработчик клика
-                        button.on('click', function(event) {
-                            console.log('[4Kino] Button clicked');
-                            event.preventDefault();
-                            event.stopPropagation();
-                            
-                            try {
-                                plugin.playMovie(e.data.movie);
-                            } catch (err) {
-                                console.error('[4Kino] Click handler error:', err);
-                                Lampa.Noty.show('Ошибка: ' + err.message);
-                            }
-                        });
-                        
-                        // Находим контейнер с кнопками и добавляем нашу кнопку
-                        const buttonsContainer = $('.full-start__buttons');
-                        if (buttonsContainer.length) {
-                            buttonsContainer.append(button);
-                            console.log('[4Kino] Button added to container');
-                        } else {
-                            // Альтернативный метод
-                            const lastButton = $('.full-start__button').last();
-                            if (lastButton.length) {
-                                lastButton.after(button);
-                                console.log('[4Kino] Button added after last button');
-                            } else {
-                                console.error('[4Kino] No suitable place for button found');
-                            }
-                        }
-                        
-                    } catch (err) {
-                        console.error('[4Kino] Error adding button:', err);
-                    }
-                }, 500);
+        try {
+            // Проверяем что токен установлен
+            if (VOKINO_CONFIG.token === 'ВАШ_ТОКЕН_ЗДЕСЬ') {
+                Lampa.Noty.show('⚠️ Установите токен Vokino в коде!');
+                return;
             }
-        });
-        
-        console.log('[4Kino] Plugin loaded successfully');
+            
+            Lampa.Noty.show('Vokino плагин загружен ✓');
+            
+            const plugin = new PluginVokino();
+            window.PluginVokino_instance = plugin;
+            
+            Lampa.Listener.follow('full', (e) => {
+                if (e.type === 'complite' && e.data && e.data.movie) {
+                    setTimeout(() => {
+                        addButton(e.data.movie, plugin);
+                    }, 1000);
+                }
+            });
+            
+        } catch (error) {
+            Lampa.Noty.show('❌ Ошибка загрузки Vokino');
+        }
     }
 
-    // Проверяем готовность Lampa
+    function addButton(movie, plugin) {
+        try {
+            // Проверяем не добавлена ли уже кнопка
+            if ($('.view--online_vokino').length > 0) {
+                return;
+            }
+            
+            const buttonHtml = `
+                <div class="full-start__button selector view--online_vokino">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 48 48" width="48" height="48">
+                        <rect width="48" height="48" rx="8" fill="#00A8E8" fill-opacity="0.8"/>
+                        <text x="24" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="white">VOK</text>
+                    </svg>
+                    <span>Vokino</span>
+                </div>
+            `;
+            
+            const button = $(buttonHtml);
+            
+            button.on('click tap touchend', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+                
+                plugin.playMovie(movie);
+                return false;
+            });
+            
+            const buttonsContainer = $('.full-start__buttons');
+            if (buttonsContainer.length > 0) {
+                buttonsContainer.append(button);
+            } else {
+                const lastButton = $('.full-start__button').last();
+                if (lastButton.length > 0) {
+                    lastButton.after(button);
+                } else {
+                    $('.full-start, .full').first().append(button);
+                }
+            }
+            
+        } catch (err) {
+            Lampa.Noty.show('❌ Ошибка добавления кнопки');
+        }
+    }
+
     if (window.appready) {
         startPlugin();
     } else {
