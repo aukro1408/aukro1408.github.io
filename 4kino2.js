@@ -68,12 +68,14 @@
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
 
+                // iframe
                 doc.querySelectorAll('iframe').forEach(frame => {
                     if (frame.src && frame.src.startsWith('http')) {
                         links.push({ url: frame.src, quality: 'HD', source: 'FanFilm4K' });
                     }
                 });
 
+                // ссылки из скриптов
                 doc.querySelectorAll('script').forEach(script => {
                     const regex = /['"](https?:\/\/[^'"]+)['"]/g;
                     let match;
@@ -91,106 +93,38 @@
                 return [];
             }
         }
-
-        async playMovie(card) {
-            try {
-                Lampa.Noty.show('Поиск на FanFilm4K...');
-                Lampa.Loading.start();
-
-                const searchResults = await this.searchMovie(card);
-                if (!searchResults.length) {
-                    Lampa.Noty.show('Фильм не найден');
-                    Lampa.Loading.stop();
-                    return;
-                }
-
-                const movieUrl = searchResults[0].url;
-                const links = await this.getPlayerLinks(movieUrl);
-
-                if (!links.length) {
-                    Lampa.Noty.show('Плееры не найдены');
-                    Lampa.Loading.stop();
-                    return;
-                }
-
-                if (links.length === 1) this.openPlayer(links[0], card);
-                else this.showQualitySelector(links, card);
-
-            } catch (err) {
-                console.error('[FanFilm4K] Ошибка:', err);
-                Lampa.Noty.show('Ошибка загрузки');
-                Lampa.Loading.stop();
-            }
-        }
-
-        showQualitySelector(links, card) {
-            const items = links.map(link => ({ title: `${link.quality} - ${link.source}`, url: link.url }));
-            Lampa.Select.show({
-                title: 'Выберите качество',
-                items,
-                onSelect: (item) => this.openPlayer({ url: item.url, quality: item.title }, card),
-                onBack: () => Lampa.Controller.toggle('content')
-            });
-            Lampa.Loading.stop();
-        }
-
-        openPlayer(link, card) {
-            Lampa.Loading.stop();
-            Lampa.Player.play({ title: card.title || card.name, url: link.url, quality: link.quality });
-            Lampa.Player.playlist([{ title: card.title || card.name, url: link.url }]);
-        }
     }
 
-    // --- Кнопка с MutationObserver + setTimeout ---
-    function addFanFilm4KButton(plugin, e) {
-        const observer = new MutationObserver((mutations, obs) => {
-            // универсальный поиск контейнера кнопок
-            const container = document.querySelector('.full-start__buttons') 
-                           || document.querySelector('.full-start-buttons') 
-                           || document.querySelector('.buttons-container');
-
-            if (!container) return;
-
-            if (container.querySelector('.view--fanfilm4k')) {
-                obs.disconnect();
-                return;
-            }
-
-            const button = document.createElement('div');
-            button.className = 'full-start__button selector view--fanfilm4k';
-            button.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
-                    <rect width="48" height="48" rx="8" fill="currentColor" fill-opacity="0.3"/>
-                    <text x="50%" y="55%" text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">4K</text>
-                </svg>
-                <span>FanFilm4K</span>
-            `;
-
-            button.addEventListener('click', () => {
-                const movie = e.data?.movie || e.data?.card || e.data?.data;
-                if (!movie) {
-                    Lampa.Noty.show('Ошибка: нет данных фильма');
-                    return;
-                }
-                plugin.playMovie(movie);
-            });
-
-            container.appendChild(button);
-            console.log('[FanFilm4K] Button added!');
-            obs.disconnect();
-        });
-
-        observer.observe(document.body, { childList: true, subtree: true });
-
-        // на всякий случай, попытка через setTimeout
-        setTimeout(() => observer.takeRecords(), 500);
-    }
-
+    // --- Добавление источника в Lampa ---
     function startPlugin() {
         const plugin = new PluginFanFilm4K();
-        Lampa.Listener.follow('full', (e) => {
-            if (e.type === 'complite') addFanFilm4KButton(plugin, e);
+
+        Lampa.Component.add('online_fanfilm4k', {
+            name: 'FanFilm4K',
+            icon: 'https://v4.fanfilm4k.media/favicon.ico',
+            component: {
+                search: async (card) => {
+                    const results = await plugin.searchMovie(card);
+                    const items = [];
+
+                    for (const r of results) {
+                        const links = await plugin.getPlayerLinks(r.url);
+                        for (const l of links) {
+                            items.push({
+                                title: r.title,
+                                url: l.url,
+                                quality: l.quality,
+                                source: l.source
+                            });
+                        }
+                    }
+
+                    return items;
+                }
+            }
         });
+
+        console.log('[FanFilm4K] Источник добавлен в список источников');
     }
 
     if (window.appready) startPlugin();
