@@ -43,7 +43,7 @@
                 }
 
                 console.log('[4Kino] search result:', list);
-                return list; // Возвращаем массив, чтобы Lampa не показывал красный восклицательный знак
+                return list;
 
             } catch (e) {
                 console.error('[4Kino] Ошибка запроса:', e);
@@ -138,34 +138,27 @@
         }
     }
 
-    function startPlugin() {
-        const plugin = new Plugin4Kino();
-
-        Lampa.Listener.follow('full', (e) => {
-            if (e.type !== 'complite') return;
-
-            let tries = 0;
-            const interval = setInterval(() => {
-                const buttonsContainer = $('.full-start__buttons, .full-start__buttons.scroll');
-                if (!buttonsContainer.length) {
-                    if (tries++ > 20) clearInterval(interval);
+    // --- Вставка кнопки через MutationObserver ---
+    function add4KinoButton(plugin, e) {
+        const observer = new MutationObserver((mutations, obs) => {
+            const container = document.querySelector('.full-start__buttons, .full-start__buttons.scroll');
+            if (container) {
+                if (container.querySelector('.view--4kino')) {
+                    obs.disconnect();
                     return;
                 }
 
-                clearInterval(interval);
-                if ($('.view--4kino').length) return;
+                const button = document.createElement('div');
+                button.className = 'full-start__button selector view--4kino';
+                button.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+                        <rect width="48" height="48" rx="8" fill="currentColor" fill-opacity="0.3"/>
+                        <text x="50%" y="55%" text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">4K</text>
+                    </svg>
+                    <span>4Kino</span>
+                `;
 
-                const button = $(`
-                    <div class="full-start__button selector view--4kino" data-name="4kino">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
-                            <rect width="48" height="48" rx="8" fill="currentColor" fill-opacity="0.3"/>
-                            <text x="50%" y="55%" text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">4K</text>
-                        </svg>
-                        <span>4Kino</span>
-                    </div>
-                `);
-
-                button.on('hover:enter click', () => {
+                button.addEventListener('click', () => {
                     const movie = e.data.movie || e.data.card || e.data.data;
                     if (!movie) {
                         Lampa.Noty.show('Ошибка: нет данных фильма');
@@ -174,12 +167,23 @@
                     plugin.playMovie(movie);
                 });
 
-                buttonsContainer.append(button);
+                container.appendChild(button);
                 console.log('[4Kino] Button added!');
-            }, 300);
+                obs.disconnect();
+            }
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    function startPlugin() {
+        const plugin = new Plugin4Kino();
+        Lampa.Listener.follow('full', (e) => {
+            if (e.type === 'complite') add4KinoButton(plugin, e);
         });
     }
 
     if (window.appready) startPlugin();
     else Lampa.Listener.follow('app', (e) => { if (e.type === 'ready') startPlugin(); });
+
 })();
