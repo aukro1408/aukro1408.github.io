@@ -1,94 +1,85 @@
 (function () {
     'use strict';
 
-    const API_URL = 'https://4kino.cc';
+    const API_URL = 'https://4kino.cc'; // ← без пробела!
 
-    // Парсим главную — это всё, что есть на сайте
-    function parseMainPage(html, card) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const query = (card.title || card.name || '').toLowerCase().trim();
-
-        // Ищем картинки с alt/title
-        const images = doc.querySelectorAll('img[src*="/uploads/"]');
-        for (const img of images) {
-            const alt = (img.alt || img.title || '').toLowerCase();
-            const link = img.closest('a[href]');
-            if (link && alt && alt.includes(query)) {
-                return new URL(link.href, API_URL).href;
-            }
-        }
-        return null;
-    }
-
-    // Ищем плеер на странице фильма
-    function parsePlayer(html) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const iframes = doc.querySelectorAll('iframe[src*="http"]');
-        return Array.from(iframes)
-            .map((f) => f.src)
-            .filter(Boolean);
-    }
-
-    // Основной класс плагина
     class Plugin4kino {
-        async manifest() {
-            return { name: '4Kino', version: '1.0' };
+        constructor() {
+            this.network = new Lampa.Reguest();
         }
 
-        async search(card) {
+        // Просто открываем главную — на сайте нет поиска и страниц фильмов
+        async playMovie(card) {
             try {
-                // Загружаем главную
-                const html = await new Promise((resolve, reject) => {
-                    new Lampa.Reguest().silent(API_URL, resolve, reject);
-                });
+                Lampa.Noty.show('Открываем 4Kino…');
+                Lampa.Loading.start();
 
-                const movieUrl = parseMainPage(html, card);
-                if (!movieUrl) return [];
-
-                // Загружаем страницу фильма
-                const pageHtml = await new Promise((resolve, reject) => {
-                    new Lampa.Reguest().silent(movieUrl, resolve, reject);
-                });
-
-                const urls = parsePlayer(pageHtml);
-                return urls.map((url) => ({
-                    url,
-                    quality: '4K',
-                    source: '4Kino',
-                    type: 'video',
-                }));
-            } catch (e) {
-                console.error('[4Kino] Error:', e);
-                return [];
+                // Так как на сайте нет плееров — просто открываем главную
+                // Но если вы хотите "имитировать" воспроизведение — можно открыть в браузере
+                Lampa.Utils.open(API_URL);
+                Lampa.Loading.stop();
+            } catch (err) {
+                console.error('[4Kino] Error:', err);
+                Lampa.Noty.show('Ошибка');
+                Lampa.Loading.stop();
             }
         }
     }
 
-    // Регистрация
-    function init() {
-        Lampa.Component.add('online', {
-            name: '4Kino',
-            component: new Plugin4kino(),
+    // === ДОБАВЛЕНИЕ КНОПКИ ТОЧНО КАК РАНЬШЕ ===
+    function add4kinoButton(e, plugin) {
+        const container = document.querySelector('.full-start__buttons');
+        if (!container) return;
+
+        // Защита от дублирования
+        if (container.querySelector('.view--4kino')) return;
+
+        const button = document.createElement('div');
+        button.className = 'full-start__button selector view--4kino';
+        button.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+                <rect width="48" height="48" rx="8" fill="currentColor" fill-opacity="0.3"/>
+                <text x="50%" y="55%" text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">4K</text>
+            </svg>
+            <span>4Kino</span>
+        `;
+
+        button.addEventListener('click', () => {
+            const movie = e.data?.movie || e.data?.card || e.data?.data;
+            if (!movie) {
+                Lampa.Noty.show('Нет данных фильма');
+                return;
+            }
+            plugin.playMovie(movie);
         });
 
-        if (Lampa.Manifest?.plugins) {
-            Lampa.Manifest.plugins.push({
-                name: '4Kino',
-                author: '@custom',
-                descr: 'Фильмы в 4K с 4kino.cc',
-                version: '1.0',
-            });
+        // ← КЛЮЧЕВОЙ МОМЕНТ: вставляем ПОСЛЕ uTorrent, как раньше
+        const uTorrentButton = container.querySelector('.view--torrent');
+        if (uTorrentButton) {
+            uTorrentButton.after(button);
+        } else {
+            // Если uTorrent нет — в конец
+            container.appendChild(button);
         }
-        console.log('[4Kino] Registered as online source');
+
+        console.log('[4Kino] Кнопка добавлена');
+    }
+
+    function startPlugin() {
+        const plugin = new Plugin4kino();
+
+        Lampa.Listener.follow('full', (e) => {
+            if (e.type === 'complite') {
+                add4kinoButton(e, plugin);
+            }
+        });
     }
 
     if (window.appready) {
-        init();
+        startPlugin();
     } else {
         Lampa.Listener.follow('app', (e) => {
-            if (e.type === 'ready') init();
+            if (e.type === 'ready') startPlugin();
         });
     }
 })();
