@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lampa Rainstorm Final
-// @namespace    lampa.rainstorm.final
-// @version      5.0
-// @description  Дождь с плавными молниями и стекущими каплями для Lampa, без звука
+// @name         aukro1408
+// @namespace    lampa.rainstorm.aukro140
+// @version      7.0
+// @description  Дождь с локальными молниями и стекущими каплями для Lampa
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -15,9 +15,8 @@
       return;
     }
 
-    // --- Canvas для дождя ---
     const canvas = document.createElement('canvas');
-    canvas.id = 'rainstormFinalEffect';
+    canvas.id = 'rainstormAukroEffect';
     canvas.style.position = 'fixed';
     canvas.style.top = '0';
     canvas.style.left = '0';
@@ -36,7 +35,7 @@
       H = canvas.height = window.innerHeight;
     });
 
-    // --- Настройки обычного дождя ---
+    // обычный дождь
     const drops = [];
     const splashes = [];
     const dropCount = 250;
@@ -54,7 +53,7 @@
       });
     }
 
-    // --- Стекущие капли по экрану ---
+    // стекущие капли
     const glassDrops = [];
     const glassCount = 20;
 
@@ -69,31 +68,49 @@
       });
     }
 
-    // --- Плавные молнии (как версия 2) ---
-    let lightningTime = 0;
-    let lightningOpacity = 0;
+    // локальные молнии
+    const localFlashes = [];
 
-    function lightning() {
-      if (Math.random() < 0.002 && lightningTime <= 0) {
-        lightningTime = random(30, 60);
-      }
-      if (lightningTime > 0) {
-        lightningOpacity = Math.sin((60 - lightningTime)/60 * Math.PI) * 0.6 + 0.2;
-        lightningTime--;
-      } else {
-        lightningOpacity = 0;
+    function generateFlash() {
+      if (Math.random() < 0.005) { // вероятность появления локальной молнии
+        localFlashes.push({
+          x: random(0, W),
+          y: random(0, H/2),
+          width: random(50, 150),
+          height: random(30, 100),
+          opacity: 0.6
+        });
       }
     }
 
-    // --- Основная анимация ---
+    function updateFlashes() {
+      for (let i = localFlashes.length-1; i>=0; i--) {
+        const f = localFlashes[i];
+        f.opacity -= 0.03;
+        if (f.opacity <= 0) localFlashes.splice(i,1);
+      }
+    }
+
+    function drawFlashes() {
+      for (let f of localFlashes) {
+        const gradient = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.width);
+        gradient.addColorStop(0, `rgba(255,255,255,${f.opacity})`);
+        gradient.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.ellipse(f.x, f.y, f.width, f.height, 0, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+
     function draw() {
       ctx.clearRect(0, 0, W, H);
 
-      // ночной фон
+      // фон ночь
       ctx.fillStyle = 'rgba(10,10,20,0.2)';
       ctx.fillRect(0, 0, W, H);
 
-      // обычный дождь с размытой перспективой
+      // обычный дождь
       for (let i = 0; i < drops.length; i++) {
         const d = drops[i];
         ctx.beginPath();
@@ -107,7 +124,6 @@
 
         d.y += d.speed;
 
-        // разбрызгивание
         if (d.y > H) {
           d.y = -20;
           d.x = random(0, W);
@@ -126,7 +142,7 @@
         if (s.opacity <= 0) splashes.splice(i,1);
       }
 
-      // стекущие капли по экрану
+      // стекущие капли
       for (let i = 0; i < glassDrops.length; i++) {
         const g = glassDrops[i];
         g.y += g.speed;
@@ -152,12 +168,10 @@
         }
       }
 
-      // молнии
-      lightning();
-      if (lightningOpacity > 0) {
-        ctx.fillStyle = `rgba(255,255,255,${lightningOpacity})`;
-        ctx.fillRect(0, 0, W, H);
-      }
+      // локальные молнии
+      generateFlash();
+      updateFlashes();
+      drawFlashes();
 
       requestAnimationFrame(draw);
     }
