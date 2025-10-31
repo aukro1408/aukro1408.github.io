@@ -3,111 +3,84 @@
 
     const API_URL = 'https://4kino.cc';
 
-    class Plugin4kino {
-        constructor() {
-            this.network = new Lampa.Reguest();
-        }
+    // Парсим главную — это всё, что есть на сайте
+    function parseMainPage(html, card) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const query = (card.title || card.name || '').toLowerCase().trim();
 
-        // Главный метод — вызывается Lampa автоматически
+        // Ищем картинки с alt/title
+        const images = doc.querySelectorAll('img[src*="/uploads/"]');
+        for (const img of images) {
+            const alt = (img.alt || img.title || '').toLowerCase();
+            const link = img.closest('a[href]');
+            if (link && alt && alt.includes(query)) {
+                return new URL(link.href, API_URL).href;
+            }
+        }
+        return null;
+    }
+
+    // Ищем плеер на странице фильма
+    function parsePlayer(html) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const iframes = doc.querySelectorAll('iframe[src*="http"]');
+        return Array.from(iframes)
+            .map((f) => f.src)
+            .filter(Boolean);
+    }
+
+    // Основной класс плагина
+    class Plugin4kino {
         async manifest() {
-            return {
-                version: '1.0',
-                provider: '4kino',
-                name: '4Kino',
-                icon: '', // можно оставить пустым
-            };
+            return { name: '4Kino', version: '1.0' };
         }
 
         async search(card) {
             try {
-                // Парсим главную страницу (поиск на сайте не работает)
-                const html = await this.request(API_URL);
-                const results = this.parseMainPage(html, card);
+                // Загружаем главную
+                const html = await new Promise((resolve, reject) => {
+                    new Lampa.Reguest().silent(API_URL, resolve, reject);
+                });
 
-                if (results.length === 0) return [];
+                const movieUrl = parseMainPage(html, card);
+                if (!movieUrl) return [];
 
-                // Берём первый совпадающий
-                const moviePage = await this.request(results[0].url);
-                const links = this.parsePlayerLinks(moviePage);
+                // Загружаем страницу фильма
+                const pageHtml = await new Promise((resolve, reject) => {
+                    new Lampa.Reguest().silent(movieUrl, resolve, reject);
+                });
 
-                return links.map((link) => ({
-                    url: link.url,
-                    quality: link.quality,
+                const urls = parsePlayer(pageHtml);
+                return urls.map((url) => ({
+                    url,
+                    quality: '4K',
                     source: '4Kino',
                     type: 'video',
                 }));
             } catch (e) {
-                console.error('[4Kino] Search error:', e);
+                console.error('[4Kino] Error:', e);
                 return [];
             }
         }
-
-        request(url) {
-            return new Promise((resolve, reject) => {
-                this.network.silent(url, resolve, reject);
-            });
-        }
-
-        parseMainPage(html, card) {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const results = [];
-
-            const images = doc.querySelectorAll('img[src*="/uploads/"]');
-            const query = (card.title || card.name || '').toLowerCase();
-
-            images.forEach((img) => {
-                const alt = (img.alt || img.title || '').toLowerCase();
-                const link = img.closest('a[href]');
-                if (link && alt && alt.includes(query)) {
-                    results.push({
-                        url: new URL(link.href, API_URL).href,
-                        title: alt,
-                    });
-                }
-            });
-
-            return results;
-        }
-
-        parsePlayerLinks(html) {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const links = [];
-
-            doc.querySelectorAll('iframe[src*="http"]').forEach((iframe) => {
-                links.push({
-                    url: iframe.src,
-                    quality: '4K',
-                });
-            });
-
-            // Можно добавить парсинг скриптов, если нужно
-
-            return links;
-        }
     }
 
-    // Регистрация плагина в системе Lampa
+    // Регистрация
     function init() {
-        const plugin = new Plugin4kino();
-
-        // Добавляем как online-источник
         Lampa.Component.add('online', {
             name: '4Kino',
-            component: plugin,
+            component: new Plugin4kino(),
         });
 
-        // Добавляем в манифест для отображения в настройках
         if (Lampa.Manifest?.plugins) {
             Lampa.Manifest.plugins.push({
-                author: '@custom',
                 name: '4Kino',
+                author: '@custom',
                 descr: 'Фильмы в 4K с 4kino.cc',
                 version: '1.0',
             });
         }
-
         console.log('[4Kino] Registered as online source');
     }
 
