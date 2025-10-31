@@ -1,83 +1,49 @@
-(function () {
-    'use strict';
+async playMovie(card) {
+    try {
+        const title = card.title || card.name || 'Неизвестно';
+        console.log('[4Kino] Запрос фильма:', title);
+        Lampa.Noty.show(`Поиск: ${title}`);
 
-    const API_URL = 'https://4kino.cc';
+        Lampa.Loading.start(() => {
+            Lampa.Loading.stop();
+            Lampa.Controller.toggle('content');
+        });
 
-    class Plugin4kino {
-        async manifest() {
-            return {
-                name: '4Kino',
-                version: '1.0',
-                provider: '4kino',
-                icon: '',
-            };
-        }
+        // Парсим главную — это всё, что есть
+        const html = await new Promise((resolve, reject) => {
+            this.network.silent(API_URL, resolve, reject);
+        });
 
-        async search(card) {
-            try {
-                // Загружаем главную страницу
-                const html = await new Promise((resolve, reject) => {
-                    new Lampa.Reguest().silent(API_URL, resolve, reject);
-                });
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const query = title.toLowerCase();
+        let found = false;
 
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const query = (card.title || card.name || '').toLowerCase();
-
-                // Ищем картинки с совпадением по названию
-                const images = doc.querySelectorAll('img[src*="/uploads/"]');
-                for (const img of images) {
-                    const alt = (img.alt || img.title || '').toLowerCase();
-                    const link = img.closest('a[href]');
-                    if (link && alt.includes(query)) {
-                        const movieUrl = new URL(link.href, API_URL).href;
-                        // Так как на сайте нет плееров — просто возвращаем ссылку на сайт
-                        return [
-                            {
-                                url: movieUrl,
-                                quality: '4K',
-                                source: '4Kino',
-                                type: 'video',
-                                title: alt,
-                            },
-                        ];
-                    }
-                }
-
-                return []; // не найдено
-
-            } catch (e) {
-                console.error('[4Kino] Search error:', e);
-                return [];
+        const images = doc.querySelectorAll('img[src*="/uploads/"]');
+        for (const img of images) {
+            const alt = (img.alt || img.title || '').toLowerCase();
+            if (alt.includes(query)) {
+                found = true;
+                Lampa.Noty.show(`Найдено: ${alt}`);
+                console.log('[4Kino] Совпадение:', alt);
+                // Открываем сайт, потому что видео нет
+                setTimeout(() => {
+                    Lampa.Utils.open(API_URL);
+                    Lampa.Loading.stop();
+                }, 1500);
+                return;
             }
         }
-    }
 
-    function init() {
-        // Регистрация как online-источника
-        Lampa.Component.add('online', {
-            name: '4Kino',
-            component: new Plugin4kino(),
-        });
-
-        // Добавляем в манифест
-        if (Lampa.Manifest?.plugins) {
-            Lampa.Manifest.plugins.push({
-                name: '4Kino',
-                author: '@custom',
-                descr: 'Фильмы в 4K с 4kino.cc',
-                version: '1.0',
-            });
+        if (!found) {
+            Lampa.Noty.show('Не найдено на 4Kino');
+            console.log('[4Kino] Не найдено');
         }
+        Lampa.Loading.stop();
 
-        console.log('[4Kino] Registered as online source');
+    } catch (error) {
+        console.error('[4Kino] Ошибка:', error);
+        Lampa.Noty.show('Ошибка: ' + (error.message || 'сеть'));
+        Lampa.Loading.stop();
     }
-
-    if (window.appready) {
-        init();
-    } else {
-        Lampa.Listener.follow('app', (e) => {
-            if (e.type === 'ready') init();
-        });
-    }
-})();
+}
