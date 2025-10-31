@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lampa Rain Sound
 // @namespace    lampa.rain
-// @version      1.0
+// @version      1.1
 // @description  Кнопка для включения/выключения звука дождя в Lampa
 // @match        *://*/lampa/*
 // ==/UserScript==
@@ -9,12 +9,12 @@
 (function() {
     'use strict';
 
-    // Прямая ссылка на звук дождя с Google Drive
-    const rainSoundUrl = 'https://drive.google.com/uc?export=download&id=1T3scwlrYH7mQOAz_ekSL01KP5qRIUB6M';
+    // Прямая ссылка на дождь (Pixabay, CC0, бесплатно)
+    const rainSoundUrl = 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_3a8b9f7b45.mp3?filename=rain-ambient-10294.mp3';
 
     const audio = new Audio(rainSoundUrl);
     audio.loop = true;
-    audio.volume = 0.5; // громкость
+    audio.volume = 0.5;
 
     const btn = document.createElement('button');
     btn.innerText = '🌧️ Дождь';
