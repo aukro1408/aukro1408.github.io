@@ -1,88 +1,130 @@
 (function () {
     'use strict';
 
-    // --- Настройки ---
-    const YOUTUBE_API_KEY = 'AIzaSyBbZ_BNLNdgC9dylYEQdIAPkXc6g3VlLMw'; // Ваш API ключ
+    const API_URL = 'https://4kino.cc '; // Этот URL не используется для YouTube, но оставлен для совместимости
+    const YOUTUBE_API_KEY = 'AIzaSyBbZ_BNLNdgC9dylYEQdIAPkXc6g3VlLMw'; // Ваш API ключ YouTube
     const YOUTUBE_BASE_URL = 'https://www.googleapis.com/youtube/v3';
-    const PLUGIN_NAME = 'YouTube';
-    const PLUGIN_ID = 'youtube';
 
-    // --- Переменные ---
-    let youtubePluginInstance = null;
-    let menuAdded = false;
-
-    // --- Класс плагина ---
-    class YouTubePlugin {
+    class PluginYoutube {
         constructor() {
-            this.name = PLUGIN_NAME;
-            this.id = PLUGIN_ID;
-            this.icon = 'YT'; // Иконка
-            this.iconColor = '#FF0000'; // Красный цвет
+            this.network = new Lampa.Reguest();
         }
 
-        // --- Инициализация ---
-        init() {
-            console.log(`[${PLUGIN_NAME}] Initializing plugin...`);
-            this.addMenuItem();
+        // --- Поиск видео на YouTube ---
+        searchVideo(query) {
+            return new Promise((resolve, reject) => {
+                const searchUrl = `${YOUTUBE_BASE_URL}/search?key=${YOUTUBE_API_KEY}&q=${encodeURIComponent(query)}&part=snippet&type=video&maxResults=20`;
+
+                this.network.silent(searchUrl, (data) => {
+                    try {
+                        const results = this.parseSearchResults(data);
+                        resolve(results);
+                    } catch (e) {
+                        reject(e);
+                    }
+                }, (error) => {
+                    reject(error);
+                });
+            });
         }
 
-        // --- Добавление кнопки в меню ---
-        addMenuItem() {
-            if (menuAdded) return;
+        // --- Парсинг результатов поиска YouTube ---
+        parseSearchResults(html) {
+            // В данном случае, мы уже получаем JSON, поэтому парсим его
+            const data = JSON.parse(html);
+            const results = [];
 
+            if (data.items && data.items.length > 0) {
+                data.items.forEach(item => {
+                    if (item.id && item.id.videoId) {
+                        results.push({
+                            id: item.id.videoId,
+                            title: item.snippet.title,
+                            description: item.snippet.description,
+                            image: item.snippet.thumbnails.medium.url,
+                            channel: item.snippet.channelTitle,
+                            publishedAt: item.snippet.publishedAt,
+                            url: `https://www.youtube.com/watch?v=${item.id.videoId}`
+                        });
+                    }
+                });
+            }
+
+            return results;
+        }
+
+        // --- Получение информации о видео ---
+        getVideoInfo(videoId) {
+            return new Promise((resolve, reject) => {
+                const videoUrl = `${YOUTUBE_BASE_URL}/videos?key=${YOUTUBE_API_KEY}&id=${videoId}&part=snippet,contentDetails,statistics`;
+
+                this.network.silent(videoUrl, (data) => {
+                    try {
+                        const videoInfo = this.parseVideoInfo(data);
+                        resolve(videoInfo);
+                    } catch (e) {
+                        reject(e);
+                    }
+                }, reject);
+            });
+        }
+
+        // --- Парсинг информации о видео ---
+        parseVideoInfo(html) {
+            const data = JSON.parse(html);
+            if (data.items && data.items.length > 0) {
+                const item = data.items[0];
+                return {
+                    id: item.id,
+                    title: item.snippet.title,
+                    description: item.snippet.description,
+                    image: item.snippet.thumbnails.medium.url,
+                    channel: item.snippet.channelTitle,
+                    duration: item.contentDetails.duration,
+                    viewCount: item.statistics.viewCount,
+                    likeCount: item.statistics.likeCount,
+                    url: `https://www.youtube.com/watch?v=${item.id}`
+                };
+            }
+            return null;
+        }
+
+        // --- Воспроизведение видео ---
+        async playVideo(videoId) {
             try {
-                // Ищем контейнер меню (обычно .menu)
-                let menuContainer = document.querySelector('.menu');
+                Lampa.Noty.show('Получаем информацию о видео...');
+                const videoInfo = await this.getVideoInfo(videoId);
                 
-                if (!menuContainer) {
-                    console.warn(`[${PLUGIN_NAME}] Menu container not found yet.`);
+                if (!videoInfo) {
+                    Lampa.Noty.show('Не удалось получить информацию о видео');
                     return;
                 }
 
-                // Проверяем, есть ли уже наш элемент
-                if (document.getElementById(`menu-item-${this.id}`)) {
-                    console.log(`[${PLUGIN_NAME}] Menu item already exists.`);
-                    menuAdded = true;
-                    return;
-                }
-
-                // Создаем новый элемент
-                const menuItem = document.createElement('div');
-                menuItem.id = `menu-item-${this.id}`;
-                menuItem.className = 'menu__item';
-                menuItem.style.padding = '12px 20px';
-                menuItem.style.cursor = 'pointer';
-                menuItem.style.display = 'flex';
-                menuItem.style.alignItems = 'center';
-                menuItem.style.gap = '10px';
-                menuItem.innerHTML = `
-                    <div class="menu__item-icon" style="color: ${this.iconColor}; font-weight: bold; font-size: 18px;">${this.icon}</div>
-                    <div class="menu__item-title" style="font-size: 16px; color: white;">${this.name}</div>
-                `;
-
-                // Добавляем обработчик клика
-                menuItem.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log(`[${PLUGIN_NAME}] Button clicked!`);
-                    this.openSearchModal(); // Открываем модальное окно поиска
+                // Воспроизведение через iframe YouTube
+                const playerUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+                Lampa.Player.play({
+                    title: videoInfo.title,
+                    url: playerUrl,
+                    poster: videoInfo.image,
+                    type: 'iframe'
                 });
 
-                // Вставляем в конец меню
-                menuContainer.appendChild(menuItem);
-                console.log(`[${PLUGIN_NAME}] Menu item added successfully.`);
-                menuAdded = true;
+                Lampa.Player.playlist([{
+                    title: videoInfo.title,
+                    url: playerUrl
+                }]);
 
-            } catch (e) {
-                console.error(`[${PLUGIN_NAME}] Error adding menu item:`, e);
+                Lampa.Noty.show(`Воспроизведение: ${videoInfo.title}`);
+
+            } catch (error) {
+                console.error('YouTube error:', error);
+                Lampa.Noty.show('Ошибка при воспроизведении: ' + error.message);
             }
         }
 
-        // --- Открытие модального окна поиска ---
-        openSearchModal() {
-            console.log(`[${PLUGIN_NAME}] Opening search modal...`);
-
-            // Создаем модальное окно
+        // --- Открытие экрана поиска ---
+        openSearchScreen() {
+            // Создаем простое модальное окно для поиска
             const modal = new Lampa.Modal({
                 title: 'Поиск на YouTube',
                 html: `
@@ -109,7 +151,7 @@
                         }
 
                         resultsDiv.innerHTML = '<p>Ищем...</p>';
-                        const results = await this.search(query);
+                        const results = await this.searchVideo(query);
 
                         if (results.length === 0) {
                             resultsDiv.innerHTML = '<p>Ничего не найдено.</p>';
@@ -149,169 +191,134 @@
                     });
                 },
                 onClose: () => {
-                    console.log(`[${PLUGIN_NAME}] Modal closed.`);
+                    console.log('[YouTube] Modal closed.');
                 }
             });
 
             modal.open();
         }
-
-        // --- Поиск ---
-        async search(query, maxResults = 20) {
-            try {
-                console.log(`[${PLUGIN_NAME}] Searching for: ${query}`);
-                const response = await fetch(
-                    `${YOUTUBE_BASE_URL}/search?key=${YOUTUBE_API_KEY}&q=${encodeURIComponent(query)}&part=snippet&type=video&maxResults=${maxResults}`
-                );
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                // Преобразование данных YouTube в формат, понятный Lampa
-                const results = data.items.map(item => ({
-                    id: item.id.videoId,
-                    title: item.snippet.title,
-                    description: item.snippet.description,
-                    image: item.snippet.thumbnails.medium.url,
-                    channel: item.snippet.channelTitle,
-                    publishedAt: item.snippet.publishedAt,
-                    url: `https://www.youtube.com/watch?v=${item.id.videoId}` // Ссылка на YouTube
-                }));
-
-                console.log(`[${PLUGIN_NAME}] Search results count: ${results.length}`);
-                return results;
-            } catch (error) {
-                console.error(`[${PLUGIN_NAME}] Search error:`, error);
-                Lampa.Noty.show(`Ошибка поиска: ${error.message}`);
-                return [];
-            }
-        }
-
-        // --- Получение информации о видео ---
-        async getVideoInfo(videoId) {
-            try {
-                console.log(`[${PLUGIN_NAME}] Getting info for video: ${videoId}`);
-                const response = await fetch(
-                    `${YOUTUBE_BASE_URL}/videos?key=${YOUTUBE_API_KEY}&id=${videoId}&part=snippet,contentDetails,statistics`
-                );
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                if (data.items && data.items.length > 0) {
-                    const item = data.items[0];
-                    const videoInfo = {
-                        id: item.id,
-                        title: item.snippet.title,
-                        description: item.snippet.description,
-                        image: item.snippet.thumbnails.medium.url,
-                        channel: item.snippet.channelTitle,
-                        duration: item.contentDetails.duration, // ISO 8601 формат
-                        viewCount: item.statistics.viewCount,
-                        likeCount: item.statistics.likeCount,
-                        url: `https://www.youtube.com/watch?v=${item.id}`
-                    };
-                    console.log(`[${PLUGIN_NAME}] Video info retrieved:`, videoInfo);
-                    return videoInfo;
-                }
-                return null;
-            } catch (error) {
-                console.error(`[${PLUGIN_NAME}] Get video info error:`, error);
-                return null;
-            }
-        }
-
-        // --- Воспроизведение ---
-        async playVideo(videoId) {
-            try {
-                console.log(`[${PLUGIN_NAME}] Playing video: ${videoId}`);
-                const videoInfo = await this.getVideoInfo(videoId);
-                if (!videoInfo) {
-                    Lampa.Noty.show('Не удалось получить информацию о видео');
-                    return;
-                }
-
-                // Воспроизведение через iframe YouTube
-                const playerUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-                Lampa.Player.play({
-                    title: videoInfo.title,
-                    url: playerUrl,
-                    poster: videoInfo.image,
-                    type: 'iframe'
-                });
-
-                Lampa.Noty.show(`Воспроизведение: ${videoInfo.title}`);
-
-            } catch (error) {
-                console.error(`[${PLUGIN_NAME}] Play video error:`, error);
-                Lampa.Noty.show(`Ошибка воспроизведения: ${error.message}`);
-            }
-        }
     }
 
-    // --- Запуск ---
+    // --- Инициализация плагина ---
     function startPlugin() {
-        console.log(`[${PLUGIN_NAME}] Starting plugin...`);
+        console.log('[YouTube] Starting plugin...');
 
-        // Инициализация плагина
-        youtubePluginInstance = new YouTubePlugin();
-        youtubePluginInstance.init(); // Инициализируем
+        const plugin = new PluginYoutube();
 
-        // Добавление плагина в Lampa
-        Lampa.Component.add(youtubePluginInstance.id, {
-            name: youtubePluginInstance.name,
-            component: youtubePluginInstance
+        // Метод 1: Используем API Lampa для добавления источника онлайн
+        Lampa.Component.add('online_youtube', {
+            name: 'YouTube',
+            component: plugin
         });
 
-        // Добавление в Manifest (если нужно)
+        // Метод 2: Добавляем кнопку через API источников (если нужно)
         if (Lampa.Manifest && Lampa.Manifest.plugins) {
             Lampa.Manifest.plugins.push({
-                author: '@your_name',
-                name: PLUGIN_NAME,
+                author: '@custom',
+                name: 'YouTube',
                 descr: 'Источник видео из YouTube',
                 version: '1.0.0'
             });
         }
 
-        console.log(`[${PLUGIN_NAME}] Plugin loaded successfully`);
+        // Метод 3: Перехватываем создание карточки и добавляем кнопку
+        // Вместо добавления кнопки на карточку, мы добавим её в меню
+        // Но если вы хотите именно кнопку на карточке, можно сделать так:
+        /*
+        Lampa.Listener.follow('full', (e) => {
+            if (e.type === 'complite') {
+                console.log('[YouTube] Full card loaded, adding button');
+
+                setTimeout(() => {
+                    try {
+                        // Создаем кнопку
+                        const button = $('<div class="full-start__button selector view--online_youtube">' +
+                            '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 48 48" width="48" height="48">' +
+                            '<rect width="48" height="48" rx="8" fill="currentColor" fill-opacity="0.3"/>' +
+                            '<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">YT</text>' +
+                            '</svg>' +
+                            '<span>YouTube</span>' +
+                            '</div>');
+
+                        // Добавляем обработчик клика
+                        button.on('click', () => {
+                            plugin.openSearchScreen(); // Открываем поиск
+                        });
+
+                        // Находим контейнер с кнопками и добавляем нашу кнопку
+                        const buttonsContainer = $('.full-start__buttons');
+                        if (buttonsContainer.length) {
+                            buttonsContainer.append(button);
+                            console.log('[YouTube] Button added successfully');
+                        } else {
+                            console.log('[YouTube] Buttons container not found');
+                        }
+
+                    } catch (err) {
+                        console.error('[YouTube] Error adding button:', err);
+                    }
+                }, 300);
+            }
+        });
+        */
+
+        // --- Добавляем кнопку в меню (как в вашем оригинальном коде) ---
+        // Попробуем добавить кнопку в меню через DOM
+        const addButtonToMenu = () => {
+            // Проверяем, есть ли уже кнопка
+            if (document.getElementById('youtube-menu-button')) {
+                return;
+            }
+
+            // Ищем контейнер меню
+            const menuContainer = document.querySelector('.menu');
+            if (menuContainer) {
+                // Создаем кнопку
+                const button = document.createElement('div');
+                button.id = 'youtube-menu-button';
+                button.className = 'menu__item';
+                button.style.padding = '12px 20px';
+                button.style.cursor = 'pointer';
+                button.style.display = 'flex';
+                button.style.alignItems = 'center';
+                button.style.gap = '10px';
+                button.innerHTML = `
+                    <div class="menu__item-icon" style="color: #FF0000; font-weight: bold; font-size: 18px;">YT</div>
+                    <div class="menu__item-title" style="font-size: 16px; color: white;">YouTube</div>
+                `;
+
+                // Добавляем обработчик клика
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[YouTube] Button clicked!');
+                    plugin.openSearchScreen();
+                });
+
+                // Добавляем в конец меню
+                menuContainer.appendChild(button);
+                console.log('[YouTube] Menu button added successfully');
+            } else {
+                // Если меню еще не загружено, повторяем через 500мс
+                setTimeout(addButtonToMenu, 500);
+            }
+        };
+
+        // Запускаем добавление кнопки
+        setTimeout(addButtonToMenu, 500);
+
+        console.log('[YouTube] Plugin loaded successfully');
     }
 
-    // Проверка готовности Lampa
+    // Проверяем готовность Lampa
     if (window.appready) {
         startPlugin();
     } else {
-        // Проверяем, есть ли Lampa и Listener
-        if (typeof Lampa !== 'undefined' && Lampa.Listener) {
-            Lampa.Listener.follow('app', (e) => {
-                if (e.type === 'ready') {
-                    startPlugin();
-                }
-            });
-        } else {
-            // Если Lampa не загружена, ждем
-            const interval = setInterval(() => {
-                if (typeof Lampa !== 'undefined' && Lampa.Listener) {
-                    clearInterval(interval);
-                    Lampa.Listener.follow('app', (e) => {
-                        if (e.type === 'ready') {
-                            startPlugin();
-                        }
-                    });
-                }
-            }, 500);
-
-            // Таймаут
-            setTimeout(() => {
-                clearInterval(interval);
-                console.warn(`[${PLUGIN_NAME}] Lampa not loaded after timeout`);
-                // Попробуем запустить сразу
+        Lampa.Listener.follow('app', (e) => {
+            if (e.type === 'ready') {
                 startPlugin();
-            }, 10000);
-        }
+            }
+        });
     }
+
 })();
