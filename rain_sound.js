@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lampa Rainstorm Effect with Sound
+// @name         Lampa Rainstorm Effect with Sound Button
 // @namespace    lampa.rainstorm
-// @version      1.2
-// @description  Дождь с ветром, молниями и звуком дождя для Lampa
+// @version      1.3
+// @description  Дождь с ветром, молниями и кнопкой включения/выключения звука для Lampa
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -15,22 +15,47 @@
       return;
     }
 
-    // --- Звук дождя ---
+    // --- Создаём звук дождя ---
     const audio = document.createElement('audio');
-    audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; // замените на реальный звук дождя
+    audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; // заменить на реальный дождь
     audio.loop = true;
     audio.volume = 0.3;
     audio.style.display = 'none';
     document.body.appendChild(audio);
 
-    // Запуск через таймаут для обхода политики автозапуска
-    setTimeout(() => {
-      audio.play().catch(() => {
-        console.log('Автоплей заблокирован, дождь без звука');
-      });
-    }, 1000);
+    let soundOn = false; // звук изначально выключен
 
-    // Canvas поверх интерфейса
+    // --- Создаём кнопку включения звука ---
+    const btn = document.createElement('div');
+    btn.style.position = 'fixed';
+    btn.style.bottom = '20px';
+    btn.style.right = '20px';
+    btn.style.width = '50px';
+    btn.style.height = '50px';
+    btn.style.borderRadius = '25px';
+    btn.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    btn.style.color = 'white';
+    btn.style.display = 'flex';
+    btn.style.alignItems = 'center';
+    btn.style.justifyContent = 'center';
+    btn.style.fontSize = '12px';
+    btn.style.cursor = 'pointer';
+    btn.style.zIndex = '99999';
+    btn.innerText = 'Звук';
+    document.body.appendChild(btn);
+
+    btn.addEventListener('click', () => {
+      if (!soundOn) {
+        audio.play().catch(() => console.log('Нажмите ещё раз, чтобы разрешить звук'));
+        btn.style.backgroundColor = 'rgba(0,100,0,0.7)';
+      } else {
+        audio.pause();
+        btn.style.backgroundColor = 'rgba(0,0,0,0.5)';
+      }
+      soundOn = !soundOn;
+    });
+
+    // --- Canvas дождя ---
     const canvas = document.createElement('canvas');
     canvas.id = 'rainstormEffect';
     canvas.style.position = 'fixed';
@@ -51,7 +76,6 @@
       H = canvas.height = window.innerHeight;
     });
 
-    // Настройки дождя
     const drops = [];
     const dropCount = 200;
     const wind = -1;
@@ -69,7 +93,6 @@
       });
     }
 
-    // Молнии
     let lightningTime = 0;
     function lightning() {
       if (Math.random() < 0.002 && lightningTime <= 0) {
@@ -80,11 +103,9 @@
     function draw() {
       ctx.clearRect(0, 0, W, H);
 
-      // фон ночь
       ctx.fillStyle = 'rgba(10,10,20,0.2)';
       ctx.fillRect(0, 0, W, H);
 
-      // рисуем дождь
       ctx.strokeStyle = 'rgba(173,216,230,0.6)';
       ctx.lineWidth = 2;
       for (let i = 0; i < drops.length; i++) {
@@ -105,7 +126,6 @@
         if (d.x < 0) d.x = W;
       }
 
-      // молния
       lightning();
       if (lightningTime > 0) {
         ctx.fillStyle = `rgba(255,255,255,${0.3 + Math.random()*0.3})`;
