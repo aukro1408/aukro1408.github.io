@@ -9,13 +9,14 @@
 
     // --- Переменные ---
     let youtubePluginInstance = null;
+    let menuAdded = false; // Флаг для отслеживания добавления меню
 
     // --- Класс плагина ---
     class YouTubePlugin {
         constructor() {
             this.name = PLUGIN_NAME;
             this.id = PLUGIN_ID;
-            // Используем простой текстовый символ для иконки
+            // Используем простой символ для иконки
             this.icon = 'YT';
             this.iconColor = '#FF0000'; // Красный цвет для иконки
         }
@@ -23,114 +24,81 @@
         // --- Инициализация ---
         init() {
             console.log(`[${PLUGIN_NAME}] Initializing plugin...`);
+            // Попробуем добавить элемент в меню
+            this.addMenuItem();
             
-            // Попробуем добавить элемент в меню после задержки
-            setTimeout(() => {
-                this.attemptToAddToMenu();
-            }, 2000); // Задержка для уверенности, что Lampa полностью загружена
-            
-            // Также добавим слушатель готовности Lampa
-            if (typeof Lampa !== 'undefined' && Lampa.Listener) {
-                Lampa.Listener.follow('app', (e) => {
-                    if (e.type === 'ready') {
-                        setTimeout(() => {
-                            this.attemptToAddToMenu();
-                        }, 1000);
-                    }
-                });
-            }
-        }
-
-        // --- Попытка добавления в меню ---
-        attemptToAddToMenu() {
-            console.log(`[${PLUGIN_NAME}] Attempting to add menu item...`);
-            
-            // Проверим, есть ли объекты, которые могут быть использованы для меню
-            if (typeof Lampa !== 'undefined') {
-                console.log(`[${PLUGIN_NAME}] Lampa object found`);
-                
-                // Проверим, есть ли методы, которые могут быть использованы для меню
-                if (Lampa.Menu && typeof Lampa.Menu.add === 'function') {
-                    console.log(`[${PLUGIN_NAME}] Lampa.Menu.add is available`);
-                    
-                    try {
-                        // Попробуем добавить элемент
-                        const menuItem = {
-                            name: this.name,
-                            icon: this.icon,
-                            color: this.iconColor,
-                            handler: () => {
-                                this.openSearch();
-                            }
-                        };
-                        
-                        Lampa.Menu.add(menuItem);
-                        console.log(`[${PLUGIN_NAME}] Menu item added via Lampa.Menu.add`);
-                        return true;
-                    } catch (e) {
-                        console.error(`[${PLUGIN_NAME}] Error adding menu item via Lampa.Menu.add:`, e);
-                    }
+            // Проверим, добавилось ли меню, и если нет, будем пробовать снова
+            const checkInterval = setInterval(() => {
+                if (!menuAdded) {
+                    this.addMenuItem();
                 } else {
-                    console.warn(`[${PLUGIN_NAME}] Lampa.Menu.add not available`);
+                    clearInterval(checkInterval);
                 }
-                
-                // Попробуем другие способы добавления, если Lampa.Menu не работает
-                // Например, если есть какой-то объект меню, который можно модифицировать
-                if (typeof Lampa.Menu !== 'undefined') {
-                    console.log(`[${PLUGIN_NAME}] Lampa.Menu exists but add method might be different`);
-                }
-                
-            } else {
-                console.warn(`[${PLUGIN_NAME}] Lampa object not found`);
-            }
+            }, 1000); // Проверяем каждую секунду
             
-            // Если ничего не помогло, попробуем создать кнопку вручную
-            // (Это более сложный путь и зависит от структуры DOM Lampa)
-            this.createManualButton();
-            return false;
+            // Таймаут
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                console.log(`[${PLUGIN_NAME}] Finished attempting to add menu item`);
+            }, 10000); // Через 10 секунд прекращаем попытки
         }
 
-        // --- Создание кнопки вручную (альтернативный способ) ---
-        createManualButton() {
-            console.log(`[${PLUGIN_NAME}] Trying manual button creation...`);
+        // --- Добавление элемента меню ---
+        addMenuItem() {
+            if (menuAdded) return; // Уже добавлено
             
-            // Попробуем создать кнопку и добавить ее в DOM
-            // Сначала дождемся готовности DOM
-            const checkDOM = setInterval(() => {
-                const menuContainer = document.querySelector('.menu'); // Попробуем найти контейнер меню
-                if (menuContainer) {
-                    clearInterval(checkDOM);
-                    console.log(`[${PLUGIN_NAME}] Found menu container`);
+            try {
+                // Проверяем, есть ли Lampa и нужные объекты
+                if (typeof Lampa === 'undefined') {
+                    console.warn(`[${PLUGIN_NAME}] Lampa is undefined`);
+                    return;
+                }
+
+                // Проверим, есть ли элементы меню в DOM
+                const menuElements = document.querySelectorAll('.menu__item'); // Общий класс меню
+                
+                if (menuElements.length > 0) {
+                    // Попробуем добавить кнопку в существующее меню
+                    const firstMenuElement = menuElements[0]; // Берем первый элемент меню как ориентир
                     
-                    // Проверим, есть ли уже наша кнопка
+                    // Проверим, есть ли уже наш элемент
                     if (!document.getElementById(`menu-item-${this.id}`)) {
-                        // Создаем элемент
-                        const button = document.createElement('div');
-                        button.id = `menu-item-${this.id}`;
-                        button.className = 'menu__item';
-                        button.innerHTML = `
+                        // Создаем новый элемент
+                        const newMenuItem = document.createElement('div');
+                        newMenuItem.id = `menu-item-${this.id}`;
+                        newMenuItem.className = 'menu__item';
+                        newMenuItem.innerHTML = `
                             <div class="menu__item-icon" style="color: ${this.iconColor};">${this.icon}</div>
                             <div class="menu__item-title">${this.name}</div>
                         `;
                         
                         // Добавляем обработчик клика
-                        button.addEventListener('click', (e) => {
+                        newMenuItem.addEventListener('click', (e) => {
                             e.preventDefault();
                             this.openSearch();
                         });
                         
-                        // Добавляем кнопку в конец меню
-                        menuContainer.appendChild(button);
-                        console.log(`[${PLUGIN_NAME}] Manual button created and added`);
+                        // Вставляем перед первым элементом меню или в конец
+                        const menuContainer = firstMenuElement.parentNode; // Родительский контейнер меню
+                        
+                        if (menuContainer) {
+                            // Вставляем перед первым элементом
+                            menuContainer.insertBefore(newMenuItem, firstMenuElement);
+                            console.log(`[${PLUGIN_NAME}] Menu item added manually`);
+                            menuAdded = true;
+                        } else {
+                            console.warn(`[${PLUGIN_NAME}] Could not find menu container`);
+                        }
+                    } else {
+                        console.log(`[${PLUGIN_NAME}] Menu item already exists`);
+                        menuAdded = true;
                     }
+                } else {
+                    console.log(`[${PLUGIN_NAME}] No menu items found yet. Will retry.`);
                 }
-            }, 500);
-            
-            // Таймаут
-            setTimeout(() => {
-                clearInterval(checkDOM);
-                console.warn(`[${PLUGIN_NAME}] Timeout waiting for menu container`);
-            }, 10000);
+            } catch (e) {
+                console.error(`[${PLUGIN_NAME}] Error adding menu item:`, e);
+            }
         }
 
         // --- Открытие экрана поиска ---
