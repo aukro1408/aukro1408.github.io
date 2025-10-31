@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lampa Rainstorm Glass
-// @namespace    lampa.rainstorm.glass
-// @version      4.0
-// @description  Дождь с молниями, звуком и стекущими каплями для Lampa
+// @name         Lampa Rainstorm Final
+// @namespace    lampa.rainstorm.final
+// @version      5.0
+// @description  Дождь с плавными молниями и стекущими каплями для Lampa, без звука
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -17,7 +17,7 @@
 
     // --- Canvas для дождя ---
     const canvas = document.createElement('canvas');
-    canvas.id = 'rainstormGlassEffect';
+    canvas.id = 'rainstormFinalEffect';
     canvas.style.position = 'fixed';
     canvas.style.top = '0';
     canvas.style.left = '0';
@@ -36,16 +36,13 @@
       H = canvas.height = window.innerHeight;
     });
 
-    // --- Настройки капель ---
+    // --- Настройки обычного дождя ---
     const drops = [];
     const splashes = [];
-    const glassDrops = [];
     const dropCount = 250;
-    const glassCount = 20;
 
     function random(min, max) { return Math.random() * (max - min) + min; }
 
-    // обычный дождь
     for (let i = 0; i < dropCount; i++) {
       drops.push({
         x: random(0, W),
@@ -57,7 +54,10 @@
       });
     }
 
-    // стекущие капли (стекло)
+    // --- Стекущие капли по экрану ---
+    const glassDrops = [];
+    const glassCount = 20;
+
     for (let i = 0; i < glassCount; i++) {
       glassDrops.push({
         x: random(0, W),
@@ -69,7 +69,7 @@
       });
     }
 
-    // --- Молнии ---
+    // --- Плавные молнии (как версия 2) ---
     let lightningTime = 0;
     let lightningOpacity = 0;
 
@@ -85,20 +85,11 @@
       }
     }
 
-    // --- Звуки ---
-    const rainAudio = new Audio('https://www.soundjay.com/nature/rain-01.mp3');
-    rainAudio.loop = true;
-    rainAudio.volume = 0.3;
-    rainAudio.play().catch(()=>{});
-
-    const thunderAudio = new Audio('https://www.soundjay.com/nature/thunder-1.mp3');
-    thunderAudio.volume = 0.5;
-
     // --- Основная анимация ---
     function draw() {
       ctx.clearRect(0, 0, W, H);
 
-      // фон ночь
+      // ночной фон
       ctx.fillStyle = 'rgba(10,10,20,0.2)';
       ctx.fillRect(0, 0, W, H);
 
@@ -116,6 +107,7 @@
 
         d.y += d.speed;
 
+        // разбрызгивание
         if (d.y > H) {
           d.y = -20;
           d.x = random(0, W);
@@ -138,8 +130,6 @@
       for (let i = 0; i < glassDrops.length; i++) {
         const g = glassDrops[i];
         g.y += g.speed;
-        // случайное дрожание, как стекло
-        g.x += Math.sin(Date.now()*0.002 + i)*0.2;
         g.path.push({x: g.x, y: g.y});
         if (g.path.length > 10) g.path.shift();
 
@@ -167,7 +157,6 @@
       if (lightningOpacity > 0) {
         ctx.fillStyle = `rgba(255,255,255,${lightningOpacity})`;
         ctx.fillRect(0, 0, W, H);
-        if (lightningTime === 1) thunderAudio.play().catch(()=>{});
       }
 
       requestAnimationFrame(draw);
