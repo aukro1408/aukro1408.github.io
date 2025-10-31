@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         aukro1408
 // @namespace    lampa.rainstorm.aukro140
-// @version      7.0
-// @description  Дождь с локальными молниями и стекущими каплями для Lampa
+// @version      8.0
+// @description  Дождь с локальными молниями, стекущими каплями и накоплением воды внизу для Lampa
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -103,6 +103,22 @@
       }
     }
 
+    // накопление воды
+    let waterLevel = 0; // высота воды
+    const waterMax = 40; // максимальная высота слоя воды
+    const waterRiseRate = 0.02; // скорость накопления воды
+    const waterFadeRate = 0.005; // постепенное испарение
+
+    function drawWater() {
+      if (waterLevel > 0) {
+        const gradient = ctx.createLinearGradient(0, H - waterLevel, 0, H);
+        gradient.addColorStop(0, 'rgba(173,216,230,0.2)');
+        gradient.addColorStop(1, 'rgba(173,216,230,0.5)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, H - waterLevel, W, waterLevel);
+      }
+    }
+
     function draw() {
       ctx.clearRect(0, 0, W, H);
 
@@ -128,6 +144,10 @@
           d.y = -20;
           d.x = random(0, W);
           splashes.push({ x: d.x, y: H-2, radius: random(1,3), opacity:1 });
+
+          // накапливаем воду
+          waterLevel += waterRiseRate;
+          if (waterLevel > waterMax) waterLevel = waterMax;
         }
       }
 
@@ -172,6 +192,11 @@
       generateFlash();
       updateFlashes();
       drawFlashes();
+
+      // накопление воды
+      waterLevel -= waterFadeRate; // медленное испарение
+      if (waterLevel < 0) waterLevel = 0;
+      drawWater();
 
       requestAnimationFrame(draw);
     }
