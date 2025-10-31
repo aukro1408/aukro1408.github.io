@@ -37,8 +37,7 @@
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
 
-                // Парсинг результатов поиска
-                // !!! Замените селектор под актуальный на сайте !!!
+                // !!! Обновите селектор под актуальный на сайте !!!
                 const items = doc.querySelectorAll('.movie-item a'); 
                 const results = [];
 
@@ -69,14 +68,12 @@
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
 
-                // iframe
                 doc.querySelectorAll('iframe').forEach(frame => {
                     if (frame.src && frame.src.startsWith('http')) {
                         links.push({ url: frame.src, quality: 'HD', source: 'FanFilm4K' });
                     }
                 });
 
-                // ссылки из скриптов
                 doc.querySelectorAll('script').forEach(script => {
                     const regex = /['"](https?:\/\/[^'"]+)['"]/g;
                     let match;
@@ -144,42 +141,49 @@
         }
     }
 
-    // --- Вставка кнопки через MutationObserver ---
+    // --- Кнопка с MutationObserver + setTimeout ---
     function addFanFilm4KButton(plugin, e) {
         const observer = new MutationObserver((mutations, obs) => {
-            const container = document.querySelector('.full-start__buttons, .full-start__buttons.scroll');
-            if (container) {
-                if (container.querySelector('.view--fanfilm4k')) {
-                    obs.disconnect();
+            // универсальный поиск контейнера кнопок
+            const container = document.querySelector('.full-start__buttons') 
+                           || document.querySelector('.full-start-buttons') 
+                           || document.querySelector('.buttons-container');
+
+            if (!container) return;
+
+            if (container.querySelector('.view--fanfilm4k')) {
+                obs.disconnect();
+                return;
+            }
+
+            const button = document.createElement('div');
+            button.className = 'full-start__button selector view--fanfilm4k';
+            button.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+                    <rect width="48" height="48" rx="8" fill="currentColor" fill-opacity="0.3"/>
+                    <text x="50%" y="55%" text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">4K</text>
+                </svg>
+                <span>FanFilm4K</span>
+            `;
+
+            button.addEventListener('click', () => {
+                const movie = e.data?.movie || e.data?.card || e.data?.data;
+                if (!movie) {
+                    Lampa.Noty.show('Ошибка: нет данных фильма');
                     return;
                 }
+                plugin.playMovie(movie);
+            });
 
-                const button = document.createElement('div');
-                button.className = 'full-start__button selector view--fanfilm4k';
-                button.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
-                        <rect width="48" height="48" rx="8" fill="currentColor" fill-opacity="0.3"/>
-                        <text x="50%" y="55%" text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">4K</text>
-                    </svg>
-                    <span>FanFilm4K</span>
-                `;
-
-                button.addEventListener('click', () => {
-                    const movie = e.data.movie || e.data.card || e.data.data;
-                    if (!movie) {
-                        Lampa.Noty.show('Ошибка: нет данных фильма');
-                        return;
-                    }
-                    plugin.playMovie(movie);
-                });
-
-                container.appendChild(button);
-                console.log('[FanFilm4K] Button added!');
-                obs.disconnect();
-            }
+            container.appendChild(button);
+            console.log('[FanFilm4K] Button added!');
+            obs.disconnect();
         });
 
         observer.observe(document.body, { childList: true, subtree: true });
+
+        // на всякий случай, попытка через setTimeout
+        setTimeout(() => observer.takeRecords(), 500);
     }
 
     function startPlugin() {
