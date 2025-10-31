@@ -2,7 +2,7 @@
     'use strict';
 
     // --- Настройки ---
-    const YOUTUBE_API_KEY = 'YOUR_YOUTUBE_API_KEY'; // Замените на ваш API ключ от Google Cloud Console
+    const YOUTUBE_API_KEY = 'AIzaSyBbZ_BNLNdgC9dylYEQdIAPkXc6g3VlLMw'; // Ваш API ключ
     const YOUTUBE_BASE_URL = 'https://www.googleapis.com/youtube/v3';
     const PLUGIN_NAME = 'YouTube';
     const PLUGIN_ID = 'youtube';
