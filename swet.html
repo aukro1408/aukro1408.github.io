@@ -1,354 +1,111 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Учёт электроэнергии</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    :root {
-      --bg: #121212;
-      --card-bg: #1e1e1e;
-      --text: #e0e0e0;
-      --accent: #4caf50;
-      --input-bg: #2d2d2d;
-      --border: #333;
-      --warning: #ff9800;
-    }
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-    }
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      padding: 20px;
-      line-height: 1.6;
-    }
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 24px;
-      color: var(--accent);
-    }
-    .card {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 24px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: 500;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 16px;
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text);
-    }
-    button {
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      width: 100%;
-    }
-    button:hover {
-      opacity: 0.9;
-    }
-    .delete-btn {
-      background: #f44336 !important;
-      padding: 4px 8px !important;
-      font-size: 12px !important;
-      width: auto !important;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 16px;
-    }
-    th, td {
-      padding: 10px;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-    }
-    th {
-      color: var(--accent);
-    }
-    canvas {
-      margin-top: 20px;
-      background: var(--card-bg);
-      border-radius: 8px;
-      padding: 10px;
-    }
-    .empty {
-      text-align: center;
-      color: #aaa;
-      padding: 20px;
-    }
-    .warning {
-      color: var(--warning);
-      font-size: 0.9em;
-      margin-top: 8px;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Учёт электроэнергии</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body { font-family: Arial; padding: 20px; }
+input, button { margin: 5px 0; }
+table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+canvas { margin-top: 30px; }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>⚡ Учёт электроэнергии</h1>
+<h2>Учёт электроэнергии</h2>
 
-    <div class="card">
-      <label for="date">Дата показания</label>
-      <input type="date" id="date" />
+<label>Показание счётчика (кВт·ч): </label>
+<input type="number" id="reading" />
+<button onclick="addReading()">Добавить</button><br>
 
-      <label for="reading">Показания счётчика (кВт·ч)</label>
-      <input type="number" id="reading" step="0.01" placeholder="Например: 12345.67" />
+<label>Цена за кВт·ч (грн): </label>
+<input type="number" id="price" value="4.32" step="0.01" />
 
-      <button onclick="addReading()">Добавить</button>
-      <div class="warning">ℹ️ Вводите показания хотя бы раз в месяц.</div>
-    </div>
+<table>
+<thead>
+<tr>
+<th>Месяц</th>
+<th>Показание</th>
+<th>Расход (кВт·ч)</th>
+<th>Стоимость (грн)</th>
+</tr>
+</thead>
+<tbody id="history"></tbody>
+</table>
 
-    <div class="card">
-      <h2>Все показания</h2>
-      <div id="history-table"></div>
-    </div>
+<canvas id="chart" width="400" height="200"></canvas>
 
-    <div class="card">
-      <h2>Потребление по месяцам</h2>
-      <div id="monthly-table"></div>
-    </div>
+<script>
+let chart;
 
-    <div class="card">
-      <h2>График: Расход по месяцам</h2>
-      <canvas id="monthlyChart" height="250"></canvas>
-    </div>
-  </div>
+function loadData() {
+    let data = JSON.parse(localStorage.getItem('electricity')) || [];
+    let tbody = document.getElementById('history');
+    tbody.innerHTML = '';
 
-  <script>
-    const TARIFF = 4.32; // грн/кВт·ч
+    let labels = [];
+    let consumptions = [];
 
-    document.getElementById('date').valueAsDate = new Date();
+    for(let i = 0; i < data.length; i++){
+        let prev = i > 0 ? data[i-1].value : 0;
+        let consumption = data[i].value - prev;
+        let cost = consumption * (parseFloat(document.getElementById('price').value) || 0);
 
-    function loadReadings() {
-      try {
-        const data = localStorage.getItem('electricityReadings');
-        return data ? JSON.parse(data).sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
-      } catch (e) {
-        console.error("Ошибка загрузки данных:", e);
-        return [];
-      }
-    }
-
-    function saveReadings(readings) {
-      try {
-        localStorage.setItem('electricityReadings', JSON.stringify(readings));
-      } catch (e) {
-        console.error("Ошибка сохранения данных:", e);
-      }
-    }
-
-    function addReading() {
-      const dateInput = document.getElementById('date').value;
-      const readingInput = parseFloat(document.getElementById('reading').value);
-
-      if (!dateInput || isNaN(readingInput)) {
-        alert('Пожалуйста, заполните оба поля корректно.');
-        return;
-      }
-
-      const readings = loadReadings();
-      if (readings.some(r => r.date === dateInput)) {
-        alert('Показание на эту дату уже существует.');
-        return;
-      }
-
-      readings.push({ date: dateInput, value: readingInput });
-      saveReadings(readings);
-
-      renderAll();
-      document.getElementById('reading').value = ''; // Очищаем поле
-    }
-
-    function deleteReading(date) {
-      if (!confirm('Удалить запись?')) return;
-      let readings = loadReadings();
-      readings = readings.filter(r => r.date !== date);
-      saveReadings(readings);
-      renderAll();
-    }
-
-    function formatDate(dateStr) {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('ru-RU');
-    }
-
-    function getMonthKey(dateStr) {
-      const d = new Date(dateStr);
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    }
-
-    function getMonthName(dateStr) {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' });
-    }
-
-    function calculateMonthlyConsumption() {
-      const readings = loadReadings();
-      if (readings.length < 2) return [];
-
-      const monthly = {};
-
-      for (let i = 1; i < readings.length; i++) {
-        const prev = readings[i - 1];
-        const curr = readings[i];
-        const consumption = curr.value - prev.value;
-
-        // Получаем все месяцы между prev и curr
-        const start = new Date(prev.date);
-        const end = new Date(curr.date);
-
-        let current = new Date(start);
-        while (current <= end) {
-          const key = getMonthKey(current.toISOString().split('T')[0]);
-          const name = getMonthName(current.toISOString().split('T')[0]);
-
-          if (!monthly[key]) {
-            monthly[key] = { name, total: 0 };
-          }
-
-          // Простое распределение: пропорционально дням в месяце
-          const daysInMonth = new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate();
-          const daysInPeriod = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
-          const dailyCons = consumption / daysInPeriod;
-
-          // Сколько дней в этом месяце в периоде?
-          const firstDayOfMonth = new Date(current.getFullYear(), current.getMonth(), 1);
-          const lastDayOfMonth = new Date(current.getFullYear(), current.getMonth() + 1, 0);
-          const periodStart = start > firstDayOfMonth ? start : firstDayOfMonth;
-          const periodEnd = end < lastDayOfMonth ? end : lastDayOfMonth;
-          const daysInThisMonth = Math.max(0, Math.floor((periodEnd - periodStart) / (1000 * 60 * 60 * 24)) + 1);
-
-          monthly[key].total += dailyCons * daysInThisMonth;
-
-          current.setMonth(current.getMonth() + 1);
-        }
-      }
-
-      return Object.values(monthly).sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    function renderHistory() {
-      const readings = loadReadings();
-      const container = document.getElementById('history-table');
-
-      if (readings.length === 0) {
-        container.innerHTML = '<div class="empty">Нет данных</div>';
-        return;
-      }
-
-      let html = `<table><thead><tr><th>Дата</th><th>Показания</th><th></th></tr></thead><tbody>`;
-      readings.forEach(r => {
-        html += `<tr>
-          <td>${formatDate(r.date)}</td>
-          <td>${r.value.toFixed(2)}</td>
-          <td><button class="delete-btn" onclick="deleteReading('${r.date}')">×</button></td>
+        tbody.innerHTML += `<tr>
+            <td>${data[i].month}</td>
+            <td>${data[i].value}</td>
+            <td>${consumption}</td>
+            <td>${cost.toFixed(2)}</td>
         </tr>`;
-      });
-      html += '</tbody></table>';
-      container.innerHTML = html;
+
+        labels.push(data[i].month);
+        consumptions.push(consumption);
     }
 
-    function renderMonthlyTable() {
-      const monthly = calculateMonthlyConsumption();
-      const container = document.getElementById('monthly-table');
+    updateChart(labels, consumptions);
+}
 
-      if (monthly.length === 0) {
-        container.innerHTML = '<div class="empty">Нужно минимум 2 показания</div>';
-        return;
-      }
+function addReading() {
+    let val = parseFloat(document.getElementById('reading').value);
+    if(isNaN(val)) return alert('Введите число!');
+    let data = JSON.parse(localStorage.getItem('electricity')) || [];
+    let month = new Date().toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
+    data.push({month: month, value: val});
+    localStorage.setItem('electricity', JSON.stringify(data));
+    loadData();
+    document.getElementById('reading').value = '';
+}
 
-      let html = `<table><thead><tr><th>Месяц</th><th>Расход (кВт·ч)</th><th>Стоимость</th></tr></thead><tbody>`;
-      monthly.forEach(m => {
-        const cost = (m.total * TARIFF).toFixed(2);
-        html += `<tr>
-          <td>${m.name}</td>
-          <td>${m.total.toFixed(2)}</td>
-          <td>${cost} грн</td>
-        </tr>`;
-      });
-      html += '</tbody></table>';
-      container.innerHTML = html;
-    }
+document.getElementById('price').addEventListener('change', loadData);
 
-    let chartInstance = null;
-
-    function renderChart() {
-      const monthly = calculateMonthlyConsumption();
-      const ctx = document.getElementById('monthlyChart').getContext('2d');
-
-      if (chartInstance) {
-        chartInstance.destroy();
-      }
-
-      if (monthly.length === 0) return;
-
-      const labels = monthly.map(m => m.name);
-      const data = monthly.map(m => parseFloat(m.total.toFixed(2)));
-
-      chartInstance = new Chart(ctx, {
-        type: 'bar',
-         {
-          labels: labels,
-          datasets: [{
-            label: 'Потребление (кВт·ч)',
-             data,
-            backgroundColor: '#4caf50',
-            borderColor: '#2e7d32',
-            borderWidth: 1
-          }]
+function updateChart(labels, consumptions) {
+    const ctx = document.getElementById('chart').getContext('2d');
+    if(chart) chart.destroy();
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Расход электроэнергии (кВт·ч)',
+                data: consumptions,
+                borderColor: 'blue',
+                backgroundColor: 'rgba(0,0,255,0.1)',
+                fill: true,
+                tension: 0.3
+            }]
         },
         options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { color: '#aaa' },
-              grid: { color: '#333' }
-            },
-            x: {
-              ticks: { color: '#aaa' },
-              grid: { color: '#333' }
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
             }
-          }
         }
-      });
-    }
+    });
+}
 
-    function renderAll() {
-      renderHistory();
-      renderMonthlyTable();
-      renderChart();
-    }
-
-    // Инициализация
-    renderAll();
-  </script>
+loadData();
+</script>
 </body>
 </html>
