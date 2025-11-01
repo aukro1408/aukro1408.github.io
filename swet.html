@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Электроэнергия</title>
+  <title>Электроэнергия по месяцам</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
@@ -13,6 +13,7 @@
       --accent: #4caf50;
       --input-bg: #2d2d2d;
       --border: #333;
+      --warning: #ff9800;
     }
     * {
       margin: 0;
@@ -27,7 +28,7 @@
       line-height: 1.6;
     }
     .container {
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
     }
     h1 {
@@ -69,6 +70,12 @@
     button:hover {
       opacity: 0.9;
     }
+    .delete-btn {
+      background: #f44336 !important;
+      padding: 4px 8px !important;
+      font-size: 12px !important;
+      width: auto !important;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -93,6 +100,11 @@
       color: #aaa;
       padding: 20px;
     }
+    .warning {
+      color: var(--warning);
+      font-size: 0.9em;
+      margin-top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -107,25 +119,28 @@
       <input type="number" id="reading" step="0.01" placeholder="Например: 12345.67" />
 
       <button onclick="addReading()">Добавить</button>
+      <div class="warning">ℹ️ Вводите показания хотя бы раз в месяц для точного расчёта.</div>
     </div>
 
     <div class="card">
-      <h2>История</h2>
-      <div id="history-table">
-        <!-- Заполнится JS -->
-      </div>
+      <h2>Все показания</h2>
+      <div id="history-table"></div>
     </div>
 
     <div class="card">
-      <h2>График потребления (кВт·ч)</h2>
-      <canvas id="consumptionChart" height="200"></canvas>
+      <h2>Потребление по месяцам</h2>
+      <div id="monthly-table"></div>
+    </div>
+
+    <div class="card">
+      <h2>График: Расход по месяцам (кВт·ч)</h2>
+      <canvas id="monthlyChart" height="250"></canvas>
     </div>
   </div>
 
   <script>
     const TARIFF = 4.32; // грн/кВт·ч
 
-    // Установить сегодняшнюю дату по умолчанию
     document.getElementById('date').valueAsDate = new Date();
 
     function loadReadings() {
@@ -147,7 +162,6 @@
       }
 
       const readings = loadReadings();
-      // Проверка на дубликат даты
       if (readings.some(r => r.date === dateInput)) {
         alert('Показание на эту дату уже существует.');
         return;
@@ -155,9 +169,7 @@
 
       readings.push({ date: dateInput, value: readingInput });
       saveReadings(readings);
-      renderHistory();
-      renderChart();
-      document.getElementById('reading').value = '';
+      renderAll();
     }
 
     function deleteReading(date) {
@@ -165,8 +177,69 @@
       let readings = loadReadings();
       readings = readings.filter(r => r.date !== date);
       saveReadings(readings);
-      renderHistory();
-      renderChart();
+      renderAll();
+    }
+
+    function formatDate(dateStr) {
+      return new Date(dateStr).toLocaleDateString('ru-RU');
+    }
+
+    function getMonthKey(dateStr) {
+      const d = new Date(dateStr);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function getMonthName(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' });
+    }
+
+    function calculateMonthlyConsumption() {
+      const readings = loadReadings();
+      if (readings.length < 2) return [];
+
+      // Создаём массив всех дней между первой и последней записью
+      const start = new Date(readings[0].date);
+      const end = new Date(readings[readings.length - 1].date);
+      const dailyReadings = [];
+
+      // Интерполируем показания по дням (линейно)
+      for (let i = 0; i < readings.length - 1; i++) {
+        const curr = readings[i];
+        const next = readings[i + 1];
+        const currDate = new Date(curr.date);
+        const nextDate = new Date(next.date);
+        const daysDiff = Math.floor((nextDate - currDate) / (1000 * 60 * 60 * 24));
+        const diffValue = next.value - curr.value;
+
+        for (let d = 0; d <= daysDiff; d++) {
+          const date = new Date(currDate);
+          date.setDate(currDate.getDate() + d);
+          const value = curr.value + (diffValue * d / daysDiff);
+          dailyReadings.push({ date: date.toISOString().split('T')[0], value });
+        }
+      }
+
+      // Группируем по месяцам
+      const monthly = {};
+      for (let i = 1; i < dailyReadings.length; i++) {
+        const prev = dailyReadings[i - 1];
+        const curr = dailyReadings[i];
+        const consumption = curr.value - prev.value;
+        const monthKey = getMonthKey(curr.date);
+        if (!monthly[monthKey]) {
+          monthly[monthKey] = { total: 0, dates: [] };
+        }
+        monthly[monthKey].total += consumption;
+        monthly[monthKey].dates.push(curr.date);
+      }
+
+      // Преобразуем в массив
+      return Object.entries(monthly).map(([key, data]) => ({
+        monthKey: key,
+        monthName: getMonthName(data.dates[0]),
+        consumption: data.total
+      })).sort((a, b) => a.monthKey.localeCompare(b.monthKey));
     }
 
     function renderHistory() {
@@ -184,70 +257,84 @@
             <tr>
               <th>Дата</th>
               <th>Показания</th>
-              <th>Расход</th>
-              <th>Стоимость</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
       `;
 
-      for (let i = 0; i < readings.length; i++) {
-        const current = readings[i];
-        const prev = readings[i - 1];
-        const consumption = prev ? (current.value - prev.value).toFixed(2) : '—';
-        const cost = prev ? (consumption * TARIFF).toFixed(2) + ' грн' : '—';
-
+      readings.forEach(r => {
         html += `
           <tr>
-            <td>${formatDate(current.date)}</td>
-            <td>${current.value.toFixed(2)}</td>
-            <td>${consumption}</td>
-            <td>${cost}</td>
-            <td><button onclick="deleteReading('${current.date}')" style="background:#f44336;padding:4px 8px;font-size:12px;">×</button></td>
+            <td>${formatDate(r.date)}</td>
+            <td>${r.value.toFixed(2)}</td>
+            <td><button class="delete-btn" onclick="deleteReading('${r.date}')">×</button></td>
           </tr>
         `;
-      }
+      });
 
       html += '</tbody></table>';
       container.innerHTML = html;
     }
 
-    function formatDate(dateStr) {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('ru-RU');
+    function renderMonthlyTable() {
+      const monthly = calculateMonthlyConsumption();
+      const container = document.getElementById('monthly-table');
+
+      if (monthly.length === 0) {
+        container.innerHTML = '<div class="empty">Недостаточно данных (нужно минимум 2 показания)</div>';
+        return;
+      }
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>Месяц</th>
+              <th>Расход (кВт·ч)</th>
+              <th>Стоимость</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      monthly.forEach(m => {
+        const cost = (m.consumption * TARIFF).toFixed(2);
+        html += `
+          <tr>
+            <td>${m.monthName}</td>
+            <td>${m.consumption.toFixed(2)}</td>
+            <td>${cost} грн</td>
+          </tr>
+        `;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
     }
 
     let chartInstance = null;
 
-    function renderChart() {
-      const readings = loadReadings();
-      if (readings.length < 2) return;
+    function renderMonthlyChart() {
+      const monthly = calculateMonthlyConsumption();
+      const ctx = document.getElementById('monthlyChart').getContext('2d');
 
-      const ctx = document.getElementById('consumptionChart').getContext('2d');
-
-      // Удаляем старый график, если есть
       if (chartInstance) {
         chartInstance.destroy();
       }
 
-      const labels = [];
-      const data = [];
+      if (monthly.length === 0) return;
 
-      for (let i = 1; i < readings.length; i++) {
-        const period = `${formatDate(readings[i-1].date)} – ${formatDate(readings[i].date)}`;
-        const cons = (readings[i].value - readings[i-1].value).toFixed(2);
-        labels.push(period);
-        data.push(parseFloat(cons));
-      }
+      const labels = monthly.map(m => m.monthName);
+      const data = monthly.map(m => parseFloat(m.consumption.toFixed(2)));
 
       chartInstance = new Chart(ctx, {
         type: 'bar',
-        data: {
+         {
           labels: labels,
           datasets: [{
             label: 'Потребление (кВт·ч)',
-            data: data,
+             data,
             backgroundColor: '#4caf50',
             borderColor: '#2e7d32',
             borderWidth: 1
@@ -273,9 +360,14 @@
       });
     }
 
+    function renderAll() {
+      renderHistory();
+      renderMonthlyTable();
+      renderMonthlyChart();
+    }
+
     // Инициализация
-    renderHistory();
-    renderChart();
+    renderAll();
   </script>
 </body>
 </html>
