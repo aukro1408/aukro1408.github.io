@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Электроэнергия по месяцам</title>
+  <title>Учёт электроэнергии</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
@@ -139,76 +139,124 @@
   </div>
 
   <script>
-    const TARIFF = 4.32;
+    const TARIFF = 4.32; // грн/кВт·ч
 
-    // Установить сегодня
     document.getElementById('date').valueAsDate = new Date();
 
-    // === ХРАНЕНИЕ ===
     function loadReadings() {
-      const data = localStorage.getItem('electricityReadings');
-      if (!data) return [];
       try {
-        return JSON.parse(data).sort((a, b) => new Date(a.date) - new Date(b.date));
+        const data = localStorage.getItem('electricityReadings');
+        return data ? JSON.parse(data).sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
       } catch (e) {
-        console.error('Ошибка загрузки данных', e);
+        console.error("Ошибка загрузки данных:", e);
         return [];
       }
     }
 
     function saveReadings(readings) {
-      localStorage.setItem('electricityReadings', JSON.stringify(readings));
+      try {
+        localStorage.setItem('electricityReadings', JSON.stringify(readings));
+      } catch (e) {
+        console.error("Ошибка сохранения данных:", e);
+      }
     }
 
-    // === ДОБАВЛЕНИЕ ===
     function addReading() {
-      const dateStr = document.getElementById('date').value;
-      const readingVal = parseFloat(document.getElementById('reading').value);
+      const dateInput = document.getElementById('date').value;
+      const readingInput = parseFloat(document.getElementById('reading').value);
 
-      if (!dateStr || isNaN(readingVal)) {
-        alert('Заполните оба поля корректно.');
+      if (!dateInput || isNaN(readingInput)) {
+        alert('Пожалуйста, заполните оба поля корректно.');
         return;
       }
 
       const readings = loadReadings();
-
-      // Проверка дубликата
-      if (readings.some(r => r.date === dateStr)) {
-        alert('Запись на эту дату уже есть.');
+      if (readings.some(r => r.date === dateInput)) {
+        alert('Показание на эту дату уже существует.');
         return;
       }
 
-      readings.push({ date: dateStr, value: readingVal });
+      readings.push({ date: dateInput, value: readingInput });
       saveReadings(readings);
 
-      // Обновляем ВСЁ
-      renderHistory();
-      renderMonthly();
-      renderChart();
-
-      // Очищаем поле ввода
-      document.getElementById('reading').value = '';
+      renderAll();
+      document.getElementById('reading').value = ''; // Очищаем поле
     }
 
     function deleteReading(date) {
-      if (!confirm('Удалить?')) return;
-      const readings = loadReadings().filter(r => r.date !== date);
+      if (!confirm('Удалить запись?')) return;
+      let readings = loadReadings();
+      readings = readings.filter(r => r.date !== date);
       saveReadings(readings);
-      renderHistory();
-      renderMonthly();
-      renderChart();
+      renderAll();
     }
 
-    // === ОТОБРАЖЕНИЕ ===
     function formatDate(dateStr) {
-      return new Date(dateStr).toLocaleDateString('ru-RU');
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('ru-RU');
+    }
+
+    function getMonthKey(dateStr) {
+      const d = new Date(dateStr);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function getMonthName(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' });
+    }
+
+    function calculateMonthlyConsumption() {
+      const readings = loadReadings();
+      if (readings.length < 2) return [];
+
+      const monthly = {};
+
+      for (let i = 1; i < readings.length; i++) {
+        const prev = readings[i - 1];
+        const curr = readings[i];
+        const consumption = curr.value - prev.value;
+
+        // Получаем все месяцы между prev и curr
+        const start = new Date(prev.date);
+        const end = new Date(curr.date);
+
+        let current = new Date(start);
+        while (current <= end) {
+          const key = getMonthKey(current.toISOString().split('T')[0]);
+          const name = getMonthName(current.toISOString().split('T')[0]);
+
+          if (!monthly[key]) {
+            monthly[key] = { name, total: 0 };
+          }
+
+          // Простое распределение: пропорционально дням в месяце
+          const daysInMonth = new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate();
+          const daysInPeriod = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+          const dailyCons = consumption / daysInPeriod;
+
+          // Сколько дней в этом месяце в периоде?
+          const firstDayOfMonth = new Date(current.getFullYear(), current.getMonth(), 1);
+          const lastDayOfMonth = new Date(current.getFullYear(), current.getMonth() + 1, 0);
+          const periodStart = start > firstDayOfMonth ? start : firstDayOfMonth;
+          const periodEnd = end < lastDayOfMonth ? end : lastDayOfMonth;
+          const daysInThisMonth = Math.max(0, Math.floor((periodEnd - periodStart) / (1000 * 60 * 60 * 24)) + 1);
+
+          monthly[key].total += dailyCons * daysInThisMonth;
+
+          current.setMonth(current.getMonth() + 1);
+        }
+      }
+
+      return Object.values(monthly).sort((a, b) => a.name.localeCompare(b.name));
     }
 
     function renderHistory() {
       const readings = loadReadings();
-      const el = document.getElementById('history-table');
+      const container = document.getElementById('history-table');
+
       if (readings.length === 0) {
-        el.innerHTML = '<div class="empty">Нет данных</div>';
+        container.innerHTML = '<div class="empty">Нет данных</div>';
         return;
       }
 
@@ -221,66 +269,20 @@
         </tr>`;
       });
       html += '</tbody></table>';
-      el.innerHTML = html;
+      container.innerHTML = html;
     }
 
-    // === МЕСЯЧНЫЙ РАСЧЁТ (без интерполяции) ===
-    function renderMonthly() {
-      const readings = loadReadings();
-      const el = document.getElementById('monthly-table');
+    function renderMonthlyTable() {
+      const monthly = calculateMonthlyConsumption();
+      const container = document.getElementById('monthly-table');
 
-      if (readings.length < 2) {
-        el.innerHTML = '<div class="empty">Нужно минимум 2 показания</div>';
+      if (monthly.length === 0) {
+        container.innerHTML = '<div class="empty">Нужно минимум 2 показания</div>';
         return;
       }
 
-      // Группировка по месяцам
-      const monthly = {};
-
-      for (let i = 1; i < readings.length; i++) {
-        const prev = readings[i - 1];
-        const curr = readings[i];
-        const prevDate = new Date(prev.date);
-        const currDate = new Date(curr.date);
-
-        // Если обе даты в одном месяце
-        if (prevDate.getFullYear() === currDate.getFullYear() &&
-            prevDate.getMonth() === currDate.getMonth()) {
-          const key = `${currDate.getFullYear()}-${currDate.getMonth()}`;
-          const cons = curr.value - prev.value;
-          monthly[key] = monthly[key] || { name: currDate.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' }), total: 0 };
-          monthly[key].total += cons;
-        } else {
-          // Распределяем пропорционально дням в каждом месяце
-          const totalDays = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
-          if (totalDays <= 0) continue;
-
-          const totalConsumption = curr.value - prev.value;
-          const dailyRate = totalConsumption / totalDays;
-
-          // Проходим по каждому дню
-          let day = new Date(prevDate);
-          while (day < currDate) {
-            const monthKey = `${day.getFullYear()}-${day.getMonth()}`;
-            const monthName = day.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' });
-            monthly[monthKey] = monthly[monthKey] || { name: monthName, total: 0 };
-            monthly[monthKey].total += dailyRate;
-            day.setDate(day.getDate() + 1);
-          }
-        }
-      }
-
-      // Сортируем по дате
-      const sorted = Object.values(monthly).sort((a, b) => {
-        const [y1, m1] = a.name.split(' ');
-        const [y2, m2] = b.name.split(' ');
-        const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
-        return (parseInt(y1) - parseInt(y2)) || (months.indexOf(m1) - months.indexOf(m2));
-      });
-
-      // Рендер
       let html = `<table><thead><tr><th>Месяц</th><th>Расход (кВт·ч)</th><th>Стоимость</th></tr></thead><tbody>`;
-      sorted.forEach(m => {
+      monthly.forEach(m => {
         const cost = (m.total * TARIFF).toFixed(2);
         html += `<tr>
           <td>${m.name}</td>
@@ -289,70 +291,64 @@
         </tr>`;
       });
       html += '</tbody></table>';
-      el.innerHTML = html;
+      container.innerHTML = html;
     }
 
-    // === ГРАФИК ===
-    let chart = null;
+    let chartInstance = null;
+
     function renderChart() {
-      const readings = loadReadings();
-      if (readings.length < 2) return;
+      const monthly = calculateMonthlyConsumption();
+      const ctx = document.getElementById('monthlyChart').getContext('2d');
 
-      const monthly = {};
-      for (let i = 1; i < readings.length; i++) {
-        const prev = readings[i - 1];
-        const curr = readings[i];
-        const prevDate = new Date(prev.date);
-        const currDate = new Date(curr.date);
-        const totalDays = Math.max(1, Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24)));
-        const totalConsumption = curr.value - prev.value;
-        const dailyRate = totalConsumption / totalDays;
-
-        let day = new Date(prevDate);
-        while (day < currDate) {
-          const key = `${day.getFullYear()}-${day.getMonth()}`;
-          const name = day.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' });
-          monthly[key] = monthly[key] || { name, total: 0 };
-          monthly[key].total += dailyRate;
-          day.setDate(day.getDate() + 1);
-        }
+      if (chartInstance) {
+        chartInstance.destroy();
       }
 
-      const sorted = Object.values(monthly).sort((a, b) => {
-        const [y1, m1] = a.name.split(' ');
-        const [y2, m2] = b.name.split(' ');
-        const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
-        return (parseInt(y1) - parseInt(y2)) || (months.indexOf(m1) - months.indexOf(m2));
-      });
+      if (monthly.length === 0) return;
 
-      const ctx = document.getElementById('monthlyChart').getContext('2d');
-      if (chart) chart.destroy();
+      const labels = monthly.map(m => m.name);
+      const data = monthly.map(m => parseFloat(m.total.toFixed(2)));
 
-      chart = new Chart(ctx, {
+      chartInstance = new Chart(ctx, {
         type: 'bar',
          {
-          labels: sorted.map(m => m.name),
+          labels: labels,
           datasets: [{
-            label: 'кВт·ч',
-             data: sorted.map(m => parseFloat(m.total.toFixed(2))),
-            backgroundColor: '#4caf50'
+            label: 'Потребление (кВт·ч)',
+             data,
+            backgroundColor: '#4caf50',
+            borderColor: '#2e7d32',
+            borderWidth: 1
           }]
         },
         options: {
           responsive: true,
-          plugins: { legend: { display: false } },
+          plugins: {
+            legend: { display: false }
+          },
           scales: {
-            y: { beginAtZero: true, ticks: { color: '#aaa' }, grid: { color: '#333' } },
-            x: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#aaa' },
+              grid: { color: '#333' }
+            },
+            x: {
+              ticks: { color: '#aaa' },
+              grid: { color: '#333' }
+            }
           }
         }
       });
     }
 
-    // === ЗАПУСК ===
-    renderHistory();
-    renderMonthly();
-    renderChart();
+    function renderAll() {
+      renderHistory();
+      renderMonthlyTable();
+      renderChart();
+    }
+
+    // Инициализация
+    renderAll();
   </script>
 </body>
 </html>
