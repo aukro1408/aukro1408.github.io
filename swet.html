@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Электроэнергия</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #121212;
+      --card-bg: #1e1e1e;
+      --text: #e0e0e0;
+      --accent: #4caf50;
+      --input-bg: #2d2d2d;
+      --border: #333;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 24px;
+      color: var(--accent);
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 16px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+    }
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      width: 100%;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      color: var(--accent);
+    }
+    canvas {
+      margin-top: 20px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .empty {
+      text-align: center;
+      color: #aaa;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⚡ Учёт электроэнергии</h1>
+
+    <div class="card">
+      <label for="date">Дата показания</label>
+      <input type="date" id="date" />
+
+      <label for="reading">Показания счётчика (кВт·ч)</label>
+      <input type="number" id="reading" step="0.01" placeholder="Например: 12345.67" />
+
+      <button onclick="addReading()">Добавить</button>
+    </div>
+
+    <div class="card">
+      <h2>История</h2>
+      <div id="history-table">
+        <!-- Заполнится JS -->
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>График потребления (кВт·ч)</h2>
+      <canvas id="consumptionChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const TARIFF = 4.32; // грн/кВт·ч
+
+    // Установить сегодняшнюю дату по умолчанию
+    document.getElementById('date').valueAsDate = new Date();
+
+    function loadReadings() {
+      const data = localStorage.getItem('electricityReadings');
+      return data ? JSON.parse(data).sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
+    }
+
+    function saveReadings(readings) {
+      localStorage.setItem('electricityReadings', JSON.stringify(readings));
+    }
+
+    function addReading() {
+      const dateInput = document.getElementById('date').value;
+      const readingInput = parseFloat(document.getElementById('reading').value);
+
+      if (!dateInput || isNaN(readingInput)) {
+        alert('Пожалуйста, заполните оба поля корректно.');
+        return;
+      }
+
+      const readings = loadReadings();
+      // Проверка на дубликат даты
+      if (readings.some(r => r.date === dateInput)) {
+        alert('Показание на эту дату уже существует.');
+        return;
+      }
+
+      readings.push({ date: dateInput, value: readingInput });
+      saveReadings(readings);
+      renderHistory();
+      renderChart();
+      document.getElementById('reading').value = '';
+    }
+
+    function deleteReading(date) {
+      if (!confirm('Удалить запись?')) return;
+      let readings = loadReadings();
+      readings = readings.filter(r => r.date !== date);
+      saveReadings(readings);
+      renderHistory();
+      renderChart();
+    }
+
+    function renderHistory() {
+      const readings = loadReadings();
+      const container = document.getElementById('history-table');
+
+      if (readings.length === 0) {
+        container.innerHTML = '<div class="empty">Нет данных</div>';
+        return;
+      }
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>Дата</th>
+              <th>Показания</th>
+              <th>Расход</th>
+              <th>Стоимость</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      for (let i = 0; i < readings.length; i++) {
+        const current = readings[i];
+        const prev = readings[i - 1];
+        const consumption = prev ? (current.value - prev.value).toFixed(2) : '—';
+        const cost = prev ? (consumption * TARIFF).toFixed(2) + ' грн' : '—';
+
+        html += `
+          <tr>
+            <td>${formatDate(current.date)}</td>
+            <td>${current.value.toFixed(2)}</td>
+            <td>${consumption}</td>
+            <td>${cost}</td>
+            <td><button onclick="deleteReading('${current.date}')" style="background:#f44336;padding:4px 8px;font-size:12px;">×</button></td>
+          </tr>
+        `;
+      }
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('ru-RU');
+    }
+
+    let chartInstance = null;
+
+    function renderChart() {
+      const readings = loadReadings();
+      if (readings.length < 2) return;
+
+      const ctx = document.getElementById('consumptionChart').getContext('2d');
+
+      // Удаляем старый график, если есть
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      const labels = [];
+      const data = [];
+
+      for (let i = 1; i < readings.length; i++) {
+        const period = `${formatDate(readings[i-1].date)} – ${formatDate(readings[i].date)}`;
+        const cons = (readings[i].value - readings[i-1].value).toFixed(2);
+        labels.push(period);
+        data.push(parseFloat(cons));
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Потребление (кВт·ч)',
+            data: data,
+            backgroundColor: '#4caf50',
+            borderColor: '#2e7d32',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#aaa' },
+              grid: { color: '#333' }
+            },
+            x: {
+              ticks: { color: '#aaa' },
+              grid: { color: '#333' }
+            }
+          }
+        }
+      });
+    }
+
+    // Инициализация
+    renderHistory();
+    renderChart();
+  </script>
+</body>
+</html>
