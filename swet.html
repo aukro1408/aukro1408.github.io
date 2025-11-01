@@ -18,7 +18,7 @@ h2 {
 }
 
 .container {
-    max-width: 700px;
+    max-width: 800px;
     margin: 0 auto;
     background: #fff;
     padding: 25px 30px;
@@ -26,34 +26,26 @@ h2 {
     box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 
-input[type="number"] {
-    width: calc(100% - 20px);
-    padding: 8px 10px;
-    margin-bottom: 10px;
+input[type="number"], input[type="text"] {
+    padding: 6px 10px;
     border-radius: 6px;
     border: 1px solid #ccc;
     font-size: 16px;
+    width: 80%;
 }
 
 button {
     background: #1a73e8;
     color: white;
     border: none;
-    padding: 10px 18px;
-    font-size: 16px;
+    padding: 8px 14px;
+    font-size: 14px;
     border-radius: 8px;
     cursor: pointer;
     transition: 0.3s;
+    margin-left: 5px;
 }
-button:hover {
-    background: #155ab6;
-}
-
-label {
-    font-weight: bold;
-    display: block;
-    margin-top: 10px;
-}
+button:hover { background: #155ab6; }
 
 table {
     border-collapse: collapse;
@@ -89,9 +81,11 @@ canvas {
 <div class="container">
 <h2>Учёт электроэнергии</h2>
 
+<label>Месяц (например, Октябрь 2025):</label>
+<input type="text" id="month" placeholder="Месяц Год" />
 <label>Показание счётчика (кВт·ч):</label>
 <input type="number" id="reading" />
-<button onclick="addReading()">Добавить</button>
+<button onclick="addOrUpdateReading()">Сохранить</button>
 
 <label>Цена за кВт·ч (грн):</label>
 <input type="number" id="price" value="4.32" step="0.01" />
@@ -103,6 +97,7 @@ canvas {
 <th>Показание</th>
 <th>Расход (кВт·ч)</th>
 <th>Стоимость (грн)</th>
+<th>Действия</th>
 </tr>
 </thead>
 <tbody id="history"></tbody>
@@ -116,6 +111,8 @@ let chart;
 
 function loadData() {
     let data = JSON.parse(localStorage.getItem('electricity')) || [];
+    // Сортировка по дате (опционально можно по месяцу)
+    data.sort((a,b) => new Date(a.date) - new Date(b.date));
     let tbody = document.getElementById('history');
     tbody.innerHTML = '';
 
@@ -125,13 +122,17 @@ function loadData() {
     for(let i = 0; i < data.length; i++){
         let prev = i > 0 ? data[i-1].value : 0;
         let consumption = data[i].value - prev;
-        let cost = consumption * (parseFloat(document.getElementById('price').value) || 0);
+        let cost = consumption * parseFloat(document.getElementById('price').value);
 
         tbody.innerHTML += `<tr>
             <td>${data[i].month}</td>
             <td>${data[i].value}</td>
             <td>${consumption}</td>
             <td>${cost.toFixed(2)}</td>
+            <td>
+                <button onclick="editReading('${data[i].month}')">Редактировать</button>
+                <button onclick="deleteReading('${data[i].month}')">Удалить</button>
+            </td>
         </tr>`;
 
         labels.push(data[i].month);
@@ -141,15 +142,42 @@ function loadData() {
     updateChart(labels, consumptions);
 }
 
-function addReading() {
+function addOrUpdateReading() {
+    let month = document.getElementById('month').value.trim();
     let val = parseFloat(document.getElementById('reading').value);
-    if(isNaN(val)) return alert('Введите число!');
+    if(!month || isNaN(val)) return alert('Введите корректный месяц и число!');
+    
     let data = JSON.parse(localStorage.getItem('electricity')) || [];
-    let month = new Date().toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
-    data.push({month: month, value: val});
+    let existing = data.find(d => d.month === month);
+    
+    if(existing){
+        existing.value = val; // обновление
+        existing.date = new Date(month + " 1").toISOString();
+    } else {
+        data.push({month: month, value: val, date: new Date(month + " 1").toISOString()});
+    }
+
     localStorage.setItem('electricity', JSON.stringify(data));
     loadData();
+    document.getElementById('month').value = '';
     document.getElementById('reading').value = '';
+}
+
+function editReading(month) {
+    let data = JSON.parse(localStorage.getItem('electricity')) || [];
+    let entry = data.find(d => d.month === month);
+    if(entry){
+        document.getElementById('month').value = entry.month;
+        document.getElementById('reading').value = entry.value;
+    }
+}
+
+function deleteReading(month) {
+    if(!confirm('Удалить показание за ' + month + '?')) return;
+    let data = JSON.parse(localStorage.getItem('electricity')) || [];
+    data = data.filter(d => d.month !== month);
+    localStorage.setItem('electricity', JSON.stringify(data));
+    loadData();
 }
 
 document.getElementById('price').addEventListener('change', loadData);
@@ -175,18 +203,10 @@ function updateChart(labels, consumptions) {
             responsive: true,
             plugins: {
                 legend: {
-                    labels: {
-                        font: {
-                            size: 14
-                        }
-                    }
+                    labels: { font: { size: 14 } }
                 }
             },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
+            scales: { y: { beginAtZero: true } }
         }
     });
 }
