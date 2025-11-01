@@ -5,21 +5,95 @@
 <title>Учёт электроэнергии</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-body { font-family: Arial; padding: 20px; }
-input, button { margin: 5px 0; }
-table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-canvas { margin-top: 30px; }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f4f7fc;
+    color: #333;
+    padding: 20px;
+}
+h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #1a73e8;
+}
+
+.container {
+    max-width: 700px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+input[type="number"] {
+    width: calc(100% - 20px);
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
+
+button {
+    background: #1a73e8;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+button:hover {
+    background: #155ab6;
+}
+
+label {
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+th, td {
+    padding: 12px;
+    text-align: center;
+}
+th {
+    background-color: #1a73e8;
+    color: white;
+}
+tr:nth-child(even) {
+    background-color: #f2f4f7;
+}
+
+canvas {
+    margin-top: 30px;
+    border-radius: 12px;
+    background: #fff;
+    padding: 15px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+}
 </style>
 </head>
 <body>
+
+<div class="container">
 <h2>Учёт электроэнергии</h2>
 
-<label>Показание счётчика (кВт·ч): </label>
+<label>Показание счётчика (кВт·ч):</label>
 <input type="number" id="reading" />
-<button onclick="addReading()">Добавить</button><br>
+<button onclick="addReading()">Добавить</button>
 
-<label>Цена за кВт·ч (грн): </label>
+<label>Цена за кВт·ч (грн):</label>
 <input type="number" id="price" value="4.32" step="0.01" />
 
 <table>
@@ -35,6 +109,7 @@ canvas { margin-top: 30px; }
 </table>
 
 <canvas id="chart" width="400" height="200"></canvas>
+</div>
 
 <script>
 let chart;
@@ -89,13 +164,24 @@ function updateChart(labels, consumptions) {
             datasets: [{
                 label: 'Расход электроэнергии (кВт·ч)',
                 data: consumptions,
-                borderColor: 'blue',
-                backgroundColor: 'rgba(0,0,255,0.1)',
+                borderColor: '#1a73e8',
+                backgroundColor: 'rgba(26,115,232,0.2)',
                 fill: true,
-                tension: 0.3
+                tension: 0.3,
+                pointBackgroundColor: '#1a73e8'
             }]
         },
         options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        font: {
+                            size: 14
+                        }
+                    }
+                }
+            },
             scales: {
                 y: {
                     beginAtZero: true
