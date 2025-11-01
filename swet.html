@@ -5,55 +5,73 @@
 <title>Учёт электроэнергии</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #f4f7fc;
-    color: #333;
+    font-family: 'Roboto', sans-serif;
+    background: #121212;
+    color: #eee;
     padding: 20px;
-}
-h2 {
-    text-align: center;
-    margin-bottom: 30px;
-    color: #1a73e8;
+    margin: 0;
 }
 
 .container {
     max-width: 800px;
     margin: 0 auto;
-    background: #fff;
+    background: #1e1e1e;
     padding: 25px 30px;
     border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.7);
+}
+
+h1 {
+    text-align: center;
+    font-size: 2em;
+    margin-bottom: 20px;
+    background: linear-gradient(90deg, #ff004c, #00ffe5, #ffea00, #ff004c);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient 6s ease infinite;
+}
+
+@keyframes gradient {
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
 }
 
 input[type="number"], input[type="text"] {
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
+    width: 100%;
+    padding: 8px 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+    border: 1px solid #444;
+    background: #2b2b2b;
+    color: #eee;
     font-size: 16px;
-    width: 80%;
 }
 
 button {
     background: #1a73e8;
     color: white;
     border: none;
-    padding: 8px 14px;
+    padding: 8px 16px;
     font-size: 14px;
     border-radius: 8px;
     cursor: pointer;
+    margin: 4px;
     transition: 0.3s;
-    margin-left: 5px;
 }
 button:hover { background: #155ab6; }
 
 table {
-    border-collapse: collapse;
     width: 100%;
+    border-collapse: collapse;
     margin-top: 20px;
-    border-radius: 8px;
+    border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 th, td {
     padding: 12px;
@@ -63,23 +81,20 @@ th {
     background-color: #1a73e8;
     color: white;
 }
-tr:nth-child(even) {
-    background-color: #f2f4f7;
-}
+tr:nth-child(even) { background-color: #2b2b2b; }
 
 canvas {
     margin-top: 30px;
     border-radius: 12px;
-    background: #fff;
+    background: #1e1e1e;
     padding: 15px;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
 }
 </style>
 </head>
 <body>
-
 <div class="container">
-<h2>Учёт электроэнергии</h2>
+<h1>ул. Запрудная 44</h1>
 
 <label>Месяц (например, Октябрь 2025):</label>
 <input type="text" id="month" placeholder="Месяц Год" />
@@ -111,7 +126,6 @@ let chart;
 
 function loadData() {
     let data = JSON.parse(localStorage.getItem('electricity')) || [];
-    // Сортировка по дате (опционально можно по месяцу)
     data.sort((a,b) => new Date(a.date) - new Date(b.date));
     let tbody = document.getElementById('history');
     tbody.innerHTML = '';
@@ -151,7 +165,7 @@ function addOrUpdateReading() {
     let existing = data.find(d => d.month === month);
     
     if(existing){
-        existing.value = val; // обновление
+        existing.value = val;
         existing.date = new Date(month + " 1").toISOString();
     } else {
         data.push({month: month, value: val, date: new Date(month + " 1").toISOString()});
@@ -193,7 +207,7 @@ function updateChart(labels, consumptions) {
                 label: 'Расход электроэнергии (кВт·ч)',
                 data: consumptions,
                 borderColor: '#1a73e8',
-                backgroundColor: 'rgba(26,115,232,0.2)',
+                backgroundColor: 'rgba(26,115,232,0.3)',
                 fill: true,
                 tension: 0.3,
                 pointBackgroundColor: '#1a73e8'
@@ -202,11 +216,12 @@ function updateChart(labels, consumptions) {
         options: {
             responsive: true,
             plugins: {
-                legend: {
-                    labels: { font: { size: 14 } }
-                }
+                legend: { labels: { font: { size: 14 }, color:'#eee' } }
             },
-            scales: { y: { beginAtZero: true } }
+            scales: {
+                x: { ticks: { color: '#eee' } },
+                y: { ticks: { color: '#eee' }, beginAtZero: true }
+            }
         }
     });
 }
