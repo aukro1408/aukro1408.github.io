@@ -119,7 +119,7 @@
       <input type="number" id="reading" step="0.01" placeholder="Например: 12345.67" />
 
       <button onclick="addReading()">Добавить</button>
-      <div class="warning">ℹ️ Вводите показания хотя бы раз в месяц для точного расчёта.</div>
+      <div class="warning">ℹ️ Вводите показания хотя бы раз в месяц.</div>
     </div>
 
     <div class="card">
@@ -133,241 +133,226 @@
     </div>
 
     <div class="card">
-      <h2>График: Расход по месяцам (кВт·ч)</h2>
+      <h2>График: Расход по месяцам</h2>
       <canvas id="monthlyChart" height="250"></canvas>
     </div>
   </div>
 
   <script>
-    const TARIFF = 4.32; // грн/кВт·ч
+    const TARIFF = 4.32;
 
+    // Установить сегодня
     document.getElementById('date').valueAsDate = new Date();
 
+    // === ХРАНЕНИЕ ===
     function loadReadings() {
       const data = localStorage.getItem('electricityReadings');
-      return data ? JSON.parse(data).sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
+      if (!data) return [];
+      try {
+        return JSON.parse(data).sort((a, b) => new Date(a.date) - new Date(b.date));
+      } catch (e) {
+        console.error('Ошибка загрузки данных', e);
+        return [];
+      }
     }
 
     function saveReadings(readings) {
       localStorage.setItem('electricityReadings', JSON.stringify(readings));
     }
 
+    // === ДОБАВЛЕНИЕ ===
     function addReading() {
-      const dateInput = document.getElementById('date').value;
-      const readingInput = parseFloat(document.getElementById('reading').value);
+      const dateStr = document.getElementById('date').value;
+      const readingVal = parseFloat(document.getElementById('reading').value);
 
-      if (!dateInput || isNaN(readingInput)) {
-        alert('Пожалуйста, заполните оба поля корректно.');
+      if (!dateStr || isNaN(readingVal)) {
+        alert('Заполните оба поля корректно.');
         return;
       }
 
       const readings = loadReadings();
-      if (readings.some(r => r.date === dateInput)) {
-        alert('Показание на эту дату уже существует.');
+
+      // Проверка дубликата
+      if (readings.some(r => r.date === dateStr)) {
+        alert('Запись на эту дату уже есть.');
         return;
       }
 
-      readings.push({ date: dateInput, value: readingInput });
+      readings.push({ date: dateStr, value: readingVal });
       saveReadings(readings);
-      renderAll();
+
+      // Обновляем ВСЁ
+      renderHistory();
+      renderMonthly();
+      renderChart();
+
+      // Очищаем поле ввода
+      document.getElementById('reading').value = '';
     }
 
     function deleteReading(date) {
-      if (!confirm('Удалить запись?')) return;
-      let readings = loadReadings();
-      readings = readings.filter(r => r.date !== date);
+      if (!confirm('Удалить?')) return;
+      const readings = loadReadings().filter(r => r.date !== date);
       saveReadings(readings);
-      renderAll();
+      renderHistory();
+      renderMonthly();
+      renderChart();
     }
 
+    // === ОТОБРАЖЕНИЕ ===
     function formatDate(dateStr) {
       return new Date(dateStr).toLocaleDateString('ru-RU');
     }
 
-    function getMonthKey(dateStr) {
-      const d = new Date(dateStr);
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    }
-
-    function getMonthName(dateStr) {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' });
-    }
-
-    function calculateMonthlyConsumption() {
-      const readings = loadReadings();
-      if (readings.length < 2) return [];
-
-      // Создаём массив всех дней между первой и последней записью
-      const start = new Date(readings[0].date);
-      const end = new Date(readings[readings.length - 1].date);
-      const dailyReadings = [];
-
-      // Интерполируем показания по дням (линейно)
-      for (let i = 0; i < readings.length - 1; i++) {
-        const curr = readings[i];
-        const next = readings[i + 1];
-        const currDate = new Date(curr.date);
-        const nextDate = new Date(next.date);
-        const daysDiff = Math.floor((nextDate - currDate) / (1000 * 60 * 60 * 24));
-        const diffValue = next.value - curr.value;
-
-        for (let d = 0; d <= daysDiff; d++) {
-          const date = new Date(currDate);
-          date.setDate(currDate.getDate() + d);
-          const value = curr.value + (diffValue * d / daysDiff);
-          dailyReadings.push({ date: date.toISOString().split('T')[0], value });
-        }
-      }
-
-      // Группируем по месяцам
-      const monthly = {};
-      for (let i = 1; i < dailyReadings.length; i++) {
-        const prev = dailyReadings[i - 1];
-        const curr = dailyReadings[i];
-        const consumption = curr.value - prev.value;
-        const monthKey = getMonthKey(curr.date);
-        if (!monthly[monthKey]) {
-          monthly[monthKey] = { total: 0, dates: [] };
-        }
-        monthly[monthKey].total += consumption;
-        monthly[monthKey].dates.push(curr.date);
-      }
-
-      // Преобразуем в массив
-      return Object.entries(monthly).map(([key, data]) => ({
-        monthKey: key,
-        monthName: getMonthName(data.dates[0]),
-        consumption: data.total
-      })).sort((a, b) => a.monthKey.localeCompare(b.monthKey));
-    }
-
     function renderHistory() {
       const readings = loadReadings();
-      const container = document.getElementById('history-table');
-
+      const el = document.getElementById('history-table');
       if (readings.length === 0) {
-        container.innerHTML = '<div class="empty">Нет данных</div>';
+        el.innerHTML = '<div class="empty">Нет данных</div>';
         return;
       }
 
-      let html = `
-        <table>
-          <thead>
-            <tr>
-              <th>Дата</th>
-              <th>Показания</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
-
+      let html = `<table><thead><tr><th>Дата</th><th>Показания</th><th></th></tr></thead><tbody>`;
       readings.forEach(r => {
-        html += `
-          <tr>
-            <td>${formatDate(r.date)}</td>
-            <td>${r.value.toFixed(2)}</td>
-            <td><button class="delete-btn" onclick="deleteReading('${r.date}')">×</button></td>
-          </tr>
-        `;
+        html += `<tr>
+          <td>${formatDate(r.date)}</td>
+          <td>${r.value.toFixed(2)}</td>
+          <td><button class="delete-btn" onclick="deleteReading('${r.date}')">×</button></td>
+        </tr>`;
       });
-
       html += '</tbody></table>';
-      container.innerHTML = html;
+      el.innerHTML = html;
     }
 
-    function renderMonthlyTable() {
-      const monthly = calculateMonthlyConsumption();
-      const container = document.getElementById('monthly-table');
+    // === МЕСЯЧНЫЙ РАСЧЁТ (без интерполяции) ===
+    function renderMonthly() {
+      const readings = loadReadings();
+      const el = document.getElementById('monthly-table');
 
-      if (monthly.length === 0) {
-        container.innerHTML = '<div class="empty">Недостаточно данных (нужно минимум 2 показания)</div>';
+      if (readings.length < 2) {
+        el.innerHTML = '<div class="empty">Нужно минимум 2 показания</div>';
         return;
       }
 
-      let html = `
-        <table>
-          <thead>
-            <tr>
-              <th>Месяц</th>
-              <th>Расход (кВт·ч)</th>
-              <th>Стоимость</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
+      // Группировка по месяцам
+      const monthly = {};
 
-      monthly.forEach(m => {
-        const cost = (m.consumption * TARIFF).toFixed(2);
-        html += `
-          <tr>
-            <td>${m.monthName}</td>
-            <td>${m.consumption.toFixed(2)}</td>
-            <td>${cost} грн</td>
-          </tr>
-        `;
-      });
+      for (let i = 1; i < readings.length; i++) {
+        const prev = readings[i - 1];
+        const curr = readings[i];
+        const prevDate = new Date(prev.date);
+        const currDate = new Date(curr.date);
 
-      html += '</tbody></table>';
-      container.innerHTML = html;
-    }
+        // Если обе даты в одном месяце
+        if (prevDate.getFullYear() === currDate.getFullYear() &&
+            prevDate.getMonth() === currDate.getMonth()) {
+          const key = `${currDate.getFullYear()}-${currDate.getMonth()}`;
+          const cons = curr.value - prev.value;
+          monthly[key] = monthly[key] || { name: currDate.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' }), total: 0 };
+          monthly[key].total += cons;
+        } else {
+          // Распределяем пропорционально дням в каждом месяце
+          const totalDays = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
+          if (totalDays <= 0) continue;
 
-    let chartInstance = null;
+          const totalConsumption = curr.value - prev.value;
+          const dailyRate = totalConsumption / totalDays;
 
-    function renderMonthlyChart() {
-      const monthly = calculateMonthlyConsumption();
-      const ctx = document.getElementById('monthlyChart').getContext('2d');
-
-      if (chartInstance) {
-        chartInstance.destroy();
+          // Проходим по каждому дню
+          let day = new Date(prevDate);
+          while (day < currDate) {
+            const monthKey = `${day.getFullYear()}-${day.getMonth()}`;
+            const monthName = day.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' });
+            monthly[monthKey] = monthly[monthKey] || { name: monthName, total: 0 };
+            monthly[monthKey].total += dailyRate;
+            day.setDate(day.getDate() + 1);
+          }
+        }
       }
 
-      if (monthly.length === 0) return;
+      // Сортируем по дате
+      const sorted = Object.values(monthly).sort((a, b) => {
+        const [y1, m1] = a.name.split(' ');
+        const [y2, m2] = b.name.split(' ');
+        const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+        return (parseInt(y1) - parseInt(y2)) || (months.indexOf(m1) - months.indexOf(m2));
+      });
 
-      const labels = monthly.map(m => m.monthName);
-      const data = monthly.map(m => parseFloat(m.consumption.toFixed(2)));
+      // Рендер
+      let html = `<table><thead><tr><th>Месяц</th><th>Расход (кВт·ч)</th><th>Стоимость</th></tr></thead><tbody>`;
+      sorted.forEach(m => {
+        const cost = (m.total * TARIFF).toFixed(2);
+        html += `<tr>
+          <td>${m.name}</td>
+          <td>${m.total.toFixed(2)}</td>
+          <td>${cost} грн</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      el.innerHTML = html;
+    }
 
-      chartInstance = new Chart(ctx, {
+    // === ГРАФИК ===
+    let chart = null;
+    function renderChart() {
+      const readings = loadReadings();
+      if (readings.length < 2) return;
+
+      const monthly = {};
+      for (let i = 1; i < readings.length; i++) {
+        const prev = readings[i - 1];
+        const curr = readings[i];
+        const prevDate = new Date(prev.date);
+        const currDate = new Date(curr.date);
+        const totalDays = Math.max(1, Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24)));
+        const totalConsumption = curr.value - prev.value;
+        const dailyRate = totalConsumption / totalDays;
+
+        let day = new Date(prevDate);
+        while (day < currDate) {
+          const key = `${day.getFullYear()}-${day.getMonth()}`;
+          const name = day.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' });
+          monthly[key] = monthly[key] || { name, total: 0 };
+          monthly[key].total += dailyRate;
+          day.setDate(day.getDate() + 1);
+        }
+      }
+
+      const sorted = Object.values(monthly).sort((a, b) => {
+        const [y1, m1] = a.name.split(' ');
+        const [y2, m2] = b.name.split(' ');
+        const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+        return (parseInt(y1) - parseInt(y2)) || (months.indexOf(m1) - months.indexOf(m2));
+      });
+
+      const ctx = document.getElementById('monthlyChart').getContext('2d');
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
         type: 'bar',
          {
-          labels: labels,
+          labels: sorted.map(m => m.name),
           datasets: [{
-            label: 'Потребление (кВт·ч)',
-             data,
-            backgroundColor: '#4caf50',
-            borderColor: '#2e7d32',
-            borderWidth: 1
+            label: 'кВт·ч',
+             data: sorted.map(m => parseFloat(m.total.toFixed(2))),
+            backgroundColor: '#4caf50'
           }]
         },
         options: {
           responsive: true,
-          plugins: {
-            legend: { display: false }
-          },
+          plugins: { legend: { display: false } },
           scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { color: '#aaa' },
-              grid: { color: '#333' }
-            },
-            x: {
-              ticks: { color: '#aaa' },
-              grid: { color: '#333' }
-            }
+            y: { beginAtZero: true, ticks: { color: '#aaa' }, grid: { color: '#333' } },
+            x: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
           }
         }
       });
     }
 
-    function renderAll() {
-      renderHistory();
-      renderMonthlyTable();
-      renderMonthlyChart();
-    }
-
-    // Инициализация
-    renderAll();
+    // === ЗАПУСК ===
+    renderHistory();
+    renderMonthly();
+    renderChart();
   </script>
 </body>
 </html>
