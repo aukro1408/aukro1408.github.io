@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lampa Falling Grinch (новое изображение)
+// @name         Lampa Falling Grinch with Sparkling Eyes
 // @namespace    lampa.grinchfall
-// @version      1.0
-// @description  Падающие Гринчи вместо снега для LAMPA UI — новое изображение
+// @version      1.1
+// @description  Падающие Гринчи с мерцающими глазами и плавным движением для LAMPA UI
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -17,16 +17,12 @@
         speed: parseFloat(localStorage.getItem('lampa_grinch_speed') || '1.0')
     };
 
-    if (!cfg.enabled) {
-        console.info('Lampa Grinch: disabled by config');
-        return;
-    }
+    if (!cfg.enabled) return;
 
     const grinchUrl = 'https://aukro1408.github.io/Lovepik_com-380569615-grinchmas-clipart-the-grinch-vector-face-sticker-cartoon-cartoon.png';
 
     // --- Контейнер ---
     var overlay = document.createElement('div');
-    overlay.id = 'lampa-grinch-overlay';
     Object.assign(overlay.style, {
         position: 'fixed',
         left: '0',
@@ -62,15 +58,20 @@
             flakes.push({
                 x: rand(0, canvas.width),
                 y: rand(-canvas.height, canvas.height),
-                size: rand(20, 50),
+                size: rand(30, 60),
                 speedY: rand(0.5, 1.5) * cfg.speed,
-                swing: rand(0.3, 1.2),
+                swing: rand(0.2, 0.7),
                 swingPhase: rand(0, Math.PI*2),
-                opacity: rand(0.5, 1.0)
+                opacity: rand(0.6, 1.0),
+                eyePhase: rand(0, Math.PI*2) // для мерцания глаз
             });
         }
     }
     makeFlakes(cfg.density);
+
+    // Предзагрузка изображения
+    var grinchImg = new Image();
+    grinchImg.src = grinchUrl;
 
     // --- Анимация ---
     var last = performance.now();
@@ -83,19 +84,30 @@
         for (var i=0;i<flakes.length;i++){
             var f = flakes[i];
             f.y += f.speedY * dt;
-            f.x += Math.sin((now/1000) * f.swing + f.swingPhase) * 0.5 * f.swing * dt;
+            f.x += Math.sin((now/1000) * f.swing + f.swingPhase) * 1.5; // плавное покачивание
 
             if (f.y - f.size > canvas.height){
                 f.y = -50 - rand(0, canvas.height*0.2);
                 f.x = rand(0, canvas.width);
             }
 
-            // Рисуем Гринча
-            var img = new Image();
-            img.src = grinchUrl;
+            // Мерцающие глаза (градиентная маска)
+            ctx.save();
             ctx.globalAlpha = f.opacity;
-            ctx.drawImage(img, f.x, f.y, f.size, f.size);
-            ctx.globalAlpha = 1.0;
+
+            // рисуем основной Гринч
+            ctx.drawImage(grinchImg, f.x, f.y, f.size, f.size);
+
+            // создаём эффект мерцающих глаз
+            var eyeAlpha = 0.5 + 0.5 * Math.sin(now/150 + f.eyePhase);
+            ctx.fillStyle = `rgba(255,255,255,${eyeAlpha})`;
+            // координаты глаз подгоняем под картинку (~масштаб f.size)
+            ctx.beginPath();
+            ctx.arc(f.x + f.size*0.6, f.y + f.size*0.35, f.size*0.05, 0, Math.PI*2);
+            ctx.arc(f.x + f.size*0.75, f.y + f.size*0.35, f.size*0.05, 0, Math.PI*2);
+            ctx.fill();
+
+            ctx.restore();
         }
 
         raf = requestAnimationFrame(step);
@@ -104,7 +116,6 @@
 
     // --- Панель управления ---
     var ctl = document.createElement('div');
-    ctl.id = 'lampa-grinch-ctl';
     Object.assign(ctl.style, {
         position: 'fixed',
         right: '10px',
@@ -198,5 +209,5 @@
         }
     });
 
-    console.info('Lampa Grinch plugin initialized with new image. Double-click top-left corner to open the panel.');
+    console.info('Lampa Grinch plugin with sparkling eyes initialized!');
 })();
