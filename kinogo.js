@@ -1,69 +1,80 @@
 // ==addon==
 // name: Kinokrad
 // type: movie
-// icon: https://kinokrad.my/templates/kinokrad/images/favicon.ico
+// icon: https://kinokrad.my/favicon.ico
 // version: 1.0
 // ==/addon==
 
-var addon = {
-    title: 'Kinokrad',
-    type: 'movie',
-    id: 'kinokrad',
-    host: 'https://kinokrad.my',
+(function () {
+    'use strict';
 
-    search: function(query, page, callback) {
-        var url = this.host + '/search/?q=' + encodeURIComponent(query);
-        Lampa.api(url, function(html) {
-            if (!html) return callback([]);
+    function Component() {
+        var host = 'https://kinokrad.my';
 
-            var results = [];
-            var matches = html.matchAll(/<div class="th-item">.*?href="([^"]+)".*?<img src="([^"]+)".*?<div class="th-title">([^<]+)<\/div>.*?<div class="th-year">(\d{4})<\/div>/gs);
-            for (var match of matches) {
-                results.push({
-                    title: match[3].trim(),
-                    year: parseInt(match[4]) || 0,
-                    url: match[1].startsWith('http') ? match[1] : addon.host + match[1],
-                    img: match[2].startsWith('http') ? match[2] : addon.host + match[2],
-                    source: 'kinokrad'
-                });
-            }
-            callback(results);
-        }, { timeout: 10 });
-    },
+        function search(query, page, onResult) {
+            var url = host + '/search/?q=' + encodeURIComponent(query);
+            Lampa.api(url, function (html) {
+                if (!html) return onResult([]);
 
-    content: function(href, callback) {
-        Lampa.api(href, function(html) {
-            if (!html) return callback(null);
-
-            // Извлекаем заголовок
-            var titleMatch = html.match(/<h1[^>]*>([^<]+)<\/h1>/);
-            var title = titleMatch ? titleMatch[1].trim() : 'Фильм';
-
-            // Ищем iframe — основной способ показа видео на Kinokrad
-            var iframeMatch = html.match(/<iframe[^>]+src="([^"]+)"/i);
-            if (!iframeMatch) {
-                // Если iframe нет, ищем ссылку в атрибуте data-player
-                var dataPlayer = html.match(/data-player="([^"]+)"/);
-                if (dataPlayer) {
-                    var playerUrl = dataPlayer[1];
-                    if (playerUrl.startsWith('//')) playerUrl = 'https:' + playerUrl;
-                    else if (!playerUrl.startsWith('http')) playerUrl = addon.host + playerUrl;
-                    return callback({
-                        title: title,
-                        sources: [{ url: playerUrl, title: 'Плеер' }]
+                var results = [];
+                // Парсим стандартный блок фильмов на Kinokrad
+                var matches = html.matchAll(/<div class="th-item"[^>]*>.*?href="([^"]+)".*?<img[^>]+src="([^"]+)".*?<div class="th-title"[^>]*>([^<]+)<\/div>.*?<div class="th-year"[^>]*>(\d{4})<\/div>/gs);
+                for (var match of matches) {
+                    results.push({
+                        title: match[3].trim(),
+                        year: parseInt(match[4]) || 0,
+                        url: match[1].startsWith('http') ? match[1] : host + match[1],
+                        img: match[2].startsWith('http') ? match[2] : host + match[2],
+                        source: 'kinokrad'
                     });
                 }
-                return callback(null);
-            }
+                onResult(results);
+            }, { timeout: 10 });
+        }
 
-            var playerUrl = iframeMatch[1];
-            if (playerUrl.startsWith('//')) playerUrl = 'https:' + playerUrl;
-            else if (playerUrl.startsWith('/')) playerUrl = addon.host + playerUrl;
+        function content(href, onResult) {
+            Lampa.api(href, function (html) {
+                if (!html) return onResult(null);
 
-            callback({
-                title: title,
-                sources: [{ url: playerUrl, title: 'Основной плеер' }]
-            });
-        }, { timeout: 10 });
+                var title = 'Фильм';
+                var titleMatch = html.match(/<h1[^>]*>([^<]+)<\/h1>/);
+                if (titleMatch) title = titleMatch[1].trim();
+
+                // Ищем iframe — основной способ показа на Kinokrad
+                var iframeMatch = html.match(/<iframe[^>]+src="([^"]+)"/i);
+                if (!iframeMatch) {
+                    // Альтернатива: data-player (редко, но бывает)
+                    var dataPlayer = html.match(/data-player="([^"]+)"/);
+                    if (dataPlayer) {
+                        var playerUrl = dataPlayer[1];
+                        if (playerUrl.startsWith('//')) playerUrl = 'https:' + playerUrl;
+                        else if (!playerUrl.startsWith('http')) playerUrl = host + playerUrl;
+                        return onResult({
+                            title: title,
+                            sources: [{ url: playerUrl, title: 'Плеер' }]
+                        });
+                    }
+                    return onResult(null);
+                }
+
+                var playerUrl = iframeMatch[1];
+                if (playerUrl.startsWith('//')) playerUrl = 'https:' + playerUrl;
+                else if (playerUrl.startsWith('/')) playerUrl = host + playerUrl;
+
+                onResult({
+                    title: title,
+                    sources: [{ url: playerUrl, title: 'Основной' }]
+                });
+            }, { timeout: 10 });
+        }
+
+        return {
+            search: search,
+            content: content
+        };
     }
-};
+
+    if (typeof Lampa !== 'undefined' && Lampa.Manifest) {
+        Lampa.Manifest.add('kinokrad', Component);
+    }
+})();
