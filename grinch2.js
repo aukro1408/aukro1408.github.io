@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lampa Falling Grinch with Sparkling Eyes
-// @namespace    lampa.grinchfall
-// @version      1.1
-// @description  Падающие Гринчи с мерцающими глазами и плавным движением для LAMPA UI
+// @name         Lampa Falling Grinch Behind Cards
+// @namespace    lampa.grinchbehind
+// @version      1.2
+// @description  Гринчи с мерцающими глазами падают за карточками фильмов для LAMPA UI
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -10,7 +10,6 @@
     if (window.__lampa_grinch_inited) return;
     window.__lampa_grinch_inited = true;
 
-    // --- Настройки ---
     var cfg = {
         enabled: (localStorage.getItem('lampa_grinch_enabled') || '1') === '1',
         density: parseInt(localStorage.getItem('lampa_grinch_density') || '60', 10),
@@ -24,30 +23,41 @@
     // --- Контейнер ---
     var overlay = document.createElement('div');
     Object.assign(overlay.style, {
-        position: 'fixed',
+        position: 'absolute', // внутри контейнера
         left: '0',
         top: '0',
         width: '100%',
         height: '100%',
         pointerEvents: 'none',
-        zIndex: 999999,
+        zIndex: 0, // за карточками
         overflow: 'hidden',
         background: 'transparent'
     });
-    document.documentElement.appendChild(overlay);
+
+    // Находим контейнер с карточками
+    function attachOverlay() {
+        var container = document.querySelector('.catalog'); // <- нужно проверить селектор Lampa
+        if(container){
+            container.style.position = 'relative';
+            container.insertBefore(overlay, container.firstChild);
+        } else {
+            // fallback
+            document.documentElement.appendChild(overlay);
+        }
+    }
+    attachOverlay();
 
     // Canvas
     var canvas = document.createElement('canvas');
-    canvas.width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-    canvas.height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
     overlay.appendChild(canvas);
     var ctx = canvas.getContext('2d');
 
     function resizeCanvas(){
-        canvas.width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-        canvas.height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+        canvas.width = overlay.clientWidth;
+        canvas.height = overlay.clientHeight;
     }
     window.addEventListener('resize', resizeCanvas, {passive:true});
+    resizeCanvas();
 
     // --- Гринчи ---
     function rand(min, max){ return Math.random() * (max - min) + min; }
@@ -63,13 +73,12 @@
                 swing: rand(0.2, 0.7),
                 swingPhase: rand(0, Math.PI*2),
                 opacity: rand(0.6, 1.0),
-                eyePhase: rand(0, Math.PI*2) // для мерцания глаз
+                eyePhase: rand(0, Math.PI*2)
             });
         }
     }
     makeFlakes(cfg.density);
 
-    // Предзагрузка изображения
     var grinchImg = new Image();
     grinchImg.src = grinchUrl;
 
@@ -84,29 +93,24 @@
         for (var i=0;i<flakes.length;i++){
             var f = flakes[i];
             f.y += f.speedY * dt;
-            f.x += Math.sin((now/1000) * f.swing + f.swingPhase) * 1.5; // плавное покачивание
+            f.x += Math.sin((now/1000) * f.swing + f.swingPhase) * 1.5;
 
             if (f.y - f.size > canvas.height){
                 f.y = -50 - rand(0, canvas.height*0.2);
                 f.x = rand(0, canvas.width);
             }
 
-            // Мерцающие глаза (градиентная маска)
             ctx.save();
             ctx.globalAlpha = f.opacity;
-
-            // рисуем основной Гринч
             ctx.drawImage(grinchImg, f.x, f.y, f.size, f.size);
 
-            // создаём эффект мерцающих глаз
+            // Мерцающие глаза
             var eyeAlpha = 0.5 + 0.5 * Math.sin(now/150 + f.eyePhase);
             ctx.fillStyle = `rgba(255,255,255,${eyeAlpha})`;
-            // координаты глаз подгоняем под картинку (~масштаб f.size)
             ctx.beginPath();
             ctx.arc(f.x + f.size*0.6, f.y + f.size*0.35, f.size*0.05, 0, Math.PI*2);
             ctx.arc(f.x + f.size*0.75, f.y + f.size*0.35, f.size*0.05, 0, Math.PI*2);
             ctx.fill();
-
             ctx.restore();
         }
 
@@ -209,5 +213,5 @@
         }
     });
 
-    console.info('Lampa Grinch plugin with sparkling eyes initialized!');
+    console.info('Lampa Grinch plugin behind cards initialized!');
 })();
