@@ -1,41 +1,22 @@
 // ==addon==
-// name: KinoGo
+// name: TestSource
 // type: movie
-// icon: https://kinogo.no/templates/kinogo/images/favicon.png
-// version: 1.1
+// version: 1.0
 // ==/addon==
 
 var addon = {
-    title: 'KinoGo',
+    title: 'TestSource',
     type: 'movie',
-    id: 'kinogo',
-    api: 'https://kinogo.no',
-
     search: function(query, page, callback) {
-        let url = this.api + '/search/?q=' + encodeURIComponent(query);
-
-        Lampa.api(url, (html) => {
-            if (!html) {
-                callback([]);
-                return;
-            }
-
-            let results = [];
-            let matches = html.matchAll(/<div class="th-item">.*?href="([^"]+)"[^>]*>.*?<img src="([^"]+)"[^>]*>.*?<div class="th-title">([^<]+)<\/div>.*?<div class="th-year">(\d{4})<\/div>/gs);
-
-            for (let match of matches) {
-                results.push({
-                    title: match[3].trim(),
-                    year: parseInt(match[4]) || 0,
-                    url: match[1].startsWith('http') ? match[1] : this.api + match[1],
-                    img: match[2].startsWith('http') ? match[2] : this.api + match[2],
-                    source: 'kinogo'
-                });
-            }
-
-            callback(results);
-        }, { timeout: 10 });
+        callback([{
+            title: 'Тестовый фильм: ' + query,
+            year: 2025,
+            url: 'https://example.com',
+            img: 'https://via.placeholder.com/300x400',
+            source: 'test'
+        }]);
     },
-
     content: function(href, callback) {
-        Lampa.api(href, (html) => {
+        callback({ title: 'Тест', sources: [{ url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', title: 'HD' }] });
+    }
+};
