@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lampa Falling Grinch
+// @name         Lampa Falling Grinch (новое изображение)
 // @namespace    lampa.grinchfall
 // @version      1.0
-// @description  Падающие Гринчи вместо снега для LAMPA UI
+// @description  Падающие Гринчи вместо снега для LAMPA UI — новое изображение
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -22,7 +22,7 @@
         return;
     }
 
-    const grinchUrl = 'https://aukro1408.github.io/ebd8d475d8b9f7af6c42722ff10bf8.webp';
+    const grinchUrl = 'https://aukro1408.github.io/Lovepik_com-380569615-grinchmas-clipart-the-grinch-vector-face-sticker-cartoon-cartoon.png';
 
     // --- Контейнер ---
     var overlay = document.createElement('div');
@@ -198,5 +198,5 @@
         }
     });
 
-    console.info('Lampa Grinch plugin initialized. Double-click top-left corner to open the panel.');
+    console.info('Lampa Grinch plugin initialized with new image. Double-click top-left corner to open the panel.');
 })();
