@@ -1,121 +1,89 @@
-// festive_snow_fixed.js
+// ==UserScript==
+// @name         Lampa Christmas Magic
+// @namespace    lampa.christmas
+// @version      1.0
+// @description  Падающий снег, Санта, снеговик, олень и Гринч для Lampa
+// @match        *://*/lampa/*
+// ==/UserScript==
+
 (function () {
-    if (window.__lampa_festive_snow_inited) return;
-    window.__lampa_festive_snow_inited = true;
+  'use strict';
 
-    var cfg = {
-        density: 60,
-        minSize: 32,
-        maxSize: 56,
-        speedFactor: 0.75,
-        windStrength: 0.5,
-        accumulation: false
-    };
+  function initChristmasMagic() {
+    if (!window.Lampa || !document.body) {
+      return setTimeout(initChristmasMagic, 1000);
+    }
 
-    // 🔗 Надёжные PNG с прозрачным фоном (размещены на GitHub)
-    var imageUrls = [
-        'https://raw.githubusercontent.com/aukro1408/lampa-festive-snow/main/snowman.png',     // Снеговик
-        'https://raw.githubusercontent.com/aukro1408/lampa-festive-snow/main/santa.png',       // Санта
-        'https://raw.githubusercontent.com/aukro1408/lampa-festive-snow/main/reindeer.png',    // Олень
-        'https://raw.githubusercontent.com/aukro1408/lampa-festive-snow/main/grinch.png'       // Гринч
+    // Создаём контейнер
+    const container = document.createElement('div');
+    container.id = 'christmas-magic';
+    Object.assign(container.style, {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      pointerEvents: 'none',
+      overflow: 'hidden',
+      zIndex: 9999,
+    });
+    document.body.appendChild(container);
+
+    const images = [
+      'https://i.imgur.com/NZ0ErzA.png', // Санта
+      'https://i.imgur.com/5zFv7Ro.png', // Олень
+      'https://i.imgur.com/gH1FZmb.png', // Снеговик
+      'https://i.imgur.com/yQ53Uec.png', // Гринч
+      'https://i.imgur.com/4M7D1ay.png', // Снежинка 1
+      'https://i.imgur.com/6v2AI6O.png', // Снежинка 2
     ];
 
-    var images = [];
-    var loadedCount = 0;
+    // Функция создания элемента
+    function createFloatingItem() {
+      const item = document.createElement('img');
+      item.src = images[Math.floor(Math.random() * images.length)];
+      const size = Math.random() * 60 + 30;
+      Object.assign(item.style, {
+        position: 'absolute',
+        top: '-80px',
+        left: Math.random() * 100 + '%',
+        width: size + 'px',
+        height: 'auto',
+        opacity: Math.random() * 0.8 + 0.2,
+        filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.7))',
+        transition: 'transform 1s linear',
+        animation: `floatDown ${10 + Math.random() * 20}s linear infinite`,
+      });
 
-    imageUrls.forEach(function (url, i) {
-        var img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = img.onerror = function () {
-            images[i] = img;
-            loadedCount++;
-        };
-        img.src = url;
-    });
+      if (Math.random() < 0.3) {
+        // добавляем эффект мерцания
+        item.style.animation += `, sparkle ${1 + Math.random() * 2}s ease-in-out infinite alternate`;
+      }
 
-    var overlay = document.createElement('div');
-    Object.assign(overlay.style, {
-        position: 'fixed',
-        left: 0,
-        top: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 999999,
-        overflow: 'hidden',
-        background: 'transparent'
-    });
-    document.documentElement.appendChild(overlay);
+      container.appendChild(item);
 
-    var canvas = document.createElement('canvas');
-    overlay.appendChild(canvas);
-    var ctx = canvas.getContext('2d');
-
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    function rand(min, max) { return Math.random() * (max - min) + min; }
-
-    var elements = [];
-    function initElements() {
-        elements = [];
-        for (var i = 0; i < cfg.density; i++) {
-            elements.push({
-                x: rand(0, canvas.width),
-                y: rand(-canvas.height, 0),
-                imgIndex: Math.floor(rand(0, imageUrls.length)),
-                size: rand(cfg.minSize, cfg.maxSize),
-                speedY: rand(0.8, 1.5) * cfg.speedFactor,
-                speedX: rand(-cfg.windStrength, cfg.windStrength),
-                swingPhase: rand(0, Math.PI * 2),
-                rotation: 0,
-                rotationSpeed: rand(-0.005, 0.005)
-            });
-        }
-    }
-    initElements();
-
-    function drawElement(el, dt) {
-        if (loadedCount < images.length) return;
-
-        el.y += el.speedY * dt;
-        el.x += Math.sin(performance.now() / 1000 + el.swingPhase) * 0.7 + el.speedX * dt;
-        el.rotation += el.rotationSpeed * dt;
-
-        if (el.x < -100) el.x = canvas.width + 50;
-        if (el.x > canvas.width + 100) el.x = -50;
-        if (el.y > canvas.height + 100) {
-            el.y = rand(-100, -10);
-            el.x = rand(0, canvas.width);
-        }
-
-        var img = images[el.imgIndex];
-        if (!img || !img.complete) return;
-
-        ctx.save();
-        ctx.translate(el.x, el.y);
-        ctx.rotate(el.rotation);
-        ctx.drawImage(img, -el.size / 2, -el.size / 2, el.size, el.size);
-        ctx.restore();
+      // удаляем, когда выходит за пределы
+      setTimeout(() => item.remove(), 30000);
     }
 
-    var last = performance.now();
-    function step(now) {
-        var dt = (now - last) / 16.6667;
-        last = now;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Периодическое создание элементов
+    setInterval(createFloatingItem, 700);
 
-        for (var i = 0; i < elements.length; i++) {
-            drawElement(elements[i], dt);
-        }
+    // Добавляем анимации
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes floatDown {
+        0% { transform: translateY(0) rotate(0deg); }
+        100% { transform: translateY(110vh) rotate(360deg); }
+      }
 
-        requestAnimationFrame(step);
-    }
-    requestAnimationFrame(step);
+      @keyframes sparkle {
+        0% { opacity: 0.3; filter: drop-shadow(0 0 3px rgba(255,255,255,0.3)); }
+        100% { opacity: 1; filter: drop-shadow(0 0 10px rgba(255,255,255,1)); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
-    console.info('Lampa Festive Snow FIXED: Santa, Snowman, Reindeer, Grinch ✅');
+  initChristmasMagic();
 })();
