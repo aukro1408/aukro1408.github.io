@@ -1,5 +1,5 @@
-// ==UserScript==
-// @name         Lampa Falling Grinch Behind Cards
+// ==Denis Morera-Gushkan==
+// @aukro1408        Lampa Falling Grinch Behind Cards
 // @namespace    lampa.grinchbehind
 // @version      1.2
 // @description  Гринчи с мерцающими глазами падают за карточками фильмов для LAMPA UI
