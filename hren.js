@@ -1,26 +1,25 @@
 // ==UserScript==
-// @name         Lampa Add "Хрень" Menu Item
+// @name         Lampa Add "Хрень" Menu Item (Fixed for Beta)
 // @namespace    lampa.hren
-// @version      1.0
-// @description  Добавляет пункт меню "Хрень" с иконкой сердечка
+// @version      1.1
+// @description  Добавляет пункт меню "Хрень" с иконкой сердечка (beta.lampa.mx совместимо)
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
   'use strict';
 
-  function addMenuItem() {
-    if (!window.Lampa || !Lampa.Listener) {
-      setTimeout(addMenuItem, 500);
-      return;
-    }
+  function waitForMenu() {
+    const menuList = document.querySelector('.menu__list') || document.querySelector('.menu__scroll');
+    if (!menuList) return setTimeout(waitForMenu, 1000);
 
-    // Проверяем, нет ли уже нашего пункта
-    if (document.querySelector('.menu__item.hren-item')) return;
+    // Проверяем, есть ли уже элемент
+    if (menuList.querySelector('.menu__item.hren-item')) return;
 
     // Создаём пункт меню
     const item = document.createElement('div');
     item.classList.add('menu__item', 'hren-item');
+    item.style.cursor = 'pointer';
     item.innerHTML = `
       <div class="menu__ico">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
@@ -35,16 +34,29 @@
       <div class="menu__text">Хрень</div>
     `;
 
-    // Добавляем обработчик клика (ничего не делает)
-    item.addEventListener('click', (e) => {
-      e.preventDefault();
-      Lampa.Noty.show('Просто хрень 😎');
+    item.addEventListener('click', () => {
+      if (window.Lampa && Lampa.Noty) Lampa.Noty.show('Просто хрень 😎');
     });
 
-    // Добавляем в боковое меню
-    const menu = document.querySelector('.menu__list') || document.querySelector('.menu__scroll');
-    if (menu) menu.appendChild(item);
+    // Вставляем после пункта "Избранное" если он есть
+    const favorite = [...menuList.querySelectorAll('.menu__item')].find(el =>
+      el.textContent.trim().includes('Избранное')
+    );
+
+    if (favorite && favorite.nextSibling) {
+      menuList.insertBefore(item, favorite.nextSibling);
+    } else {
+      menuList.appendChild(item);
+    }
   }
 
-  addMenuItem();
+  // ждём загрузку интерфейса
+  const observer = new MutationObserver(() => {
+    if (document.querySelector('.menu__list, .menu__scroll')) {
+      observer.disconnect();
+      waitForMenu();
+    }
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
 })();
