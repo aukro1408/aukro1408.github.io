@@ -1,44 +1,36 @@
 // ==UserScript==
-// @name         Lampa Add "Хрень" Menu Item — Random Movie (Final Compatible)
+// @name         Lampa Add "Хрень" Menu Item — Random Movie (Stable Version)
 // @namespace    lampa.hren
-// @version      1.5
-// @description  Добавляет пункт меню "Хрень" с анимированным сердечком и случайным фильмом
+// @version      1.6
+// @description  Добавляет пункт меню "Хрень" с пульсирующим сердечком, открывает случайный фильм через встроенный интерфейс
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
   'use strict';
 
-  // --- Анимация сердца ---
+  // Анимация сердца
   const style = document.createElement('style');
   style.textContent = `
     @keyframes heartPulse {
-      0%, 100% { transform: scale(1); opacity: 0.9; }
-      50% { transform: scale(1.2); opacity: 1; }
+      0%,100%{transform:scale(1);opacity:0.9;}
+      50%{transform:scale(1.2);opacity:1;}
     }
-    .hren-item svg {
-      animation: heartPulse 2s infinite ease-in-out;
-      transition: transform 0.2s;
-    }
-    .hren-item:hover svg {
-      transform: scale(1.3);
-      opacity: 1;
-    }
+    .hren-item svg{animation:heartPulse 2s infinite ease-in-out;transition:transform .2s;}
+    .hren-item:hover svg{transform:scale(1.3);opacity:1;}
   `;
   document.head.appendChild(style);
 
-  // --- Добавление пункта меню ---
   function addHrenItem() {
-    const menuList = document.querySelector('.menu__list') || document.querySelector('.menu__scroll');
-    if (!menuList) return setTimeout(addHrenItem, 1000);
-    if (menuList.querySelector('.menu__item.hren-item')) return;
+    const menuList = document.querySelector('.menu__list,.menu__scroll');
+    if (!menuList || document.querySelector('.hren-item')) return;
 
     const item = document.createElement('div');
     item.classList.add('menu__item', 'hren-item');
     item.style.cursor = 'pointer';
     item.innerHTML = `
       <div class="menu__ico">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
           <path d="M12.1 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
                    2 5.42 4.42 3 7.5 3
                    c1.74 0 3.41 0.81 4.5 2.09
@@ -50,52 +42,36 @@
       <div class="menu__text">Хрень</div>
     `;
 
-    // --- Клик по пункту ---
     item.addEventListener('click', () => {
-      if (!window.Lampa || !Lampa.TMDB) return;
+      if (!window.Lampa) return;
+      try {
+        Lampa.Noty.show('Выбираю хрень дня... 🍿');
 
-      Lampa.Noty.show('Выбираю хрень дня... 🍿');
-
-      const randomPage = Math.floor(Math.random() * 30) + 1;
-
-      // Используем встроенный API Lampa.TMDB
-      Lampa.TMDB.discover('movie', { page: randomPage }, (data) => {
-        if (data && data.results && data.results.length) {
-          const movie = data.results[Math.floor(Math.random() * data.results.length)];
-
-          // Открываем карточку фильма
-          Lampa.Activity.push({
-            component: 'full',
-            source: 'tmdb',
-            id: movie.id,
-            title: movie.title,
-            url: '',
-            method: 'movie'
-          });
-
-          Lampa.Noty.show(`Хрень выбрала: ${movie.title} 🎬`);
-        } else {
-          Lampa.Noty.show('Не удалось найти хрень 😅');
-        }
-      }, () => {
-        Lampa.Noty.show('Ошибка при получении хрени 💩');
-      });
+        // Просто открываем раздел "Популярные фильмы"
+        // Lampa сама подгрузит карточки и пользователь увидит случайное
+        Lampa.Activity.push({
+          component: 'category_full',
+          source: 'tmdb',
+          title: 'Хрень дня 🎬',
+          url: 'discover/movie?sort_by=popularity.desc',
+          page: Math.floor(Math.random() * 30) + 1
+        });
+      } catch (e) {
+        console.error(e);
+        Lampa.Noty.show('Ошибка при вызове хрени 💩');
+      }
     });
 
-    // Вставляем после "Избранное"
-    const favorite = [...menuList.querySelectorAll('.menu__item')].find(el =>
-      el.textContent.trim().includes('Избранное')
-    );
-    if (favorite && favorite.nextSibling) {
+    const favorite = [...menuList.querySelectorAll('.menu__item')]
+      .find(el => el.textContent.trim().includes('Избранное'));
+    if (favorite && favorite.nextSibling)
       menuList.insertBefore(item, favorite.nextSibling);
-    } else {
+    else
       menuList.appendChild(item);
-    }
   }
 
-  // --- Ждём появления меню ---
   const observer = new MutationObserver(() => {
-    if (document.querySelector('.menu__list, .menu__scroll') && window.Lampa?.TMDB) {
+    if (document.querySelector('.menu__list,.menu__scroll') && window.Lampa) {
       observer.disconnect();
       addHrenItem();
     }
