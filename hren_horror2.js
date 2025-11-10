@@ -1,28 +1,36 @@
 // ==UserScript==
-// @name         Lampa Add "Хрень" Menu Item — Cracked Heart
-// @namespace    lampa.hren.cracked
-// @version      2.1
-// @description  Добавляет пункт меню "Хрень" (ужасы) с треснутым пульсирующим сердцем
+// @name         Lampa Add "Хрень" Menu Item — Rainbow Heart
+// @namespace    lampa.hren.rainbow
+// @version      2.2
+// @description  Добавляет пункт меню "Хрень" (ужасы) с пульсирующим радужным сердцем
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
   'use strict';
 
-  // 🔥 Анимация пульсации
+  // 🔥 Анимация пульсации и переливания
   const style = document.createElement('style');
   style.textContent = `
     @keyframes heartPulse {
       0%,100%{transform:scale(1);opacity:0.9;}
       50%{transform:scale(1.2);opacity:1;}
     }
-    .hren-item svg{animation:heartPulse 2s infinite ease-in-out;transition:transform .2s;}
-    .hren-item:hover svg{transform:scale(1.3);opacity:1;}
-    /* Линия трещины */
-    .hren-item svg line{
-      stroke:red;
-      stroke-width:2;
-      stroke-dasharray:4 2;
+    @keyframes rainbowFill {
+      0%{fill:red;}
+      16%{fill:orange;}
+      32%{fill:yellow;}
+      48%{fill:green;}
+      64%{fill:blue;}
+      80%{fill:indigo;}
+      100%{fill:violet;}
+    }
+    .hren-item svg{
+      animation: heartPulse 2s infinite ease-in-out, rainbowFill 4s infinite linear;
+      transition: transform .2s;
+    }
+    .hren-item:hover svg{
+      transform: scale(1.3);
     }
   `;
   document.head.appendChild(style);
@@ -43,7 +51,6 @@
                    C13.09 3.81 14.76 3 16.5 3
                    19.58 3 22 5.42 22 8.5
                    c0 3.78-3.4 6.86-8.55 11.54L12.1 21.35z"/>
-          <line x1="12" y1="4" x2="12" y2="20"/>
         </svg>
       </div>
       <div class="menu__text">Хрень</div>
@@ -66,6 +73,7 @@
       }
     });
 
+    // Вставляем **под "Главная"**
     const mainItem = [...menuList.querySelectorAll('.menu__item')]
       .find(el => el.textContent.trim().includes('Главная'));
     if (mainItem && mainItem.nextSibling)
