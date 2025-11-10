@@ -1,22 +1,36 @@
 // ==UserScript==
-// @name         Lampa Add "Хрень" Menu Item (Fixed for Beta)
+// @name         Lampa Add "Хрень" Menu Item Animated
 // @namespace    lampa.hren
-// @version      1.1
-// @description  Добавляет пункт меню "Хрень" с иконкой сердечка (beta.lampa.mx совместимо)
+// @version      1.2
+// @description  Добавляет пункт меню "Хрень" с анимированным сердечком
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
   'use strict';
 
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes heartPulse {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.2); opacity: 1; }
+    }
+    .hren-item svg {
+      animation: heartPulse 2s infinite ease-in-out;
+      transition: transform 0.2s;
+    }
+    .hren-item:hover svg {
+      transform: scale(1.3);
+      opacity: 1;
+    }
+  `;
+  document.head.appendChild(style);
+
   function waitForMenu() {
     const menuList = document.querySelector('.menu__list') || document.querySelector('.menu__scroll');
     if (!menuList) return setTimeout(waitForMenu, 1000);
-
-    // Проверяем, есть ли уже элемент
     if (menuList.querySelector('.menu__item.hren-item')) return;
 
-    // Создаём пункт меню
     const item = document.createElement('div');
     item.classList.add('menu__item', 'hren-item');
     item.style.cursor = 'pointer';
@@ -34,11 +48,13 @@
       <div class="menu__text">Хрень</div>
     `;
 
+    // Обработка клика
     item.addEventListener('click', () => {
-      if (window.Lampa && Lampa.Noty) Lampa.Noty.show('Просто хрень 😎');
+      if (window.Lampa && Lampa.Noty) {
+        Lampa.Noty.show('Ты нажал на самую хрень 😅');
+      }
     });
 
-    // Вставляем после пункта "Избранное" если он есть
     const favorite = [...menuList.querySelectorAll('.menu__item')].find(el =>
       el.textContent.trim().includes('Избранное')
     );
@@ -50,7 +66,6 @@
     }
   }
 
-  // ждём загрузку интерфейса
   const observer = new MutationObserver(() => {
     if (document.querySelector('.menu__list, .menu__scroll')) {
       observer.disconnect();
