@@ -1,15 +1,15 @@
 // ==UserScript==
-// @name         Lampa Add "Хрень" Menu Item — Rainbow Heart
-// @namespace    lampa.hren.rainbow
-// @version      2.2
-// @description  Добавляет пункт меню "Хрень" (ужасы) с пульсирующим радужным сердцем
+// @name         Lampa Add "Хрень" Menu Item — Glowing Rainbow Heart
+// @namespace    lampa.hren.glowing
+// @version      2.4
+// @description  Добавляет пункт меню "Хрень" (ужасы) с пульсирующим радужным сияющим сердцем вверху
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
   'use strict';
 
-  // 🔥 Анимация пульсации и переливания
+  // 🔥 Анимация пульсации, переливания и свечения
   const style = document.createElement('style');
   style.textContent = `
     @keyframes heartPulse {
@@ -25,8 +25,14 @@
       80%{fill:indigo;}
       100%{fill:violet;}
     }
+    @keyframes heartGlow {
+      0%,100%{filter: drop-shadow(0 0 2px #fff);}
+      50%{filter: drop-shadow(0 0 10px #fff);}
+    }
     .hren-item svg{
-      animation: heartPulse 2s infinite ease-in-out, rainbowFill 4s infinite linear;
+      animation: heartPulse 2s infinite ease-in-out,
+                 rainbowFill 4s infinite linear,
+                 heartGlow 2s infinite ease-in-out;
       transition: transform .2s;
     }
     .hren-item:hover svg{
@@ -73,13 +79,8 @@
       }
     });
 
-    // Вставляем **под "Главная"**
-    const mainItem = [...menuList.querySelectorAll('.menu__item')]
-      .find(el => el.textContent.trim().includes('Главная'));
-    if (mainItem && mainItem.nextSibling)
-      menuList.insertBefore(item, mainItem.nextSibling);
-    else
-      menuList.insertBefore(item, menuList.firstChild);
+    // Вставляем **в самый верх**
+    menuList.insertBefore(item, menuList.firstChild);
   }
 
   const observer = new MutationObserver(() => {
