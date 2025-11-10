@@ -1,14 +1,15 @@
 // ==UserScript==
-// @name         Lampa Add "Хрень" Menu Item Animated
+// @name         Lampa Add "Хрень" Menu Item — Random Movie
 // @namespace    lampa.hren
-// @version      1.2
-// @description  Добавляет пункт меню "Хрень" с анимированным сердечком
+// @version      1.3
+// @description  Добавляет пункт меню "Хрень" с анимированным сердечком, открывает случайный фильм
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
   'use strict';
 
+  // --- Анимация сердца ---
   const style = document.createElement('style');
   style.textContent = `
     @keyframes heartPulse {
@@ -26,6 +27,7 @@
   `;
   document.head.appendChild(style);
 
+  // --- Добавление пункта меню ---
   function waitForMenu() {
     const menuList = document.querySelector('.menu__list') || document.querySelector('.menu__scroll');
     if (!menuList) return setTimeout(waitForMenu, 1000);
@@ -48,13 +50,41 @@
       <div class="menu__text">Хрень</div>
     `;
 
-    // Обработка клика
+    // --- Поведение при клике ---
     item.addEventListener('click', () => {
-      if (window.Lampa && Lampa.Noty) {
-        Lampa.Noty.show('Ты нажал на самую хрень 😅');
-      }
+      if (!window.Lampa) return;
+
+      // Показываем уведомление
+      Lampa.Noty.show('Выбираю хрень дня... 🍿');
+
+      // Генерируем случайную страницу и ID для поиска фильмов
+      const randomPage = Math.floor(Math.random() * 30) + 1;
+
+      // Загружаем данные из встроенного источника TMDB (через API Lampa)
+      Lampa.Api.themoviedb.discover('movie', { page: randomPage }, (data) => {
+        if (data && data.results && data.results.length) {
+          const randomMovie = data.results[Math.floor(Math.random() * data.results.length)];
+
+          // Открываем карточку фильма
+          Lampa.Activity.push({
+            url: '',
+            title: randomMovie.title,
+            component: 'full',
+            id: randomMovie.id,
+            method: 'tv',
+            source: 'tmdb'
+          });
+
+          Lampa.Noty.show(`Хрень выбрала: ${randomMovie.title} 🎬`);
+        } else {
+          Lampa.Noty.show('Не удалось найти хрень 😅');
+        }
+      }, () => {
+        Lampa.Noty.show('Ошибка при получении хрени 💩');
+      });
     });
 
+    // Вставляем пункт после "Избранное"
     const favorite = [...menuList.querySelectorAll('.menu__item')].find(el =>
       el.textContent.trim().includes('Избранное')
     );
@@ -66,12 +96,12 @@
     }
   }
 
+  // --- Ждём появления меню ---
   const observer = new MutationObserver(() => {
     if (document.querySelector('.menu__list, .menu__scroll')) {
       observer.disconnect();
       waitForMenu();
     }
   });
-
   observer.observe(document.body, { childList: true, subtree: true });
 })();
