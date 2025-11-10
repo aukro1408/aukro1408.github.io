@@ -1,15 +1,15 @@
 // ==UserScript==
-// @name         Lampa Add "Хрень" Menu Item — Glowing Rainbow Heart Top
-// @namespace    lampa.hren.glowtop
-// @version      2.6
-// @description  Добавляет пункт меню "Хрень" (ужасы) с радужным сияющим сердцем вверху без пульсации
+// @name         Lampa Add "Хрень" Menu Item — Rainbow Heart Top
+// @namespace    lampa.hren.rainbowtop
+// @version      2.7
+// @description  Добавляет пункт меню "Хрень" (ужасы) с радужным сердцем вверху, без сияния
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
   'use strict';
 
-  // ✨ Анимация радужного свечения
+  // ✨ Только радужное переливание
   const style = document.createElement('style');
   style.textContent = `
     @keyframes rainbowFill {
@@ -21,13 +21,8 @@
       80%{fill:indigo;}
       100%{fill:violet;}
     }
-    @keyframes heartGlow {
-      0%,100%{filter: drop-shadow(0 0 2px #fff);}
-      50%{filter: drop-shadow(0 0 10px #fff);}
-    }
     .hren-item svg{
-      animation: rainbowFill 4s infinite linear,
-                 heartGlow 2s infinite ease-in-out;
+      animation: rainbowFill 4s infinite linear;
       transition: transform .2s;
     }
     .hren-item:hover svg{
@@ -78,7 +73,7 @@
 
       menuList.insertBefore(item, menuList.firstChild);
     } else {
-      // Если элемент уже есть — перемещаем в начало
+      // Перемещаем элемент в начало
       if (menuList.firstChild !== item) {
         menuList.insertBefore(item, menuList.firstChild);
       }
