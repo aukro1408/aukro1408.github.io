@@ -1,15 +1,15 @@
 // ==UserScript==
-// @name         Lampa Add "Хрень" Menu Item — Random Movie (Beta Fixed)
+// @name         Lampa Add "Хрень" Menu Item — Random Movie (Final Compatible)
 // @namespace    lampa.hren
-// @version      1.4
-// @description  Добавляет пункт меню "Хрень" с анимированным сердечком, открывает случайный фильм
+// @version      1.5
+// @description  Добавляет пункт меню "Хрень" с анимированным сердечком и случайным фильмом
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
   'use strict';
 
-  // Добавляем анимацию сердца
+  // --- Анимация сердца ---
   const style = document.createElement('style');
   style.textContent = `
     @keyframes heartPulse {
@@ -27,7 +27,7 @@
   `;
   document.head.appendChild(style);
 
-  // Функция добавления пункта меню
+  // --- Добавление пункта меню ---
   function addHrenItem() {
     const menuList = document.querySelector('.menu__list') || document.querySelector('.menu__scroll');
     if (!menuList) return setTimeout(addHrenItem, 1000);
@@ -50,41 +50,36 @@
       <div class="menu__text">Хрень</div>
     `;
 
-    // --- Логика случайного фильма ---
-    item.addEventListener('click', async () => {
-      if (!window.Lampa || !Lampa.Noty) return;
+    // --- Клик по пункту ---
+    item.addEventListener('click', () => {
+      if (!window.Lampa || !Lampa.TMDB) return;
 
       Lampa.Noty.show('Выбираю хрень дня... 🍿');
 
-      try {
-        const randomPage = Math.floor(Math.random() * 50) + 1;
-        const url = `https://api.themoviedb.org/3/discover/movie?api_key=4ef0d7355a9a96886e6c4b21c9b6e0b8&page=${randomPage}&language=ru-RU`;
+      const randomPage = Math.floor(Math.random() * 30) + 1;
 
-        const res = await fetch(url);
-        const data = await res.json();
+      // Используем встроенный API Lampa.TMDB
+      Lampa.TMDB.discover('movie', { page: randomPage }, (data) => {
+        if (data && data.results && data.results.length) {
+          const movie = data.results[Math.floor(Math.random() * data.results.length)];
 
-        if (!data.results?.length) {
+          // Открываем карточку фильма
+          Lampa.Activity.push({
+            component: 'full',
+            source: 'tmdb',
+            id: movie.id,
+            title: movie.title,
+            url: '',
+            method: 'movie'
+          });
+
+          Lampa.Noty.show(`Хрень выбрала: ${movie.title} 🎬`);
+        } else {
           Lampa.Noty.show('Не удалось найти хрень 😅');
-          return;
         }
-
-        const randomMovie = data.results[Math.floor(Math.random() * data.results.length)];
-
-        // Открываем карточку фильма в интерфейсе Lampa
-        Lampa.Activity.push({
-          component: 'full',
-          source: 'tmdb',
-          id: randomMovie.id,
-          title: randomMovie.title,
-          url: '',
-          method: 'movie'
-        });
-
-        Lampa.Noty.show(`Хрень выбрала: ${randomMovie.title} 🎬`);
-      } catch (err) {
-        console.error(err);
+      }, () => {
         Lampa.Noty.show('Ошибка при получении хрени 💩');
-      }
+      });
     });
 
     // Вставляем после "Избранное"
@@ -98,9 +93,9 @@
     }
   }
 
-  // Ждём появления меню
+  // --- Ждём появления меню ---
   const observer = new MutationObserver(() => {
-    if (document.querySelector('.menu__list, .menu__scroll')) {
+    if (document.querySelector('.menu__list, .menu__scroll') && window.Lampa?.TMDB) {
       observer.disconnect();
       addHrenItem();
     }
