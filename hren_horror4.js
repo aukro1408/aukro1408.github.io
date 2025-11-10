@@ -1,15 +1,15 @@
 // ==UserScript==
-// @name         Lampa Add "Хрень" Menu Item — Rainbow Heart Top
-// @namespace    lampa.hren.rainbowtop
-// @version      2.7
-// @description  Добавляет пункт меню "Хрень" (ужасы) с радужным сердцем вверху, без сияния
+// @name         Lampa "Хрень" — Rainbow Heart + Filter Submenu
+// @namespace    lampa.hren.submenu
+// @version      3.1
+// @description  Пункт меню "Хрень" с радужным сердцем и подменю фильтров ужасов
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
   'use strict';
 
-  // ✨ Только радужное переливание
+  // ✨ Радужное сердце
   const style = document.createElement('style');
   style.textContent = `
     @keyframes rainbowFill {
@@ -28,8 +28,23 @@
     .hren-item:hover svg{
       transform: scale(1.3);
     }
+    .hren-submenu {
+      padding-left: 20px;
+      display: none;
+      flex-direction: column;
+    }
+    .hren-submenu .menu__item {
+      font-size: 0.9em;
+    }
   `;
   document.head.appendChild(style);
+
+  const horrorFilters = [
+    { name: 'Слэшеры', genre: 28 },
+    { name: 'Сверхъестественные', genre: 27 },
+    { name: 'Зомби', genre: 10752 },
+    { name: 'Вампиры', genre: 14 }
+  ];
 
   function addHrenItem() {
     const menuList = document.querySelector('.menu__list,.menu__scroll');
@@ -55,32 +70,55 @@
         <div class="menu__text">Хрень</div>
       `;
 
+      // 🔹 Создаём подменю с фильтрами
+      const subMenu = document.createElement('div');
+      subMenu.classList.add('hren-submenu');
+      horrorFilters.forEach(f => {
+        const filterItem = document.createElement('div');
+        filterItem.classList.add('menu__item');
+        filterItem.textContent = f.name;
+        filterItem.style.cursor = 'pointer';
+        filterItem.addEventListener('click', (e) => {
+          e.stopPropagation(); // предотвращаем закрытие подменю
+          try {
+            Lampa.Noty.show(`Открываем: ${f.name}`);
+            Lampa.Activity.push({
+              component: 'category_full',
+              source: 'tmdb',
+              title: `Хрень: ${f.name}`,
+              url: `discover/movie?with_genres=${f.genre}&sort_by=popularity.desc`,
+              page: Math.floor(Math.random() * 10) + 1
+            });
+          } catch(e) {
+            console.error(e);
+            Lampa.Noty.show('Ошибка при открытии фильтра 💩');
+          }
+        });
+        subMenu.appendChild(filterItem);
+      });
+
+      item.appendChild(subMenu);
+
+      // Показываем/скрываем подменю при клике на основной пункт
       item.addEventListener('click', () => {
-        try {
-          Lampa.Noty.show('Хрень вызывает ужасы... 👻');
-          Lampa.Activity.push({
-            component: 'category_full',
-            source: 'tmdb',
-            title: 'Хрень: Ужасы 😱',
-            url: 'discover/movie?with_genres=27&sort_by=popularity.desc',
-            page: Math.floor(Math.random() * 10) + 1
-          });
-        } catch (e) {
-          console.error(e);
-          Lampa.Noty.show('Ошибка при вызове хрени 💩');
-        }
+        subMenu.style.display = subMenu.style.display === 'none' ? 'flex' : 'none';
       });
 
       menuList.insertBefore(item, menuList.firstChild);
     } else {
-      // Перемещаем элемент в начало
       if (menuList.firstChild !== item) {
         menuList.insertBefore(item, menuList.firstChild);
       }
     }
   }
 
-  // 🔍 Следим за динамическим изменением меню
+  // 🔍 MutationObserver для динамического меню
   const observer = new MutationObserver(addHrenItem);
   observer.observe(document.body, { childList: true, subtree: true });
+
+  // 🟢 Lampa.Listener для стабильного закрепления пункта
+  if (window.Lampa && Lampa.Listener) {
+    Lampa.Listener.follow('menuLoaded', addHrenItem);
+    Lampa.Listener.follow('menuUpdate', addHrenItem);
+  }
 })();
