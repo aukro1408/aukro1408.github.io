@@ -1,213 +1,267 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR-генератор с логотипом</title>
-    <style>
-        :root {
-            --bg: #0f1724;
-            --card: #0b1220;
-            --muted: #9aa4b2;
-            --accent: #06b6d4;
-        }
-        body {
-            font-family: 'Inter', system-ui;
-            margin: 0;
-            background: var(--bg);
-            color: #e6eef6;
-            min-height: 100vh;
-            padding: 24px;
-            display: flex;
-            justify-content: center;
-        }
-        .app {
-            width: 100%;
-            max-width: 900px;
-        }
-        input, select {
-            padding: 8px 10px;
-            border-radius: 8px;
-            background: #0002;
-            border: 1px solid #fff1;
-            color: white;
-            width: 100%;
-        }
-        .card {
-            background: #ffffff06;
-            padding: 18px;
-            border-radius: 12px;
-            margin-top: 16px;
-        }
-        .btn {
-            background: var(--accent);
-            color: #031b22;
-            padding: 10px 14px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            margin: 0 5px;
-        }
-        canvas {
-            background: white;
-            border-radius: 8px;
-            max-width: 100%;
-        }
-        .logo-preview {
-            display: none;
-            margin-top: 10px;
-            text-align: center;
-        }
-        .logo-preview img {
-            max-width: 100px;
-            max-height: 100px;
-            border-radius: 8px;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Улучшенный QR-генератор с логотипом</title>
+<style>
+  :root {
+    --bg: #0f1724;
+    --card: #0b1220;
+    --muted: #9aa4b2;
+    --accent: #06b6d4;
+  }
+  body {
+    font-family: 'Inter', system-ui;
+    margin: 0;
+    background: var(--bg);
+    color: #e6eef6;
+    min-height: 100vh;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .container {
+    max-width: 1000px;
+    width: 100%;
+  }
+  h1 {
+    text-align: center;
+  }
+  .card {
+    background: #ffffff06;
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
+  label {
+    display: block;
+    margin-top: 10px;
+  }
+  input[type="text"],
+  input[type="number"],
+  select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #fff1;
+    background: #0002;
+    color: #fff;
+    margin-top: 5px;
+  }
+  #logo {
+    padding: 4px;
+  }
+  #logoPreview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 10px;
+  }
+  #logoPreview img {
+    max-width: 100px;
+    max-height: 100px;
+    border-radius: 8px;
+    margin-top: 5px;
+  }
+  button {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #031b22;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  button:hover {
+    background: #0399a6;
+  }
+  #qr {
+    width: 100%;
+    margin-top: 20px;
+    border-radius: 8px;
+    background: #fff;
+  }
+</style>
 </head>
 <body>
-    <div class="app">
-        <h1>QR-генератор с логотипом</h1>
-        <div class="card">
-            <label>Текст или ссылка</label>
-            <input id="text" placeholder="https://example.com" value="https://example.com" />
-            
-            <label style="margin-top:10px">Загрузка логотипа (PNG/JPEG)</label>
-            <input id="logo" type="file" accept="image/*" />
-            <div class="logo-preview" id="logoPreview">
-                <p>Предварительный просмотр логотипа:</p>
-                <img id="previewImg" src="" alt="Preview" />
-            </div>
-            
-            <label style="margin-top:10px">Размер QR</label>
-            <input id="size" type="number" value="300" min="200" max="800" />
-            
-            <div style="margin-top:15px; text-align:center">
-                <button class="btn" id="generate">Сгенерировать</button>
-                <button class="btn" id="saveSvg">Скачать SVG</button>
-                <button class="btn" id="savePng">Скачать PNG</button>
-            </div>
-        </div>
-        
-        <div class="card" style="text-align:center">
-            <canvas id="qr" width="300" height="300"></canvas>
-        </div>
-    </div>
+<div class="container">
+<h1>Улучшенный QR-генератор с логотипом</h1>
 
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <script>
-        const canvas = document.getElementById('qr');
-        const ctx = canvas.getContext('2d');
-        let logoImg = null;
+<div class="card">
+  <label>Текст или ссылка</label>
+  <input id="text" placeholder="https://example.com" value="https://example.com" />
 
-        // Обработка загрузки логотипа
-        document.getElementById('logo').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    logoImg = new Image();
-                    logoImg.onload = function() {
-                        // Показываем превью логотипа
-                        const preview = document.getElementById('previewImg');
-                        preview.src = event.target.result;
-                        document.getElementById('logoPreview').style.display = 'block';
-                    };
-                    logoImg.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
+  <label>Загрузка логотипа (PNG/JPEG)</label>
+  <input id="logo" type="file" accept="image/*" />
+  
+  <div id="logoPreview" style="display:none;">
+    <p>Предварительный просмотр логотипа:</p>
+    <img id="previewImg" src="" alt="Preview" />
+  </div>
+  
+  <label>Цвет QR-кода</label>
+  <input type="color" id="colorDark" value="#000000" />
+  
+  <label>Цвет фона</label>
+  <input type="color" id="colorLight" value="#ffffff" />
 
-        // Генерация QR-кода
-        async function generateQR() {
-            const text = document.getElementById('text').value;
-            const size = Number(document.getElementById('size').value) || 300;
-            
-            if (!text) {
-                alert('Пожалуйста, введите текст или ссылку');
-                return;
-            }
-            
-            canvas.width = size;
-            canvas.height = size;
-            
-            const qrOptions = {
-                errorCorrectionLevel: 'H',
-                margin: 1,
-                width: size,
-                color: { dark: '#000000', light: '#ffffff' }
-            };
-            
-            try {
-                await QRCode.toCanvas(canvas, text, qrOptions);
-                
-                // Добавление логотипа, если загружен
-                if (logoImg) {
-                    const logoSize = size * 0.22;
-                    const x = (size - logoSize) / 2;
-                    const y = (size - logoSize) / 2;
-                    
-                    // Создаем белый фон для логотипа
-                    ctx.fillStyle = '#ffffff';
-                    ctx.beginPath();
-                    ctx.arc(x + logoSize/2, y + logoSize/2, logoSize/2, 0, 2 * Math.PI);
-                    ctx.fill();
-                    
-                    // Рисуем логотип
-                    ctx.drawImage(logoImg, x, y, logoSize, logoSize);
-                }
-            } catch (error) {
-                console.error('Ошибка генерации QR:', error);
-                alert('Ошибка при генерации QR-кода');
-            }
-        }
+  <label>Размер QR-кода</label>
+  <input id="size" type="number" value="300" min="200" max="800" />
 
-        // Сохранение PNG
-        document.getElementById('savePng').onclick = () => {
-            if (!document.getElementById('text').value) {
-                alert('Сначала сгенерируйте QR-код');
-                return;
-            }
-            const link = document.createElement('a');
-            link.download = 'qr_with_logo.png';
-            link.href = canvas.toDataURL();
-            link.click();
-        };
+  <label>Форма логотипа</label>
+  <select id="logoShape">
+    <option value="circle">Круг</option>
+    <option value="square" selected>Квадрат</option>
+  </select>
+  
+  <label>Прозрачность логотипа (%)</label>
+  <input id="logoOpacity" type="range" min="0" max="100" value="100" />
 
-        // Генерация SVG (без логотипа, так как это требует сложной интеграции)
-        document.getElementById('saveSvg').onclick = async () => {
-            const text = document.getElementById('text').value;
-            if (!text) {
-                alert('Пожалуйста, введите текст или ссылку');
-                return;
-            }
-            
-            try {
-                const svg = await QRCode.toString(text, { 
-                    type: 'svg',
-                    errorCorrectionLevel: 'H',
-                    margin: 1
-                });
-                
-                const blob = new Blob([svg], { type: 'image/svg+xml' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'qr_code.svg';
-                a.click();
-            } catch (error) {
-                console.error('Ошибка экспорта SVG:', error);
-                alert('Ошибка при создании SVG');
-            }
-        };
+  <div style="margin-top:15px; text-align:center;">
+    <button id="generate">Генерировать</button>
+    <button id="saveSvg">Скачать SVG</button>
+    <button id="savePng">Скачать PNG</button>
+  </div>
+</div>
 
-        // Обработчик кнопки генерации
-        document.getElementById('generate').onclick = generateQR;
+<div class="card" style="text-align:center;">
+  <canvas id="qr" width="300" height="300"></canvas>
+</div>
+</div>
 
-        // Генерация по умолчанию при загрузке
-        window.onload = generateQR;
-    </script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+const canvas = document.getElementById('qr');
+const ctx = canvas.getContext('2d');
+let logoImg = null;
+
+const fileInput = document.getElementById('logo');
+const previewContainer = document.getElementById('logoPreview');
+const previewImg = document.getElementById('previewImg');
+
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      logoImg = new Image();
+      logoImg.onload = () => {
+        previewImg.src = reader.result;
+        previewContainer.style.display = 'block';
+      };
+      logoImg.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+function getLogoShape() {
+  const shape = document.getElementById('logoShape').value;
+  return shape;
+}
+
+function getLogoOpacity() {
+  return parseInt(document.getElementById('logoOpacity').value) / 100;
+}
+
+async function generateQR() {
+  const text = document.getElementById('text').value;
+  const size = Number(document.getElementById('size').value);
+  const darkColor = document.getElementById('colorDark').value;
+  const lightColor = document.getElementById('colorLight').value;
+
+  if (!text) {
+    alert('Пожалуйста, введите текст или ссылку');
+    return;
+  }
+
+  // Настройка цвета
+  ctx.fillStyle = lightColor;
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = darkColor;
+
+  // Генерация QR-кода
+  try {
+    await QRCode.toCanvas(canvas, text, {
+      errorCorrectionLevel: 'H',
+      margin: 1,
+      width: size,
+      color: { dark: darkColor, light: lightColor },
+    });
+  } catch (err) {
+    alert('Ошибка при генерации QR-кода');
+    return;
+  }
+
+  // Добавление логотипа
+  if (logoImg) {
+    const logoSize = size * 0.22;
+    const x = (size - logoSize) / 2;
+    const y = (size - logoSize) / 2;
+
+    // Фон под логотип (круг или квадрат)
+    ctx.globalAlpha = getLogoOpacity();
+
+    if (getLogoShape() === 'circle') {
+      ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.arc(x + logoSize / 2, y + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = 'white';
+      ctx.fillRect(x, y, logoSize, logoSize);
+    }
+
+    // Рисуем логотип с прозрачностью
+    ctx.globalAlpha = getLogoOpacity();
+    ctx.drawImage(logoImg, x, y, logoSize, logoSize);
+  }
+}
+
+document.getElementById('generate').onclick = generateQR;
+
+// Скачивание PNG
+document.getElementById('savePng').onclick = () => {
+  if (!document.getElementById('text').value) {
+    alert('Генерируйте QR-код перед сохранением');
+    return;
+  }
+  const link = document.createElement('a');
+  link.download = 'qr_with_logo.png';
+  link.href = canvas.toDataURL();
+  link.click();
+};
+
+// Генерация SVG без логотипа (для более сложной интеграции логотипа в SVG потребуется другая библиотека)
+document.getElementById('saveSvg').onclick = async () => {
+  const text = document.getElementById('text').value;
+  if (!text) {
+    alert('Введите ссылку или текст');
+    return;
+  }
+  try {
+    const svg = await QRCode.toString(text, {
+      type: 'svg',
+      errorCorrectionLevel: 'H',
+      margin: 1
+    });
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'qr_code.svg';
+    a.click();
+  } catch {
+    alert('Ошибка при создании SVG');
+  }
+};
+
+window.onload = generateQR;
+</script>
 </body>
 </html>
