@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luna Player — Прототип</title>
+    <style>
+        /* Основные стили: тёмная тема, неоморфизм */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%); 
+            color: white; 
+            overflow: hidden; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        .player { position: relative; height: 100vh; }
+        
+        /* Фон с размытой обложкой */
+        .background { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNDgwMDgwIi8+PC9zdmc+') center/cover; /* Заглушка для обложки */
+            filter: blur(30px); 
+            opacity: 0.6; 
+            z-index: -1; 
+        }
+        .gradient-overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.8) 70%); 
+        }
+        
+        /* Верхняя панель */
+        .top-bar { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 20px 15px 10px; position: relative; z-index: 10; 
+        }
+        .back-btn { font-size: 24px; color: #ccc; }
+        .track-info { text-align: center; flex: 1; }
+        .track-title { font-size: 14px; font-weight: bold; }
+        .artist { font-size: 12px; color: #aaa; }
+        .menu-btn { font-size: 24px; color: #ccc; }
+        
+        /* Обложка альбома */
+        .album-art { 
+            width: 280px; height: 280px; margin: 40px auto 20px; 
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); /* Градиент как заглушка */
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 48px; color: white; transition: transform 0.3s ease; 
+        }
+        .album-art:hover { transform: scale(1.05); }
+        
+        /* Инфо трека */
+        .track-details { text-align: center; margin-bottom: 30px; }
+        .title { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+        .subtitle { font-size: 14px; color: #aaa; }
+        
+        /* Прогресс-бар */
+        .progress-container { 
+            width: 80%; margin: 0 auto 30px; position: relative; 
+        }
+        .progress-bar { 
+            height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; 
+            position: relative; overflow: hidden; 
+        }
+        .progress { 
+            height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); 
+            width: 40%; border-radius: 2px; transition: width 0.1s; 
+        }
+        .progress-thumb { 
+            position: absolute; top: -6px; right: -8px; width: 16px; height: 16px; 
+            background: white; border-radius: 50%; box-shadow: 0 0 10px #667eea; 
+            cursor: pointer; 
+        }
+        .time { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; }
+        
+        /* Кнопки управления */
+        .controls { display: flex; justify-content: space-around; align-items: center; margin-bottom: 40px; }
+        .btn { 
+            width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.1); 
+            border: none; color: white; font-size: 20px; cursor: pointer; 
+            transition: all 0.2s; display: flex; align-items: center; justify-content: center; 
+        }
+        .btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+        .play-btn { width: 70px; height: 70px; font-size: 24px; background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); }
+        .play-btn.playing { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        
+        /* Нижняя панель (мини-плеер) */
+        .mini-player { 
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; 
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); 
+            display: flex; align-items: center; padding: 0 15px; z-index: 20; 
+        }
+        .mini-art { width: 50px; height: 50px; border-radius: 8px; background: #667eea; margin-right: 15px; }
+        .mini-info { flex: 1; }
+        .mini-title { font-size: 14px; }
+        .mini-progress { height: 2px; background: rgba(255,255,255,0.2); margin-top: 2px; }
+        .mini-progress-fill { height: 100%; background: #667eea; width: 30%; }
+        
+        /* Анимации для свайпа (имитация) */
+        .swipe-hint { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); color: #aaa; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="player">
+        <div class="background"></div>
+        <div class="gradient-overlay"></div>
+        
+        <div class="top-bar">
+            <button class="back-btn">&larr;</button>
+            <div class="track-info">
+                <div class="track-title">Сейчас играет</div>
+                <div class="artist">Luna Player</div>
+            </div>
+            <button class="menu-btn">&#8942;</button>
+        </div>
+        
+        <div class="album-art" id="albumArt">🎵</div>
+        
+        <div class="track-details">
+            <div class="title" id="trackTitle">Ночной Город</div>
+            <div class="subtitle" id="trackSubtitle">Артём Пивоваров · Альбом 2023</div>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress" id="progress"></div>
+                <div class="progress-thumb"></div>
+            </div>
+            <div class="time">
+                <span id="currentTime">0:45</span>
+                <span id="totalTime">3:12</span>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" id="prev10">&larr;</button>
+            <button class="btn" id="prev">⏮</button>
+            <button class="btn play-btn" id="playBtn">▶</button>
+            <button class="btn" id="next">⏭</button>
+            <button class="btn" id="next10">&rarr;</button>
+            <button class="btn" id="like">♡</button>
+        </div>
+        
+        <div class="swipe-hint">Свайпни влево/вправо для смены трека</div>
+    </div>
+    
+    <div class="mini-player" id="miniPlayer">
+        <div class="mini-art"></div>
+        <div class="mini-info">
+            <div class="mini-title">Ночной Город</div>
+            <div class="mini-subtitle">Артём Пивоваров</div>
+            <div class="mini-progress">
+                <div class="mini-progress-fill"></div>
+            </div>
+        </div>
+        <button class="btn" style="width: auto; padding: 0 15px;">Очередь</button>
+    </div>
+    
+    <script>
+        // JS для интерактивности
+        const playBtn = document.getElementById('playBtn');
+        const progress = document.getElementById('progress');
+        const trackTitle = document.getElementById('trackTitle');
+        const trackSubtitle = document.getElementById('trackSubtitle');
+        const albumArt = document.getElementById('albumArt');
+        const miniTitle = document.querySelector('.mini-title');
+        const miniSubtitle = document.querySelector('.mini-subtitle');
+        
+        let isPlaying = false;
+        let currentTime = 0;
+        let duration = 192; // 3:12 в секундах
+        let tracks = [
+            { title: 'Ночной Город', artist: 'Артём Пивоваров · Альбом 2023', art: '🌃' },
+            { title: 'Луна', artist: 'The Weeknd · Dawn FM', art: '🌕' },
+            { title: 'Эхо', artist: 'Monetochka · Раскрашенный', art: '🔊' }
+        ];
+        let currentTrack = 0;
+        
+        // Play/Pause
+        playBtn.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            playBtn.textContent = isPlaying ? '⏸' : '▶';
+            playBtn.classList.toggle('playing', isPlaying);
+            if (isPlaying) updateProgress();
+        });
+        
+        // Прогресс (имитация)
+        function updateProgress() {
+            if (isPlaying) {
+                currentTime += 1;
+                let percent = (currentTime / duration) * 100;
+                progress.style.width = percent + '%';
+                document.getElementById('currentTime').textContent = formatTime(currentTime);
+                if (currentTime < duration) setTimeout(updateProgress, 1000);
+                else nextTrack();
+            }
+        }
+        function formatTime(s) { return Math.floor(s/60) + ':' + (s%60).toString().padStart(2,'0'); }
+        
+        // Переключение треков
+        function nextTrack() { currentTrack = (currentTrack + 1) % tracks.length; loadTrack(); }
+        function prevTrack() { currentTrack = (currentTrack - 1 + tracks.length) % tracks.length; loadTrack(); }
+        function loadTrack() {
+            const track = tracks[currentTrack];
+            trackTitle.textContent = track.title;
+            trackSubtitle.textContent = track.artist;
+            albumArt.textContent = track.art;
+            miniTitle.textContent = track.title;
+            miniSubtitle.textContent = track.artist;
+            currentTime = 0;
+            progress.style.width = '0%';
+            document.getElementById('currentTime').textContent = '0:00';
+        }
+        
+        // Кнопки
+        document.getElementById('next').addEventListener('click', nextTrack);
+        document.getElementById('prev').addEventListener('click', prevTrack);
+        document.getElementById('next10').addEventListener('click', () => { currentTime = Math.min(currentTime + 10, duration); });
+        document.getElementById('prev10').addEventListener('click', () => { currentTime = Math.max(currentTime - 10, 0); });
+        document.getElementById('like').addEventListener('click', (e) => { e.target.textContent = '♥'; e.target.style.color = '#ff6b6b'; });
+        
+        // Имитация свайпа (на десктопе — клик по краям)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextTrack();
+            if (e.key === 'ArrowLeft') prevTrack();
+        });
+        
+        // Инициализация
+        loadTrack();
+    </script>
+</body>
+</html>
