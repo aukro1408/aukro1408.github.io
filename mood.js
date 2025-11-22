@@ -1,18 +1,18 @@
 (function () {
     'use strict';
     
-    // --- 1. ФОРМУЛЫ (Упрощено до одного основного жанра для совместимости) ---
-    // Формат: [Имя, URL-параметры TMDB, Иконка]
+    // --- 1. ФОРМУЛЫ (Переход на использование ID жанров) ---
+    // Формат: [Имя, Жанр ID, Иконка]
     var MOOD_BUTTONS = [
-        ['☕ Расслабиться', 'discover/movie?with_genres=35,10749&sort_by=popularity.desc', '☕'], // Комедия, Мелодрама
-        ['💥 Взбодриться', 'discover/movie?with_genres=28,53&sort_by=popularity.desc', '💥'],  // Боевик, Триллер
-        ['🤔 Подумать', 'discover/movie?with_genres=9648,18&sort_by=popularity.desc', '🤔'],     // Детектив, Драма
-        ['😂 Посмеяться', 'discover/movie?with_genres=35&sort_by=popularity.desc', '😂'],        // Только Комедия
+        ['☕ Расслабиться', 10749, '☕'], // Мелодрама
+        ['💥 Взбодриться', 28, '💥'],  // Боевик
+        ['🤔 Подумать', 18, '🤔'],     // Драма
+        ['😂 Посмеяться', 35, '😂'],    // Комедия
         
-        ['😱 Испугаться', 'discover/movie?with_genres=27&sort_by=vote_average.desc&vote_count.gte=1000', '😱'], // Чистый Ужас
-        ['👽 Фантастика', 'discover/movie?with_genres=878&sort_by=popularity.desc', '👽'],       // Добавлено Фантастика
-        ['🕰️ Классика', 'discover/movie?with_genres=10752&sort_by=vote_average.desc&primary_release_year.lte=1995', '🕰️'], // Военные + Старые
-        ['😴 Скучно', 'discover/movie?sort_by=vote_average.desc&vote_count.lte=500&vote_average.gte=7.5', '😴'] // Скрытые жемчужины
+        ['😱 Испугаться', 27, '😱'],    // Ужасы
+        ['👽 Фантастика', 878, '👽'],   // Фантастика
+        ['🤠 Вестерн', 37, '🤠'],       // Вестерн (Простой жанр)
+        ['👶 Для детей', 10751, '👶'] // Семейный
     ];
 
     var PLUGIN_TITLE = 'Подборка по Настроению';
@@ -48,7 +48,8 @@
     function createMoodSelectorHTML() {
         var html = '<div class="mood-selector-container">';
         MOOD_BUTTONS.forEach(function(mood) {
-            html += `<div data-mood-url="${mood[1]}" data-mood-title="${mood[0]}" class="mood-button selector">
+            // В data-mood-id теперь ID жанра
+            html += `<div data-mood-id="${mood[1]}" data-mood-title="${mood[0]}" class="mood-button selector">
                         <div class="mood-icon">${mood[2]}</div>
                         <div class="mood-text">${mood[0]}</div>
                     </div>`;
@@ -60,18 +61,18 @@
     function setupMoodHandlers() {
         $('.mood-button').on('hover:enter', function() {
             var btn = $(this);
-            var url = btn.data('mood-url');
+            var id = btn.data('mood-id');
             var title = btn.data('mood-title');
             
             Lampa.Modal.close(); 
             
-            // Здесь Lampa должна успешно обработать простой URL
+            // --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: ИСПОЛЬЗУЕМ Lampa.Component.Genre ---
+            // Этот компонент более надежен для открытия категорий по ID жанра.
             Lampa.Activity.push({
-                url: url, 
+                component: Lampa.Component.Genre,
+                id: id,
                 title: title,
-                component: 'category_full',
                 page: 1,
-                source: 'tmdb'
             });
         });
     }
