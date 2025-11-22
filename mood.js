@@ -1,18 +1,18 @@
 (function () {
     'use strict';
     
-    // --- 1. ФОРМУЛЫ (Обновлено: добавлены сезонные и специфичные) ---
+    // --- 1. ФОРМУЛЫ (Упрощено до одного основного жанра для совместимости) ---
     // Формат: [Имя, URL-параметры TMDB, Иконка]
     var MOOD_BUTTONS = [
-        ['☕ Расслабиться', 'discover/movie?with_genres=35,10749&sort_by=popularity.desc', '☕'],  // Комедия, Мелодрама
-        ['💥 Взбодриться', 'discover/movie?with_genres=28,53&sort_by=popularity.desc', '💥'],   // Боевик, Триллер
-        ['🤔 Подумать', 'discover/movie?with_genres=9648,18&sort_by=popularity.desc', '🤔'],      // Детектив, Драма
-        ['😂 Посмеяться', 'discover/movie?with_genres=35&sort_by=popularity.desc', '😂'],         // Только Комедия
+        ['☕ Расслабиться', 'discover/movie?with_genres=35,10749&sort_by=popularity.desc', '☕'], // Комедия, Мелодрама
+        ['💥 Взбодриться', 'discover/movie?with_genres=28,53&sort_by=popularity.desc', '💥'],  // Боевик, Триллер
+        ['🤔 Подумать', 'discover/movie?with_genres=9648,18&sort_by=popularity.desc', '🤔'],     // Детектив, Драма
+        ['😂 Посмеяться', 'discover/movie?with_genres=35&sort_by=popularity.desc', '😂'],        // Только Комедия
         
-        ['👻 Хэллоуин', 'discover/movie?with_genres=27&with_keywords=10040,10334&sort_by=popularity.desc', '👻'], // Ужасы + Монстры, Призраки
-        ['🎄 Рождество', 'discover/movie?with_genres=35&with_keywords=1409,1592&sort_by=popularity.desc', '🎄'], // Комедия + Рождество, Зима
-        ['😱 Испугаться', 'discover/movie?with_genres=27,53&sort_by=vote_average.desc&vote_count.gte=1000', '😱'], // Чистый Ужас/Триллер с хорошим рейтингом
-        ['😴 Скучно', 'discover/movie?sort_by=vote_average.desc&vote_count.lte=500&vote_average.gte=7.5', '😴'] // Скрытые жемчужины (высокий рейтинг, мало голосов)
+        ['😱 Испугаться', 'discover/movie?with_genres=27&sort_by=vote_average.desc&vote_count.gte=1000', '😱'], // Чистый Ужас
+        ['👽 Фантастика', 'discover/movie?with_genres=878&sort_by=popularity.desc', '👽'],       // Добавлено Фантастика
+        ['🕰️ Классика', 'discover/movie?with_genres=10752&sort_by=vote_average.desc&primary_release_year.lte=1995', '🕰️'], // Военные + Старые
+        ['😴 Скучно', 'discover/movie?sort_by=vote_average.desc&vote_count.lte=500&vote_average.gte=7.5', '😴'] // Скрытые жемчужины
     ];
 
     var PLUGIN_TITLE = 'Подборка по Настроению';
@@ -65,6 +65,7 @@
             
             Lampa.Modal.close(); 
             
+            // Здесь Lampa должна успешно обработать простой URL
             Lampa.Activity.push({
                 url: url, 
                 title: title,
@@ -79,12 +80,12 @@
     var styles = `
         .mood-selector-container {
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* Увеличили сетку до 3х */
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             padding: 20px;
         }
         .mood-button {
-            height: 80px; /* Уменьшили высоту, так как кнопок стало больше */
+            height: 80px;
             border-radius: 8px;
             text-align: center;
             display: flex;
@@ -98,14 +99,14 @@
         }
         .mood-button.focus {
             transform: scale(1.05);
-            background-color: #007bff; /* Цвет фокуса (замените, если используете тему) */
+            background-color: #007bff; 
         }
         .mood-icon {
             font-size: 32px;
             margin-bottom: 5px;
         }
         .mood-text {
-            font-size: 14px; /* Уменьшили шрифт */
+            font-size: 14px;
         }
     `;
     
