@@ -2,39 +2,39 @@
     'use strict';
 
     function startPlugin() {
-        Lampa.Noty.show('Horror 3.0: Ищу кнопку настроек...');
+        Lampa.Noty.show('Horror 4.0: Ищу кнопку Главная...');
 
         var attempts = 0;
         
         var search_timer = setInterval(function(){
-            // Ищем кнопку "Настройки" по её стандартному селектору
-            var settings_btn = $('.menu__item[data-action="settings"]');
+            // Ищем кнопку "Главная" по её стандартному селектору 'main'
+            var main_btn = $('.menu__item[data-action="main"]');
 
-            // Если нашли кнопку настроек
-            if(settings_btn.length > 0){
+            // Если нашли кнопку Главная
+            if(main_btn.length > 0){
                 clearInterval(search_timer);
                 
                 // Проверяем, нет ли уже нашей кнопки
                 if($('.menu__item[data-action="horror"]').length == 0){
-                    addHorrorButton(settings_btn);
-                    Lampa.Noty.show('Horror 3.0: Кнопка внедрена!');
+                    addHorrorButton(main_btn);
+                    Lampa.Noty.show('Horror 4.0: Кнопка внедрена!');
                 }
             } else {
                 attempts++;
                 // Если прошло 10 секунд (20 попыток по 500мс), сдаемся
                 if(attempts > 20) {
                     clearInterval(search_timer);
-                    Lampa.Noty.show('Horror 3.0: Ошибка! Меню не найдено.');
-                    console.log('Lampa Horror Plugin: Не удалось найти селектор .menu__item[data-action="settings"]');
+                    Lampa.Noty.show('Horror 4.0: Ошибка! Меню не найдено.');
+                    console.log('Lampa Horror Plugin: Не удалось найти селектор .menu__item[data-action="main"]');
                 }
             }
         }, 500);
     }
 
+    // Изменена только функция, которая вставляет кнопку: теперь она принимает элемент "Главная"
     function addHorrorButton(target_element) {
         var genreId = '27';
         var genreTitle = 'Ужасы';
-        // Простая иконка (череп)
         var iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle><path d="M8 20v2h8v-2"></path><path d="M12.5 17l-.5-4"></path><path d="M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20"></path></svg>';
 
         var button_html = `
@@ -56,8 +56,8 @@
             });
         });
 
-        // Вставляем ПЕРЕД кнопкой настроек
-        target_element.before(button);
+        // САМОЕ ГЛАВНОЕ: Вставляем ПОСЛЕ элемента "Главная"
+        target_element.after(button);
     }
 
     if (window.Lampa) startPlugin();
