@@ -2,36 +2,35 @@
     'use strict';
 
     function startPlugin() {
-        Lampa.Noty.show('Horror 4.0: Ищу кнопку Главная...');
+        Lampa.Noty.show('Horror 5.0: Ищу кнопку Лента...');
 
         var attempts = 0;
         
         var search_timer = setInterval(function(){
-            // Ищем кнопку "Главная" по её стандартному селектору 'main'
-            var main_btn = $('.menu__item[data-action="main"]');
+            // Ищем кнопку "Лента" по её стандартному селектору 'feed'
+            var feed_btn = $('.menu__item[data-action="feed"]');
 
-            // Если нашли кнопку Главная
-            if(main_btn.length > 0){
+            // Если нашли кнопку Лента
+            if(feed_btn.length > 0){
                 clearInterval(search_timer);
                 
                 // Проверяем, нет ли уже нашей кнопки
                 if($('.menu__item[data-action="horror"]').length == 0){
-                    addHorrorButton(main_btn);
-                    Lampa.Noty.show('Horror 4.0: Кнопка внедрена!');
+                    addHorrorButton(feed_btn);
+                    Lampa.Noty.show('Horror 5.0: Кнопка внедрена!');
                 }
             } else {
                 attempts++;
-                // Если прошло 10 секунд (20 попыток по 500мс), сдаемся
+                // Если прошло 10 секунд (20 попыток по 500мс), сдаемся и выводим ошибку
                 if(attempts > 20) {
                     clearInterval(search_timer);
-                    Lampa.Noty.show('Horror 4.0: Ошибка! Меню не найдено.');
-                    console.log('Lampa Horror Plugin: Не удалось найти селектор .menu__item[data-action="main"]');
+                    Lampa.Noty.show('Horror 5.0: Ошибка! Якорный элемент не найден.');
                 }
             }
         }, 500);
     }
 
-    // Изменена только функция, которая вставляет кнопку: теперь она принимает элемент "Главная"
+    // Изменения: удален фильтр голосования и изменено позиционирование
     function addHorrorButton(target_element) {
         var genreId = '27';
         var genreTitle = 'Ужасы';
@@ -48,7 +47,8 @@
 
         button.on('hover:enter', function () {
             Lampa.Activity.push({
-                url: 'discover/movie?with_genres=' + genreId + '&sort_by=popularity.desc&vote_count.gte=100',
+                // ИЗМЕНЕНИЕ 1: Удален фильтр "&vote_count.gte=100" для максимальной выдачи фильмов
+                url: 'discover/movie?with_genres=' + genreId + '&sort_by=popularity.desc', 
                 title: genreTitle,
                 component: 'category_full',
                 page: 1,
@@ -56,8 +56,8 @@
             });
         });
 
-        // САМОЕ ГЛАВНОЕ: Вставляем ПОСЛЕ элемента "Главная"
-        target_element.after(button);
+        // ИЗМЕНЕНИЕ 2: Вставляем ПЕРЕД элементом "Лента"
+        target_element.before(button);
     }
 
     if (window.Lampa) startPlugin();
