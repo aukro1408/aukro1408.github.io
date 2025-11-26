@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IVAN IVANOV | Web & UI/UX Designer</title>
     <style>
-        /* Общие стили и сброс */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: sans-serif;
+            font-family: 'Segoe UI', sans-serif;
         }
 
         body {
@@ -19,7 +18,7 @@
             overflow-x: hidden;
         }
 
-        /* 1. Стили Прелоадера */
+        /* Прелоадер */
         .preloader {
             position: fixed;
             top: 0;
@@ -33,7 +32,7 @@
             align-items: center;
         }
 
-        /* 2. Стили Hero-Секции */
+        /* Hero-секция */
         .hero-section {
             min-height: 100vh;
             display: flex;
@@ -53,7 +52,6 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* Стили навигации */
         .header-nav {
             width: 100%;
             display: flex;
@@ -62,7 +60,6 @@
             opacity: 0;
         }
 
-        /* Стили контента */
         .hero-content {
             text-align: center;
             transform: translateY(20px);
@@ -72,13 +69,18 @@
         .main-title {
             font-size: 5vw;
             line-height: 1.2;
-            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .tagline {
+            font-size: 1.4rem;
+            margin-bottom: 30px;
+            opacity: 0;
         }
 
         .cta-button {
             display: inline-block;
             padding: 15px 40px;
-            margin-top: 30px;
             text-decoration: none;
             background: linear-gradient(90deg, #00c6ff, #0072ff);
             border-radius: 50px;
@@ -87,6 +89,14 @@
             transition: all 0.3s ease-in-out;
             transform: scale(0.8);
             opacity: 0;
+        }
+
+        /* Фолбэк: если анимация не сработала — кнопка появится через CSS */
+        .hero-content.loaded .cta-button,
+        .hero-content.loaded .tagline,
+        .hero-content.loaded {
+            opacity: 1 !important;
+            transform: translateY(0) scale(1) !important;
         }
 
         .cta-button:hover {
@@ -112,7 +122,6 @@
 <body>
     <div class="preloader">
         <svg class="logo-loader" viewBox="0 0 100 100" width="80" height="80">
-            <!-- Простой SVG-круг как placeholder. Замените на ваш логотип, если нужно -->
             <circle cx="50" cy="50" r="40" stroke="white" stroke-width="4" fill="none" />
         </svg>
     </div>
@@ -130,17 +139,17 @@
 
         <div class="hero-content">
             <h1 class="main-title">
-                <span class="name-part">IVAN IVANOV</span>
+                <span class="name-part">IVAN IVANOV</span><br>
                 <span class="designation-part">WEB & UI/UX DESIGNER</span>
             </h1>
             <p class="tagline">Crafting digital experiences with passion and precision</p>
             <a href="#projects" class="cta-button">VIEW WORK</a>
         </div>
 
-        <div class="scroll-indicator">SCROLL DOWN</div>
+        <div class="scroll-indicator" style="position: absolute; bottom: 30px; font-size: 0.9rem; opacity: 0.7;">SCROLL DOWN</div>
     </header>
 
-    <!-- Подключаем GSAP из CDN -->
+    <!-- GSAP без пробелов! -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
 
@@ -151,46 +160,49 @@
             const headerNav = document.querySelector('.header-nav');
             const ctaButton = document.querySelector('.cta-button');
             const mainTitle = document.querySelector('.main-title');
+            const tagline = heroContent.querySelector('.tagline');
+
+            // Фолбэк: если через 2.5 секунды ничего не анимировалось — показываем всё
+            setTimeout(() => {
+                if (!heroContent.classList.contains('loaded')) {
+                    heroContent.classList.add('loaded');
+                }
+            }, 2500);
+
+            // Проверяем, загрузился ли GSAP
+            if (typeof gsap === 'undefined') {
+                console.warn('GSAP не загружен. Используется фолбэк-появление.');
+                heroContent.classList.add('loaded');
+                preloader.style.display = 'none';
+                return;
+            }
 
             const masterTL = gsap.timeline({ defaults: { ease: "power3.inOut" } });
 
-            // Фаза 1: Исчезновение прелоадера
             masterTL.to(preloader, {
-                duration: 1.5,
+                duration: 1.2,
                 opacity: 0,
-                scale: 1.2,
-                delay: 0.5,
+                scale: 1.1,
+                ease: "power2.inOut",
                 onComplete: () => {
                     preloader.style.display = 'none';
                 }
             });
 
-            // Фаза 2: Появление элементов hero-секции
-            masterTL.from(headerNav, {
-                duration: 0.8,
-                y: -50,
-                opacity: 0
-            }, "-=1.0");
-
-            masterTL.from(mainTitle.children, {
-                duration: 0.8,
-                y: 50,
-                opacity: 0,
-                stagger: 0.2
-            }, "-=0.6");
-
-            masterTL.from(heroContent.querySelector('.tagline'), {
-                duration: 0.6,
-                y: 30,
-                opacity: 0
-            }, "-=0.4");
-
-            masterTL.from(ctaButton, {
-                duration: 0.7,
-                scale: 0.5,
-                opacity: 0,
-                ease: "elastic.out(1, 0.5)"
+            masterTL.from(headerNav, { y: -40, opacity: 0, duration: 0.7 }, "-=0.8");
+            masterTL.from(mainTitle.children, { y: 40, opacity: 0, stagger: 0.15, duration: 0.6 }, "-=0.6");
+            masterTL.from(tagline, { y: 20, opacity: 0, duration: 0.5 }, "-=0.4");
+            masterTL.from(ctaButton, { 
+                scale: 0.4, 
+                opacity: 0, 
+                duration: 0.7, 
+                ease: "elastic.out(1, 0.6)" 
             }, "-=0.3");
+
+            // После завершения анимации добавляем класс для надёжности
+            masterTL.eventCallback("onComplete", () => {
+                heroContent.classList.add('loaded');
+            });
 
             // Кастомный курсор
             const customCursor = document.createElement('div');
@@ -201,16 +213,16 @@
                 gsap.to(customCursor, {
                     x: e.clientX,
                     y: e.clientY,
-                    duration: 0.5,
+                    duration: 0.3,
                     ease: "power2.out"
                 });
             });
 
-            // Опционально: изменение курсора при наведении на интерактивные элементы
+            // Эффект при наведении на интерактивные элементы
             const interactives = document.querySelectorAll('a, button, .cta-button');
             interactives.forEach(el => {
                 el.addEventListener('mouseenter', () => {
-                    customCursor.style.transform = 'translate(-50%, -50%) scale(1.5)';
+                    customCursor.style.transform = 'translate(-50%, -50%) scale(1.8)';
                 });
                 el.addEventListener('mouseleave', () => {
                     customCursor.style.transform = 'translate(-50%, -50%) scale(1)';
