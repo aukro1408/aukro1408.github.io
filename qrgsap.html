@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кастомный QR Генератор</title>
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- QR Code Styling -->
+    <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    <style>
+        :root {
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --input-border: #ddd;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --btn-bg: #007bff;
+            --btn-hover: #0056b3;
+        }
+
+        .dark-theme {
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --text: #f0f0f0;
+            --input-border: #444;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --btn-bg: #0d6efd;
+            --btn-hover: #0a58ca;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px var(--shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            max-width: 400px;
+            width: 100%;
+            opacity: 0; /* Для GSAP */
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text);
+        }
+
+        .controls {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+
+        input[type="text"],
+        select,
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text);
+            box-sizing: border-box;
+        }
+
+        input[type="file"] {
+            color: var(--text);
+        }
+
+        .color-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .color-picker { flex: 1; }
+        input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: none;
+            cursor: pointer;
+        }
+
+        #canvas {
+            margin-top: 10px;
+            border: 1px solid var(--input-border);
+            border-radius: 10px;
+            overflow: hidden;
+            opacity: 0;
+        }
+
+        button, .theme-toggle {
+            background-color: var(--btn-bg);
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+
+        button:hover, .theme-toggle:hover {
+            background-color: var(--btn-hover);
+        }
+
+        .theme-toggle {
+            width: auto;
+            padding: 6px 12px;
+            font-size: 0.9rem;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle">🌓</button>
+
+<div class="container" id="container">
+    <h1>🎨 QR Creator</h1>
+
+    <div class="controls">
+        <div>
+            <label>Текст или Ссылка:</label>
+            <input type="text" id="dataInput" value="https://google.com" placeholder="Введите ссылку">
+        </div>
+
+        <div>
+            <label>Стиль точек:</label>
+            <select id="dotsStyle">
+                <option value="square">Квадраты (Стандарт)</option>
+                <option value="dots">Точки (Круглые)</option>
+                <option value="rounded">Закругленные</option>
+                <option value="extra-rounded">Сильно закругленные</option>
+                <option value="classy">Элегантный</option>
+            </select>
+        </div>
+
+        <div class="color-group">
+            <div class="color-picker">
+                <label>Цвет кода:</label>
+                <input type="color" id="colorDots" value="#000000">
+            </div>
+            <div class="color-picker">
+                <label>Фон:</label>
+                <input type="color" id="colorBg" value="#ffffff">
+            </div>
+        </div>
+
+        <div>
+            <label>Логотип (по центру):</label>
+            <input type="file" id="logoInput" accept="image/*">
+        </div>
+    </div>
+
+    <div id="canvas"></div>
+
+    <button onclick="downloadQR()">Скачать PNG</button>
+</div>
+
+<script>
+    // Инициализация QR
+    const qrCode = new QRCodeStyling({
+        width: 300,
+        height: 300,
+        type: "svg",
+         "https://google.com",
+        image: "",
+        dotsOptions: { color: "#000000", type: "square" },
+        backgroundOptions: { color: "#ffffff" },
+        imageOptions: { crossOrigin: "anonymous", margin: 5 },
+        cornersSquareOptions: { type: "extra-rounded" }
+    });
+
+    qrCode.append(document.getElementById("canvas"));
+
+    // Обновление QR
+    function updateQRCode() {
+        const data = document.getElementById("dataInput").value.trim();
+        if (!data) return;
+        const dotsStyle = document.getElementById("dotsStyle").value;
+        const colorDots = document.getElementById("colorDots").value;
+        const colorBg = document.getElementById("colorBg").value;
+
+        qrCode.update({
+             data,
+            dotsOptions: { color: colorDots, type: dotsStyle },
+            backgroundOptions: { color: colorBg }
+        });
+    }
+
+    // Слушатели
+    document.getElementById("dataInput").addEventListener("input", updateQRCode);
+    document.getElementById("dotsStyle").addEventListener("change", updateQRCode);
+    document.getElementById("colorDots").addEventListener("input", updateQRCode);
+    document.getElementById("colorBg").addEventListener("input", updateQRCode);
+
+    document.getElementById("logoInput").addEventListener("change", function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => qrCode.update({ image: reader.result });
+        reader.readAsDataURL(file);
+    });
+
+    function downloadQR() {
+        const data = document.getElementById("dataInput").value.trim();
+        if (!data) {
+            alert("Пожалуйста, введите корректный текст или ссылку.");
+            return;
+        }
+        qrCode.download({ name: "custom-qr", extension: "png" });
+    }
+
+    // === Тёмная тема ===
+    const themeToggle = document.getElementById("themeToggle");
+    const body = document.body;
+
+    // Проверка системной темы
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (prefersDark) {
+        body.classList.add('dark-theme');
+    }
+
+    themeToggle.addEventListener("click", () => {
+        body.classList.toggle('dark-theme');
+    });
+
+    // === GSAP анимации ===
+    gsap.set("#container", { opacity: 0, y: 30 });
+    gsap.set("#canvas", { opacity: 0 });
+    gsap.set("h1, .controls > *, button", { opacity: 0, y: 20 });
+
+    // Анимация появления
+    gsap.to("#container", { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" });
+    gsap.to("h1", { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: "power2.out" });
+    gsap.to(".controls > *", { opacity: 1, y: 0, duration: 0.5, stagger: 0.08, delay: 0.3, ease: "power2.out" });
+    gsap.to("#canvas", { opacity: 1, duration: 0.5, delay: 0.7, ease: "power2.out" });
+    gsap.to("button:last-of-type", { opacity: 1, y: 0, duration: 0.5, delay: 0.8, ease: "power2.out" });
+</script>
+
+</body>
+</html>
