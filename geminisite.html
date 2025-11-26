@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IVAN IVANOV | Web & UI/UX Designer</title>
+    <style>
+        /* Общие стили и сброс */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: sans-serif;
+        }
+
+        body {
+            background-color: #1a1a2e;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* 1. Стили Прелоадера */
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1a1a2e;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 2. Стили Hero-Секции */
+        .hero-section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 5%;
+            position: relative;
+            background: linear-gradient(135deg, #1f005c, #5b0060, #870058);
+            background-size: 400% 400%;
+            animation: livingGradient 15s ease infinite;
+        }
+
+        @keyframes livingGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Стили навигации */
+        .header-nav {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0;
+        }
+
+        /* Стили контента */
+        .hero-content {
+            text-align: center;
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        .main-title {
+            font-size: 5vw;
+            line-height: 1.2;
+            overflow: hidden;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 15px 40px;
+            margin-top: 30px;
+            text-decoration: none;
+            background: linear-gradient(90deg, #00c6ff, #0072ff);
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease-in-out;
+            transform: scale(0.8);
+            opacity: 0;
+        }
+
+        .cta-button:hover {
+            box-shadow: 0 0 20px rgba(0, 198, 255, 0.8);
+            transform: scale(1.05);
+        }
+
+        /* Кастомный курсор */
+        .custom-cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            mix-blend-mode: difference;
+            transform: translate(-50%, -50%);
+            transition: transform 0.2s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="preloader">
+        <svg class="logo-loader" viewBox="0 0 100 100" width="80" height="80">
+            <!-- Простой SVG-круг как placeholder. Замените на ваш логотип, если нужно -->
+            <circle cx="50" cy="50" r="40" stroke="white" stroke-width="4" fill="none" />
+        </svg>
+    </div>
+
+    <header class="hero-section">
+        <nav class="header-nav">
+            <div class="logo">IV</div>
+            <ul class="nav-links">
+                <li><a href="#about">ABOUT</a></li>
+                <li><a href="#skills">SKILLS</a></li>
+                <li><a href="#projects">PROJECTS</a></li>
+                <li><a href="#contact">CONTACT</a></li>
+            </ul>
+        </nav>
+
+        <div class="hero-content">
+            <h1 class="main-title">
+                <span class="name-part">IVAN IVANOV</span>
+                <span class="designation-part">WEB & UI/UX DESIGNER</span>
+            </h1>
+            <p class="tagline">Crafting digital experiences with passion and precision</p>
+            <a href="#projects" class="cta-button">VIEW WORK</a>
+        </div>
+
+        <div class="scroll-indicator">SCROLL DOWN</div>
+    </header>
+
+    <!-- Подключаем GSAP из CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const preloader = document.querySelector('.preloader');
+            const heroContent = document.querySelector('.hero-content');
+            const headerNav = document.querySelector('.header-nav');
+            const ctaButton = document.querySelector('.cta-button');
+            const mainTitle = document.querySelector('.main-title');
+
+            const masterTL = gsap.timeline({ defaults: { ease: "power3.inOut" } });
+
+            // Фаза 1: Исчезновение прелоадера
+            masterTL.to(preloader, {
+                duration: 1.5,
+                opacity: 0,
+                scale: 1.2,
+                delay: 0.5,
+                onComplete: () => {
+                    preloader.style.display = 'none';
+                }
+            });
+
+            // Фаза 2: Появление элементов hero-секции
+            masterTL.from(headerNav, {
+                duration: 0.8,
+                y: -50,
+                opacity: 0
+            }, "-=1.0");
+
+            masterTL.from(mainTitle.children, {
+                duration: 0.8,
+                y: 50,
+                opacity: 0,
+                stagger: 0.2
+            }, "-=0.6");
+
+            masterTL.from(heroContent.querySelector('.tagline'), {
+                duration: 0.6,
+                y: 30,
+                opacity: 0
+            }, "-=0.4");
+
+            masterTL.from(ctaButton, {
+                duration: 0.7,
+                scale: 0.5,
+                opacity: 0,
+                ease: "elastic.out(1, 0.5)"
+            }, "-=0.3");
+
+            // Кастомный курсор
+            const customCursor = document.createElement('div');
+            customCursor.classList.add('custom-cursor');
+            document.body.appendChild(customCursor);
+
+            document.addEventListener('mousemove', (e) => {
+                gsap.to(customCursor, {
+                    x: e.clientX,
+                    y: e.clientY,
+                    duration: 0.5,
+                    ease: "power2.out"
+                });
+            });
+
+            // Опционально: изменение курсора при наведении на интерактивные элементы
+            const interactives = document.querySelectorAll('a, button, .cta-button');
+            interactives.forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    customCursor.style.transform = 'translate(-50%, -50%) scale(1.5)';
+                });
+                el.addEventListener('mouseleave', () => {
+                    customCursor.style.transform = 'translate(-50%, -50%) scale(1)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
