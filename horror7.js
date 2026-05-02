@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Lampa Horror Menu FIX
-// @namespace    lampa.horror.fixed
-// @version      3.0
+// @name         Lampa Horror Menu FINAL
+// @namespace    lampa.horror.final
+// @version      4.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -12,7 +12,7 @@
     const menu = document.querySelector('.menu__list, .menu__scroll');
     if (!menu || !window.Lampa) return;
 
-    // если уже есть — не дублируем
+    // если уже есть — не создаём повторно
     if (document.querySelector('.hren-item')) return;
 
     const item = document.createElement('div');
@@ -25,24 +25,32 @@
     `;
 
     item.onclick = () => {
-      Lampa.Activity.push({
-        component: 'category_full',
-        source: 'tmdb',
-        title: 'Ужасы 😱',
-        api: 'discover',
-        params: {
-          with_genres: 27,
-          sort_by: 'popularity.desc',
-          language: 'ru-RU'
-        }
-      });
+      try {
+        Lampa.Activity.push({
+          component: 'category_full',
+          source: 'tmdb',
+          title: 'Ужасы 😱',
+          api: 'discover',
+          params: {
+            with_genres: '27',
+            sort_by: 'popularity.desc',
+            language: 'ru-RU',
+            include_adult: false,
+            page: 1
+          },
+          pagination: true
+        });
+      } catch (e) {
+        console.error(e);
+        Lampa.Noty.show('Ошибка загрузки 😢');
+      }
     };
 
     menu.prepend(item);
-    console.log('✔ horror menu added');
+    console.log('✔ Ужасы добавлены');
   }
 
-  // 🔁 пытаемся вставить каждые 1.5 сек (самый стабильный способ)
+  // стабильно работает даже при перерисовке интерфейса
   setInterval(createButton, 1500);
 
 })();
