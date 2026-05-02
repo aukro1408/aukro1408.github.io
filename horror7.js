@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         Lampa Horror Menu PRO (3 кнопки)
-// @namespace    lampa.horror.pro
+// @name         Lampa Horror + Thriller Menu
+// @namespace    lampa.simple.genres
 // @version      1.0
 // @match        *://*/lampa/*
 // ==/UserScript==
@@ -12,16 +12,16 @@
     const menu = document.querySelector('.menu__list, .menu__scroll');
     if (!menu || !window.Lampa) return;
 
-    // чтобы не дублировались
-    if (document.querySelector('.hren-popular')) return;
+    // защита от дублей
+    if (document.querySelector('.genre-horror')) return;
 
-    function createItem(text, className, url) {
+    function createItem(text, className, url, icon) {
       const item = document.createElement('div');
       item.className = 'menu__item ' + className;
       item.style.cursor = 'pointer';
 
       item.innerHTML = `
-        <div class="menu__ico">🎬</div>
+        <div class="menu__ico">${icon}</div>
         <div class="menu__text">${text}</div>
       `;
 
@@ -38,34 +38,28 @@
       return item;
     }
 
-    // 🔥 создаём кнопки
-    const popular = createItem(
+    // 🎯 жанры
+    const horror = createItem(
       'Ужасы 😱',
-      'hren-popular',
-      'discover/movie?with_genres=27&sort_by=popularity.desc'
+      'genre-horror',
+      'discover/movie?with_genres=27&sort_by=popularity.desc',
+      '😱'
     );
 
-    const top = createItem(
-      'ТОП ужасы ⭐',
-      'hren-top',
-      'discover/movie?with_genres=27&vote_average.gte=7&sort_by=vote_average.desc'
+    const thriller = createItem(
+      'Триллеры 🔪',
+      'genre-thriller',
+      'discover/movie?with_genres=53&sort_by=popularity.desc',
+      '🔪'
     );
 
-    const neww = createItem(
-      'Новые ужасы 🆕',
-      'hren-new',
-      'discover/movie?with_genres=27&primary_release_date.gte=2023-01-01&sort_by=primary_release_date.desc'
-    );
+    // вставка
+    menu.prepend(thriller);
+    menu.prepend(horror);
 
-    // вставляем в начало
-    menu.prepend(neww);
-    menu.prepend(top);
-    menu.prepend(popular);
-
-    console.log('✔ Horror PRO меню добавлено');
+    console.log('✔ Жанры добавлены');
   }
 
-  // стабильно при перерисовке UI
   setInterval(addButtons, 1500);
 
 })();
