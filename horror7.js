@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Lampa Horror Menu FINAL
-// @namespace    lampa.horror.final
-// @version      4.0
+// @name         Lampa Horror Menu FINAL (URL)
+// @namespace    lampa.horror.final.url
+// @version      5.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -12,7 +12,6 @@
     const menu = document.querySelector('.menu__list, .menu__scroll');
     if (!menu || !window.Lampa) return;
 
-    // если уже есть — не создаём повторно
     if (document.querySelector('.hren-item')) return;
 
     const item = document.createElement('div');
@@ -30,27 +29,18 @@
           component: 'category_full',
           source: 'tmdb',
           title: 'Ужасы 😱',
-          api: 'discover',
-          params: {
-            with_genres: '27',
-            sort_by: 'popularity.desc',
-            language: 'ru-RU',
-            include_adult: false,
-            page: 1
-          },
-          pagination: true
+          url: 'discover/movie?with_genres=27&sort_by=popularity.desc',
+          page: Math.floor(Math.random() * 5) + 1 // 🔥 чтобы не залипало на 1 странице
         });
       } catch (e) {
         console.error(e);
-        Lampa.Noty.show('Ошибка загрузки 😢');
+        Lampa.Noty.show('Ошибка 😢');
       }
     };
 
     menu.prepend(item);
-    console.log('✔ Ужасы добавлены');
   }
 
-  // стабильно работает даже при перерисовке интерфейса
   setInterval(createButton, 1500);
 
 })();
