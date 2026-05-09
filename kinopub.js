@@ -1,5 +1,5 @@
 /*!
- * Kinopub plugin for Lampa  v1.5.1
+ * Kinopub plugin for Lampa v2 (Tizen-focused)  v2.0.0-alpha
  * https://github.com/mainsync-afk/kinopub
  *
  * Источник kino.pub в карточке Lampa. Структура — копия filmix.js,
@@ -9,10 +9,124 @@
 (function() {
   'use strict';
 
-  var PLUGIN_VERSION = '1.5.0';
+  var PLUGIN_VERSION = '2.1.3-voiceovers';
+
+  /* ============================================================
+   * REMOTE DEBUG LOGGER (опционально)
+   * ============================================================
+   * Включается одной командой через Lampa Terminal:
+   *
+   *   Lampa.Storage.set('kp2_log_url', 'http://<IP_ПК>:8765/l');
+   *   location.reload();
+   *
+   * После релоада все console.log/warn/error/info + window.onerror +
+   * unhandledrejection шлются GET-запросом к указанному URL (через
+   * <Image> — без CORS-preflight, работает на старых Tizen WebView).
+   *
+   * На ПК запускается приёмник: python kp2_log_server.py
+   * Выключение: Lampa.Storage.set('kp2_log_url', '');  → location.reload()
+   * ============================================================ */
+  (function() {
+    // ВРЕМЕННЫЙ хардкод на период отладки на Tizen.
+    // Когда логи станут не нужны — поставь LOG_URL_FALLBACK = '' и пушни.
+    var LOG_URL_FALLBACK = 'http://192.168.10.200:8765/l';
+    var logUrl = '';
+    try { logUrl = (Lampa.Storage.get('kp2_log_url', '') || '').toString(); } catch (e) {}
+    logUrl = logUrl && ('' + logUrl).replace(/^\s+|\s+$/g, '');
+    if (!logUrl) logUrl = LOG_URL_FALLBACK;
+    if (!logUrl) return;
+
+    function ser(v) {
+      if (v === null) return 'null';
+      if (v === undefined) return 'undefined';
+      var t = typeof v;
+      if (t === 'string') return v;
+      if (t === 'number' || t === 'boolean') return String(v);
+      if (t === 'function') return '[Function ' + (v.name || 'anon') + ']';
+      try { return JSON.stringify(v); }
+      catch (e) {
+        try { return String(v); } catch (e2) { return '[unserializable]'; }
+      }
+    }
+    function send(level, args) {
+      try {
+        var parts = [];
+        for (var i = 0; i < args.length; i++) parts.push(ser(args[i]));
+        var line = '[' + level + '] ' + parts.join(' ');
+        if (line.length > 1800) line = line.slice(0, 1800) + '\u2026[trunc]';
+        var sep = logUrl.indexOf('?') < 0 ? '?' : '&';
+        new Image().src = logUrl + sep + 'd=' + encodeURIComponent(line) + '&t=' + Date.now();
+      } catch (e) {}
+    }
+    ['log','info','warn','error'].forEach(function(lvl) {
+      var orig = console[lvl];
+      console[lvl] = function() {
+        try { if (orig) orig.apply(console, arguments); } catch (e) {}
+        send(lvl, arguments);
+      };
+    });
+    window.addEventListener('error', function(e) {
+      send('uncaught', [
+        (e.message || 'error') + ' @ ' + (e.filename || '?') + ':' + (e.lineno || 0) + ':' + (e.colno || 0),
+        (e.error && e.error.stack) ? e.error.stack : ''
+      ]);
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+      var r = e.reason;
+      send('reject', [
+        r && (r.message || String(r)),
+        (r && r.stack) ? r.stack : ''
+      ]);
+    });
+    send('init', [
+      'kp2 v' + PLUGIN_VERSION + ' logger online',
+      'UA=' + (navigator.userAgent || '').slice(0, 140)
+    ]);
+
+    /* ============================================================
+     * BULK LOG DUMP (Lampa.Console.export)
+     * ============================================================
+     * Lampa внутри держит буфер всех console.log в module-scope
+     * (src/interaction/console.js → original{App, Errors, Warnings, ...}).
+     * Этот буфер выставлен наружу как Lampa.Console.export().
+     * Здесь дёргаем его и POST'им на сервер: эквивалент UI-кнопки
+     * «Экспорт логов», но без cub.rip и без кода.
+     *
+     * Точка приёма на python-сервере — POST {logUrl_root}/dump.
+     * (logUrl у нас ".../l", соответственно меняем на ".../dump")
+     * ============================================================ */
+    var dumpUrl = logUrl.replace(/\/l$/, '/dump');
+    function dumpLampaLogs(reason) {
+      try {
+        if (!window.Lampa || !Lampa.Console || typeof Lampa.Console.export !== 'function') return;
+        var dump = Lampa.Console.export();
+        var payload = JSON.stringify({
+          reason: reason || '',
+          ts: Date.now(),
+          ua: (navigator.userAgent || '').slice(0, 200),
+          plugin_version: PLUGIN_VERSION,
+          logs: dump
+        });
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', dumpUrl, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(payload);
+      } catch (e) { try { send('dump-err', [String(e)]); } catch (er) {} }
+    }
+    // Автозапуск через 10с после буста (Lampa уже загружена и начала логи копить)
+    setTimeout(function() { dumpLampaLogs('boot+10s'); }, 10000);
+    // Каждые 30с — фоновый pull. На Tizen это ~5–50 КБ за раз, не страшно.
+    setInterval(function() { dumpLampaLogs('interval'); }, 30000);
+    // Глобальная функция: можно дёрнуть руками через Lampa Terminal или через
+    // нашу же кнопку в UI: window.kp2_dump('manual')
+    window.kp2_dump = dumpLampaLogs;
+  })();
 
   /* ---------- авторизационные креды и эндпойнты ---------- */
   var api_url   = 'https://api.srvkp.com/v1/';
+  var COMPONENT = 'online_kinopub2';
+  var SETTINGS  = 'kinopub2';
+  var CHOICE_KEY = 'online_choice_kp2';
   var oauth_url = 'https://api.srvkp.com/oauth2/';
   // Креды из официального PWA kinopub. xbmc-секрет старого Kodi-аддона
   // отозван, эта пара — рабочая на момент v1.5.1.
@@ -215,6 +329,11 @@
    * ========================================================== */
 
   function kpapi(component, _object) {
+    console.log('[kp2] kpapi(): source factory called', {
+      title: _object && _object.title,
+      original_title: _object && _object.original_title,
+      movie_id: _object && _object.movie && _object.movie.id
+    });
     var network       = new Lampa.Reguest();
     var extract       = {};
     var results       = null;        // raw kinopub item
@@ -850,20 +969,34 @@
         timeline: element.timeline,
         callback: element.mark
       };
-      // Метаданные выбранной озвучки. Их подхватит глобальный
-      // 'player' listener и переключит дорожку через hls.js / video.audioTracks.
+      // Метаданные выбранной озвучки.
       if (element.voice_lang)            play.kp_voice_lang   = element.voice_lang;
       if (element.voice_author)          play.kp_voice_author = element.voice_author;
       if (element.voice_index != null)   play.kp_voice_index  = element.voice_index;
       if (element.voice_name)            play.kp_voice_name   = element.voice_name;
-      // Сохраняем «глобально» — listener возьмёт это значение даже когда
-      // плеер переключится на след. серию из плейлиста.
       window.__kp_pending_voice = {
         lang:   element.voice_lang   || '',
         author: element.voice_author || '',
         index:  (element.voice_index != null ? element.voice_index : 0),
         name:   element.voice_name   || ''
       };
+      // === voiceovers (v2.1) ===
+      // Lampa.Player.play(data) при наличии data.voiceovers вызывает
+      // Panel.setTracks(data.voiceovers) — кнопка дорожек в OSD появится
+      // автоматически. Каждый элемент имеет onSelect, в котором мы
+      // сохраняем выбор и переключаем активный плеер (AVPlay/hls.js).
+      var voiceovers = buildVoiceovers(element, {
+        voice_lang:   element.voice_lang,
+        voice_author: element.voice_author,
+        voice_type:   element.voice_type || '',
+        voice_name:   element.voice_name
+      });
+      if (voiceovers) {
+        play.voiceovers = voiceovers;
+        // Запоминаем глобально, чтобы при старте плеера сразу применить
+        // pre-selected дорожку (без ожидания клика юзера).
+        window.__kp_pending_voiceovers = voiceovers;
+      }
       return play;
     }
 
@@ -903,16 +1036,21 @@
    * ========================================================== */
 
   function component(object) {
+    console.log('[kp2] component(): constructor called', {
+      title: object && object.title,
+      search: object && object.search,
+      movie_id: object && object.movie && object.movie.id
+    });
     var network = new Lampa.Reguest();
     var scroll  = new Lampa.Scroll({ mask: true, over: true });
     var files   = new Lampa.Explorer(object);
     var filter  = new Lampa.Filter(object);
-    var sources = { kpapi: kpapi };
+    var sources = { kp2: kpapi };
     var last;
     var extended;
     var selected_id;
     var source;
-    var balanser = 'kpapi';
+    var balanser = 'kp2';
     var initialized;
     var balanser_timer;
     var images = [];
@@ -1460,20 +1598,21 @@
     if (!track && !kpAudio) return;
     var t = track || {};
     var k = kpAudio || {};
+    // kinopub.author/type — это объекты {id, title}, не строки. Извлекаем title.
+    var kAuthor = (k.author && typeof k.author === 'object' && k.author.title) || (typeof k.author === 'string' ? k.author : '');
+    var kType   = (k.type   && typeof k.type   === 'object' && k.type.title)   || (typeof k.type   === 'string' ? k.type   : '');
     var voice = {
       lang:   k.lang   || t.lang  || t.language || '',
-      author: k.author || t.name  || t.label    || '',
-      type:   k.type   || '',
-      // Display label: предпочитаем то что показывает плеер (track.name).
-      // Если он пустой — собираем из kp-полей.
-      name:   (t.name || t.label) || (k.author ? k.author + (k.type ? ' • ' + k.type : '') : (k.type || ''))
+      author: kAuthor || t.name || t.label || '',
+      type:   kType,
+      name:   (t.name || t.label) || (kAuthor ? kAuthor + (kType ? ' • ' + kType : '') : (kType || ''))
     };
     window.__kp_pending_voice = voice;
 
     var item_id = window.__kp_current_item_id;
     if (!item_id) return;
     try {
-      var key  = 'online_choice_kpapi';
+      var key  = 'online_choice_kp2';
       var data = Lampa.Storage.cache(key, 3000, {});
       // Чистим этот item_id от любого мусора — пишем только примитивы.
       data[item_id] = {
@@ -1497,6 +1636,222 @@
       }
       Lampa.Storage.set(key, clean);
     } catch (e) {}
+  }
+
+  /**
+   * Применить выбранную озвучку к АКТИВНОМУ плееру.
+   *
+   * Из исходника Lampa (v3.x):
+   *   - На Tizen с Storage.field('player')=='tizen' воспроизводит AVPlay
+   *     (webapis.avplay), переключение дорожки — setSelectTrack('AUDIO', idx).
+   *   - Иначе используется hls.js + <video>; переключение — hls.audioTrack=id.
+   *
+   * Для AVPlay AUDIO-индекс — это item.index из getTotalTrackInfo()
+   * (отфильтрованного по type=='AUDIO'). Порядок дорожек в манифесте
+   * совпадает с kinopub episode.audios (kinopub строит мастер-плейлист
+   * в том же порядке, в котором отдаёт audios), поэтому kp_idx → AVPlay
+   * audio_position подходит как маппинг.
+   *
+   * Для hls.js — пытаемся сначала матчить по lang+name (track.lang часто
+   * есть, name бывает пустой), при неудаче — по индексу.
+   */
+  /**
+   * AVPlay безопасно: получаем state, проверяем что плеер готов, и при
+   * InvalidStateError на setSelectTrack ретраим в pause/play обёртке.
+   * Это смягчает второй симптом (звук пропадает после нескольких смен).
+   */
+  function avplayState() {
+    try { return (window.webapis.avplay.getState() || '').toUpperCase(); }
+    catch (e) { return ''; }
+  }
+  function avplayGetAudioTracks() {
+    try {
+      var info = window.webapis.avplay.getTotalTrackInfo() || [];
+      var out = [];
+      for (var i = 0; i < info.length; i++) {
+        if ((info[i].type || '').toUpperCase() === 'AUDIO') out.push(info[i]);
+      }
+      return out;
+    } catch (e) { return []; }
+  }
+  function avplaySetTrackSafe(trackIdx) {
+    var st = avplayState();
+    if (st !== 'PLAYING' && st !== 'READY' && st !== 'PAUSED') {
+      console.log('[kp2] avplaySetTrackSafe: bad state', { state: st });
+      return { ok: false, reason: 'bad_state', state: st };
+    }
+    // Стандартный setSelectTrack — самый простой и быстрый путь.
+    try {
+      window.webapis.avplay.setSelectTrack('AUDIO', trackIdx);
+      return { ok: true, mode: 'direct' };
+    } catch (e) {
+      var msg = String(e || '');
+      console.log('[kp2] setSelectTrack direct fail', msg);
+      // На InvalidStateError пробуем через паузу: pause → setSelectTrack → play
+      if (msg.indexOf('InvalidState') >= 0 || msg.indexOf('INVALID_STATE') >= 0) {
+        try {
+          var wasPlaying = (st === 'PLAYING');
+          if (wasPlaying) window.webapis.avplay.pause();
+          window.webapis.avplay.setSelectTrack('AUDIO', trackIdx);
+          if (wasPlaying) window.webapis.avplay.play();
+          return { ok: true, mode: 'pause-play' };
+        } catch (e2) {
+          console.log('[kp2] setSelectTrack pause-play fail', String(e2));
+          return { ok: false, reason: 'pause_play_fail', err: String(e2) };
+        }
+      }
+      return { ok: false, reason: 'direct_fail', err: msg };
+    }
+  }
+
+  function applyVoiceToActivePlayer(kpAudio, kpIdx) {
+    var ts = Date.now();
+    var player_setting = '';
+    try { player_setting = Lampa.Storage.field('player') || ''; } catch (e) {}
+    var hasAvplay = !!(window.webapis && window.webapis.avplay);
+    var hls = window.__kp_hls;
+    var hlsTracksN = (hls && hls.audioTracks && hls.audioTracks.length) || 0;
+
+    console.log('[kp2] applyVoice: enter', {
+      kp_idx: kpIdx,
+      player: player_setting,
+      avplay: hasAvplay,
+      avplay_state: hasAvplay ? avplayState() : '',
+      hls_present: !!hls,
+      hls_tracks_n: hlsTracksN
+    });
+
+    // ---------- Tizen AVPlay path (приоритет на Tizen с player='tizen') ----------
+    if (player_setting === 'tizen' && hasAvplay) {
+      var audioTracks = avplayGetAudioTracks();
+      if (!audioTracks.length) {
+        console.log('[kp2] applyVoice: avplay no tracks yet, will rely on retries');
+      } else {
+        var pick = audioTracks[kpIdx];
+        if (pick) {
+          var res = avplaySetTrackSafe(pick.index);
+          console.log('[kp2] applyVoice: avplay path', {
+            kp_idx: kpIdx, n: audioTracks.length,
+            pick_idx: pick.index, result: res
+          });
+          if (res.ok) return true;
+        } else {
+          console.log('[kp2] applyVoice: avplay no track at idx', { kp_idx: kpIdx, n: audioTracks.length });
+        }
+      }
+    }
+
+    // ---------- hls.js path (только когда Lampa реально играет через hls) ----------
+    // На Tizen с player='tizen' window.__kp_hls указывает на hls_parser
+    // (без attachMedia), и hls.audioTrack=id ни на что не влияет.
+    // Эта ветка работает в built-in режиме (player != 'tizen').
+    if (hls && hlsTracksN > kpIdx) {
+      try {
+        var t = hls.audioTracks[kpIdx];
+        var trackId = (typeof t.id === 'number') ? t.id : kpIdx;
+        console.log('[kp2] applyVoice: hls path', {
+          kp_idx: kpIdx, hls_n: hlsTracksN,
+          track_id: trackId, track_lang: t.lang, track_name: t.name
+        });
+        hls.audioTrack = trackId;
+        return true;
+      } catch (e) {
+        console.log('[kp2] applyVoice: hls err', String(e));
+      }
+    }
+
+    console.log('[kp2] applyVoice: no active player', {
+      took_ms: Date.now() - ts,
+      reason_player: player_setting,
+      avplay_ready: hasAvplay && (avplayState() === 'PLAYING'),
+      hls_ready: hlsTracksN > 0
+    });
+    return false;
+  }
+
+  /**
+   * Построить voiceovers-массив для Lampa.Player.play(data).
+   * Lampa автоматически покажет кнопку дорожек в OSD, и при клике
+   * вызовет наш onSelect — там мы сохраняем выбор и переключаем дорожку.
+   * Один из элементов помечается selected: true (последний выбранный
+   * пользователем для этого фильма/сериала, либо первый по дефолту).
+   */
+  function buildVoiceovers(media, choice) {
+    var audios = (media && media.audios) || [];
+    if (!audios.length) return null;
+    var savedLang   = (choice && choice.voice_lang)   || '';
+    var savedAuthor = (choice && choice.voice_author) || '';
+    var savedType   = (choice && choice.voice_type)   || '';
+    var anySelected = false;
+
+    var voiceovers = audios.map(function(audio, idx) {
+      var author = (audio.author && audio.author.title) || audio.author || '';
+      var atype  = (audio.type   && audio.type.title)   || audio.type   || '';
+      var lang   = audio.lang || '';
+      var parts = [];
+      if (author) parts.push(author);
+      if (atype)  parts.push(atype);
+      var label = parts.join(' • ') || lang.toUpperCase() || ('Track ' + (idx + 1));
+
+      // Только первое совпадение помечаем — иначе при дублях (RUS Кубик в Кубе
+      // обычная и AC3 идут с одинаковыми lang+author+type) ставится 2 галочки.
+      var isSelected = false;
+      if (!anySelected) {
+        if (savedLang || savedAuthor || savedType) {
+          isSelected = audioMatches(audio, savedLang, savedAuthor, savedType);
+        } else if (idx === 0) {
+          isSelected = true;
+        }
+        if (isSelected) anySelected = true;
+      }
+
+      return {
+        title:    label,
+        name:     label,
+        language: lang,
+        label:    atype,
+        extra: {
+          channels: (audio.codec && (audio.codec + '').toUpperCase()) || '',
+          fourCC:   ''
+        },
+        selected: isSelected,
+        enabled:  isSelected,
+        kp_audio: audio,
+        kp_index: idx,
+        onSelect: function(item) {
+          try {
+            console.log('[kp2] voiceover.onSelect', {
+              kp_index: item.kp_index, label: item.title
+            });
+            saveKinopubVoice(null, audio);
+            // Ретрай с backoff: на Built-in плеере в момент клика hls.audioTracks
+            // часто ещё пуст (AUDIO_TRACKS_UPDATED идёт через ~200мс после loadSource).
+            // На Tizen AVPlay — IDLE state в момент старта серии. Несколько попыток.
+            var delays = [0, 500, 1500, 3000];
+            var attempt = 0;
+            (function tryApply() {
+              var ok = applyVoiceToActivePlayer(audio, idx);
+              if (ok) return;
+              if (attempt < delays.length - 1) {
+                attempt++;
+                setTimeout(tryApply, delays[attempt]);
+              } else {
+                console.log('[kp2] voiceover.onSelect: gave up after retries', { kp_index: idx });
+              }
+            })();
+          } catch (e) {
+            console.log('[kp2] voiceover.onSelect err', String(e));
+          }
+        }
+      };
+    });
+
+    // Если ни один не помечен — пометим первый
+    if (!anySelected && voiceovers.length) {
+      voiceovers[0].selected = true;
+      voiceovers[0].enabled  = true;
+    }
+    return voiceovers;
   }
 
   function applyKinopubVoice() {
@@ -1542,20 +1897,230 @@
    * пользователем озвучку, как только hls.js распарсит мастер-плейлист.
    */
   function ensurePatchHls() {
+    patchVideoBridge();
     // window.Hls появляется только после того как Lampa подгрузит ./vender/hls/hls.js,
     // а это происходит уже ПОСЛЕ нашего startPlugin. Поэтому ждём в фоне.
-    if (window.__kp_hls_patched) return;
-    if (window.Hls) { patchHls(); return; }
-    var tries = 0;
-    var iv = setInterval(function() {
-      if (window.__kp_hls_patched) { clearInterval(iv); return; }
-      if (window.Hls) { clearInterval(iv); patchHls(); return; }
-      if (++tries > 120) clearInterval(iv); // 60 секунд — c запасом
+    if (window.Hls) patchHls();
+
+    // Watcher на смену window.Hls (Lampa/bwa подменяют 1.1.2 → 1.4.7 на лету,
+    // см. v2.0.8). Каждые 500 мс проверяем, остался ли прототип запатченным —
+    // если нет (новый класс), повторно патчим. Это страховка для прототипного
+    // hook'а; Proxy на конструктор патчим только один раз (window.Hls могут
+    // оборачивать несколько раз, перенакручивать наш Proxy не будем).
+    if (window.__kp_hls_watcher) return;
+    window.__kp_hls_watcher = true;
+    var watcherTries = 0;
+    setInterval(function() {
+      try {
+        if (window.Hls && window.Hls.prototype && !window.Hls.prototype.__kp_proto_patched) {
+          console.log('[kp2] Hls swap detected, re-patching prototype', {
+            version: window.Hls.version
+          });
+          patchHlsPrototype();
+        }
+      } catch (e) {}
+      if (++watcherTries > 600) {} // не выключаем — пусть работает всю сессию (~5 мин минимум)
     }, 500);
+  }
+
+  /**
+   * На Tizen Lampa захватывает window.Hls раньше нашего Proxy-патча, так что
+   * Proxy на конструктор не срабатывает (window.__kp_hls остаётся пустым).
+   * Прототипное патчирование решает это: Hls.prototype.attachMedia — один
+   * объект для ВСЕХ ссылок на класс (хоть кэшированных, хоть свежих),
+   * и new Hls() обязательно проходит через него. Этим способом мы ловим
+   * ЛЮБОЙ инстанс независимо от того, кто и когда его создал.
+   */
+  function hookHlsInstance(instance, source) {
+    if (!instance || instance.__kp_hooked) return;
+    instance.__kp_hooked = true;
+    window.__kp_hls = instance;
+    try {
+      console.log('[kp2] hooking Hls instance', {
+        source: source,
+        v: window.Hls && window.Hls.version,
+        tracks_n: instance.audioTracks && instance.audioTracks.length
+      });
+    } catch (e) {}
+    try {
+      var EV = (window.Hls && window.Hls.Events) || (instance.constructor && instance.constructor.Events);
+      if (!EV) { console.log('[kp2] no EV available'); return; }
+      if (EV.AUDIO_TRACKS_UPDATED) {
+        instance.on(EV.AUDIO_TRACKS_UPDATED, function() {
+          try {
+            console.log('[kp2] AUDIO_TRACKS_UPDATED', {
+              n: instance.audioTracks && instance.audioTracks.length
+            });
+          } catch (e) {}
+          applyKinopubVoice();
+          // v2.1.3: как только треки загрузились — применяем pre-selected
+          // voiceover (если он был помечен в buildVoiceovers как selected:true).
+          // Это закрывает race на Built-in плеере где AUDIO_TRACKS_UPDATED
+          // приходит ПОСЛЕ кликов юзера.
+          try {
+            var vs = window.__kp_pending_voiceovers;
+            if (vs && vs.length) {
+              for (var i = 0; i < vs.length; i++) {
+                if (vs[i].selected) {
+                  applyVoiceToActivePlayer(vs[i].kp_audio, vs[i].kp_index);
+                  break;
+                }
+              }
+            }
+          } catch (e) {}
+        });
+      }
+      if (EV.MANIFEST_PARSED) {
+        instance.on(EV.MANIFEST_PARSED, function() { setTimeout(applyKinopubVoice, 200); });
+      }
+      if (EV.AUDIO_TRACK_SWITCHED) {
+        instance.on(EV.AUDIO_TRACK_SWITCHED, function() {
+          try {
+            var id = instance.audioTrack;
+            var track = instance.audioTracks && instance.audioTracks[id];
+            var kpAudio = window.__kp_current_audios && window.__kp_current_audios[id];
+            console.log('[kp2] AUDIO_TRACK_SWITCHED', {
+              id: id, track_lang: track && track.lang,
+              track_name: track && track.name, kp_audio: kpAudio
+            });
+            if (track || kpAudio) saveKinopubVoice(track, kpAudio);
+          } catch (e) {}
+        });
+      }
+    } catch (e) { console.log('[kp2] hook err', String(e)); }
+  }
+
+  function patchHlsPrototype() {
+    if (!window.Hls || !window.Hls.prototype || !window.Hls.prototype.attachMedia) {
+      console.log('[kp2] proto-patch: no Hls/proto/attachMedia, skip');
+      return;
+    }
+    var proto = window.Hls.prototype;
+    if (proto.__kp_proto_patched) return;
+
+    console.log('[kp2] patchHlsPrototype: applying', {
+      Hls_version: window.Hls.version,
+      proto_keys_count: Object.getOwnPropertyNames(proto).length
+    });
+
+    // Patch attachMedia
+    var origAttach = proto.attachMedia;
+    proto.attachMedia = function(media) {
+      try {
+        console.log('[kp2] Hls.attachMedia intercepted (proto)', {
+          v: window.Hls && window.Hls.version
+        });
+      } catch (e) {}
+      return origAttach.apply(this, arguments);
+    };
+
+    // Patch loadSource (альтернативный entry-point — иногда зовут раньше attachMedia)
+    if (proto.loadSource) {
+      var origLoadSource = proto.loadSource;
+      proto.loadSource = function(url) {
+        try {
+          console.log('[kp2] Hls.loadSource intercepted (proto)', {
+            v: window.Hls && window.Hls.version,
+            url_tail: (url || '').slice(-60)
+          });
+        } catch (e) {}
+        hookHlsInstance(this, 'loadSource');
+        return origLoadSource.apply(this, arguments);
+      };
+    }
+
+    proto.__kp_proto_patched = true;
+    console.log('[kp2] Hls.prototype.attachMedia PATCHED', {
+      version: window.Hls && window.Hls.version
+    });
+  }
+
+  /**
+   * Глобальный мост: патчим HTMLMediaElement.prototype.addEventListener.
+   * Любой плеер, использующий <video>, обязательно подписывается на события.
+   * Когда видим listener на 'loadedmetadata' / 'canplay' — это знак, что
+   * видео-поток готов. Тогда сканируем глобально все объекты с интерфейсом
+   * Hls (audioTracks + on()) и подцепляемся к найденному.
+   */
+  function patchVideoBridge() {
+    if (window.__kp_video_bridge) return;
+    window.__kp_video_bridge = true;
+    try {
+      var protoME = window.HTMLMediaElement && window.HTMLMediaElement.prototype;
+      if (!protoME) { console.log('[kp2] no HTMLMediaElement.prototype'); return; }
+      var origAddEv = protoME.addEventListener;
+      protoME.addEventListener = function(type, listener, opts) {
+        try {
+          if (type === 'loadedmetadata' || type === 'canplay') {
+            console.log('[kp2] video.addEventListener', { type: type });
+            // Через 100/500/1500 мс пробуем найти hls и подцепиться
+            setTimeout(deepProbeHls, 100);
+            setTimeout(deepProbeHls, 500);
+            setTimeout(deepProbeHls, 1500);
+          }
+        } catch (e) {}
+        return origAddEv.apply(this, arguments);
+      };
+      console.log('[kp2] video bridge patched');
+    } catch (e) {
+      console.log('[kp2] video bridge err', String(e));
+    }
+  }
+
+  function deepProbeHls() {
+    if (window.__kp_hls && window.__kp_hls.__kp_hooked) return;
+    var found = null;
+    var foundVia = '';
+    function looksLikeHls(o) {
+      return o && typeof o === 'object'
+        && Array.isArray(o.audioTracks)
+        && typeof o.on === 'function'
+        && Array.isArray(o.levels);
+    }
+    // Walk a few well-known namespaces deeply (1 level)
+    var roots = [
+      ['Lampa.Player', Lampa.Player],
+      ['Lampa.PlayerVideo', Lampa.PlayerVideo],
+      ['Lampa.Player.video', Lampa.Player && Lampa.Player.video],
+      ['Lampa.PlayerVideo.video', Lampa.PlayerVideo && Lampa.PlayerVideo.video]
+    ];
+    for (var r = 0; r < roots.length; r++) {
+      var rname = roots[r][0]; var robj = roots[r][1];
+      if (!robj) continue;
+      try {
+        for (var k in robj) {
+          try {
+            var v = robj[k];
+            if (looksLikeHls(v)) {
+              found = v; foundVia = rname + '.' + k; break;
+            }
+          } catch (e) {}
+        }
+      } catch (e) {}
+      if (found) break;
+    }
+    // Also walk video element
+    if (!found) {
+      var vEl = document.querySelector('video');
+      if (vEl) {
+        for (var vk in vEl) {
+          try {
+            if (looksLikeHls(vEl[vk])) { found = vEl[vk]; foundVia = 'video.' + vk; break; }
+          } catch (e) {}
+        }
+      }
+    }
+    console.log('[kp2] deepProbeHls', { found: !!found, via: foundVia });
+    if (found) hookHlsInstance(found, 'deepProbe:' + foundVia);
   }
 
   function patchHls() {
     if (window.__kp_hls_patched || !window.Hls) return;
+    console.log('[kp2] patchHls(): wrapping window.Hls', {
+      version: (window.Hls && window.Hls.version) || '?'
+    });
+    // Сначала прототипный фоллбек — он самый надёжный на Tizen.
+    patchHlsPrototype();
     var Original = window.Hls;
 
     // Proxy прозрачно форвардит ВСЕ обращения к target — включая
@@ -1566,6 +2131,7 @@
       construct: function(target, args) {
         var inst = Reflect.construct(target, args);
         window.__kp_hls = inst;
+        console.log('[kp2] new Hls() intercepted, instance saved');
         try {
           var EV = target.Events;
           // Дорожки готовы → применяем сохранённую озвучку
@@ -1584,10 +2150,13 @@
               try {
                 var id = inst.audioTrack;
                 var track = inst.audioTracks && inst.audioTracks[id];
-                // hls audio idx обычно совпадает с kinopub episode.audios[idx]
-                // (HLS-плейлист генерится в том же порядке) — это даёт нам
-                // точный author/type для сохранения и матчинга.
                 var kpAudio = window.__kp_current_audios && window.__kp_current_audios[id];
+                console.log('[kp2] AUDIO_TRACK_SWITCHED', {
+                  id: id,
+                  track_lang: track && track.lang,
+                  track_name: track && track.name,
+                  kp_audio: kpAudio
+                });
                 if (track || kpAudio) saveKinopubVoice(track, kpAudio);
               } catch (e) {}
             });
@@ -1603,11 +2172,132 @@
   // Слушаем события плеера: на старт каждого нового стрима (новая серия,
   // переоткрытие, и т.п.) повторно применяем озвучку. Это страховка на случай
   // если monkey-patch был установлен ПОСЛЕ создания Hls-инстанса.
+  /**
+   * На Tizen наш Proxy на window.Hls срабатывает не всегда — Lampa захватывает
+   * ссылку на конструктор раньше нашего patch'а (порядок загрузки модулей
+   * отличается от десктопа). Поэтому страховочно ищем готовый инстанс через
+   * известные места в самой Lampa и через DOM-video, и подцепляемся к нему
+   * пост-фактум. Логируем всё, что нашли — это наш единственный способ узнать
+   * структуру Lampa изнутри Tizen.
+   */
+  function probeAndHookHls(reason) {
+    var hls = null;
+    var found_via = '';
+    var probes = [];
+
+    function tryPath(name, fn) {
+      try {
+        var v = fn();
+        var ok = !!v;
+        probes.push(name + '=' + (ok ? 'present' : 'null'));
+        if (ok && !hls) { hls = v; found_via = name; }
+      } catch (e) {
+        probes.push(name + '=throw');
+      }
+    }
+
+    // Каждый probe — ещё и шанс запатчить прототип (если Hls появился позже).
+    try { patchHlsPrototype(); } catch (e) {}
+
+    tryPath('window.__kp_hls',          function() { return window.__kp_hls; });
+    tryPath('Lampa.PlayerVideo.hls',    function() { return Lampa.PlayerVideo && Lampa.PlayerVideo.hls; });
+    tryPath('Lampa.Player.hls',         function() { return Lampa.Player && Lampa.Player.hls; });
+    tryPath('Lampa.Player.video.hls',   function() { return Lampa.Player && Lampa.Player.video && Lampa.Player.video.hls; });
+    tryPath('Lampa.PlayerVideo.video.hls', function() { return Lampa.PlayerVideo && Lampa.PlayerVideo.video && Lampa.PlayerVideo.video.hls; });
+
+    // Probe video element: hls.js часто вешает себя на video через wreflict,
+    // sym-ключ или приватное _-свойство. Пройдёмся по всем ключам и найдём
+    // объект с .audioTracks + .levels (характерный признак Hls instance).
+    try {
+      var vEl = document.querySelector('video');
+      probes.push('video_el=' + (vEl ? 'present' : 'null'));
+      if (vEl) {
+        var keys = [];
+        for (var k in vEl) {
+          try {
+            var val = vEl[k];
+            if (val && typeof val === 'object'
+              && Array.isArray(val.audioTracks)
+              && Array.isArray(val.levels)) {
+              keys.push(k);
+              if (!hls) { hls = val; found_via = 'video.' + k; }
+            }
+          } catch (e) {}
+        }
+        if (keys.length) probes.push('video_keys=' + keys.join(','));
+      }
+    } catch (e) {}
+
+    console.log('[kp2] hls probe (' + reason + ')', { found_via: found_via, probes: probes });
+
+    // Если нашли — подцепляемся (только один раз на каждый инстанс).
+    if (hls && !hls.__kp_hooked) {
+      hls.__kp_hooked = true;
+      try {
+        var EV = (window.Hls && window.Hls.Events) || hls.constructor && hls.constructor.Events;
+        if (!EV) { console.log('[kp2] no Hls.Events available, skip hook'); return; }
+        if (EV.AUDIO_TRACKS_UPDATED) {
+          hls.on(EV.AUDIO_TRACKS_UPDATED, function() {
+            console.log('[kp2] AUDIO_TRACKS_UPDATED (probed)', {
+              n: hls.audioTracks && hls.audioTracks.length
+            });
+            applyKinopubVoice();
+          });
+        }
+        if (EV.MANIFEST_PARSED) {
+          hls.on(EV.MANIFEST_PARSED, function() { setTimeout(applyKinopubVoice, 200); });
+        }
+        if (EV.AUDIO_TRACK_SWITCHED) {
+          hls.on(EV.AUDIO_TRACK_SWITCHED, function() {
+            try {
+              var id = hls.audioTrack;
+              var track = hls.audioTracks && hls.audioTracks[id];
+              var kpAudio = window.__kp_current_audios && window.__kp_current_audios[id];
+              console.log('[kp2] AUDIO_TRACK_SWITCHED (probed)', {
+                id: id,
+                track_lang: track && track.lang,
+                track_name: track && track.name,
+                kp_audio: kpAudio
+              });
+              if (track || kpAudio) saveKinopubVoice(track, kpAudio);
+            } catch (e) {}
+          });
+        }
+        console.log('[kp2] hls hooks attached via probe', { via: found_via });
+      } catch (e) {
+        console.log('[kp2] hook failed', String(e));
+      }
+    }
+  }
+
   function bindPlayerListener() {
     if (window.__kp_player_listener) return;
     window.__kp_player_listener = true;
 
+    // v2.1: при старте плеера применяем сохранённый voiceover автоматически —
+    // юзер видит уже выбранную дорожку, без клика. На каждый старт серии
+    // воспроизведение начинается с дефолтной дорожки плеера, поэтому
+    // переключаем со ступенчатой задержкой (avplay/hls — оба требуют, чтобы
+    // плейлист был распарсен).
+    var applyPendingVoiceover = function() {
+      var vs = window.__kp_pending_voiceovers;
+      if (!vs || !vs.length) return;
+      var sel;
+      for (var i = 0; i < vs.length; i++) if (vs[i].selected) { sel = vs[i]; break; }
+      if (!sel) return;
+      try {
+        applyVoiceToActivePlayer(sel.kp_audio, sel.kp_index);
+      } catch (e) {
+        console.log('[kp2] applyPendingVoiceover err', String(e));
+      }
+    };
+
     var apply = function() {
+      setTimeout(applyPendingVoiceover,  800);
+      setTimeout(applyPendingVoiceover, 2000);
+      setTimeout(applyPendingVoiceover, 4000);
+      // Старая логика hls-side — оставляем как страховку для случаев
+      // когда voiceovers не построились или плеер ведёт себя необычно.
       setTimeout(applyKinopubVoice,  600);
       setTimeout(applyKinopubVoice, 1500);
       setTimeout(applyKinopubVoice, 3000);
@@ -1616,15 +2306,28 @@
     // Канал 1: глобальный Lampa.Listener
     try {
       Lampa.Listener.follow('player', function(e) {
-        if (e && (e.type === 'start' || e.type === 'video' || e.type === 'change' || e.type === 'inited')) apply();
+        try { console.log('[kp2] player event', { type: e && e.type }); } catch (er) {}
+        if (e && (e.type === 'start' || e.type === 'video' || e.type === 'change' || e.type === 'inited')) {
+          apply();
+          // probe + hook (несколько раз — hls может ещё не успеть появиться)
+          setTimeout(function() { probeAndHookHls('player.' + e.type + '+200'); },  200);
+          setTimeout(function() { probeAndHookHls('player.' + e.type + '+800'); },  800);
+          setTimeout(function() { probeAndHookHls('player.' + e.type + '+2000'); }, 2000);
+        }
       });
     } catch (e) {}
 
     // Канал 2: Lampa.Player.listener (отдельный Listener плеера)
     try {
       if (Lampa.Player && Lampa.Player.listener && Lampa.Player.listener.follow) {
-        Lampa.Player.listener.follow('start', apply);
-        Lampa.Player.listener.follow('video', apply);
+        Lampa.Player.listener.follow('start', function() {
+          apply();
+          setTimeout(function() { probeAndHookHls('Lampa.Player.start+500'); }, 500);
+        });
+        Lampa.Player.listener.follow('video', function() {
+          apply();
+          setTimeout(function() { probeAndHookHls('Lampa.Player.video+500'); }, 500);
+        });
       }
     } catch (e) {}
   }
@@ -1638,7 +2341,7 @@
    */
   function sanitizeKpStorage() {
     try {
-      var key   = 'online_choice_kpapi';
+      var key   = 'online_choice_kp2';
       var data  = Lampa.Storage.get(key, {}) || {};
       var clean = {};
       var dropped = 0;
@@ -1670,7 +2373,8 @@
   }
 
   function startPlugin() {
-    window.online_kinopub = true;
+    console.log('[kp2] startPlugin: enter');
+    window.online_kinopub2 = true;
     sanitizeKpStorage();  // one-time cleanup от циклов из старых сборок
     ensurePatchHls();     // дождаться window.Hls и подменить конструктор
     bindPlayerListener(); // страховка на повторное применение озвучки
@@ -1679,18 +2383,22 @@
     var manifest = {
       type:        'video',
       version:     PLUGIN_VERSION,
-      name:        'Онлайн - Kinopub',
+      name:        'Онлайн - Kinopub 2 (TV)',
       description: 'Плагин для просмотра онлайн kino.pub',
-      component:   'online_kinopub',
+      component:   'online_kinopub2',
       onContextMenu: function() {
         return { name: Lampa.Lang.translate('online_watch'), description: '' };
       },
       onContextLauch: function(object) {
+        console.log('[kp2] manifest.onContextLauch fired', {
+          title: object && object.title,
+          movie_id: object && object.id
+        });
         resetTemplates();
-        Lampa.Component.add('online_kinopub', component);
+        Lampa.Component.add('online_kinopub2', component);
         Lampa.Activity.push({
           url: '', title: Lampa.Lang.translate('title_online'),
-          component: 'online_kinopub',
+          component: 'online_kinopub2',
           search: object.title, search_one: object.title, search_two: object.original_title,
           movie: object, page: 1
         });
@@ -1703,6 +2411,7 @@
       online_video:  { ru: 'Видео', en: 'Video', uk: 'Відео' },
       online_nolink: { ru: 'Не удалось извлечь ссылку', en: 'Failed to fetch link', uk: 'Неможливо отримати посилання' },
       title_online:  { ru: 'Онлайн', en: 'Online', uk: 'Онлайн' },
+      title_online_v2: { ru: 'Kinopub 2 (TV)', en: 'Kinopub 2 (TV)', uk: 'Kinopub 2 (TV)' },
       kp_modal_text: { ru: 'Введите код на https://kinopub.tv/device или вставьте имеющийся access-token', en: 'Enter code at https://kinopub.tv/device or paste an existing access-token', uk: 'Введіть код або вставте access-token' },
       kp_modal_wait: { ru: 'Ожидаем код', en: 'Waiting for the code', uk: 'Очікуємо код' },
       kp_oauth_failed: { ru: 'OAuth недоступен. Можно вставить токен с kino.pub/api.', en: 'OAuth unavailable. Paste a token from kino.pub/api.', uk: 'OAuth недоступний. Вставте токен з kino.pub/api.' },
@@ -1773,35 +2482,46 @@
 
     var button = '<div class="full-start__button selector view--online" data-subtitle="Kinopub v' + PLUGIN_VERSION + '">' +
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>' +
-      '<span>#{title_online}</span>' +
+      '<span>#{title_online_v2}</span>' +
     '</div>';
 
-    Lampa.Component.add('online_kinopub', component);
+    Lampa.Component.add('online_kinopub2', component);
     resetTemplates();
 
     Lampa.Listener.follow('full', function(e) {
+      console.log('[kp2] full listener fired', { type: e && e.type });
       if (e.type == 'complite') {
         var btn = $(Lampa.Lang.translate(button));
         btn.on('hover:enter', function() {
+          console.log('[kp2] button hover:enter clicked');
           resetTemplates();
-          Lampa.Component.add('online_kinopub', component);
+          Lampa.Component.add('online_kinopub2', component);
           Lampa.Activity.push({
             url: '', title: Lampa.Lang.translate('title_online'),
-            component: 'online_kinopub',
+            component: 'online_kinopub2',
             search: e.data.movie.title, search_one: e.data.movie.title, search_two: e.data.movie.original_title,
             movie: e.data.movie, page: 1
           });
         });
-        e.object.activity.render().find('.view--torrent').after(btn);
+        var $render = e.object && e.object.activity && e.object.activity.render && e.object.activity.render();
+        var $torrent = $render && $render.find('.view--torrent');
+        console.log('[kp2] inserting button', {
+          render_found: !!$render,
+          render_size: $render && $render.length,
+          torrent_found: $torrent && $torrent.length,
+          movie_id: e && e.data && e.data.movie && e.data.movie.id
+        });
+        if ($torrent && $torrent.length) $torrent.after(btn);
+        else if ($render && $render.length) $render.find('.full-start__buttons').append(btn);
       }
     });
 
     Lampa.SettingsApi.addComponent({
-      component: 'kinopub', name: 'Kinopub',
+      component: 'kinopub2', name: 'Kinopub',
       icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>'
     });
     Lampa.SettingsApi.addParam({
-      component: 'kinopub',
+      component: 'kinopub2',
       param: { name: 'kp_version_info', type: 'static' },
       field: { name: 'Kinopub v' + PLUGIN_VERSION, description: '' },
       onRender: function(el) {
@@ -1813,7 +2533,7 @@
       }
     });
     Lampa.SettingsApi.addParam({
-      component: 'kinopub',
+      component: 'kinopub2',
       param: { name: 'kp_logout_btn', type: 'button' },
       field: {
         name:        Lampa.Lang.translate('kp_logout'),
@@ -1830,11 +2550,21 @@
     });
 
     if (Lampa.Manifest.app_digital >= 177) {
-      Lampa.Storage.sync('online_choice_kpapi',  'object_object');
+      Lampa.Storage.sync('online_choice_kp2',  'object_object');
       Lampa.Storage.sync('online_watched_last',  'object_object');
     }
   }
 
-  if (!window.online_kinopub && Lampa.Manifest.app_digital >= 155) startPlugin();
+  try {
+    console.log('[kp2 v' + PLUGIN_VERSION + '] gate', {
+      already: !!window.online_kinopub2,
+      app_digital: (Lampa.Manifest && Lampa.Manifest.app_digital),
+      hls_present: !!window.Hls,
+      hls_version: (window.Hls && window.Hls.version),
+      kp_token_len: (kp_token || '').length
+    });
+  } catch (e) {}
+  if (!window.online_kinopub2 && Lampa.Manifest.app_digital >= 155) startPlugin();
+  else console.log('[kp2] startPlugin SKIPPED');
 
 })();
