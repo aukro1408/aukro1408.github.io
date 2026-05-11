@@ -10,7 +10,7 @@
 
     // Настройки
     const DEFAULT_SETTINGS = {
-        orchestrator_url: 'http://178.20.46.93:8091',
+        orchestrator_url: 'http://93.115.17.173:8090',
         enabled: true,
         quality_preference: '1080p',
         show_logs: true
