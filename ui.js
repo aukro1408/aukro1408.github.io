@@ -1,24 +1,20 @@
 // ==UserScript==
-// @name         Lampa Soft Poster Glow
-// @namespace    lampa.poster.softglow
-// @version      4.0
+// @name         Lampa Soft Neon Border
+// @namespace    lampa.poster.soft
+// @version      5.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
 
-    if (window.lampa_soft_poster_glow) return;
-    window.lampa_soft_poster_glow = true;
+    if (window.lampa_soft_neon) return;
+    window.lampa_soft_neon = true;
 
     const style = document.createElement('style');
 
     style.innerHTML = `
 
-    /* =========================
-       ANIMATION
-    ========================= */
-
-    @keyframes posterGlow {
+    @keyframes posterRGB {
 
         0% {
             background-position: 0% 50%;
@@ -34,50 +30,81 @@
     }
 
     /* =========================
-       IMAGE ONLY
+       POSTER ONLY
     ========================= */
 
-    .card__img {
+    .card__view {
 
         position: relative !important;
 
-        border-radius: 1.4em !important;
-
         overflow: visible !important;
 
-        z-index: 2;
+        border-radius: 1.4em !important;
     }
 
-    .card__img::before {
+    .card__img {
+
+        border-radius: 1.4em !important;
+
+        overflow: hidden !important;
+    }
+
+    /* =========================
+       BORDER + SOFT GLOW
+    ========================= */
+
+    .card__view::before {
 
         content: '';
 
         position: absolute;
 
-        inset: -2px;
+        inset: -1px;
 
         border-radius: 1.5em;
 
-        pointer-events: none;
-
-        z-index: -1;
-
         background: linear-gradient(
             135deg,
-            rgba(94,162,255,.9),
-            rgba(123,104,255,.8),
-            rgba(176,108,255,.75),
-            rgba(123,104,255,.8),
-            rgba(94,162,255,.9)
+            #5ea2ff,
+            #7b68ff,
+            #b06cff,
+            #7b68ff,
+            #5ea2ff
         );
 
         background-size: 250% 250%;
 
-        animation: posterGlow 8s ease infinite;
+        animation: posterRGB 8s ease infinite;
 
-        filter: blur(10px);
+        z-index: -1;
 
-        opacity: .45;
+        opacity: .9;
+
+        /* ВОТ ЭТО ДАЁТ МЯГКИЙ СВЕТ */
+
+        box-shadow:
+            0 0 8px rgba(94,162,255,.25),
+            0 0 16px rgba(123,104,255,.18),
+            0 0 28px rgba(176,108,255,.12);
+    }
+
+    /* =========================
+       INNER MASK
+    ========================= */
+
+    .card__view::after {
+
+        content: '';
+
+        position: absolute;
+
+        inset: 2px;
+
+        border-radius: 1.3em;
+
+        background: #141414;
+
+        z-index: -1;
     }
 
     `;
