@@ -1,81 +1,91 @@
 // ==UserScript==
-// @name         Lampa Neon Poster Flow
-// @namespace    lampa.neon.poster
-// @version      3.0
+// @name         Lampa Poster RGB Border
+// @namespace    lampa.poster.rgb
+// @version      1.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
 
-    if (window.poster_flow_loaded) return;
-    window.poster_flow_loaded = true;
+    if (window.poster_rgb_border) return;
+    window.poster_rgb_border = true;
 
     const style = document.createElement('style');
 
     style.innerHTML = `
 
-    @keyframes neonRotate {
+    @keyframes posterRGB {
 
         0% {
-            transform: rotate(0deg);
+            filter: hue-rotate(0deg);
         }
 
         100% {
-            transform: rotate(360deg);
+            filter: hue-rotate(360deg);
         }
     }
 
     /* =========================
-       POSTER ONLY
+       ONLY POSTER
     ========================= */
 
-    .card__img {
+    .card__view {
 
         position: relative !important;
 
-        overflow: hidden !important;
+        overflow: visible !important;
+
+        border-radius: 1.4em !important;
+    }
+
+    .card__img {
 
         border-radius: 1.4em !important;
 
-        isolation: isolate;
+        overflow: hidden !important;
     }
 
     /* =========================
-       ROTATING BORDER
+       RGB BORDER ONLY IMAGE
     ========================= */
 
-    .card__img::before {
+    .card__view::before {
 
         content: '';
 
         position: absolute;
 
-        width: 220%;
-        height: 220%;
+        inset: -2px;
 
-        top: -60%;
-        left: -60%;
+        border-radius: 1.5em;
 
-        background: conic-gradient(
-            from 0deg,
-            #2563eb,
-            #4f46e5,
-            #7c3aed,
-            #9333ea,
-            #4f46e5,
-            #2563eb
+        background: linear-gradient(
+            45deg,
+            #ff0000,
+            #ff9900,
+            #ffee00,
+            #00ff66,
+            #00ffff,
+            #0066ff,
+            #aa00ff,
+            #ff00aa,
+            #ff0000
         );
 
-        animation: neonRotate 4s linear infinite;
+        background-size: 300%;
 
-        z-index: 0;
+        animation: posterRGB 5s linear infinite;
+
+        z-index: -1;
+
+        opacity: .95;
     }
 
     /* =========================
-       MASK
+       INNER MASK
     ========================= */
 
-    .card__img::after {
+    .card__view::after {
 
         content: '';
 
@@ -83,29 +93,11 @@
 
         inset: 2px;
 
-        border-radius: 1.2em;
+        border-radius: 1.3em;
 
-        background-size: cover;
+        background: #141414;
 
-        background: transparent;
-
-        box-shadow:
-            inset 0 0 0 3px #111;
-
-        z-index: 1;
-    }
-
-    /* =========================
-       KEEP IMAGE ABOVE
-    ========================= */
-
-    .card__img img {
-
-        position: relative;
-
-        z-index: 2;
-
-        border-radius: 1.2em;
+        z-index: -1;
     }
 
     `;
