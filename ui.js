@@ -1,64 +1,82 @@
 // ==UserScript==
-// @name         Lampa RGB Glow Focus
-// @namespace    lampa.rgb.glow.focus
-// @version      1.0
+// @name         Lampa Full Card RGB Glow
+// @namespace    lampa.full.rgb.glow
+// @version      2.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
     'use strict';
 
-    if (window.rgb_glow_focus_plugin) return;
-    window.rgb_glow_focus_plugin = true;
+    if (window.full_card_rgb_glow) return;
+    window.full_card_rgb_glow = true;
 
     const style = document.createElement('style');
 
     style.innerHTML = `
 
-    /* ===== RGB GLOW ANIMATION ===== */
+    /* =========================
+       RGB FLOW ANIMATION
+    ========================= */
 
     @keyframes rgbBorderFlow {
+
         0% {
-            filter: hue-rotate(0deg);
+            filter: hue-rotate(0deg) blur(12px);
         }
 
         100% {
-            filter: hue-rotate(360deg);
+            filter: hue-rotate(360deg) blur(12px);
         }
     }
 
-    /* ===== FOCUSED CARD ===== */
+    /* =========================
+       FULL CARD FOCUS
+    ========================= */
 
-    .card.focus,
-    .card--focus,
-    .selector.focus {
-        position: relative;
-        z-index: 2;
-        overflow: visible;
+    .card.card--focus,
+    .card.focus {
+
+        position: relative !important;
+
+        overflow: visible !important;
 
         border-radius: 1.4em;
 
         transform: scale(1.03);
 
+        z-index: 10;
+
         transition:
             transform .18s ease,
             box-shadow .18s ease;
-
-        box-shadow:
-            0 0 20px rgba(255,255,255,0.08),
-            0 0 40px rgba(255,255,255,0.06);
     }
 
-    /* ===== RGB OUTLINE ===== */
+    /* FIX INNER BLOCKS */
 
-    .card.focus::before,
-    .card--focus::before,
-    .selector.focus::before {
+    .card.card--focus .card__view,
+    .card.focus .card__view,
+
+    .card.card--focus .card__img,
+    .card.focus .card__img {
+
+        overflow: visible !important;
+
+        border-radius: 1.4em;
+    }
+
+    /* =========================
+       RGB BORDER
+    ========================= */
+
+    .card.card--focus::before,
+    .card.focus::before {
+
         content: '';
 
         position: absolute;
 
-        inset: -3px;
+        inset: -4px;
 
         border-radius: 1.6em;
 
@@ -79,20 +97,20 @@
 
         z-index: -1;
 
-        opacity: 0.95;
+        opacity: .95;
 
-        filter: blur(10px);
-
-        animation: rgbBorderFlow 5s linear infinite;
+        animation: rgbBorderFlow 6s linear infinite;
 
         pointer-events: none;
     }
 
-    /* ===== EXTRA SOFT GLOW ===== */
+    /* =========================
+       OUTER SOFT GLOW
+    ========================= */
 
-    .card.focus::after,
-    .card--focus::after,
-    .selector.focus::after {
+    .card.card--focus::after,
+    .card.focus::after {
+
         content: '';
 
         position: absolute;
@@ -103,19 +121,30 @@
 
         background: rgba(255,255,255,0.08);
 
-        filter: blur(25px);
+        filter: blur(30px);
 
         z-index: -2;
 
-        opacity: 0.7;
-
         pointer-events: none;
+    }
+
+    /* =========================
+       EXTRA CINEMATIC SHADOW
+    ========================= */
+
+    .card.card--focus,
+    .card.focus {
+
+        box-shadow:
+            0 0 20px rgba(255,255,255,0.10),
+            0 0 40px rgba(255,255,255,0.08),
+            0 0 80px rgba(255,255,255,0.06);
     }
 
     `;
 
     document.head.appendChild(style);
 
-    console.log('✔ RGB Glow Focus loaded');
+    console.log('✔ Full Card RGB Glow loaded');
 
 })();
