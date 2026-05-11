@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         Lampa Mobile RGB Card Glow
-// @namespace    lampa.mobile.rgb.glow
+// @name         Lampa RGB Glow ALL Cards
+// @namespace    lampa.rgb.allcards
 // @version      1.0
 // @match        *://*/lampa/*
 // ==/UserScript==
@@ -8,18 +8,18 @@
 (function () {
     'use strict';
 
-    if (window.lampa_mobile_rgb_glow) return;
-    window.lampa_mobile_rgb_glow = true;
+    if (window.rgb_all_cards_loaded) return;
+    window.rgb_all_cards_loaded = true;
 
     const style = document.createElement('style');
 
     style.innerHTML = `
 
     /* =========================
-       RGB ANIMATION
+       RGB FLOW
     ========================= */
 
-    @keyframes lampaRgbFlow {
+    @keyframes rgbFlow {
 
         0% {
             filter: hue-rotate(0deg);
@@ -31,7 +31,7 @@
     }
 
     /* =========================
-       CARD BASE
+       ALL CARDS
     ========================= */
 
     .card {
@@ -42,9 +42,7 @@
 
         border-radius: 1.4em !important;
 
-        transition:
-            transform .18s ease,
-            box-shadow .18s ease;
+        z-index: 1;
     }
 
     .card .card__view,
@@ -56,28 +54,19 @@
     }
 
     /* =========================
-       MOBILE RGB GLOW
+       RGB BORDER
     ========================= */
 
-    .card:hover,
-    .card:active {
-
-        transform: scale(1.04);
-
-        z-index: 99;
-    }
-
-    .card:hover::before,
-    .card:active::before {
+    .card::before {
 
         content: '';
 
         position: absolute;
 
-        top: -4px;
-        left: -4px;
-        right: -4px;
-        bottom: -4px;
+        top: -3px;
+        left: -3px;
+        right: -3px;
+        bottom: -3px;
 
         border-radius: 1.6em;
 
@@ -98,47 +87,59 @@
 
         z-index: -1;
 
-        opacity: 1;
+        opacity: .9;
 
-        filter: blur(12px);
+        filter: blur(10px);
 
         animation:
-            lampaRgbFlow 5s linear infinite;
+            rgbFlow 6s linear infinite;
 
         pointer-events: none;
     }
 
     /* =========================
-       OUTER CINEMATIC GLOW
+       SOFT GLOW
     ========================= */
 
-    .card:hover::after,
-    .card:active::after {
+    .card::after {
 
         content: '';
 
         position: absolute;
 
-        top: -10px;
-        left: -10px;
-        right: -10px;
-        bottom: -10px;
+        top: -8px;
+        left: -8px;
+        right: -8px;
+        bottom: -8px;
 
         border-radius: 2em;
 
-        background: rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.05);
 
-        filter: blur(28px);
+        filter: blur(20px);
 
         z-index: -2;
 
         pointer-events: none;
     }
 
+    /* =========================
+       SMALL HOVER BOOST
+    ========================= */
+
+    .card:hover {
+
+        transform: scale(1.03);
+
+        transition: .15s ease;
+
+        z-index: 5;
+    }
+
     `;
 
     document.head.appendChild(style);
 
-    console.log('✔ Lampa Mobile RGB Glow loaded');
+    console.log('✔ RGB Glow All Cards loaded');
 
 })();
