@@ -1,37 +1,26 @@
 // ==UserScript==
-// @name         Lampa Soft Neon Poster
-// @namespace    lampa.poster.softglow
-// @version      3.0
+// @name         Lampa Soft Neon Border FIXED
+// @namespace    lampa.poster.fixed
+// @version      4.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
 
-    if (window.soft_neon_poster) return;
-    window.soft_neon_poster = true;
+    if (window.soft_neon_fixed) return;
+    window.soft_neon_fixed = true;
 
     const style = document.createElement('style');
 
     style.innerHTML = `
 
-    /* =========================
-       POSTER
-    ========================= */
-
-    .card__view {
-
-        position: relative !important;
-
-        overflow: visible !important;
-    }
-
     .card__img {
 
         position: relative !important;
 
-        overflow: visible !important;
-
         border-radius: 1.3em !important;
+
+        overflow: hidden !important;
     }
 
     .card__img img,
@@ -44,74 +33,48 @@
         z-index: 2;
     }
 
-    /* =========================
-       SOFT GLOW
-    ========================= */
-
     .card__img::before {
 
         content: '';
 
         position: absolute;
 
-        inset: -2px;
+        inset: 0;
 
-        border-radius: 1.4em;
+        border-radius: 1.3em;
 
-        z-index: 1;
+        z-index: 3;
 
         pointer-events: none;
 
         border: 1.5px solid rgba(120,140,255,0.9);
 
-        box-shadow:
+        animation: neonMove 6s linear infinite;
 
-            0 0 6px rgba(80,120,255,0.55),
+        box-sizing: border-box;
 
-            0 0 12px rgba(120,80,255,0.35),
+        filter:
 
-            0 0 22px rgba(120,80,255,0.18);
-
-        animation: softPulse 4s ease-in-out infinite;
+            drop-shadow(0 0 3px rgba(80,120,255,0.8))
+            drop-shadow(0 0 8px rgba(120,80,255,0.45))
+            drop-shadow(0 0 14px rgba(120,80,255,0.25));
     }
 
-    /* =========================
-       ANIMATION
-    ========================= */
-
-    @keyframes softPulse {
+    @keyframes neonMove {
 
         0% {
 
-            box-shadow:
-
-                0 0 4px rgba(80,120,255,0.45),
-
-                0 0 10px rgba(120,80,255,0.25),
-
-                0 0 18px rgba(120,80,255,0.12);
+            border-color: #6ea8ff;
         }
 
         50% {
 
-            box-shadow:
-
-                0 0 8px rgba(80,120,255,0.75),
-
-                0 0 16px rgba(120,80,255,0.45),
-
-                0 0 28px rgba(120,80,255,0.25);
+            border-color: #b06cff;
         }
 
         100% {
 
-            box-shadow:
-
-                0 0 4px rgba(80,120,255,0.45),
-
-                0 0 10px rgba(120,80,255,0.25),
-
-                0 0 18px rgba(120,80,255,0.12);
+            border-color: #6ea8ff;
         }
     }
 
