@@ -1,24 +1,20 @@
 // ==UserScript==
-// @name         Lampa Neon Flow Border
-// @namespace    lampa.neon.flow
-// @version      2.0
+// @name         Lampa Neon Poster Flow
+// @namespace    lampa.neon.poster
+// @version      3.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
 
-    if (window.neon_flow_loaded) return;
-    window.neon_flow_loaded = true;
+    if (window.poster_flow_loaded) return;
+    window.poster_flow_loaded = true;
 
     const style = document.createElement('style');
 
     style.innerHTML = `
 
-    /* =========================
-       ROTATING BORDER
-    ========================= */
-
-    @keyframes borderRotate {
+    @keyframes neonRotate {
 
         0% {
             transform: rotate(0deg);
@@ -30,10 +26,10 @@
     }
 
     /* =========================
-       POSTER CONTAINER
+       POSTER ONLY
     ========================= */
 
-    .card__view {
+    .card__img {
 
         position: relative !important;
 
@@ -44,22 +40,11 @@
         isolation: isolate;
     }
 
-    .card__img {
-
-        border-radius: 1.4em !important;
-
-        overflow: hidden !important;
-
-        position: relative;
-
-        z-index: 2;
-    }
-
     /* =========================
-       ROTATING NEON
+       ROTATING BORDER
     ========================= */
 
-    .card__view::before {
+    .card__img::before {
 
         content: '';
 
@@ -73,47 +58,54 @@
 
         background: conic-gradient(
             from 0deg,
-            #3b82f6,
-            #6366f1,
-            #8b5cf6,
-            #a855f7,
-            #6366f1,
-            #3b82f6
+            #2563eb,
+            #4f46e5,
+            #7c3aed,
+            #9333ea,
+            #4f46e5,
+            #2563eb
         );
 
-        animation: borderRotate 4s linear infinite;
+        animation: neonRotate 4s linear infinite;
 
         z-index: 0;
     }
 
     /* =========================
-       INNER MASK
+       MASK
     ========================= */
 
-    .card__view::after {
+    .card__img::after {
 
         content: '';
 
         position: absolute;
 
-        inset: 3px;
+        inset: 2px;
 
         border-radius: 1.2em;
 
-        background: #111;
+        background-size: cover;
+
+        background: transparent;
+
+        box-shadow:
+            inset 0 0 0 3px #111;
 
         z-index: 1;
     }
 
     /* =========================
-       EXTRA GLOW
+       KEEP IMAGE ABOVE
     ========================= */
 
-    .card__view {
+    .card__img img {
 
-        box-shadow:
-            0 0 8px rgba(99,102,241,.35),
-            0 0 18px rgba(168,85,247,.25);
+        position: relative;
+
+        z-index: 2;
+
+        border-radius: 1.2em;
     }
 
     `;
