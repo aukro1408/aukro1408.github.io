@@ -1,80 +1,92 @@
 // ==UserScript==
-// @name         Lampa Soft Neon Border FIXED
-// @namespace    lampa.poster.fixed
-// @version      4.0
+// @name         Lampa Neon Poster Final
+// @namespace    lampa.poster.neon
+// @version      5.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
 
-    if (window.soft_neon_fixed) return;
-    window.soft_neon_fixed = true;
+    if (window.lampa_neon_final) return;
+    window.lampa_neon_final = true;
 
     const style = document.createElement('style');
 
     style.innerHTML = `
 
-    .card__img {
+    .card__view {
 
         position: relative !important;
 
-        border-radius: 1.3em !important;
+        border-radius: 1.4em !important;
 
-        overflow: hidden !important;
+        overflow: visible !important;
     }
 
-    .card__img img,
-    .card__img picture {
+    .card__img {
 
-        border-radius: 1.3em !important;
+        border-radius: 1.4em !important;
+
+        overflow: hidden !important;
 
         position: relative;
 
         z-index: 2;
     }
 
-    .card__img::before {
+    .card__view::before {
 
         content: '';
 
         position: absolute;
 
-        inset: 0;
+        inset: -2px;
 
-        border-radius: 1.3em;
+        border-radius: 1.5em;
 
-        z-index: 3;
+        z-index: 1;
 
         pointer-events: none;
 
-        border: 1.5px solid rgba(120,140,255,0.9);
+        border: 2px solid #7a8cff;
 
-        animation: neonMove 6s linear infinite;
+        animation: neonBorder 5s linear infinite;
 
         box-sizing: border-box;
 
         filter:
-
-            drop-shadow(0 0 3px rgba(80,120,255,0.8))
-            drop-shadow(0 0 8px rgba(120,80,255,0.45))
-            drop-shadow(0 0 14px rgba(120,80,255,0.25));
+            drop-shadow(0 0 4px rgba(90,120,255,.9))
+            drop-shadow(0 0 10px rgba(140,90,255,.55))
+            drop-shadow(0 0 18px rgba(140,90,255,.3));
     }
 
-    @keyframes neonMove {
+    @keyframes neonBorder {
 
         0% {
 
-            border-color: #6ea8ff;
+            border-color: #5ea2ff;
+
+            filter:
+                drop-shadow(0 0 4px rgba(94,162,255,.9))
+                drop-shadow(0 0 10px rgba(94,162,255,.5));
         }
 
         50% {
 
             border-color: #b06cff;
+
+            filter:
+                drop-shadow(0 0 4px rgba(176,108,255,.9))
+                drop-shadow(0 0 10px rgba(176,108,255,.5));
         }
 
         100% {
 
-            border-color: #6ea8ff;
+            border-color: #5ea2ff;
+
+            filter:
+                drop-shadow(0 0 4px rgba(94,162,255,.9))
+                drop-shadow(0 0 10px rgba(94,162,255,.5));
         }
     }
 
