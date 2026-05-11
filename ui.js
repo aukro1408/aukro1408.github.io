@@ -1,14 +1,14 @@
 // ==UserScript==
-// @name         Lampa Neon Poster Border
-// @namespace    lampa.poster.neon
-// @version      2.0
+// @name         Lampa Soft Ambient Glow
+// @namespace    lampa.poster.glow
+// @version      3.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
 
-    if (window.poster_rgb_border) return;
-    window.poster_rgb_border = true;
+    if (window.lampa_soft_glow) return;
+    window.lampa_soft_glow = true;
 
     const style = document.createElement('style');
 
@@ -24,13 +24,17 @@
             background-position: 0% 50%;
         }
 
+        50% {
+            background-position: 100% 50%;
+        }
+
         100% {
-            background-position: 300% 50%;
+            background-position: 0% 50%;
         }
     }
 
     /* =========================
-       ONLY POSTER
+       CARD
     ========================= */
 
     .card__view {
@@ -47,10 +51,14 @@
         border-radius: 1.4em !important;
 
         overflow: hidden !important;
+
+        position: relative;
+
+        z-index: 2;
     }
 
     /* =========================
-       NEON BORDER
+       SOFT AMBIENT GLOW
     ========================= */
 
     .card__view::before {
@@ -59,52 +67,31 @@
 
         position: absolute;
 
-        inset: -2px;
+        inset: -3px;
 
-        border-radius: 1.5em;
-
-        background: linear-gradient(
-            45deg,
-            #5ea2ff,
-            #7b68ff,
-            #b06cff,
-            #7b68ff,
-            #5ea2ff
-        );
-
-        background-size: 300% 300%;
-
-        animation: posterRGB 6s linear infinite;
+        border-radius: 1.6em;
 
         z-index: -1;
 
-        opacity: .95;
+        pointer-events: none;
 
-        /* МЯГКОЕ СВЕЧЕНИЕ */
+        background:
+            linear-gradient(
+                135deg,
+                rgba(94,162,255,.85),
+                rgba(123,104,255,.75),
+                rgba(176,108,255,.7),
+                rgba(123,104,255,.75),
+                rgba(94,162,255,.85)
+            );
 
-        box-shadow:
-            0 0 6px rgba(94,162,255,.55),
-            0 0 12px rgba(123,104,255,.35),
-            0 0 22px rgba(176,108,255,.18);
-    }
+        background-size: 250% 250%;
 
-    /* =========================
-       INNER MASK
-    ========================= */
+        animation: posterRGB 8s ease infinite;
 
-    .card__view::after {
+        filter: blur(8px);
 
-        content: '';
-
-        position: absolute;
-
-        inset: 2px;
-
-        border-radius: 1.3em;
-
-        background: #141414;
-
-        z-index: -1;
+        opacity: .55;
     }
 
     `;
