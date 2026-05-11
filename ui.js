@@ -1,29 +1,59 @@
 // ==UserScript==
-// @name         Lampa Neon Poster Clean
-// @namespace    lampa.poster.clean
-// @version      6.0
+// @name         Lampa Neon Poster Border
+// @namespace    lampa.poster.neon
+// @version      2.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
 
-    if (window.lampa_neon_clean) return;
-    window.lampa_neon_clean = true;
+    if (window.poster_rgb_border) return;
+    window.poster_rgb_border = true;
 
     const style = document.createElement('style');
 
     style.innerHTML = `
 
-    .card__img {
+    /* =========================
+       ANIMATION
+    ========================= */
+
+    @keyframes posterRGB {
+
+        0% {
+            background-position: 0% 50%;
+        }
+
+        100% {
+            background-position: 300% 50%;
+        }
+    }
+
+    /* =========================
+       ONLY POSTER
+    ========================= */
+
+    .card__view {
 
         position: relative !important;
 
-        border-radius: 1.4em !important;
-
         overflow: visible !important;
+
+        border-radius: 1.4em !important;
     }
 
-    .card__img::before {
+    .card__img {
+
+        border-radius: 1.4em !important;
+
+        overflow: hidden !important;
+    }
+
+    /* =========================
+       NEON BORDER
+    ========================= */
+
+    .card__view::before {
 
         content: '';
 
@@ -33,50 +63,48 @@
 
         border-radius: 1.5em;
 
-        border: 2px solid #6ea8ff;
+        background: linear-gradient(
+            45deg,
+            #5ea2ff,
+            #7b68ff,
+            #b06cff,
+            #7b68ff,
+            #5ea2ff
+        );
 
-        pointer-events: none;
+        background-size: 300% 300%;
 
-        z-index: 2;
+        animation: posterRGB 6s linear infinite;
 
-        box-sizing: border-box;
+        z-index: -1;
 
-        animation: neonPulse 4s ease-in-out infinite;
+        opacity: .95;
 
-        filter:
-            drop-shadow(0 0 4px rgba(90,140,255,.9))
-            drop-shadow(0 0 10px rgba(120,90,255,.55))
-            drop-shadow(0 0 18px rgba(120,90,255,.25));
+        /* МЯГКОЕ СВЕЧЕНИЕ */
+
+        box-shadow:
+            0 0 6px rgba(94,162,255,.55),
+            0 0 12px rgba(123,104,255,.35),
+            0 0 22px rgba(176,108,255,.18);
     }
 
-    @keyframes neonPulse {
+    /* =========================
+       INNER MASK
+    ========================= */
 
-        0% {
+    .card__view::after {
 
-            border-color: #5ea2ff;
+        content: '';
 
-            filter:
-                drop-shadow(0 0 4px rgba(94,162,255,.9))
-                drop-shadow(0 0 12px rgba(94,162,255,.5));
-        }
+        position: absolute;
 
-        50% {
+        inset: 2px;
 
-            border-color: #b06cff;
+        border-radius: 1.3em;
 
-            filter:
-                drop-shadow(0 0 4px rgba(176,108,255,.9))
-                drop-shadow(0 0 12px rgba(176,108,255,.55));
-        }
+        background: #141414;
 
-        100% {
-
-            border-color: #5ea2ff;
-
-            filter:
-                drop-shadow(0 0 4px rgba(94,162,255,.9))
-                drop-shadow(0 0 12px rgba(94,162,255,.5));
-        }
+        z-index: -1;
     }
 
     `;
