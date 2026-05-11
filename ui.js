@@ -1,20 +1,21 @@
 // ==UserScript==
-// @name         Lampa Thin RGB Border
-// @namespace    lampa.thin.rgb
+// @name         Lampa Poster RGB Border
+// @namespace    lampa.poster.rgb
 // @version      1.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
 
-    if (window.lampa_thin_rgb) return;
-    window.lampa_thin_rgb = true;
+    if (window.poster_rgb_border) return;
+    window.poster_rgb_border = true;
 
     const style = document.createElement('style');
 
     style.innerHTML = `
 
-    @keyframes rgbBorder {
+    @keyframes posterRGB {
+
         0% {
             filter: hue-rotate(0deg);
         }
@@ -24,7 +25,11 @@
         }
     }
 
-    .card {
+    /* =========================
+       ONLY POSTER
+    ========================= */
+
+    .card__view {
 
         position: relative !important;
 
@@ -33,17 +38,18 @@
         border-radius: 1.4em !important;
     }
 
-    .card .card__view,
-    .card .card__img {
+    .card__img {
 
         border-radius: 1.4em !important;
 
         overflow: hidden !important;
     }
 
-    /* ===== THIN RGB BORDER ===== */
+    /* =========================
+       RGB BORDER ONLY IMAGE
+    ========================= */
 
-    .card::before {
+    .card__view::before {
 
         content: '';
 
@@ -68,16 +74,18 @@
 
         background-size: 300%;
 
+        animation: posterRGB 5s linear infinite;
+
         z-index: -1;
 
-        animation: rgbBorder 5s linear infinite;
-
-        opacity: .9;
+        opacity: .95;
     }
 
-    /* ВНУТРЕННЯЯ МАСКА */
+    /* =========================
+       INNER MASK
+    ========================= */
 
-    .card::after {
+    .card__view::after {
 
         content: '';
 
