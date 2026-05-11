@@ -1,22 +1,18 @@
 // ==UserScript==
-// @name         Lampa Neon Ring Border
-// @namespace    lampa.neon.ring
-// @version      2.0
+// @name         Lampa Neon Poster Ring
+// @namespace    lampa.poster.ring
+// @version      3.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
 
-    if (window.poster_rgb_border) return;
-    window.poster_rgb_border = true;
+    if (window.poster_neon_ring) return;
+    window.poster_neon_ring = true;
 
     const style = document.createElement('style');
 
     style.innerHTML = `
-
-    /* =========================
-       NEON ROTATION
-    ========================= */
 
     @keyframes neonRotate {
 
@@ -30,71 +26,59 @@
     }
 
     /* =========================
-       POSTER CONTAINER
+       POSTER ONLY
     ========================= */
 
-    .card__view {
+    .card__img {
 
         position: relative !important;
 
         overflow: hidden !important;
 
-        border-radius: 1.5em !important;
+        border-radius: 1.4em !important;
 
         isolation: isolate;
     }
 
-    .card__img {
-
-        border-radius: 1.5em !important;
-
-        overflow: hidden !important;
-
-        position: relative;
-
-        z-index: 5;
-    }
-
     /* =========================
-       OUTER NEON RING
+       ROTATING NEON
     ========================= */
 
-    .card__view::before {
+    .card__img::before {
 
         content: '';
 
         position: absolute;
 
-        width: 250%;
-        height: 250%;
+        width: 240%;
+        height: 240%;
 
-        top: -75%;
-        left: -75%;
+        top: -70%;
+        left: -70%;
 
         background: conic-gradient(
             from 0deg,
-            transparent 0deg,
-            #00aeff 40deg,
-            #7b2fff 90deg,
-            #ff4fd8 140deg,
-            transparent 190deg,
-            transparent 360deg
+            transparent,
+            #00bfff,
+            #7b2fff,
+            #ff4fd8,
+            transparent
         );
 
         animation: neonRotate 4s linear infinite;
 
-        filter: blur(8px);
+        filter: blur(10px);
 
-        opacity: .95;
+        opacity: .9;
 
         z-index: 0;
     }
 
     /* =========================
-       INNER DARK MASK
+       INNER MASK
     ========================= */
 
-    .card__view::after {
+    .card__img::after {
 
         content: '';
 
@@ -102,9 +86,12 @@
 
         inset: 3px;
 
-        border-radius: 1.3em;
+        border-radius: 1.2em;
 
-        background: #111;
+        background: transparent;
+
+        box-shadow:
+            inset 0 0 0 3px #111;
 
         z-index: 1;
     }
@@ -114,26 +101,13 @@
     ========================= */
 
     .card__img img,
-    .card__img picture,
-    .card__img div {
+    .card__img picture {
 
         position: relative;
 
         z-index: 5;
 
-        border-radius: 1.3em;
-    }
-
-    /* =========================
-       EXTRA CYBER GLOW
-    ========================= */
-
-    .card__view {
-
-        box-shadow:
-            0 0 10px rgba(0,174,255,.25),
-            0 0 20px rgba(123,47,255,.18),
-            0 0 30px rgba(255,79,216,.12);
+        border-radius: 1.2em;
     }
 
     `;
