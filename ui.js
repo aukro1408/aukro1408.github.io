@@ -1,26 +1,20 @@
 // ==UserScript==
-// @name         Lampa RGB Glow ALL Cards
-// @namespace    lampa.rgb.allcards
+// @name         Lampa Thin RGB Border
+// @namespace    lampa.thin.rgb
 // @version      1.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
-    'use strict';
 
-    if (window.rgb_all_cards_loaded) return;
-    window.rgb_all_cards_loaded = true;
+    if (window.lampa_thin_rgb) return;
+    window.lampa_thin_rgb = true;
 
     const style = document.createElement('style');
 
     style.innerHTML = `
 
-    /* =========================
-       RGB FLOW
-    ========================= */
-
-    @keyframes rgbFlow {
-
+    @keyframes rgbBorder {
         0% {
             filter: hue-rotate(0deg);
         }
@@ -30,10 +24,6 @@
         }
     }
 
-    /* =========================
-       ALL CARDS
-    ========================= */
-
     .card {
 
         position: relative !important;
@@ -41,8 +31,6 @@
         overflow: visible !important;
 
         border-radius: 1.4em !important;
-
-        z-index: 1;
     }
 
     .card .card__view,
@@ -53,9 +41,7 @@
         overflow: hidden !important;
     }
 
-    /* =========================
-       RGB BORDER
-    ========================= */
+    /* ===== THIN RGB BORDER ===== */
 
     .card::before {
 
@@ -63,17 +49,14 @@
 
         position: absolute;
 
-        top: -3px;
-        left: -3px;
-        right: -3px;
-        bottom: -3px;
+        inset: -2px;
 
-        border-radius: 1.6em;
+        border-radius: 1.5em;
 
         background: linear-gradient(
             45deg,
             #ff0000,
-            #ff8800,
+            #ff9900,
             #ffee00,
             #00ff66,
             #00ffff,
@@ -83,23 +66,16 @@
             #ff0000
         );
 
-        background-size: 400%;
+        background-size: 300%;
 
         z-index: -1;
 
+        animation: rgbBorder 5s linear infinite;
+
         opacity: .9;
-
-        filter: blur(10px);
-
-        animation:
-            rgbFlow 6s linear infinite;
-
-        pointer-events: none;
     }
 
-    /* =========================
-       SOFT GLOW
-    ========================= */
+    /* ВНУТРЕННЯЯ МАСКА */
 
     .card::after {
 
@@ -107,39 +83,17 @@
 
         position: absolute;
 
-        top: -8px;
-        left: -8px;
-        right: -8px;
-        bottom: -8px;
+        inset: 2px;
 
-        border-radius: 2em;
+        border-radius: 1.3em;
 
-        background: rgba(255,255,255,0.05);
+        background: #141414;
 
-        filter: blur(20px);
-
-        z-index: -2;
-
-        pointer-events: none;
-    }
-
-    /* =========================
-       SMALL HOVER BOOST
-    ========================= */
-
-    .card:hover {
-
-        transform: scale(1.03);
-
-        transition: .15s ease;
-
-        z-index: 5;
+        z-index: -1;
     }
 
     `;
 
     document.head.appendChild(style);
-
-    console.log('✔ RGB Glow All Cards loaded');
 
 })();
