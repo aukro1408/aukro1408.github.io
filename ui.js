@@ -1,33 +1,46 @@
 // ==UserScript==
-// @name         Lampa Poster RGB Border
-// @namespace    lampa.poster.rgb
-// @version      1.0
+// @name         Lampa Blue Purple Neon Border
+// @namespace    lampa.bluepurple.neon
+// @version      2.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
 
-    if (window.poster_rgb_border) return;
-    window.poster_rgb_border = true;
+    'use strict';
+
+    if (window.blue_purple_neon_loaded) return;
+    window.blue_purple_neon_loaded = true;
 
     const style = document.createElement('style');
 
     style.innerHTML = `
 
-    @keyframes posterRGB {
+    /* ===================================
+       SMOOTH NEON FLOW
+    =================================== */
+
+    @keyframes neonFlow {
 
         0% {
-            filter: hue-rotate(0deg);
+            background-position: 0% 50%;
+            filter: brightness(1);
+        }
+
+        50% {
+            background-position: 100% 50%;
+            filter: brightness(1.25);
         }
 
         100% {
-            filter: hue-rotate(360deg);
+            background-position: 0% 50%;
+            filter: brightness(1);
         }
     }
 
-    /* =========================
-       ONLY POSTER
-    ========================= */
+    /* ===================================
+       POSTER ONLY
+    =================================== */
 
     .card__view {
 
@@ -45,9 +58,9 @@
         overflow: hidden !important;
     }
 
-    /* =========================
-       RGB BORDER ONLY IMAGE
-    ========================= */
+    /* ===================================
+       BLUE / PURPLE BORDER
+    =================================== */
 
     .card__view::before {
 
@@ -60,30 +73,33 @@
         border-radius: 1.5em;
 
         background: linear-gradient(
-            45deg,
-            #ff0000,
-            #ff9900,
-            #ffee00,
-            #00ff66,
-            #00ffff,
-            #0066ff,
-            #aa00ff,
-            #ff00aa,
-            #ff0000
+            135deg,
+            #00c3ff,
+            #3b82ff,
+            #7a5cff,
+            #b026ff,
+            #7a5cff,
+            #3b82ff,
+            #00c3ff
         );
 
-        background-size: 300%;
+        background-size: 300% 300%;
 
-        animation: posterRGB 5s linear infinite;
+        animation: neonFlow 6s ease infinite;
 
         z-index: -1;
 
         opacity: .95;
+
+        box-shadow:
+            0 0 8px rgba(0,195,255,0.45),
+            0 0 18px rgba(122,92,255,0.35),
+            0 0 28px rgba(176,38,255,0.25);
     }
 
-    /* =========================
-       INNER MASK
-    ========================= */
+    /* ===================================
+       INNER DARK MASK
+    =================================== */
 
     .card__view::after {
 
@@ -95,13 +111,30 @@
 
         border-radius: 1.3em;
 
-        background: #141414;
+        background: #101014;
 
         z-index: -1;
+    }
+
+    /* ===================================
+       HOVER BOOST
+    =================================== */
+
+    .card:hover .card__view {
+
+        transform: scale(1.02);
+
+        transition:
+            transform .18s ease,
+            filter .18s ease;
+
+        filter: brightness(1.08);
     }
 
     `;
 
     document.head.appendChild(style);
+
+    console.log('✔ Blue Purple Neon Border Loaded');
 
 })();
