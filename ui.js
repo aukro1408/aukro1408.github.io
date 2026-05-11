@@ -1,33 +1,42 @@
 // ==UserScript==
-// @name         Lampa Neon Poster Ring
-// @namespace    lampa.poster.ring
-// @version      3.0
+// @name         Lampa Soft Neon Glow
+// @namespace    lampa.poster.glow
+// @version      2.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
 (function () {
 
-    if (window.poster_neon_ring) return;
-    window.poster_neon_ring = true;
+    if (window.poster_rgb_border) return;
+    window.poster_rgb_border = true;
 
     const style = document.createElement('style');
 
     style.innerHTML = `
 
-    @keyframes neonRotate {
+    @keyframes posterGlow {
 
         0% {
-            transform: rotate(0deg);
+            background-position: 0% 50%;
         }
 
         100% {
-            transform: rotate(360deg);
+            background-position: 300% 50%;
         }
     }
 
     /* =========================
-       POSTER ONLY
+       CARD
     ========================= */
+
+    .card__view {
+
+        position: relative !important;
+
+        overflow: visible !important;
+
+        border-radius: 1.4em !important;
+    }
 
     .card__img {
 
@@ -37,11 +46,11 @@
 
         border-radius: 1.4em !important;
 
-        isolation: isolate;
+        z-index: 2;
     }
 
     /* =========================
-       ROTATING NEON
+       SOFT GLOW BEHIND POSTER
     ========================= */
 
     .card__img::before {
@@ -50,32 +59,33 @@
 
         position: absolute;
 
-        width: 240%;
-        height: 240%;
+        inset: -10px;
 
-        top: -70%;
-        left: -70%;
+        border-radius: 1.8em;
 
-        background: conic-gradient(
-            from 0deg,
-            transparent,
+        background: linear-gradient(
+            135deg,
             #00bfff,
-            #7b2fff,
-            #ff4fd8,
-            transparent
+            #6a5cff,
+            #b14cff,
+            #00bfff
         );
 
-        animation: neonRotate 4s linear infinite;
+        background-size: 300% 300%;
 
-        filter: blur(10px);
+        animation: posterGlow 6s linear infinite;
 
-        opacity: .9;
+        filter: blur(18px);
 
-        z-index: 0;
+        opacity: .75;
+
+        z-index: -1;
+
+        transform: scale(0.96);
     }
 
     /* =========================
-       INNER MASK
+       THIN BORDER
     ========================= */
 
     .card__img::after {
@@ -84,20 +94,23 @@
 
         position: absolute;
 
-        inset: 3px;
+        inset: 0;
 
-        border-radius: 1.2em;
+        border-radius: 1.4em;
 
-        background: transparent;
+        border: 2px solid rgba(120,140,255,.9);
 
         box-shadow:
-            inset 0 0 0 3px #111;
+            0 0 8px rgba(0,191,255,.35),
+            0 0 14px rgba(138,92,255,.25);
 
-        z-index: 1;
+        z-index: 3;
+
+        pointer-events: none;
     }
 
     /* =========================
-       KEEP IMAGE ABOVE
+       IMAGE
     ========================= */
 
     .card__img img,
@@ -105,9 +118,9 @@
 
         position: relative;
 
-        z-index: 5;
+        z-index: 2;
 
-        border-radius: 1.2em;
+        border-radius: 1.4em;
     }
 
     `;
