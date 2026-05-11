@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Lampa Poster RGB Border
-// @namespace    lampa.poster.rgb
-// @version      1.0
+// @name         Lampa Neon Ring Border
+// @namespace    lampa.neon.ring
+// @version      2.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -14,39 +14,49 @@
 
     style.innerHTML = `
 
-    @keyframes posterRGB {
+    /* =========================
+       NEON ROTATION
+    ========================= */
+
+    @keyframes neonRotate {
 
         0% {
-            filter: hue-rotate(0deg);
+            transform: rotate(0deg);
         }
 
         100% {
-            filter: hue-rotate(360deg);
+            transform: rotate(360deg);
         }
     }
 
     /* =========================
-       ONLY POSTER
+       POSTER CONTAINER
     ========================= */
 
     .card__view {
 
         position: relative !important;
 
-        overflow: visible !important;
+        overflow: hidden !important;
 
-        border-radius: 1.4em !important;
+        border-radius: 1.5em !important;
+
+        isolation: isolate;
     }
 
     .card__img {
 
-        border-radius: 1.4em !important;
+        border-radius: 1.5em !important;
 
         overflow: hidden !important;
+
+        position: relative;
+
+        z-index: 5;
     }
 
     /* =========================
-       RGB BORDER ONLY IMAGE
+       OUTER NEON RING
     ========================= */
 
     .card__view::before {
@@ -55,34 +65,33 @@
 
         position: absolute;
 
-        inset: -2px;
+        width: 250%;
+        height: 250%;
 
-        border-radius: 1.5em;
+        top: -75%;
+        left: -75%;
 
-        background: linear-gradient(
-            45deg,
-            #ff0000,
-            #ff9900,
-            #ffee00,
-            #00ff66,
-            #00ffff,
-            #0066ff,
-            #aa00ff,
-            #ff00aa,
-            #ff0000
+        background: conic-gradient(
+            from 0deg,
+            transparent 0deg,
+            #00aeff 40deg,
+            #7b2fff 90deg,
+            #ff4fd8 140deg,
+            transparent 190deg,
+            transparent 360deg
         );
 
-        background-size: 300%;
+        animation: neonRotate 4s linear infinite;
 
-        animation: posterRGB 5s linear infinite;
-
-        z-index: -1;
+        filter: blur(8px);
 
         opacity: .95;
+
+        z-index: 0;
     }
 
     /* =========================
-       INNER MASK
+       INNER DARK MASK
     ========================= */
 
     .card__view::after {
@@ -91,13 +100,40 @@
 
         position: absolute;
 
-        inset: 2px;
+        inset: 3px;
 
         border-radius: 1.3em;
 
-        background: #141414;
+        background: #111;
 
-        z-index: -1;
+        z-index: 1;
+    }
+
+    /* =========================
+       KEEP IMAGE ABOVE
+    ========================= */
+
+    .card__img img,
+    .card__img picture,
+    .card__img div {
+
+        position: relative;
+
+        z-index: 5;
+
+        border-radius: 1.3em;
+    }
+
+    /* =========================
+       EXTRA CYBER GLOW
+    ========================= */
+
+    .card__view {
+
+        box-shadow:
+            0 0 10px rgba(0,174,255,.25),
+            0 0 20px rgba(123,47,255,.18),
+            0 0 30px rgba(255,79,216,.12);
     }
 
     `;
