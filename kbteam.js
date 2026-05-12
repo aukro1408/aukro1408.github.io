@@ -1,63 +1,84 @@
 (function () {
     'use strict';
 
-    function KBTeam() {
+    function startPlugin() {
 
-        this.search = function (params, oncomplete) {
+        Lampa.Noty.show('KBTeam online ready');
 
-            var query = params.query || '';
+        Lampa.Listener.follow('full', function (e) {
 
-            fetch('http://kb-team.club/msx/kinozal/videocdn.php?act=search&query=' + encodeURIComponent(query))
-                .then(function (resp) {
-                    return resp.json();
+            if (!e || !e.data || !e.data.movie) return;
+
+            var movie = e.data.movie;
+
+            if (!movie.kinopoisk_id) return;
+
+            console.log('KBTEAM MOVIE:', movie);
+
+            var button = $('<div class="simple-button selector">KBTeam</div>');
+
+            button.on('hover:enter', function () {
+
+                Lampa.Noty.show('Loading stream...');
+
+                fetch(
+                    'http://kb-team.club/msx/kinozal/videocdn.php?act=watch&vid='
+                    + movie.kinopoisk_id
+                )
+                .then(function (r) {
+                    return r.json();
                 })
                 .then(function (json) {
 
-                    var results = [];
+                    console.log(json);
 
-                    if (json && json.items) {
-
-                        json.items.forEach(function (item) {
-
-                            results.push({
-                                id: item.id || '',
-                                title: item.title || item.label || 'No title',
-                                original_title: item.original_title || '',
-                                poster_path: item.poster || '',
-                                backdrop_path: item.background || '',
-                                release_date: item.year ? item.year + '-01-01' : '',
-                                overview: '',
-                                source: 'kbteam'
-                            });
-
-                        });
-
+                    if (!json || !json.items || !json.items.length) {
+                        Lampa.Noty.show('No stream found');
+                        return;
                     }
 
-                    oncomplete({
-                        results: results
+                    var item = json.items.find(function (x) {
+                        return x.action && x.action.indexOf('video:') === 0;
+                    });
+
+                    if (!item) {
+                        Lampa.Noty.show('No playable video');
+                        return;
+                    }
+
+                    var url = item.action.replace('video:', '');
+
+                    Lampa.Player.play({
+                        title: movie.title,
+                        url: url
                     });
 
                 })
-                .catch(function () {
+                .catch(function (err) {
 
-                    oncomplete({
-                        results: []
-                    });
+                    console.log(err);
+
+                    Lampa.Noty.show('KBTeam error');
 
                 });
 
-        };
+            });
 
-    }
+            setTimeout(function () {
 
-    function startPlugin() {
+                var panel = $('.full-start-new__buttons');
 
-        Lampa.Noty.show('KBTeam source enabled');
+                if (panel.find('.kbteam-button').length === 0) {
 
-        if (!Lampa.Api.sources['kbteam']) {
-            Lampa.Api.sources['kbteam'] = new KBTeam();
-        }
+                    button.addClass('kbteam-button');
+
+                    panel.append(button);
+
+                }
+
+            }, 1000);
+
+        });
 
     }
 
