@@ -1,0 +1,33 @@
+{
+  "id": "kbteam",
+  "type": "plugin",
+  "name": "KB-Team (VideoCDN)",
+  "version": "1.0.0",
+  "author": "lampame",
+  "description": "kb-team.club /msx/kinozal/videocdn.php MSX JSON API",
+  "entry": "plugin.js",
+  "content_types": ["movie", "serial"],
+  "quality": "FHD",
+  "languages": ["ru"],
+  "tags": ["videocdn", "msx", "kinopoisk"],
+  "config_schema": [
+    {
+      "key": "apiHost",
+      "label": "API URL",
+      "type": "string",
+      "default": "http://kb-team.club/msx/kinozal/videocdn.php"
+    },
+    {
+      "key": "proxyStreams",
+      "label": "Проксировать стримы",
+      "type": "bool",
+      "default": true
+    },
+    {
+      "key": "cacheTTL",
+      "label": "Кэш ответов (сек)",
+      "type": "int",
+      "default": 1800
+    }
+  ]
+}
