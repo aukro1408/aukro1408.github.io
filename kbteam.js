@@ -1,12 +1,31 @@
 (function () {
     'use strict';
 
-    console.log('KBTeam plugin loaded');
+    function startPlugin() {
 
-    if (window.Lampa) {
-        Lampa.Noty.show('KBTeam OK');
+        console.log('KBTeam plugin started');
+
+        Lampa.Noty.show('KBTeam started');
+
+        if (!Lampa.Params.values['kbteam_source']) {
+            Lampa.Params.select('kbteam_source', {
+                name: 'KBTeam source',
+                values: {
+                    'true': 'Enabled',
+                    'false': 'Disabled'
+                },
+                default: 'true'
+            });
+        }
+
+    }
+
+    if (window.appready) {
+        startPlugin();
     } else {
-        alert('KBTeam OK');
+        Lampa.Listener.follow('app', function (e) {
+            if (e.type === 'ready') startPlugin();
+        });
     }
 
 })();
