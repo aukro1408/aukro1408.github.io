@@ -1,60 +1,63 @@
 (function () {
     'use strict';
 
-    function search(query, callback) {
+    function KBTeam() {
 
-        fetch('http://kb-team.club/msx/kinozal/videocdn.php?act=search&query=' + encodeURIComponent(query))
-            .then(function (resp) {
-                return resp.json();
-            })
-            .then(function (json) {
+        this.search = function (params, oncomplete) {
 
-                console.log('KBTEAM SEARCH:', json);
+            var query = params.query || '';
 
-                var results = [];
+            fetch('http://kb-team.club/msx/kinozal/videocdn.php?act=search&query=' + encodeURIComponent(query))
+                .then(function (resp) {
+                    return resp.json();
+                })
+                .then(function (json) {
 
-                if (json && json.items) {
+                    var results = [];
 
-                    json.items.forEach(function (item) {
+                    if (json && json.items) {
 
-                        results.push({
-                            title: item.title || item.label || 'No title',
-                            original_title: item.original_title || '',
-                            poster: item.poster || '',
-                            backdrop: item.background || '',
-                            year: item.year || '',
-                            id: item.id || '',
-                            source: 'KBTeam'
+                        json.items.forEach(function (item) {
+
+                            results.push({
+                                id: item.id || '',
+                                title: item.title || item.label || 'No title',
+                                original_title: item.original_title || '',
+                                poster_path: item.poster || '',
+                                backdrop_path: item.background || '',
+                                release_date: item.year ? item.year + '-01-01' : '',
+                                overview: '',
+                                source: 'kbteam'
+                            });
+
                         });
 
+                    }
+
+                    oncomplete({
+                        results: results
                     });
 
-                }
+                })
+                .catch(function () {
 
-                callback(results);
+                    oncomplete({
+                        results: []
+                    });
 
-            })
-            .catch(function (err) {
+                });
 
-                console.log(err);
-
-                callback([]);
-
-            });
+        };
 
     }
 
     function startPlugin() {
 
-        Lampa.Noty.show('KBTeam search loaded');
+        Lampa.Noty.show('KBTeam source enabled');
 
-        search('matrix', function (results) {
-
-            console.log('RESULTS:', results);
-
-            Lampa.Noty.show('Found: ' + results.length);
-
-        });
+        if (!Lampa.Api.sources['kbteam']) {
+            Lampa.Api.sources['kbteam'] = new KBTeam();
+        }
 
     }
 
