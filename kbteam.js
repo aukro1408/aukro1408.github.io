@@ -3,20 +3,26 @@
 
     function startPlugin() {
 
-        console.log('KBTeam plugin started');
+        Lampa.Noty.show('KBTeam API test');
 
-        Lampa.Noty.show('KBTeam started');
+        fetch('http://kb-team.club/msx/kinozal/videocdn.php?act=search&query=matrix')
+            .then(function (resp) {
+                return resp.text();
+            })
+            .then(function (text) {
 
-        if (!Lampa.Params.values['kbteam_source']) {
-            Lampa.Params.select('kbteam_source', {
-                name: 'KBTeam source',
-                values: {
-                    'true': 'Enabled',
-                    'false': 'Disabled'
-                },
-                default: 'true'
+                console.log('KBTEAM RESPONSE:', text);
+
+                Lampa.Noty.show('KBTeam response OK');
+
+            })
+            .catch(function (err) {
+
+                console.log(err);
+
+                Lampa.Noty.show('KBTeam request error');
+
             });
-        }
 
     }
 
