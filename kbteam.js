@@ -1,28 +1,60 @@
 (function () {
     'use strict';
 
-    function startPlugin() {
+    function search(query, callback) {
 
-        Lampa.Noty.show('KBTeam API test');
-
-        fetch('http://kb-team.club/msx/kinozal/videocdn.php?act=search&query=matrix')
+        fetch('http://kb-team.club/msx/kinozal/videocdn.php?act=search&query=' + encodeURIComponent(query))
             .then(function (resp) {
-                return resp.text();
+                return resp.json();
             })
-            .then(function (text) {
+            .then(function (json) {
 
-                console.log('KBTEAM RESPONSE:', text);
+                console.log('KBTEAM SEARCH:', json);
 
-                Lampa.Noty.show('KBTeam response OK');
+                var results = [];
+
+                if (json && json.items) {
+
+                    json.items.forEach(function (item) {
+
+                        results.push({
+                            title: item.title || item.label || 'No title',
+                            original_title: item.original_title || '',
+                            poster: item.poster || '',
+                            backdrop: item.background || '',
+                            year: item.year || '',
+                            id: item.id || '',
+                            source: 'KBTeam'
+                        });
+
+                    });
+
+                }
+
+                callback(results);
 
             })
             .catch(function (err) {
 
                 console.log(err);
 
-                Lampa.Noty.show('KBTeam request error');
+                callback([]);
 
             });
+
+    }
+
+    function startPlugin() {
+
+        Lampa.Noty.show('KBTeam search loaded');
+
+        search('matrix', function (results) {
+
+            console.log('RESULTS:', results);
+
+            Lampa.Noty.show('Found: ' + results.length);
+
+        });
 
     }
 
