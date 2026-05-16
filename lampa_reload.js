@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lampa Reload Cat
 // @namespace    lampa.reload.cat
-// @version      2.0
+// @version      3.0
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -26,18 +26,12 @@
         style.id = STYLE_ID;
         style.textContent =
                 '#' + BUTTON_ID + '{' +
-                    'width:2.6em;' +
-                    'height:2.6em;' +
                     'display:flex;' +
                     'align-items:center;' +
                     'justify-content:center;' +
                     'font-size:1.25em;' +
                     'line-height:1;' +
-                    'border-radius:50%;' +
-                    'background:rgba(0,0,0,0.22);' +
                     'cursor:pointer;' +
-                    'margin-left:0.5em;' +
-                    'flex-shrink:0;' +
                 '}' +
                 '#' + BUTTON_ID + '.focus,' +
                 '#' + BUTTON_ID + '.selector:focus{' +
@@ -53,7 +47,7 @@
 
         var button = document.createElement('div');
         button.id = BUTTON_ID;
-        button.className = 'selector';
+        button.className = 'head__action selector';
         button.title = 'Reload Lampa';
         button.textContent = '🐱';
         button.addEventListener('click', reloadLampa);
@@ -63,17 +57,17 @@
     }
 
     function addButton() {
-        var wrap = document.querySelector('.bell__wrap');
-        if (!wrap) return false;
+        var actions = document.querySelector('.head__actions');
+        if (!actions) return false;
 
         if (document.getElementById(BUTTON_ID)) return true;
         var button = createButton();
-        var first = wrap.children[0];
+        var search = actions.querySelector('.open--search');
 
-        if (first) {
-            first.insertAdjacentElement('afterend', button);
+        if (search) {
+            search.insertAdjacentElement('afterend', button);
         } else {
-            wrap.appendChild(button);
+            actions.insertAdjacentElement('afterbegin', button);
         }
 
         return true;
