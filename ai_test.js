@@ -526,7 +526,7 @@
       title: 'my pl',
       component: COMPONENT,
       movie: movie,
-      search: movie.title,
+      search: movie.title || movie.name || movie.original_title || '',
       page: 1
     });
   }
