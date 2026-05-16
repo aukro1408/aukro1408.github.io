@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lampa Top Kino
 // @namespace    lampa.simple.top.kino
-// @version      1.0
+// @version      1.1
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -51,11 +51,11 @@
         // защита от дублей
         if ($('.top-kino').length) return;
 
-        // Топ кино: ужасы + триллеры, только фильмы, популярные и с высоким рейтингом
+        // Топ кино: ужасы + триллеры, только фильмы, популярные и с хорошим рейтингом
         const topKino = createMenuItem(
             'Топ кино',
             'top-kino',
-            'discover/movie?with_genres=27|53&sort_by=popularity.desc&vote_average.gte=7&vote_count.gte=500&include_adult=false',
+            'discover/movie?with_genres=27|53&sort_by=popularity.desc&vote_average.gte=6.5&vote_count.gte=100&include_adult=false',
             '★'
         );
 
