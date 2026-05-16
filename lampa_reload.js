@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lampa Reload Cat
 // @namespace    lampa.reload.cat
-// @version      1.3
+// @version      1.4
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -55,18 +55,20 @@
 
     function addButton() {
         if (!window.$) return;
-        if ($('.' + BUTTON_CLASS).length) return;
 
         var wrap = $('.bell__wrap').eq(0);
         if (!wrap.length) return;
 
-        var button = createButton();
-        var search = wrap.find('.open--search, .search, [class*="search"]').eq(0);
+        if (wrap.find('.' + BUTTON_CLASS).length) return;
+        $('.' + BUTTON_CLASS).remove();
 
-        if (search.length) {
-            search.after(button);
+        var button = createButton();
+        var items = wrap.children();
+
+        if (items.length) {
+            items.eq(0).after(button);
         } else {
-            wrap.prepend(button);
+            wrap.append(button);
         }
     }
 
@@ -85,9 +87,7 @@
     timer = setInterval(function () {
         startPlugin();
 
-        if ($('.' + BUTTON_CLASS).length) {
-            clearInterval(timer);
-        }
+        if ($('.bell__wrap .' + BUTTON_CLASS).length) clearInterval(timer);
     }, 500);
 
     setTimeout(function () {
