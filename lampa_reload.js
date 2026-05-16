@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lampa Reload Cat
 // @namespace    lampa.reload.cat
-// @version      1.0
+// @version      1.1
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -22,7 +22,13 @@
     function createButton() {
         if (!$('#' + BUTTON_STYLE_ID).length) {
             $('head').append(
-                '<style id="' + BUTTON_STYLE_ID + '">' +
+            '<style id="' + BUTTON_STYLE_ID + '">' +
+                '.reload-cat-button{' +
+                    'position:fixed!important;' +
+                    'top:0.72em!important;' +
+                    'right:19.15em!important;' +
+                    'z-index:9999!important;' +
+                '}' +
                 '.reload-cat-button.focus,' +
                 '.reload-cat-button.selector:focus{' +
                     'background:rgba(255,255,255,0.24)!important;' +
@@ -44,7 +50,6 @@
             'line-height': '1',
             'border-radius': '50%',
             'background': 'rgba(0,0,0,0.22)',
-            'margin-left': '0.45em',
             cursor: 'pointer'
         });
 
@@ -53,49 +58,11 @@
         return button;
     }
 
-    function findTopMenu() {
-        var places = $(
-            '.head__actions,' +
-            '.header__actions,' +
-            '.head__right,' +
-            '.header__right,' +
-            '.head .buttons,' +
-            '.header .buttons,' +
-            '.head,' +
-            '.header'
-        );
-
-        if (places.length) return places.eq(0);
-
-        var visibleTopSelector = $('.selector:visible').filter(function () {
-            var offset = $(this).offset();
-            return offset && offset.top < 90 && offset.left > window.innerWidth * 0.45;
-        });
-
-        if (visibleTopSelector.length) return visibleTopSelector.last().parent();
-
-        return $();
-    }
-
     function addButton() {
         if (!window.$) return;
         if ($('.' + BUTTON_CLASS).length) return;
 
-        var place = findTopMenu();
         var button = createButton();
-
-        if (place.length) {
-            place.append(button);
-            return;
-        }
-
-        button.css({
-            position: 'fixed',
-            top: '0.55em',
-            right: '18.5em',
-            'z-index': '9999'
-        });
-
         $('body').append(button);
     }
 
