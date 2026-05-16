@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lampa aukro1408 template
 // @namespace    lampa.clean.online.aukro1408
-// @version      1.0
+// @version      1.1
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -13,11 +13,15 @@
     window.aukro1408_template_plugin = true;
 
     var SOURCE_NAME = 'aukro1408';
+    var registered = false;
+    var timer = null;
 
     function registerSource() {
         if (!window.Lampa) return;
-
         if (!Lampa.Component) return;
+        if (registered) return;
+
+        registered = true;
 
         Lampa.Component.add(SOURCE_NAME, function (object) {
             var scroll = new Lampa.Scroll({ mask: true, over: true });
@@ -63,9 +67,9 @@
     }
 
     function addOnlineButton() {
-        if (!window.Lampa) return;
+        if (!window.Lampa || !window.$) return;
 
-        var menu = $('.menu .menu__list').eq(0);
+        var menu = $('.menu .menu__list, .menu__list').eq(0);
         if (!menu.length) return;
         if ($('.aukro1408-template').length) return;
 
@@ -89,20 +93,26 @@
     function startPlugin() {
         registerSource();
         addOnlineButton();
+
+        if (window.Lampa && Lampa.Listener && !window.aukro1408_template_listener) {
+            window.aukro1408_template_listener = true;
+
+            Lampa.Listener.follow('activity', function () {
+                setTimeout(addOnlineButton, 500);
+            });
+        }
     }
 
-    if (window.appready) {
+    timer = setInterval(function () {
         startPlugin();
-    } else {
-        Lampa.Listener.follow('app', function (e) {
-            if (e.type === 'ready') {
-                startPlugin();
-            }
-        });
-    }
 
-    Lampa.Listener.follow('activity', function () {
-        setTimeout(addOnlineButton, 500);
-    });
+        if (registered && $('.aukro1408-template').length) {
+            clearInterval(timer);
+        }
+    }, 500);
+
+    setTimeout(function () {
+        if (timer) clearInterval(timer);
+    }, 30000);
 
 })();
