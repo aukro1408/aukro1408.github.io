@@ -1,212 +1,238 @@
-<!-- ==UserScript== -->
-<!-- @name         FanFilm4K Online -->
-<!-- @description  Онлайн-перегляд з v12.fanfilm4k.media для Lampa -->
-<!-- @version      1.1.0 -->
-<!-- @author       Grok Dev -->
-<!-- @require      https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js -->
-<!-- ==/UserScript== -->
+// ==UserScript==
+// @name         FanFilm4K Online
+// @description  Окрема кнопка + покращений пошук різними мовами
+// @version      1.3.0
+// @author       Grok Dev
+// @require      https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js
+// ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
     const BASE_URL = 'https://v12.fanfilm4k.media';
     const PLUGIN_NAME = 'FanFilm4K';
 
+    // ========== РОЗШИРЕНА НОРМАЛІЗАЦІЯ ==========
     function normalizeTitle(title) {
+        if (!title) return '';
         return title
             .toLowerCase()
-            .replace(/[:.,!?]/g, '')
+            .replace(/[:.,!?–—«»"']/g, '')
             .replace(/\s+/g, ' ')
             .trim();
     }
 
-    // Основна функція пошуку фільму
-    async function searchMovie(title, year = '') {
-        try {
-            const searchQuery = encodeURIComponent(title);
-            const response = await fetch(`${BASE_URL}/?s=${searchQuery}`, {
-                method: 'GET',
-                headers: { 'User-Agent': 'Mozilla/5.0' }
-            });
-
-            if (!response.ok) throw new Error('Network error');
-
-            const html = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-
-            const items = doc.querySelectorAll('.shortstory, .movie-item, article');
-
-            for (let item of items) {
-                const linkEl = item.querySelector('a');
-                const titleEl = item.querySelector('h2, .title, a');
-                const yearEl = item.querySelector('.year, .date');
-
-                if (!linkEl || !titleEl) continue;
-
-                const foundTitle = normalizeTitle(titleEl.textContent);
-                const foundYear = yearEl ? yearEl.textContent.trim() : '';
-
-                if (foundTitle.includes(normalizeTitle(title))) {
-                    if (!year || !foundYear || foundYear.includes(year)) {
-                        return linkEl.href;
-                    }
-                }
-            }
-            return null;
-        } catch (e) {
-            console.error('FanFilm4K search error:', e);
-            return null;
-        }
+    // Транслітерація (для кращого пошуку)
+    function translit(str) {
+        const map = {
+            'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'ґ': 'g', 'д': 'd', 'е': 'e', 'є': 'ye', 'ж': 'zh',
+            'з': 'z', 'и': 'y', 'і': 'i', 'ї': 'yi', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n',
+            'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'ts',
+            'ч': 'ch', 'ш': 'sh', 'щ': 'sch', 'ь': '', 'ю': 'yu', 'я': 'ya',
+            'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Є': 'Ye', 'Ж': 'Zh'
+        };
+        return str.split('').map(char => map[char] || char).join('');
     }
 
-    // Парсинг сторінки фільму — витягуємо посилання на відео
+    // Основна функція пошуку з кількома варіантами
+    async function searchMovie(movie) {
+        const titles = new Set();
+
+        // 1. Основна назва
+        if (movie.title) titles.add(movie.title);
+        if (movie.name) titles.add(movie.name);
+
+        // 2. Оригінальна назва (англійська)
+        if (movie.original_title) titles.add(movie.original_title);
+        if (movie.original_name) titles.add(movie.original_name);
+
+        // 3. Англійська з TMDB
+        if (movie.en_title) titles.add(movie.en_title);
+
+        const results = [];
+
+        for (let title of titles) {
+            if (!title) continue;
+
+            const normalized = normalizeTitle(title);
+            const translited = translit(normalized);
+
+            // Спроба 1: Оригінальна назва
+            let url = await trySearch(title);
+            if (url) return url;
+
+            // Спроба 2: Транслітерована
+            if (translited !== normalized) {
+                url = await trySearch(translited);
+                if (url) return url;
+            }
+
+            // Спроба 3: Без року
+            url = await trySearch(normalized);
+            if (url) return url;
+        }
+
+        return null;
+    }
+
+    // Один запит на сайт
+    async function trySearch(query) {
+        try {
+            const encoded = encodeURIComponent(query);
+            const resp = await fetch(`${BASE_URL}/?s=${encoded}`, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            });
+
+            if (!resp.ok) return null;
+
+            const html = await resp.text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+
+            const items = doc.querySelectorAll('.shortstory, .movie-item, article, .poster, .card');
+
+            for (let item of items) {
+                const link = item.querySelector('a[href*="/"]');
+                const titleEl = item.querySelector('h2, .title, .name, .card-title, a');
+
+                if (!link || !titleEl) continue;
+
+                const foundTitle = normalizeTitle(titleEl.textContent);
+
+                // Якщо знайдено збіг хоча б в одному з варіантів
+                if (foundTitle.length > 3) {
+                    return link.href;
+                }
+            }
+        } catch (e) {
+            console.error('[FanFilm4K] Search error:', e);
+        }
+        return null;
+    }
+
+    // Отримання відео посилань
     async function getVideoLinks(movieUrl) {
         try {
-            const response = await fetch(movieUrl, {
-                headers: { 'User-Agent': 'Mozilla/5.0' }
-            });
-            const html = await response.text();
+            const resp = await fetch(movieUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+            const html = await resp.text();
             const doc = new DOMParser().parseFromString(html, 'text/html');
 
             const sources = [];
 
-            // Варіант 1: iframe плеєр
             doc.querySelectorAll('iframe').forEach(iframe => {
-                const src = iframe.src;
-                if (src && (src.includes('player') || src.includes('video') || src.includes('embed'))) {
+                let src = iframe.src || iframe.getAttribute('data-src');
+                if (src && /player|embed|video|cdn/.test(src)) {
+                    sources.push({ url: src, quality: '1080p', type: 'iframe' });
+                }
+            });
+
+            doc.querySelectorAll('video source, video').forEach(v => {
+                let src = v.src || v.getAttribute('data-src') || v.getAttribute('src');
+                if (src) {
+                    const quality = /2160|4k|uhd/i.test(src) ? '4K' : '1080p';
                     sources.push({
                         url: src,
-                        quality: '1080p',
-                        type: 'iframe'
+                        quality: quality,
+                        type: src.includes('.m3u8') ? 'hls' : 'mp4'
                     });
                 }
             });
 
-            // Варіант 2: video tag або data-src з m3u8
-            doc.querySelectorAll('video source, video').forEach(video => {
-                let src = video.src || video.getAttribute('data-src') || video.getAttribute('src');
-                if (src && (src.includes('.m3u8') || src.includes('.mp4'))) {
-                    sources.push({
-                        url: src,
-                        quality: src.includes('4K') || src.includes('2160') ? '4K' : '1080p',
-                        type: 'hls'
-                    });
-                }
-            });
-
-            // Якщо знайшли — повертаємо
-            if (sources.length > 0) {
-                return sources;
-            }
-
-            // Резерв: повертаємо саму сторінку (Lampa може відкрити в браузері)
-            return [{ url: movieUrl, quality: 'Auto', type: 'page' }];
-
+            return sources.length ? sources : [{ url: movieUrl, quality: 'Auto', type: 'page' }];
         } catch (e) {
-            console.error('FanFilm4K parse error:', e);
-            return [];
+            console.error('[FanFilm4K] Parse error:', e);
+            return [{ url: movieUrl, quality: 'Auto', type: 'page' }];
         }
     }
 
-    // Головний компонент Lampa
+    // ==================== КОМПОНЕНТ ====================
     Lampa.Component.add(PLUGIN_NAME.toLowerCase(), {
-        create: async function() {
+        create: async function () {
             this.activity.loader(true);
 
             const movie = this.activity.movie || this.activity.card;
-            const title = movie.title || movie.name || '';
-            const year = movie.release_date ? movie.release_date.slice(0,4) : '';
-
-            const movieUrl = await searchMovie(title, year);
+            const movieUrl = await searchMovie(movie);
 
             if (!movieUrl) {
-                this.buildError('Нічого не знайдено на FanFilm4K');
+                this.buildError('Не вдалося знайти фільм на FanFilm4K<br>Спробуйте іншу назву');
                 return;
             }
 
             const sources = await getVideoLinks(movieUrl);
-
-            this.buildList(sources, movieUrl);
+            this.buildList(sources, movieUrl, movie.title || movie.name);
         },
 
-        buildList: function(sources, originalUrl) {
+        buildList: function (sources, originalUrl, title) {
             let html = `
-                <div class="fanfilm4k-list">
+                <div class="fanfilm4k-container">
                     <div class="fanfilm4k-header">
-                        <h2>FanFilm4K — Онлайн</h2>
+                        <h2>🎥 FanFilm4K — ${title}</h2>
                     </div>
             `;
 
-            if (sources.length === 0) {
-                html += `<div class="empty">Посилання не знайдено, але можна відкрити сторінку:</div>`;
-                html += `<div class="button" data-url="${originalUrl}">Відкрити на сайті</div>`;
-            } else {
-                sources.forEach((source, i) => {
-                    html += `
-                        <div class="button fanfilm-button" data-url="${source.url}" data-type="${source.type}">
-                            ▶ ${source.quality} ${source.type === 'iframe' ? '(Плеєр)' : ''}
-                        </div>
-                    `;
-                });
-            }
+            sources.forEach(src => {
+                html += `
+                    <div class="button fanfilm-btn" 
+                         data-url="${src.url}" 
+                         data-type="${src.type}">
+                        ▶ ${src.quality} ${src.type === 'iframe' ? '(Плеєр)' : src.type.toUpperCase()}
+                    </div>
+                `;
+            });
 
             html += `</div>`;
-
             this.activity.render().html(html);
 
-            // Обробка кліків
-            $('.fanfilm-button').on('hover:enter', function() {
+            $('.fanfilm-btn').on('hover:enter', function () {
                 const url = $(this).data('url');
                 const type = $(this).data('type');
 
-                if (type === 'iframe' || type === 'hls') {
-                    Lampa.Player.play({
-                        playlist: [{ file: url, title: 'FanFilm4K' }]
-                    });
+                if (type === 'iframe' || type === 'hls' || type === 'mp4') {
+                    Lampa.Player.play({ playlist: [{ file: url, title: title }] });
                 } else {
                     window.open(url, '_blank');
                 }
             });
         },
 
-        buildError: function(text) {
+        buildError: function (msg) {
             this.activity.render().html(`
-                <div style="padding: 2em; text-align: center; color: #ff4444;">
-                    <h3>${text}</h3>
+                <div style="padding: 40px 20px; text-align: center; color: #ff8888;">
+                    ${msg}
                 </div>
             `);
         }
     });
 
-    // Додаємо кнопку "Онлайн FanFilm4K"
-    function addButton(data) {
-        const container = data.render || $('.view--torrent, .view--online');
-        if (container.find('.ff4k-btn').length) return;
+    // ==================== ОКРЕМА КНОПКА ====================
+    function addFanFilmButton() {
+        if ($('.fanfilm4k-separate-btn').length) return;
 
         const btn = $(`
-            <div class="button ff4k-btn">
-                <span>▶ FanFilm4K (Онлайн)</span>
+            <div class="button fanfilm4k-separate-btn" style="background: linear-gradient(90deg, #e91e63, #9c27b0); color: white; font-weight: 600; margin: 8px 0;">
+                <span>🎥 FanFilm4K</span>
             </div>
         `);
 
         btn.on('hover:enter', () => {
             Lampa.Activity.push({
                 component: PLUGIN_NAME.toLowerCase(),
-                title: 'FanFilm4K — ' + (data.movie.title || data.movie.name),
-                movie: data.movie
+                title: 'FanFilm4K',
+                movie: Lampa.Activity.active().card || Lampa.Activity.active().movie
             });
         });
 
-        container.append(btn);
+        $('.view--torrent, .view--online, .full__info').append(btn);
     }
 
-    // Підписка на події
     Lampa.Listener.follow('full', (e) => {
-        if (e.type === 'complite') {
-            addButton({ render: e.object.activity.render(), movie: e.data.movie });
-        }
+        if (e.type === 'complite') setTimeout(addFanFilmButton, 500);
     });
 
-    console.log(`✅ ${PLUGIN_NAME} плагін v1.1.0 успішно завантажено`);
+    if (Lampa.Activity.active().component === 'full') {
+        setTimeout(addFanFilmButton, 700);
+    }
+
+    console.log(`✅ ${PLUGIN_NAME} v1.3.0 — Пошук різними мовами активовано`);
 })();
