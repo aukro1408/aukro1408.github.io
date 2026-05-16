@@ -56,7 +56,7 @@
   }
 
   function getBridgeBase() {
-    return trimBase(Lampa.Storage.get(STORAGE_BRIDGE, ''));
+    return  'https://deep-wanids-lampac1408-606d1b80.koyeb.app';
   }
 
   function movieHash(movie) {
