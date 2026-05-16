@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lampa Reload Cat
 // @namespace    lampa.reload.cat
-// @version      1.1
+// @version      1.2
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -26,7 +26,7 @@
                 '.reload-cat-button{' +
                     'position:fixed!important;' +
                     'top:0.72em!important;' +
-                    'right:19.15em!important;' +
+                    'right:31.6em!important;' +
                     'z-index:9999!important;' +
                 '}' +
                 '.reload-cat-button.focus,' +
