@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lampa Reload Cat
 // @namespace    lampa.reload.cat
-// @version      1.2
+// @version      1.3
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -24,10 +24,18 @@
             $('head').append(
             '<style id="' + BUTTON_STYLE_ID + '">' +
                 '.reload-cat-button{' +
-                    'position:fixed!important;' +
-                    'top:0.72em!important;' +
-                    'right:31.6em!important;' +
-                    'z-index:9999!important;' +
+                    'width:2.6em;' +
+                    'height:2.6em;' +
+                    'display:flex;' +
+                    'align-items:center;' +
+                    'justify-content:center;' +
+                    'font-size:1.25em;' +
+                    'line-height:1;' +
+                    'border-radius:50%;' +
+                    'background:rgba(0,0,0,0.22);' +
+                    'cursor:pointer;' +
+                    'margin-left:0.5em;' +
+                    'flex-shrink:0;' +
                 '}' +
                 '.reload-cat-button.focus,' +
                 '.reload-cat-button.selector:focus{' +
@@ -40,19 +48,6 @@
 
         var button = $('<div class="selector ' + BUTTON_CLASS + '" title="Reload Lampa">🐱</div>');
 
-        button.css({
-            width: '2.6em',
-            height: '2.6em',
-            display: 'flex',
-            'align-items': 'center',
-            'justify-content': 'center',
-            'font-size': '1.25em',
-            'line-height': '1',
-            'border-radius': '50%',
-            'background': 'rgba(0,0,0,0.22)',
-            cursor: 'pointer'
-        });
-
         button.on('hover:enter click', reloadLampa);
 
         return button;
@@ -62,8 +57,17 @@
         if (!window.$) return;
         if ($('.' + BUTTON_CLASS).length) return;
 
+        var wrap = $('.bell__wrap').eq(0);
+        if (!wrap.length) return;
+
         var button = createButton();
-        $('body').append(button);
+        var search = wrap.find('.open--search, .search, [class*="search"]').eq(0);
+
+        if (search.length) {
+            search.after(button);
+        } else {
+            wrap.prepend(button);
+        }
     }
 
     function startPlugin() {
