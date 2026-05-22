@@ -42,40 +42,39 @@
       '}',
 
       '.similar-plugin__title {',
-      '  font-size:1.4em;',
+      '  font-size:1.5em;',
       '  font-weight:600;',
       '  color:#fff;',
       '}',
 
       '.similar-plugin__count {',
       '  font-size:0.85em;',
-      '  color:rgba(255,255,255,0.4);',
+      '  color:rgba(255,255,255,0.45);',
       '}',
 
-      // FLEX вместо GRID
-      '.similar-plugin__grid {',
+      // КОНТЕЙНЕР
+      '.similar-plugin__items {',
       '  display:flex;',
       '  flex-wrap:wrap;',
+      '  align-items:flex-start;',
       '  gap:1.2em;',
       '}',
 
-      // 3 карточки в ряд
+      // 3 В РЯД
       '.similar-plugin__card {',
       '  width:calc(33.333% - 0.8em);',
-      '  cursor:pointer;',
-      '  outline:none;',
-      '  transition:transform 0.15s;',
       '  flex-shrink:0;',
+      '  cursor:pointer;',
+      '  transition:transform .15s;',
       '}',
 
-      '.similar-plugin__card:hover,',
       '.similar-plugin__card.focus {',
-      '  transform:scale(1.04);',
+      '  transform:scale(1.05);',
       '}',
 
       '.similar-plugin__card .card__view {',
       '  position:relative;',
-      '  border-radius:10px;',
+      '  border-radius:12px;',
       '  overflow:hidden;',
       '  aspect-ratio:2/3;',
       '  background:rgba(255,255,255,0.05);',
@@ -100,40 +99,40 @@
       '  top:6px;',
       '  right:6px;',
       '  background:rgba(0,0,0,0.75);',
-      '  color:#f3c35b;',
+      '  color:#f7c65c;',
       '  font-size:0.72em;',
       '  font-weight:700;',
       '  padding:2px 7px;',
-      '  border-radius:4px;',
+      '  border-radius:5px;',
       '}',
 
       '.similar-plugin__card .card__title {',
-      '  margin-top:0.5em;',
+      '  margin-top:0.55em;',
       '  font-size:0.9em;',
-      '  color:#ddd;',
-      '  white-space:nowrap;',
+      '  color:#fff;',
       '  overflow:hidden;',
       '  text-overflow:ellipsis;',
+      '  white-space:nowrap;',
       '}',
 
       '.similar-plugin__year {',
-      '  margin-top:0.2em;',
-      '  font-size:0.75em;',
-      '  color:rgba(255,255,255,0.4);',
+      '  margin-top:0.15em;',
+      '  font-size:0.76em;',
+      '  color:rgba(255,255,255,0.45);',
       '}',
 
       '.similar-plugin__loader {',
       '  width:100%;',
       '  display:flex;',
       '  justify-content:center;',
-      '  padding:2em 0;',
+      '  padding:3em 0;',
       '}',
 
       '.similar-plugin__spinner {',
-      '  width:34px;',
-      '  height:34px;',
+      '  width:36px;',
+      '  height:36px;',
       '  border:3px solid rgba(255,255,255,0.1);',
-      '  border-top-color:#f3c35b;',
+      '  border-top-color:#f7c65c;',
       '  border-radius:50%;',
       '  animation:similar_spin .7s linear infinite;',
       '}',
@@ -157,25 +156,23 @@
       '}',
 
       '.similar-plugin__more-btn {',
-      '  padding:0.7em 2em;',
-      '  border-radius:6px;',
-      '  border:1px solid rgba(255,255,255,0.2);',
+      '  padding:0.8em 2.2em;',
+      '  border-radius:7px;',
+      '  border:1px solid rgba(255,255,255,0.15);',
       '  background:transparent;',
       '  color:#fff;',
-      '  cursor:pointer;',
       '}',
 
-      '.similar-plugin__more-btn:hover,',
       '.similar-plugin__more-btn.focus {',
-      '  border-color:#f3c35b;',
-      '  color:#f3c35b;',
+      '  border-color:#f7c65c;',
+      '  color:#f7c65c;',
       '}'
 
     ].join('\n')).appendTo('head');
   }
 
   // ============================================================
-  // КОМПОНЕНТ
+  // COMPONENT
   // ============================================================
 
   function SimilarComponent(object) {
@@ -184,7 +181,8 @@
 
     var scroll = new Lampa.Scroll({
       mask: true,
-      over: true
+      over: true,
+      step: 250
     });
 
     var page    = 1;
@@ -196,10 +194,11 @@
     var type    = object.movie_type || 'movie';
     var tmdb_id = card.id;
 
-    var $head   = $('<div class="similar-plugin__head"></div>');
-    var $title  = $('<div class="similar-plugin__title"></div>');
-    var $count  = $('<div class="similar-plugin__count"></div>');
-    var $grid   = $('<div class="similar-plugin__grid"></div>');
+    var $head  = $('<div class="similar-plugin__head"></div>');
+    var $title = $('<div class="similar-plugin__title"></div>');
+    var $count = $('<div class="similar-plugin__count"></div>');
+
+    var $items = $('<div class="similar-plugin__items"></div>');
 
     var $loader = $(
       '<div class="similar-plugin__loader">' +
@@ -229,13 +228,13 @@
 
     $head.append($title).append($count);
 
-    scroll.body().addClass('similar-plugin');
+    scroll.render().addClass('similar-plugin');
 
     scroll.body().append($head);
-    scroll.body().append($grid);
+    scroll.body().append($items);
 
     // ============================================================
-    // СКРОЛЛ
+    // SCROLL
     // ============================================================
 
     function updateScroll() {
@@ -245,14 +244,24 @@
         var active = $('.focus');
 
         if (active.length) {
-          scroll.update(active);
+
+          var body = scroll.render().find('.scroll__body');
+
+          if (body.length) {
+
+            var top = active.position().top;
+
+            body.stop().animate({
+              scrollTop: top - 200
+            }, 150);
+          }
         }
 
-      }, 30);
+      }, 20);
     }
 
     // ============================================================
-    // КАРТОЧКИ
+    // CARDS
     // ============================================================
 
     function renderCards(results) {
@@ -263,10 +272,6 @@
           ? IMG_BASE + movie.poster_path
           : '';
 
-        var rating = movie.vote_average
-          ? parseFloat(movie.vote_average).toFixed(1)
-          : '—';
-
         var title = movie.title || movie.name || '';
 
         var year = (
@@ -274,6 +279,10 @@
           || movie.first_air_date
           || ''
         ).slice(0, 4);
+
+        var rating = movie.vote_average
+          ? parseFloat(movie.vote_average).toFixed(1)
+          : '—';
 
         var $card = $([
           '<div class="card focus--mouse similar-plugin__card">',
@@ -308,18 +317,18 @@
           updateScroll();
         });
 
-        $grid.append($card);
+        $items.append($card);
       });
-
-      updateScroll();
 
       Lampa.Controller.collectionSet(
         scroll.render()
       );
+
+      updateScroll();
     }
 
     // ============================================================
-    // ЗАГРУЗКА
+    // LOAD
     // ============================================================
 
     function loadPage() {
@@ -328,7 +337,7 @@
 
       loading = true;
 
-      $grid.append($loader);
+      $items.append($loader);
 
       var endpoint = type === 'tv'
         ? 'tv'
@@ -357,7 +366,7 @@
         if (!data || !data.results) {
 
           if (page === 1) {
-            $grid.append($empty);
+            $items.append($empty);
           }
 
           return;
@@ -372,7 +381,7 @@
 
         if (!data.results.length && page === 1) {
 
-          $grid.append($empty);
+          $items.append($empty);
 
           return;
         }
@@ -401,13 +410,13 @@
         $loader.detach();
 
         if (page === 1) {
-          $grid.append($empty);
+          $items.append($empty);
         }
       });
     }
 
     // ============================================================
-    // СИСТЕМА
+    // SYSTEM
     // ============================================================
 
     this.create = function () {
@@ -510,7 +519,7 @@
   }
 
   // ============================================================
-  // КНОПКА
+  // BUTTON
   // ============================================================
 
   function addButton(e) {
