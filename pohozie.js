@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Lampa Similar Movies Final
-// @namespace    lampa.similar.movies.final
-// @version      1.0
+// @name         Lampa Similar Movies Gold
+// @namespace    lampa.similar.movies.gold
+// @version      1.1
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -10,8 +10,57 @@
     'use strict';
 
     // защита от повторного запуска
-    if (window.similar_movies_final) return;
-    window.similar_movies_final = true;
+    if (window.similar_movies_gold) return;
+    window.similar_movies_gold = true;
+
+    // =====================================================
+    // STYLES
+    // =====================================================
+
+    function injectStyles() {
+
+        if ($('#similar_movies_gold_styles').length) return;
+
+        $('<style id="similar_movies_gold_styles">').text([
+
+            '.similar--button{',
+            'border-radius:14px;',
+            'background:linear-gradient(',
+            '135deg,',
+            'rgba(232,184,75,.18),',
+            'rgba(232,184,75,.05)',
+            ');',
+
+            'border:1px solid rgba(232,184,75,.35)!important;',
+            'transition:all .2s ease;',
+            'overflow:hidden;',
+            '}',
+
+            '.similar--button.focus{',
+            'transform:scale(1.05);',
+
+            'background:linear-gradient(',
+            '135deg,',
+            'rgba(232,184,75,.35),',
+            'rgba(232,184,75,.12)',
+            ');',
+
+            'box-shadow:0 0 30px rgba(232,184,75,.25);',
+            '}',
+
+            '.similar--button svg{',
+            'width:22px;',
+            'height:22px;',
+            'color:#f1c761;',
+            '}',
+
+            '.similar--button span{',
+            'font-weight:600;',
+            'letter-spacing:.2px;',
+            '}'
+
+        ].join('')).appendTo('head');
+    }
 
     // =====================================================
     // BUTTON
@@ -31,25 +80,30 @@
             ? 'tv'
             : 'movie';
 
-        // кнопка
+        // =================================================
+        // BUTTON UI
+        // =================================================
+
         var button = $([
             '<div class="full-start__button selector similar--button">',
+
             '   <svg xmlns="http://www.w3.org/2000/svg"',
             '        viewBox="0 0 24 24"',
             '        fill="none"',
             '        stroke="currentColor"',
-            '        stroke-width="1.5"',
-            '        width="24"',
-            '        height="24">',
-            '       <circle cx="11" cy="11" r="7"/>',
-            '       <line x1="16.5" y1="16.5" x2="22" y2="22"/>',
+            '        stroke-width="1.8"',
+            '        stroke-linecap="round"',
+            '        stroke-linejoin="round">',
+            '       <path d="M12 3l1.9 4.8L19 9.7l-4 3.4 1.2 5.1L12 15.8 7.8 18.2 9 13.1 5 9.7l5.1-1.9L12 3z"/>',
             '   </svg>',
-            '   <span>Похожее</span>',
+
+            '   <span>Похожие</span>',
+
             '</div>'
         ].join(''));
 
         // =================================================
-        // OPEN
+        // OPEN SIMILAR
         // =================================================
 
         button.on('hover:enter', function () {
@@ -62,7 +116,7 @@
             }
 
             // ВАЖНО:
-            // category_full понимает ТОЛЬКО discover / movie / tv URL
+            // именно такой URL работает в твоей Lampa
 
             var url =
                 type +
@@ -74,7 +128,7 @@
 
                 component: 'category_full',
 
-                title: 'Похожее',
+                title: 'Похожие',
 
                 source: 'tmdb',
 
@@ -84,7 +138,7 @@
             });
         });
 
-        // вставляем кнопку
+        // вставляем после torrent
         e.render.after(button);
     }
 
@@ -94,7 +148,9 @@
 
     function init() {
 
-        // слушаем открытие full карточки
+        injectStyles();
+
+        // слушаем открытие карточки
         Lampa.Listener.follow('full', function (e) {
 
             if (e.type === 'complite') {
@@ -128,7 +184,7 @@
 
         } catch (e) {}
 
-        console.log('✔ Similar Movies Final loaded');
+        console.log('✔ Similar Movies Gold loaded');
     }
 
     // =====================================================
