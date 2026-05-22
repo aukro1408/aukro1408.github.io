@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         Lampa Similar Movies Working
-// @namespace    lampa.similar.movies.working
+// @name         Lampa Similar Movies Final
+// @namespace    lampa.similar.movies.final
 // @version      1.0
 // @match        *://*/lampa/*
 // ==/UserScript==
@@ -10,23 +10,8 @@
     'use strict';
 
     // защита от повторного запуска
-    if (window.similar_movies_working) return;
-    window.similar_movies_working = true;
-
-    // =====================================================
-    // API KEY
-    // =====================================================
-
-    var TMDB_KEY = '58e6fb66b91aa8f0e1f2b8cf3bb1342e';
-
-    function getKey() {
-
-        if (TMDB_KEY) return TMDB_KEY;
-
-        return Lampa.Storage.get('tmdb_api_key')
-            || Lampa.Storage.get('tmdb_key')
-            || '';
-    }
+    if (window.similar_movies_final) return;
+    window.similar_movies_final = true;
 
     // =====================================================
     // BUTTON
@@ -64,62 +49,38 @@
         ].join(''));
 
         // =================================================
-        // OPEN SIMILAR
+        // OPEN
         // =================================================
 
         button.on('hover:enter', function () {
 
-            var id = movie.id;
+            if (!movie.id) {
 
-            if (!id) {
-
-                Lampa.Noty.show('Не удалось получить ID');
+                Lampa.Noty.show('Нет ID фильма');
 
                 return;
             }
 
+            // ВАЖНО:
+            // category_full понимает ТОЛЬКО discover / movie / tv URL
+
             var url =
-                'https://api.themoviedb.org/3/' +
                 type +
                 '/' +
-                id +
-                '/recommendations?api_key=' +
-                getKey() +
-                '&language=ru-RU&page=1';
+                movie.id +
+                '/recommendations';
 
-            var request = new Lampa.Reguest();
+            Lampa.Activity.push({
 
-            request.timeout(10000);
+                component: 'category_full',
 
-            request.silent(url, function (json) {
+                title: 'Похожее',
 
-                if (!json || !json.results || !json.results.length) {
+                source: 'tmdb',
 
-                    Lampa.Noty.show('Похожие фильмы не найдены');
+                url: url,
 
-                    return;
-                }
-
-                // ВАЖНО:
-                // открываем встроенный category_full
-                // со встроенным скроллом Lampa
-
-                Lampa.Activity.push({
-
-                    component: 'category_full',
-
-                    title: 'Похожее',
-
-                    results: json.results,
-
-                    source: 'tmdb',
-
-                    page: 1
-                });
-
-            }, function () {
-
-                Lampa.Noty.show('Ошибка загрузки TMDB');
+                page: 1
             });
         });
 
@@ -133,7 +94,7 @@
 
     function init() {
 
-        // слушаем открытие карточки
+        // слушаем открытие full карточки
         Lampa.Listener.follow('full', function (e) {
 
             if (e.type === 'complite') {
@@ -167,7 +128,7 @@
 
         } catch (e) {}
 
-        console.log('✔ Similar Movies Working loaded');
+        console.log('✔ Similar Movies Final loaded');
     }
 
     // =====================================================
