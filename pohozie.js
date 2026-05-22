@@ -22,41 +22,33 @@
       '.similar-plugin__title { font-size:1.4em; font-weight:500; color:#fff; }',
       '.similar-plugin__count { font-size:0.85em; color:rgba(255,255,255,0.4); }',
       '.similar-plugin__grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:1.2em; }',
-      
-      /* Карточки */
       '.similar-plugin__card { cursor:pointer; outline:none; transition:transform 0.15s; }',
+      '.similar-plugin__card.focus { transform:scale(1.05); }',
+      '.similar-plugin__card:hover { transform:scale(1.05); }',
       '.similar-plugin__card .card__view { position:relative; border-radius:6px; overflow:hidden; aspect-ratio:2/3; background:rgba(255,255,255,0.05); }',
       '.similar-plugin__card .card__img { width:100%; height:100%; object-fit:cover; display:block; }',
       '.card__img--empty { display:flex !important; align-items:center; justify-content:center; font-size:2.5em; }',
       '.similar-plugin__badge { position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.72); color:#e8b84b; font-size:0.75em; font-weight:600; padding:2px 7px; border-radius:4px; backdrop-filter:blur(4px); }',
       '.similar-plugin__card .card__title { margin-top:0.5em; font-size:0.85em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#ddd; }',
       '.similar-plugin__year { font-size:0.75em; color:rgba(255,255,255,0.35); margin-top:0.2em; }',
-      
-      /* ФОКУС (Обязательно для визуализации с пульта) */
-      '.similar-plugin__card.focus { transform:scale(1.05); }',
-      '.similar-plugin__card.focus .card__view { outline: 3px solid #e8b84b; outline-offset: 2px; }',
-      
-      /* Кнопка "Загрузить ещё" */
-      '.similar-plugin__more { display:flex; justify-content:center; padding:2em 0 1em; grid-column: 1 / -1; }',
-      '.similar-plugin__more-btn { padding:0.6em 2em; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); color:#ddd; border-radius:4px; font-size:0.9em; cursor:pointer; transition:all 0.2s; }',
-      '.similar-plugin__more-btn.focus, .similar-plugin__more-btn:hover { border-color:#e8b84b; color:#e8b84b; background: rgba(232, 184, 75, 0.1); outline:none; }',
-      
-      /* Спиннер и пустота */
       '.similar-plugin__loader { display:flex; justify-content:center; padding:2em 0; grid-column: 1 / -1; }',
       '.similar-plugin__spinner { width:32px; height:32px; border:3px solid rgba(255,255,255,0.1); border-top-color:#e8b84b; border-radius:50%; animation:similar_spin 0.7s linear infinite; }',
       '@keyframes similar_spin { to { transform:rotate(360deg); } }',
       '.similar-plugin__empty { text-align:center; padding:3em; color:rgba(255,255,255,0.3); font-size:0.9em; grid-column: 1 / -1; }',
+      '.similar-plugin__more { display:flex; justify-content:center; padding:2em 0 1em; }',
+      '.similar-plugin__more-btn { padding:0.6em 2em; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); color:#ddd; border-radius:4px; font-size:0.9em; cursor:pointer; transition:all 0.2s; }',
+      '.similar-plugin__more-btn.focus, .similar-plugin__more-btn:hover { background:transparent; border-color:#e8b84b; color:#e8b84b; outline:none; }',
     ].join('\n')).appendTo('head');
   }
 
   // ─── КОМПОНЕНТ СТРАНИЦЫ ───────────────────────────────────────
   function SimilarComponent(object) {
-    var network = new Lampa.Reguest();
-    var scroll  = new Lampa.Scroll({ mask: true, over: true });
-    var last    = false;
-    var page    = 1;
-    var total   = 1;
-    var loading = false;
+    var network  = new Lampa.Reguest();
+    var scroll   = new Lampa.Scroll({ mask: true, over: true });
+    var page     = 1;
+    var total    = 1;
+    var loading  = false;
+    var inited   = false; // флаг первой инициализации контроллера
 
     var card    = object.card || {};
     var type    = object.movie_type || 'movie';
@@ -66,7 +58,7 @@
     var $title  = $('<div class="similar-plugin__title"></div>');
     var $count  = $('<div class="similar-plugin__count"></div>');
     var $grid   = $('<div class="similar-plugin__grid"></div>');
-    
+
     var $more   = $('<div class="similar-plugin__more"><div class="similar-plugin__more-btn selector">Загрузить ещё</div></div>');
     var $empty  = $('<div class="similar-plugin__empty">Похожих не найдено</div>');
     var $loader = $('<div class="similar-plugin__loader"><div class="similar-plugin__spinner"></div></div>');
@@ -85,7 +77,6 @@
         var year   = (movie.release_date || movie.first_air_date || '').slice(0, 4);
         var title  = movie.title || movie.name || '';
 
-        // Класс .selector критически важен для Navigator Lampa
         var $card = $([
           '<div class="card selector similar-plugin__card">',
           '  <div class="card__view">',
@@ -99,28 +90,26 @@
           '</div>'
         ].join(''));
 
-        var open = function () {
+        $card.on('hover:enter click', function () {
           Lampa.Activity.push({
             url: '', component: 'full',
             id: movie.id,
-            method: (movie.name && !movie.title) ? 'tv' : 'movie',
+            method: type === 'tv' ? 'tv' : 'movie',
             card: movie
           });
-        };
-
-        $card.on('hover:enter click', open)
-             .on('hover:focus', function (e) {
-               last = e.target;
-               scroll.update($(e.target), true);
-             });
+        });
 
         $grid.append($card);
       });
     }
 
+    function activateNavigation() {
+      Lampa.Controller.toggle('content');
+    }
+
     function loadPage() {
       if (loading || page > total) return;
-      
+
       var key = getKey();
       if (!key) {
         $grid.append('<div class="similar-plugin__empty">Не указан TMDB API ключ</div>');
@@ -157,18 +146,19 @@
         renderCards(data.results);
         page++;
 
+        // Кнопка «Загрузить ещё»
         $more.detach();
         if (page <= total) {
           scroll.body().append($more);
-          $more.find('.selector').off('hover:enter click').on('hover:enter click', loadPage)
-               .on('hover:focus', function (e) {
-                 last = e.target;
-                 scroll.update($(e.target), true);
-               });
+          $more.find('.selector').off('hover:enter click').on('hover:enter click', loadPage);
         }
 
-        // ВАЖНО: Обновляем коллекцию для Navigator, чтобы он увидел новые карточки
-        Lampa.Controller.collectionSet(scroll.render());
+        // Включаем навигацию только после первой успешной загрузки
+        if (!inited) {
+          inited = true;
+          activateNavigation();
+        }
+
         Lampa.Controller.enable('content');
       }, function () {
         $loader.detach();
@@ -177,47 +167,44 @@
       });
     }
 
+    // ─── методы компонента ──────────────────────────────────────
     this.create  = function () { loadPage(); return scroll.render(); };
     this.render  = function () { return scroll.render(); };
     this.update  = function () {};
     this.pause   = function () {};
     this.resume  = function () {};
-    this.destroy = function () { 
-        network.clear(); 
-        scroll.destroy(); 
-    };
+    this.destroy = function () { network.clear(); scroll.destroy(); };
     this.back    = function () { Lampa.Activity.backward(); };
 
     this.start = function () {
       Lampa.Background.immediately(Lampa.Utils.cardImgBackgroundBlur(card));
-      
       Lampa.Controller.add('content', {
         toggle: function () {
           Lampa.Controller.collectionSet(scroll.render());
-          Lampa.Controller.collectionFocus(last || false, scroll.render());
+          Lampa.Controller.collectionFocus(false, scroll.render());
         },
-        // Стандартные вызовы Navigator Lampa (без несуществующих canmove)
-        up:    function () { Navigator.move('up'); },
-        down:  function () { Navigator.move('down'); },
-        right: function () { Navigator.move('right'); },
-        left:  function () { Navigator.move('left'); },
+        up:   function () { if (Navigator.canmove('up')) Navigator.move('up'); else Lampa.Controller.toggle('head'); },
+        down: function () { Navigator.move('down'); },
+        right: function () { if (Navigator.canmove('right')) Navigator.move('right'); },
+        left:  function () { if (Navigator.canmove('left')) Navigator.move('left'); else Lampa.Controller.toggle('menu'); },
         back:  this.back.bind(this)
       });
-      
-      Lampa.Controller.toggle('content');
+      // Не включаем навигацию здесь — она включится после загрузки данных
     };
   }
 
   // ─── ДОБАВИТЬ КНОПКУ В КАРТОЧКУ ──────────────────────────────
   function addButton(e) {
-    var movie = e.data?.movie || e.movie || {};
-    if (!movie.id) return;
+    if (!e || !e.render || !e.render.length) return;
+    if (e.render.find('.similar--button').length) return;
 
-    var type = (movie.media_type === 'tv' || movie.number_of_seasons || (movie.name && !movie.title)) ? 'tv' : 'movie';
+    var movie = e.movie || (e.data && e.data.movie) || {};
+    var type  = (movie.media_type === 'tv' || movie.number_of_seasons || (movie.name && !movie.title)) ? 'tv' : 'movie';
 
     var $btn = $([
       '<div class="full-start__button selector similar--button">',
-      '  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24">',
+      '  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"',
+      '    stroke="currentColor" stroke-width="1.5" width="24" height="24">',
       '    <circle cx="11" cy="11" r="7"/>',
       '    <line x1="16.5" y1="16.5" x2="22" y2="22"/>',
       '    <line x1="11" y1="7" x2="11" y2="15"/>',
@@ -236,9 +223,9 @@
       });
     });
 
-    var $container = $('.full-start__buttons');
-    if ($container.length && !$container.find('.similar--button').length) {
-        $container.append($btn);
+    var $buttonsContainer = e.render.find('.full-start__buttons');
+    if ($buttonsContainer.length) {
+      $buttonsContainer.append($btn);
     }
   }
 
@@ -247,8 +234,9 @@
     injectStyles();
     Lampa.Component.add(PLUGIN_ID, SimilarComponent);
 
+    // Слушаем событие полной загрузки карточки фильма
     Lampa.Listener.follow('full', function (e) {
-      if (e.type === 'complite') {
+      if (e.type === 'complite' || e.type === 'build') {
         addButton(e);
       }
     });
