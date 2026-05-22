@@ -100,15 +100,24 @@
              .on('keydown', function (e) { if (e.keyCode === 13) open(); })
              .on('hover:enter', open)
              .on('hover:focus', function (e) {
-               last = e.target;
-               scroll.update($(e.target), true);
+               last = this;
+               // Безопасное обновление скролла
+               setTimeout(function() {
+                 if (scroll && this && $(this).length) {
+                   scroll.update($(this), true);
+                 }
+               }.bind(this), 100);
              });
 
         $grid.append($card);
       });
       
       // Обновляем скролл после добавления карточек
-      scroll.update();
+      setTimeout(function() {
+        if (scroll) {
+          scroll.update();
+        }
+      }, 100);
     }
 
     function loadPage() {
@@ -136,8 +145,7 @@
         $count.text('Найдено: ' + (data.total_results || 0));
 
         if (!data.results.length && page === 1) {
-          $grid.append($empty);
-          return;
+          $grid.append($empty);          return;
         }
 
         renderCards(data.results);
@@ -145,7 +153,8 @@
 
         $more.detach();
         if (page <= total) {
-          scroll.body().append($more);          $more.find('button').off('click').on('click', loadPage);
+          scroll.body().append($more);
+          $more.find('button').off('click').on('click', loadPage);
         }
 
         Lampa.Controller.enable('content');
@@ -158,7 +167,11 @@
 
     this.create  = function () { loadPage(); return scroll.render(); };
     this.render  = function () { return scroll.render(); };
-    this.update  = function () { scroll.update(); };
+    this.update  = function () { 
+      if (scroll) {
+        scroll.update(); 
+      }
+    };
     this.pause   = function () {};
     this.resume  = function () {};
     this.destroy = function () { network.clear(); scroll.destroy(); };
@@ -181,8 +194,7 @@
     };
   }
 
-  // ─── ДОБАВИТЬ КНОПКУ В КАРТОЧКУ ──────────────────────────────
-  function addButton(e) {
+  // ─── ДОБАВИТЬ КНОПКУ В КАРТОЧКУ ──────────────────────────────  function addButton(e) {
     if (!e || !e.render || !e.render.length) return;
     if (e.render.next('.similar--button').length) return;
 
@@ -194,7 +206,8 @@
       '  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"',
       '    stroke="currentColor" stroke-width="1.5" width="24" height="24">',
       '    <circle cx="11" cy="11" r="7"/>',
-      '    <line x1="16.5" y1="16.5" x2="22" y2="22"/>',      '    <line x1="11" y1="7" x2="11" y2="15"/>',
+      '    <line x1="16.5" y1="16.5" x2="22" y2="22"/>',
+      '    <line x1="11" y1="7" x2="11" y2="15"/>',
       '    <line x1="7" y1="11" x2="15" y2="11"/>',
       '  </svg>',
       '  <span>Похожее</span>',
@@ -230,8 +243,7 @@
     try {
       if (Lampa.Activity.active().component === 'full') {
         addButton({
-          render: Lampa.Activity.active().activity.render().find('.view--torrent'),
-          movie:  Lampa.Activity.active().card
+          render: Lampa.Activity.active().activity.render().find('.view--torrent'),          movie:  Lampa.Activity.active().card
         });
       }
     } catch (e) {}
