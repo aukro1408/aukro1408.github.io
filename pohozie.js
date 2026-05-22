@@ -1,9 +1,9 @@
 (function () {
   'use strict';
 
-  // ============================================================
+  // =========================================================
   // SETTINGS
-  // ============================================================
+  // =========================================================
 
   var TMDB_KEY  = '58e6fb66b91aa8f0e1f2b8cf3bb1342e';
   var TMDB_LANG = 'ru-RU';
@@ -18,9 +18,9 @@
       || '';
   }
 
-  // ============================================================
+  // =========================================================
   // STYLES
-  // ============================================================
+  // =========================================================
 
   function injectStyles() {
 
@@ -28,7 +28,9 @@
 
     $('<style id="similar_movies_styles">').text([
 
-      '.similar-plugin{padding:2em;}',
+      '.similar-plugin{',
+      'padding:2em;',
+      '}',
 
       '.similar-plugin__head{',
       'display:flex;',
@@ -58,13 +60,10 @@
       '}',
 
       '.similar-plugin__card{',
-      'cursor:pointer;',
       'transition:transform .15s;',
-      'outline:none;',
       '}',
 
-      '.similar-plugin__card.focus,',
-      '.similar-plugin__card:hover{',
+      '.similar-plugin__card.focus{',
       'transform:scale(1.04);',
       '}',
 
@@ -158,7 +157,6 @@
       'color:#ddd;',
       'border-radius:4px;',
       'font-size:.9em;',
-      'cursor:pointer;',
       '}',
 
       '.similar-plugin__more-btn.focus{',
@@ -169,9 +167,9 @@
     ].join('')).appendTo('head');
   }
 
-  // ============================================================
+  // =========================================================
   // COMPONENT
-  // ============================================================
+  // =========================================================
 
   function SimilarComponent(object) {
 
@@ -182,22 +180,22 @@
       over: true
     });
 
-    var page    = 1;
-    var total   = 1;
+    var page = 1;
+    var total = 1;
     var loading = false;
 
-    var card    = object.card || {};
-    var type    = object.movie_type || 'movie';
+    var card = object.card || {};
+    var type = object.movie_type || 'movie';
     var tmdb_id = card.id;
 
     var body = $('<div class="similar-plugin"></div>');
 
     var head = $([
       '<div class="similar-plugin__head">',
-      '  <div class="similar-plugin__title">',
+      '<div class="similar-plugin__title">',
       'Похожее на «' + (card.title || card.name || '') + '»',
-      '  </div>',
-      '  <div class="similar-plugin__count"></div>',
+      '</div>',
+      '<div class="similar-plugin__count"></div>',
       '</div>'
     ].join(''));
 
@@ -219,7 +217,7 @@
 
     var more = $([
       '<div class="similar-plugin__more">',
-      '<div class="similar-plugin__more-btn selector focus--mouse">',
+      '<div class="similar-plugin__more-btn selector">',
       'Загрузить ещё',
       '</div>',
       '</div>'
@@ -228,9 +226,9 @@
     body.append(head);
     body.append(grid);
 
-    // ============================================================
-    // CARDS
-    // ============================================================
+    // =========================================================
+    // RENDER
+    // =========================================================
 
     function renderCards(results) {
 
@@ -253,15 +251,15 @@
           : '—';
 
         var card_html = $([
-          '<div class="card focus--mouse similar-plugin__card">',
-          '   <div class="card__view">',
+          '<div class="card selector similar-plugin__card">',
+          '<div class="card__view">',
           poster
             ? '<img class="card__img" src="' + poster + '">'
             : '<div class="card__img card__img--empty">🎬</div>',
-          '       <div class="similar-plugin__badge">' + rating + '</div>',
-          '   </div>',
-          '   <div class="card__title">' + title + '</div>',
-          '   <div class="similar-plugin__year">' + year + '</div>',
+          '<div class="similar-plugin__badge">' + rating + '</div>',
+          '</div>',
+          '<div class="card__title">' + title + '</div>',
+          '<div class="similar-plugin__year">' + year + '</div>',
           '</div>'
         ].join(''));
 
@@ -276,13 +274,11 @@
           });
         }
 
-        // ВАЖНО
         card_html
           .on('hover:enter', openMovie)
-          .on('click', openMovie)
           .on('hover:focus', function () {
 
-            scroll.update($(this));
+            scroll.update($(this), true);
           });
 
         grid.append(card_html);
@@ -292,9 +288,9 @@
       });
     }
 
-    // ============================================================
+    // =========================================================
     // LOAD
-    // ============================================================
+    // =========================================================
 
     function loadPage() {
 
@@ -380,9 +376,9 @@
       });
     }
 
-    // ============================================================
+    // =========================================================
     // SYSTEM
-    // ============================================================
+    // =========================================================
 
     this.create = function () {
 
@@ -471,9 +467,9 @@
     };
   }
 
-  // ============================================================
+  // =========================================================
   // BUTTON
-  // ============================================================
+  // =========================================================
 
   function addButton(e) {
 
@@ -520,9 +516,9 @@
     e.render.after(btn);
   }
 
-  // ============================================================
+  // =========================================================
   // INIT
-  // ============================================================
+  // =========================================================
 
   function init() {
 
