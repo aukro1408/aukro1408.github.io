@@ -1,11 +1,11 @@
 (function () {
   'use strict';
 
-  // ─────────────────────────────────────────────────────────────
+  // ============================================================
   // НАСТРОЙКИ
-  // ─────────────────────────────────────────────────────────────
+  // ============================================================
 
-  var TMDB_KEY  = '58e6fb66b91aa8f0e1f2b8cf3bb1342e'; // Вставь свой TMDB API KEY
+  var TMDB_KEY  = '58e6fb66b91aa8f0e1f2b8cf3bb1342e';
   var TMDB_LANG = 'ru-RU';
   var IMG_BASE  = 'https://image.tmdb.org/t/p/w300';
   var PLUGIN_ID = 'similar_movies';
@@ -18,9 +18,9 @@
       || '';
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ============================================================
   // СТИЛИ
-  // ─────────────────────────────────────────────────────────────
+  // ============================================================
 
   function injectStyles() {
 
@@ -36,14 +36,14 @@
       '  display:flex;',
       '  align-items:baseline;',
       '  gap:1em;',
-      '  margin-bottom:1.4em;',
+      '  margin-bottom:1.5em;',
       '  border-bottom:1px solid rgba(255,255,255,0.08);',
       '  padding-bottom:0.8em;',
       '}',
 
       '.similar-plugin__title {',
       '  font-size:1.4em;',
-      '  font-weight:500;',
+      '  font-weight:600;',
       '  color:#fff;',
       '}',
 
@@ -52,21 +52,23 @@
       '  color:rgba(255,255,255,0.4);',
       '}',
 
-      // 3 карточки в ряд
+      // FLEX вместо GRID
       '.similar-plugin__grid {',
-      '  display:grid;',
-      '  grid-template-columns:repeat(3,1fr);',
+      '  display:flex;',
+      '  flex-wrap:wrap;',
       '  gap:1.2em;',
       '}',
 
+      // 3 карточки в ряд
       '.similar-plugin__card {',
+      '  width:calc(33.333% - 0.8em);',
       '  cursor:pointer;',
       '  outline:none;',
       '  transition:transform 0.15s;',
+      '  flex-shrink:0;',
       '}',
 
       '.similar-plugin__card:hover,',
-      '.similar-plugin__card:focus,',
       '.similar-plugin__card.focus {',
       '  transform:scale(1.04);',
       '}',
@@ -97,42 +99,43 @@
       '  position:absolute;',
       '  top:6px;',
       '  right:6px;',
-      '  background:rgba(0,0,0,0.72);',
-      '  color:#e8b84b;',
-      '  font-size:0.75em;',
-      '  font-weight:600;',
+      '  background:rgba(0,0,0,0.75);',
+      '  color:#f3c35b;',
+      '  font-size:0.72em;',
+      '  font-weight:700;',
       '  padding:2px 7px;',
       '  border-radius:4px;',
       '}',
 
       '.similar-plugin__card .card__title {',
       '  margin-top:0.5em;',
-      '  font-size:0.85em;',
+      '  font-size:0.9em;',
+      '  color:#ddd;',
       '  white-space:nowrap;',
       '  overflow:hidden;',
       '  text-overflow:ellipsis;',
-      '  color:#ddd;',
       '}',
 
       '.similar-plugin__year {',
-      '  font-size:0.75em;',
-      '  color:rgba(255,255,255,0.35);',
       '  margin-top:0.2em;',
+      '  font-size:0.75em;',
+      '  color:rgba(255,255,255,0.4);',
       '}',
 
       '.similar-plugin__loader {',
+      '  width:100%;',
       '  display:flex;',
       '  justify-content:center;',
       '  padding:2em 0;',
       '}',
 
       '.similar-plugin__spinner {',
-      '  width:32px;',
-      '  height:32px;',
+      '  width:34px;',
+      '  height:34px;',
       '  border:3px solid rgba(255,255,255,0.1);',
-      '  border-top-color:#e8b84b;',
+      '  border-top-color:#f3c35b;',
       '  border-radius:50%;',
-      '  animation:similar_spin 0.7s linear infinite;',
+      '  animation:similar_spin .7s linear infinite;',
       '}',
 
       '@keyframes similar_spin {',
@@ -140,40 +143,40 @@
       '}',
 
       '.similar-plugin__empty {',
+      '  width:100%;',
       '  text-align:center;',
-      '  padding:3em;',
-      '  color:rgba(255,255,255,0.3);',
-      '  font-size:0.9em;',
+      '  padding:4em 0;',
+      '  color:rgba(255,255,255,0.35);',
       '}',
 
       '.similar-plugin__more {',
+      '  width:100%;',
       '  display:flex;',
       '  justify-content:center;',
-      '  padding:2em 0 1em;',
+      '  padding:2em 0;',
       '}',
 
       '.similar-plugin__more-btn {',
-      '  padding:0.6em 2em;',
-      '  background:transparent;',
+      '  padding:0.7em 2em;',
+      '  border-radius:6px;',
       '  border:1px solid rgba(255,255,255,0.2);',
-      '  color:#ddd;',
-      '  border-radius:4px;',
-      '  font-size:0.9em;',
+      '  background:transparent;',
+      '  color:#fff;',
       '  cursor:pointer;',
       '}',
 
       '.similar-plugin__more-btn:hover,',
-      '.similar-plugin__more-btn:focus {',
-      '  border-color:#e8b84b;',
-      '  color:#e8b84b;',
+      '.similar-plugin__more-btn.focus {',
+      '  border-color:#f3c35b;',
+      '  color:#f3c35b;',
       '}'
 
     ].join('\n')).appendTo('head');
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ============================================================
   // КОМПОНЕНТ
-  // ─────────────────────────────────────────────────────────────
+  // ============================================================
 
   function SimilarComponent(object) {
 
@@ -193,19 +196,10 @@
     var type    = object.movie_type || 'movie';
     var tmdb_id = card.id;
 
-    var $head  = $('<div class="similar-plugin__head"></div>');
-    var $title = $('<div class="similar-plugin__title"></div>');
-    var $count = $('<div class="similar-plugin__count"></div>');
-
-    var $grid = $('<div class="similar-plugin__grid"></div>');
-
-    var $more = $(
-      '<div class="similar-plugin__more">' +
-      '<button class="similar-plugin__more-btn focus--mouse">' +
-      'Загрузить ещё' +
-      '</button>' +
-      '</div>'
-    );
+    var $head   = $('<div class="similar-plugin__head"></div>');
+    var $title  = $('<div class="similar-plugin__title"></div>');
+    var $count  = $('<div class="similar-plugin__count"></div>');
+    var $grid   = $('<div class="similar-plugin__grid"></div>');
 
     var $loader = $(
       '<div class="similar-plugin__loader">' +
@@ -216,6 +210,14 @@
     var $empty = $(
       '<div class="similar-plugin__empty">' +
       'Похожие фильмы не найдены' +
+      '</div>'
+    );
+
+    var $more = $(
+      '<div class="similar-plugin__more">' +
+      '<div class="similar-plugin__more-btn focus--mouse">' +
+      'Загрузить ещё' +
+      '</div>' +
       '</div>'
     );
 
@@ -232,9 +234,9 @@
     scroll.body().append($head);
     scroll.body().append($grid);
 
-    // ───────────────────────────────────────────────────────────
-    // СКРОЛЛ К ФОКУСУ
-    // ───────────────────────────────────────────────────────────
+    // ============================================================
+    // СКРОЛЛ
+    // ============================================================
 
     function updateScroll() {
 
@@ -243,15 +245,15 @@
         var active = $('.focus');
 
         if (active.length) {
-          scroll.update(active, false);
+          scroll.update(active);
         }
 
-      }, 10);
+      }, 30);
     }
 
-    // ───────────────────────────────────────────────────────────
+    // ============================================================
     // КАРТОЧКИ
-    // ───────────────────────────────────────────────────────────
+    // ============================================================
 
     function renderCards(results) {
 
@@ -261,11 +263,11 @@
           ? IMG_BASE + movie.poster_path
           : '';
 
-        var title = movie.title || movie.name || '';
-
         var rating = movie.vote_average
           ? parseFloat(movie.vote_average).toFixed(1)
           : '—';
+
+        var title = movie.title || movie.name || '';
 
         var year = (
           movie.release_date
@@ -277,7 +279,7 @@
           '<div class="card focus--mouse similar-plugin__card">',
           '  <div class="card__view">',
           poster
-            ? '<img class="card__img" src="' + poster + '" loading="lazy">'
+            ? '<img class="card__img" src="' + poster + '">'
             : '<div class="card__img card__img--empty">🎬</div>',
           '    <div class="similar-plugin__badge">' + rating + '</div>',
           '  </div>',
@@ -286,7 +288,7 @@
           '</div>'
         ].join(''));
 
-        function open() {
+        function openMovie() {
 
           Lampa.Activity.push({
             url: '',
@@ -297,7 +299,7 @@
           });
         }
 
-        $card.on('hover:enter', open);
+        $card.on('hover:enter', openMovie);
 
         $card.on('hover:focus', function () {
 
@@ -309,14 +311,16 @@
         $grid.append($card);
       });
 
+      updateScroll();
+
       Lampa.Controller.collectionSet(
         scroll.render()
       );
     }
 
-    // ───────────────────────────────────────────────────────────
+    // ============================================================
     // ЗАГРУЗКА
-    // ───────────────────────────────────────────────────────────
+    // ============================================================
 
     function loadPage() {
 
@@ -346,9 +350,9 @@
 
       network.silent(url, function (data) {
 
-        $loader.detach();
-
         loading = false;
+
+        $loader.detach();
 
         if (!data || !data.results) {
 
@@ -383,18 +387,18 @@
 
           scroll.body().append($more);
 
-          $more.find('button')
-            .off('click')
-            .on('click', loadPage);
+          $more.find('.similar-plugin__more-btn')
+            .off('hover:enter')
+            .on('hover:enter', loadPage);
         }
 
         Lampa.Controller.enable('content');
 
       }, function () {
 
-        $loader.detach();
-
         loading = false;
+
+        $loader.detach();
 
         if (page === 1) {
           $grid.append($empty);
@@ -402,9 +406,9 @@
       });
     }
 
-    // ───────────────────────────────────────────────────────────
-    // МЕТОДЫ
-    // ───────────────────────────────────────────────────────────
+    // ============================================================
+    // СИСТЕМА
+    // ============================================================
 
     this.create = function () {
 
@@ -417,9 +421,9 @@
       return scroll.render();
     };
 
-    this.update  = function () {};
-    this.pause   = function () {};
-    this.resume  = function () {};
+    this.update = function () {};
+    this.pause = function () {};
+    this.resume = function () {};
 
     this.destroy = function () {
 
@@ -505,9 +509,9 @@
     };
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ============================================================
   // КНОПКА
-  // ─────────────────────────────────────────────────────────────
+  // ============================================================
 
   function addButton(e) {
 
@@ -554,9 +558,9 @@
     e.render.after($btn);
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ============================================================
   // INIT
-  // ─────────────────────────────────────────────────────────────
+  // ============================================================
 
   function init() {
 
@@ -599,7 +603,7 @@
 
     } catch (e) {}
 
-    console.log('[SimilarMovies] plugin loaded');
+    console.log('[SimilarMovies] loaded');
   }
 
   if (window.Lampa) init();
