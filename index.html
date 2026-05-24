@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Preview - Deezer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #fff;
+        }
+        h1 { text-align: center; color: #00ff88; }
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background: #00ff88;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover { background: #00cc6a; }
+        .track {
+            background: #16213e;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        .track h3 { margin: 0 0 5px 0; }
+        .track p { margin: 5px 0; color: #aaa; }
+        audio { width: 100%; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🎵 Music Preview</h1>
+    <div class="search-box">
+        <input type="text" id="search" placeholder="Введите исполнителя или трек...">
+        <button onclick="search()">Поиск</button>
+    </div>
+    <div id="results"></div>
+
+    <script>
+        async function search() {
+            const query = document.getElementById('search').value;
+            if (!query) return;
+            
+            document.getElementById('results').innerHTML = '<p>Загрузка...</p>';
+            
+            try
