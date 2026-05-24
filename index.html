@@ -44,10 +44,10 @@
         .track h3 { margin: 0 0 5px 0; }
         .track p { margin: 5px 0; color: #aaa; }
         audio { width: 100%; margin-top: 10px; }
+        .error { color: #ff6b6b; padding: 10px; }
     </style>
 </head>
-<body>
-    <h1>🎵 Music Preview</h1>
+<body>    <h1>🎵 Music Preview</h1>
     <div class="search-box">
         <input type="text" id="search" placeholder="Введите исполнителя или трек...">
         <button onclick="search()">Поиск</button>
@@ -61,4 +61,51 @@
             
             document.getElementById('results').innerHTML = '<p>Загрузка...</p>';
             
-            try
+            try {
+                // Пробуем прямой запрос к Deezer API
+                const url = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=10`;
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Response:', data); // Для отладки
+                
+                const results = document.getElementById('results');
+                results.innerHTML = '';
+                
+                if (data.data.length === 0) {
+                    results.innerHTML = '<p>Ничего не найдено</p>';
+                    return;
+                }
+                
+                data.data.forEach(track => {
+                    const div = document.createElement('div');
+                    div.className = 'track';
+                    div.innerHTML = `
+                        <h3>${track.title}</h3>
+                        <p>🎤 ${track.artist.name}</p>
+                        <p>💿 ${track.album.title}</p>
+                        <audio controls src="${track.preview}"></audio>
+                    `;
+                    results.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('results').innerHTML = `
+                    <div class="error">                        <p>❌ Ошибка: ${error.message}</p>
+                        <p>Проверьте консоль (F12) для деталей</p>
+                    </div>
+                `;
+            }
+        }
+
+        document.getElementById('search').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') search();
+        });
+    </script>
+</body>
+</html>
