@@ -33,19 +33,68 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
+            font-weight: bold;
         }
         button:hover { background: #00cc6a; }
+        
+        /* Стили для карточки трека */
         .track {
             background: #16213e;
             padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
+            margin: 15px 0;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-        .track h3 { margin: 0 0 5px 0; }
-        .track p { margin: 5px 0; color: #aaa; }
-        audio { width: 100%; margin-top: 10px; }
-        .error { color: #ff6b6b; padding: 10px; }
-        .loading { color: #00ff88; padding: 10px; }
+                .track-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Стили для обложки */
+        .track-cover {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        .track-cover:hover {
+            transform: scale(1.05); /* Увеличение при наведении */
+        }
+
+        .track-info h3 {
+            margin: 0 0 5px 0;
+            font-size: 18px;
+        }
+        
+        .track-info p {
+            margin: 3px 0;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        /* Ссылка на артиста */
+        .artist-link {
+            color: #00ff88;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .artist-link:hover { text-decoration: underline; }
+
+        audio { 
+            width: 100%; 
+            margin-top: 5px; 
+            outline: none;
+        }
+        
+        .error { color: #ff6b6b; padding: 10px; text-align: center;}
+        .loading { color: #00ff88; padding: 10px; text-align: center;}
     </style>
 </head><body>
     <h1>🎵 Music Preview</h1>
@@ -68,23 +117,35 @@
                 resultsDiv.innerHTML = '';
                 
                 if (!data.data || data.data.length === 0) {
-                    resultsDiv.innerHTML = '<p>Ничего не найдено</p>';
+                    resultsDiv.innerHTML = '<p style="text-align:center;">Ничего не найдено</p>';
                     return;
                 }
                 
                 data.data.forEach(track => {
                     const div = document.createElement('div');
                     div.className = 'track';
+                    
+                    // Получаем ссылки и картинку
+                    const coverUrl = track.album.cover_medium; // Средний размер обложки
+                    const artistLink = track.artist.link; // Ссылка на артиста
+                    const trackLink = track.link; // Ссылка на трек
+
                     div.innerHTML = `
-                        <h3>${track.title}</h3>
-                        <p>🎤 ${track.artist.name}</p>
-                        <p>💿 ${track.album.title}</p>
+                        <div class="track-header">
+                            <a href="${artistLink}" target="_blank" title="Перейти к артисту">
+                                <img src="${coverUrl}" class="track-cover" alt="cover">
+                            </a>
+                            <div class="track-info">
+                                <h3>${track.title}</h3>
+                                <p>🎤 <a href="${artistLink}" target="_blank" class="artist-link">${track.artist.name}</a></p>
+                                <p>💿 ${track.album.title}</p>
+                            </div>
+                        </div>
                         <audio controls src="${track.preview}"></audio>
                     `;
                     resultsDiv.appendChild(div);
                 });
-            };
-            
+            };            
             // Создаем script элемент для JSONP запроса
             const script = document.createElement('script');
             script.src = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&output=jsonp&callback=deezerCallback&limit=10`;
@@ -96,7 +157,8 @@
         }
 
         document.getElementById('search').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') search();        });
+            if (e.key === 'Enter') search();
+        });
     </script>
 </body>
 </html>
