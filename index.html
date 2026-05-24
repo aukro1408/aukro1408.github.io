@@ -45,9 +45,10 @@
         .track p { margin: 5px 0; color: #aaa; }
         audio { width: 100%; margin-top: 10px; }
         .error { color: #ff6b6b; padding: 10px; }
+        .loading { color: #00ff88; padding: 10px; }
     </style>
-</head>
-<body>    <h1>🎵 Music Preview</h1>
+</head><body>
+    <h1>🎵 Music Preview</h1>
     <div class="search-box">
         <input type="text" id="search" placeholder="Введите исполнителя или трек...">
         <button onclick="search()">Поиск</button>
@@ -55,30 +56,19 @@
     <div id="results"></div>
 
     <script>
-        async function search() {
+        function search() {
             const query = document.getElementById('search').value;
             if (!query) return;
             
-            document.getElementById('results').innerHTML = '<p>Загрузка...</p>';
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p class="loading">Загрузка...</p>';
             
-            try {
-                // Пробуем прямой запрос к Deezer API
-                const url = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=10`;
+            // Создаем callback функцию для JSONP
+            window.deezerCallback = function(data) {
+                resultsDiv.innerHTML = '';
                 
-                const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                console.log('Response:', data); // Для отладки
-                
-                const results = document.getElementById('results');
-                results.innerHTML = '';
-                
-                if (data.data.length === 0) {
-                    results.innerHTML = '<p>Ничего не найдено</p>';
+                if (!data.data || data.data.length === 0) {
+                    resultsDiv.innerHTML = '<p>Ничего не найдено</p>';
                     return;
                 }
                 
@@ -91,21 +81,22 @@
                         <p>💿 ${track.album.title}</p>
                         <audio controls src="${track.preview}"></audio>
                     `;
-                    results.appendChild(div);
+                    resultsDiv.appendChild(div);
                 });
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('results').innerHTML = `
-                    <div class="error">                        <p>❌ Ошибка: ${error.message}</p>
-                        <p>Проверьте консоль (F12) для деталей</p>
-                    </div>
-                `;
-            }
+            };
+            
+            // Создаем script элемент для JSONP запроса
+            const script = document.createElement('script');
+            script.src = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&output=jsonp&callback=deezerCallback&limit=10`;
+            script.onerror = function() {
+                resultsDiv.innerHTML = '<p class="error">❌ Ошибка при загрузке данных</p>';
+            };
+            
+            document.body.appendChild(script);
         }
 
         document.getElementById('search').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') search();
-        });
+            if (e.key === 'Enter') search();        });
     </script>
 </body>
 </html>
