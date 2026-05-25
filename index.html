@@ -3,161 +3,463 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music Preview - Deezer</title>
+    <title>Моё Портфолио</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #1a1a2e;
-            color: #fff;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        h1 { text-align: center; color: #00ff88; }
-        .search-box {
-            display: flex;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        input {
-            flex: 1;
-            padding: 10px;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
-        }
-        button {
-            padding: 10px 20px;
-            background: #00ff88;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-        }
-        button:hover { background: #00cc6a; }
         
-        /* Стили для карточки трека */
-        .track {
-            background: #16213e;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            overflow-x: hidden;
         }
-                .track-header {
+        
+        /* Навигация */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        nav ul {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            gap: 40px;
+        }
+        
+        nav a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+        
+        nav a:hover {
+            color: #667eea;
+        }
+        
+        /* Главный экран */
+        .hero {
+            height: 100vh;
             display: flex;
             align-items: center;
-            gap: 15px;
-        }
-
-        /* Стили для обложки */
-        .track-cover {
-            width: 80px;
-            height: 80px;
-            border-radius: 8px;
-            object-fit: cover;
-            cursor: pointer;
-            transition: transform 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            position: relative;
         }
         
-        .track-cover:hover {
-            transform: scale(1.05); /* Увеличение при наведении */
-        }
-
-        .track-info h3 {
-            margin: 0 0 5px 0;
-            font-size: 18px;
+        .hero-content h1 {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: fadeInDown 1s;
         }
         
-        .track-info p {
-            margin: 3px 0;
-            color: #aaa;
-            font-size: 14px;
+        .hero-content p {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            animation: fadeInUp 1s;
         }
-
-        /* Ссылка на артиста */
-        .artist-link {
-            color: #00ff88;
+        
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: white;
+            color: #667eea;
             text-decoration: none;
+            border-radius: 50px;
             font-weight: bold;
-        }
-        .artist-link:hover { text-decoration: underline; }
-
-        audio { 
-            width: 100%; 
-            margin-top: 5px; 
-            outline: none;
+            transition: transform 0.3s, box-shadow 0.3s;
+            animation: fadeInUp 1s 0.3s backwards;
         }
         
-        .error { color: #ff6b6b; padding: 10px; text-align: center;}
-        .loading { color: #00ff88; padding: 10px; text-align: center;}
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        /* Секции */
+        section {
+            padding: 100px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h2 {
+            font-size: 2.5em;
+            text-align: center;
+            margin-bottom: 50px;
+            color: #667eea;
+        }
+        
+        /* О себе */
+        .about {
+            background: #f9f9f9;
+        }
+        
+        .about-content {
+            display: flex;
+            gap: 50px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .about-img {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 100px;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .about-text {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .about-text p {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+        
+        /* Навыки */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+        
+        .skill-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-align: center;
+        }
+        
+        .skill-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+        
+        .skill-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .skill-card h3 {
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+        
+        /* Портфолио */
+        .portfolio {
+            background: #f9f9f9;
+        }
+        
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        
+        .portfolio-item {
+            position: relative;
+            height: 300px;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .portfolio-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        
+        .portfolio-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(102, 126, 234, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .portfolio-item:hover img {
+            transform: scale(1.1);
+        }
+        
+        .portfolio-item:hover .portfolio-overlay {
+            opacity: 1;
+        }
+        
+        .portfolio-overlay h3 {
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+        
+        /* Контакты */
+        .contact {
+            text-align: center;
+        }
+        
+        .contact-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+        
+        .contact-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #333;
+            transition: transform 0.3s;
+        }
+        
+        .contact-link:hover {
+            transform: scale(1.1);
+            color: #667eea;
+        }
+        
+        .contact-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        /* Footer */
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+        
+        /* Анимации */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .hero-content h1 {
+                font-size: 2.5em;
+            }
+            
+            .hero-content p {
+                font-size: 1.2em;
+            }
+            
+            nav ul {
+                gap: 20px;
+                flex-wrap: wrap;
+            }
+            
+            .about-content {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
     </style>
-</head><body>
-    <h1>🎵 Music Preview</h1>
-    <div class="search-box">
-        <input type="text" id="search" placeholder="Введите исполнителя или трек...">
-        <button onclick="search()">Поиск</button>
-    </div>
-    <div id="results"></div>
+</head>
+<body>
+    <!-- Навигация -->
+    <nav>
+        <ul>
+            <li><a href="#home">Главная</a></li>
+            <li><a href="#about">О себе</a></li>
+            <li><a href="#skills">Навыки</a></li>
+            <li><a href="#portfolio">Портфолио</a></li>
+            <li><a href="#contact">Контакты</a></li>
+        </ul>
+    </nav>
+
+    <!-- Главный экран -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1>Привет, я [Ваше Имя]</h1>
+            <p>Веб-разработчик | Дизайнер | Творец</p>
+            <a href="#portfolio" class="btn">Смотреть работы</a>
+        </div>
+    </section>
+
+    <!-- О себе -->
+    <section id="about" class="about">
+        <h2>Обо мне</h2>
+        <div class="about-content">
+            <div class="about-img">👨‍💻</div>
+            <div class="about-text">
+                <p>Привет! Я увлечённый разработчик с опытом создания современных веб-приложений и сайтов.</p>
+                <p>Специализируюсь на создании красивых, функциональных и отзывчивых интерфейсов, которые решают реальные бизнес-задачи.</p>
+                <p>Моя цель - создавать продукты, которые приносят пользу и радуют пользователей.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Навыки -->
+    <section id="skills">
+        <h2>Мои навыки</h2>
+        <div class="skills-grid">
+            <div class="skill-card">
+                <div class="skill-icon">💻</div>
+                <h3>Frontend</h3>
+                <p>HTML, CSS, JavaScript, React, Vue.js</p>
+            </div>
+            <div class="skill-card">
+                <div class="skill-icon">🎨</div>
+                <h3>Дизайн</h3>
+                <p>UI/UX, Figma, Adobe XD, Photoshop</p>
+            </div>
+            <div class="skill-card">
+                <div class="skill-icon">⚙️</div>
+                <h3>Backend</h3>
+                <p>Node.js, Python, PHP, Databases</p>
+            </div>
+            <div class="skill-card">
+                <div class="skill-icon">📱</div>
+                <h3>Мобильная разработка</h3>
+                <p>React Native, Flutter, адаптивный дизайн</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Портфолио -->
+    <section id="portfolio" class="portfolio">
+        <h2>Портфолио</h2>
+        <div class="portfolio-grid">
+            <div class="portfolio-item">
+                <img src="https://via.placeholder.com/400x300/667eea/ffffff?text=Проект+1" alt="Проект 1">
+                <div class="portfolio-overlay">
+                    <h3>Интернет-магазин</h3>
+                    <p>Современный e-commerce сайт с корзиной и оплатой</p>
+                </div>
+            </div>
+            <div class="portfolio-item">
+                <img src="https://via.placeholder.com/400x300/764ba2/ffffff?text=Проект+2" alt="Проект 2">
+                <div class="portfolio-overlay">
+                    <h3>Корпоративный сайт</h3>
+                    <p>Многостраничный сайт для компании</p>
+                </div>
+            </div>
+            <div class="portfolio-item">
+                <img src="https://via.placeholder.com/400x300/f093fb/ffffff?text=Проект+3" alt="Проект 3">
+                <div class="portfolio-overlay">
+                    <h3>Мобильное приложение</h3>
+                    <p>iOS и Android приложение для доставки</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Контакты -->
+    <section id="contact" class="contact">
+        <h2>Свяжитесь со мной</h2>
+        <p>Готов обсудить ваш проект!</p>
+        <div class="contact-links">
+            <a href="mailto:your@email.com" class="contact-link">
+                <div class="contact-icon">📧</div>
+                <span>Email</span>
+            </a>
+            <a href="https://github.com/yourusername" class="contact-link" target="_blank">
+                <div class="contact-icon">💼</div>
+                <span>GitHub</span>
+            </a>
+            <a href="https://linkedin.com/in/yourusername" class="contact-link" target="_blank">
+                <div class="contact-icon">👔</div>
+                <span>LinkedIn</span>
+            </a>
+            <a href="tel:+1234567890" class="contact-link">
+                <div class="contact-icon">📱</div>
+                <span>Телефон</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 [Ваше Имя]. Все права защищены.</p>
+    </footer>
 
     <script>
-        function search() {
-            const query = document.getElementById('search').value;
-            if (!query) return;
-            
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = '<p class="loading">Загрузка...</p>';
-            
-            // Создаем callback функцию для JSONP
-            window.deezerCallback = function(data) {
-                resultsDiv.innerHTML = '';
-                
-                if (!data.data || data.data.length === 0) {
-                    resultsDiv.innerHTML = '<p style="text-align:center;">Ничего не найдено</p>';
-                    return;
+        // Плавная прокрутка
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
                 }
-                
-                data.data.forEach(track => {
-                    const div = document.createElement('div');
-                    div.className = 'track';
-                    
-                    // Получаем ссылки и картинку
-                    const coverUrl = track.album.cover_medium; // Средний размер обложки
-                    const artistLink = track.artist.link; // Ссылка на артиста
-                    const trackLink = track.link; // Ссылка на трек
+            });
+        });
 
-                    div.innerHTML = `
-                        <div class="track-header">
-                            <a href="${artistLink}" target="_blank" title="Перейти к артисту">
-                                <img src="${coverUrl}" class="track-cover" alt="cover">
-                            </a>
-                            <div class="track-info">
-                                <h3>${track.title}</h3>
-                                <p>🎤 <a href="${artistLink}" target="_blank" class="artist-link">${track.artist.name}</a></p>
-                                <p>💿 ${track.album.title}</p>
-                            </div>
-                        </div>
-                        <audio controls src="${track.preview}"></audio>
-                    `;
-                    resultsDiv.appendChild(div);
-                });
-            };            
-            // Создаем script элемент для JSONP запроса
-            const script = document.createElement('script');
-            script.src = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&output=jsonp&callback=deezerCallback&limit=10`;
-            script.onerror = function() {
-                resultsDiv.innerHTML = '<p class="error">❌ Ошибка при загрузке данных</p>';
-            };
-            
-            document.body.appendChild(script);
-        }
+        // Анимация при скролле
+        const observerOptions = {
+            threshold: 0.1
+        };
 
-        document.getElementById('search').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') search();
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animation = 'fadeInUp 0.8s';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.skill-card, .portfolio-item').forEach(el => {
+            observer.observe(el);
         });
     </script>
 </body>
