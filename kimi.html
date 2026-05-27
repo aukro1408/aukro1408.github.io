@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova — Цифровое агентство</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --accent: #f472b6;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        
+        .font-display {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        
+        /* Animated gradient background */
+        .gradient-bg {
+            background: linear-gradient(135deg, #0a0a0f 0%, #1e1b4b 50%, #0a0a0f 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Floating particles */
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(99, 102, 241, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 20s infinite linear;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
+        }
+        
+        /* Glass morphism cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(99, 102, 241, 0.4);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.3);
+        }
+        
+        /* Magnetic button */
+        .magnetic-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .magnetic-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .magnetic-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        /* Text reveal animation */
+        .reveal-text {
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+        }
+        
+        .reveal-text span {
+            display: inline-block;
+            transform: translateY(100%);
+            opacity: 0;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #0a0a0f;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #4f46e5;
+            border-radius: 4px;
+        }
+        
+        /* Glow effect */
+        .glow {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5), 0 0 40px rgba(99, 102, 241, 0.3);
+        }
+        
+        /* Marquee */
+        .marquee-container {
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        .marquee-content {
+            display: inline-block;
+            animation: marquee 30s linear infinite;
+        }
+        
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        
+        /* Navigation blur */
+        .nav-blur {
+            backdrop-filter: blur(20px);
+            background: rgba(10, 10, 15, 0.8);
+        }
+        
+        /* Image hover zoom */
+        .img-zoom {
+            overflow: hidden;
+        }
+        
+        .img-zoom img {
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .img-zoom:hover img {
+            transform: scale(1.1);
+        }
+        
+        /* Cursor follower */
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background: #6366f1;
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s;
+            mix-blend-mode: difference;
+        }
+        
+        .cursor-outline {
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(99, 102, 241, 0.5);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9998;
+            transition: transform 0.15s, width 0.3s, height 0.3s;
+        }
+        
+        .cursor-outline.hover {
+            width: 60px;
+            height: 60px;
+            background: rgba(99, 102, 241, 0.1);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <!-- Custom Cursor -->
+    <div class="cursor-dot hidden md:block" id="cursorDot"></div>
+    <div class="cursor-outline hidden md:block" id="cursorOutline"></div>
+
+    <!-- Floating Particles -->
+    <div id="particles" class="fixed inset-0 pointer-events-none z-0"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 nav-blur border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
+                    <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+                </div>
+                <span class="font-display font-bold text-xl tracking-tight">Nova</span>
+            </div>
+            
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
+                <a href="#about" class="hover:text-white transition-colors">О нас</a>
+                <a href="#services" class="hover:text-white transition-colors">Услуги</a>
+                <a href="#work" class="hover:text-white transition-colors">Работы</a>
+                <a href="#team" class="hover:text-white transition-colors">Команда</a>
+            </div>
+            
+            <button class="magnetic-btn px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-sm font-medium transition-colors">
+                Связаться
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+        <div class="absolute inset-0 z-0">
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl animate-pulse"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-600/20 rounded-full blur-3xl animate-pulse" style="animation-delay: 2s;"></div>
+        </div>
+
+        <div class="relative z-10 max-w-7xl mx-auto px-6 text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 hero-badge opacity-0">
+                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                <span class="text-sm text-gray-300">Доступны для новых проектов</span>
+            </div>
+            
+            <h1 class="font-display text-5xl md:text-7xl lg:text-8xl font-bold leading-tight mb-6">
+                <span class="block overflow-hidden">
+                    <span class="hero-title inline-block">Создаём цифровые</span>
+                </span>
+                <span class="block overflow-hidden">
+                    <span class="hero-title inline-block text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
+                        впечатления
+                    </span>
+                </span>
+            </h1>
+            
+            <p class="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 hero-subtitle opacity-0">
+                Мы — креативное агентство, которое превращает сложные идеи в элегантные цифровые решения. От концепции до запуска.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 justify-center hero-buttons opacity-0">
+                <button class="magnetic-btn px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-medium text-lg transition-all glow">
+                    Начать проект
+                </button>
+                <button class="magnetic-btn px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/20 text-white rounded-full font-medium text-lg transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="play" class="w-5 h-5"></i>
+                    Смотреть шоурил
+                </button>
+            </div>
+
+            <div class="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto hero-stats opacity-0">
+                <div class="text-center">
+                    <div class="text-3xl font-display font-bold text-white">150+</div>
+                    <div class="text-sm text-gray-500 mt-1">Проектов</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-display font-bold text-white">98%</div>
+                    <div class="text-sm text-gray-500 mt-1">Довольных клиентов</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-display font-bold text-white">12</div>
+                    <div class="text-sm text-gray-500 mt-1">Наград</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-display font-bold text-white">5+</div>
+                    <div class="text-sm text-gray-500 mt-1">Лет опыта</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
+            <i data-lucide="chevron-down" class="w-6 h-6 text-gray-500"></i>
+        </div>
+    </section>
+
+    <!-- Marquee Section -->
+    <div class="py-8 border-y border-white/5 bg-white/2">
+        <div class="marquee-container">
+            <div class="marquee-content text-4xl md:text-6xl font-display font-bold text-white/10">
+                Дизайн • Разработка • Брендинг • Маркетинг • UI/UX • Мобильные приложения • Веб-сайты • Дизайн • Разработка • Брендинг • Маркетинг • UI/UX • Мобильные приложения • Веб-сайты •
+            </div>
+        </div>
+    </div>
+
+    <!-- Services Section -->
+    <section id="services" class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="mb-20">
+                <span class="text-indigo-400 text-sm font-medium tracking-wider uppercase mb-4 block">Услуги</span>
+                <h2 class="font-display text-4xl md:text-5xl font-bold mb-6">Что мы делаем</h2>
+                <p class="text-gray-400 text-lg max-w-2xl">Комплексный подход к цифровому присутствию вашего бизнеса</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="glass-card rounded-2xl p-8 group cursor-pointer service-card">
+                    <div class="w-14 h-14 bg-indigo-500/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i data-lucide="palette" class="w-7 h-7 text-indigo-400"></i>
+                    </div>
+                    <h3 class="font-display text-xl font-bold mb-3">Веб-дизайн</h3>
+                    <p class="text-gray-400 leading-relaxed">Создаём уникальные интерфейсы, которые запоминаются и конвертируют посетителей в клиентов.</p>
+                    <div class="mt-6 flex items-center text-indigo-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                        Подробнее <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-8 group cursor-pointer service-card">
+                    <div class="w-14 h-14 bg-pink-500/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i data-lucide="code-2" class="w-7 h-7 text-pink-400"></i>
+                    </div>
+                    <h3 class="font-display text-xl font-bold mb-3">Разработка</h3>
+                    <p class="text-gray-400 leading-relaxed">Современные технологии и чистый код для быстрых, надёжных и масштабируемых решений.</p>
+                    <div class="mt-6 flex items-center text-pink-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                        Подробнее <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-8 group cursor-pointer service-card">
+                    <div class="w-14 h-14 bg-purple-500/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i data-lucide="smartphone" class="w-7 h-7 text-purple-400"></i>
+                    </div>
+                    <h3 class="font-display text-xl font-bold mb-3">Мобильные приложения</h3>
+                    <p class="text-gray-400 leading-relaxed">Нативные и кроссплатформенные приложения для iOS и Android с идеальным UX.</p>
+                    <div class="mt-6 flex items-center text-purple-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                        Подробнее <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-8 group cursor-pointer service-card">
+                    <div class="w-14 h-14 bg-cyan-500/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i data-lucide="trending-up" class="w-7 h-7 text-cyan-400"></i>
+                    </div>
+                    <h3 class="font-display text-xl font-bold mb-3">Digital-маркетинг</h3>
+                    <p class="text-gray-400 leading-relaxed">Стратегии продвижения, которые работают: SEO, SMM, контекстная реклама и аналитика.</p>
+                    <div class="mt-6 flex items-center text-cyan-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                        Подробнее <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-8 group cursor-pointer service-card">
+                    <div class="w-14 h-14 bg-orange-500/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i data-lucide="box" class="w-7 h-7 text-orange-400"></i>
+                    </div>
+                    <h3 class="font-display text-xl font-bold mb-3">3D и Motion</h3>
+                    <p class="text-gray-400 leading-relaxed">Иммерсивные 3D-эксперименты и плавные анимации для незабываемого опыта.</p>
+                    <div class="mt-6 flex items-center text-orange-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                        Подробнее <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-8 group cursor-pointer service-card">
+                    <div class="w-14 h-14 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i data-lucide="shield" class="w-7 h-7 text-emerald-400"></i>
+                    </div>
+                    <h3 class="font-display text-xl font-bold mb-3">Брендинг</h3>
+                    <p class="text-gray-400 leading-relaxed">Разработка айдентики: от логотипа до полноценной системы визуальной коммуникации.</p>
+                    <div class="mt-6 flex items-center text-emerald-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                        Подробнее <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Work -->
+    <section id="work" class="py-32 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-16">
+                <div>
+                    <span class="text-indigo-400 text-sm font-medium tracking-wider uppercase mb-4 block">Портфолио</span>
+                    <h2 class="font-display text-4xl md:text-5xl font-bold">Избранные работы</h2>
+                </div>
+                <button class="mt-6 md:mt-0 px-6 py-3 border border-white/20 rounded-full hover:bg-white/5 transition-colors flex items-center gap-2">
+                    Все проекты <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="group cursor-pointer work-item">
+                    <div class="img-zoom rounded-2xl overflow-hidden mb-6 aspect-[4/3] bg-gradient-to-br from-indigo-900 to-purple-900 relative">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-32 h-32 bg-white/10 rounded-2xl backdrop-blur-sm flex items-center justify-center">
+                                <i data-lucide="shopping-bag" class="w-12 h-12 text-white/50"></i>
+                            </div>
+                        </div>
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                                <i data-lucide="arrow-up-right" class="w-6 h-6 text-black"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-display text-2xl font-bold mb-2">Luxe Market</h3>
+                            <p class="text-gray-400">E-commerce платформа</p>
+                        </div>
+                        <span class="px-4 py-1 bg-white/5 rounded-full text-sm text-gray-400">2024</span>
+                    </div>
+                </div>
+
+                <div class="group cursor-pointer work-item md:mt-20">
+                    <div class="img-zoom rounded-2xl overflow-hidden mb-6 aspect-[4/3] bg-gradient-to-br from-pink-900 to-rose-900 relative">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-32 h-32 bg-white/10 rounded-2xl backdrop-blur-sm flex items-center justify-center">
+                                <i data-lucide="heart" class="w-12 h-12 text-white/50"></i>
+                            </div>
+                        </div>
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                                <i data-lucide="arrow-up-right" class="w-6 h-6 text-black"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-display text-2xl font-bold mb-2">Health+</h3>
+                            <p class="text-gray-400">Фитнес приложение</p>
+                        </div>
+                        <span class="px-4 py-1 bg-white/5 rounded-full text-sm text-gray-400">2024</span>
+                    </div>
+                </div>
+
+                <div class="group cursor-pointer work-item">
+                    <div class="img-zoom rounded-2xl overflow-hidden mb-6 aspect-[4/3] bg-gradient-to-br from-cyan-900 to-blue-900 relative">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-32 h-32 bg-white/10 rounded-2xl backdrop-blur-sm flex items-center justify-center">
+                                <i data-lucide="building-2" class="w-12 h-12 text-white/50"></i>
+                            </div>
+                        </div>
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                                <i data-lucide="arrow-up-right" class="w-6 h-6 text-black"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-display text-2xl font-bold mb-2">Arch Studio</h3>
+                            <p class="text-gray-400">Корпоративный сайт</p>
+                        </div>
+                        <span class="px-4 py-1 bg-white/5 rounded-full text-sm text-gray-400">2023</span>
+                    </div>
+                </div>
+
+                <div class="group cursor-pointer work-item md:mt-20">
+                    <div class="img-zoom rounded-2xl overflow-hidden mb-6 aspect-[4/3] bg-gradient-to-br from-emerald-900 to-teal-900 relative">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-32 h-32 bg-white/10 rounded-2xl backdrop-blur-sm flex items-center justify-center">
+                                <i data-lucide="leaf" class="w-12 h-12 text-white/50"></i>
+                            </div>
+                        </div>
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                                <i data-lucide="arrow-up-right" class="w-6 h-6 text-black"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-display text-2xl font-bold mb-2">EcoLife</h3>
+                            <p class="text-gray-400">Социальный проект</p>
+                        </div>
+                        <span class="px-4 py-1 bg-white/5 rounded-full text-sm text-gray-400">2023</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Process Section -->
+    <section class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-20">
+                <span class="text-indigo-400 text-sm font-medium tracking-wider uppercase mb-4 block">Процесс</span>
+                <h2 class="font-display text-4xl md:text-5xl font-bold mb-6">Как мы работаем</h2>
+            </div>
+
+            <div class="relative">
+                <!-- Connection line -->
+                <div class="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transform -translate-y-1/2"></div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="relative text-center process-step">
+                        <div class="w-20 h-20 mx-auto bg-indigo-600 rounded-2xl flex items-center justify-center mb-6 relative z-10 shadow-lg shadow-indigo-500/30">
+                            <span class="font-display text-2xl font-bold">01</span>
+                        </div>
+                        <h3 class="font-display text-xl font-bold mb-3">Исследование</h3>
+                        <p class="text-gray-400 text-sm">Глубокий анализ рынка, конкурентов и целевой аудитории</p>
+                    </div>
+
+                    <div class="relative text-center process-step">
+                        <div class="w-20 h-20 mx-auto bg-purple-600 rounded-2xl flex items-center justify-center mb-6 relative z-10 shadow-lg shadow-purple-500/30">
+                            <span class="font-display text-2xl font-bold">02</span>
+                        </div>
+                        <h3 class="font-display text-xl font-bold mb-3">Стратегия</h3>
+                        <p class="text-gray-400 text-sm">Разработка концепции и детального плана реализации</p>
+                    </div>
+
+                    <div class="relative text-center process-step">
+                        <div class="w-20 h-20 mx-auto bg-pink-600 rounded-2xl flex items-center justify-center mb-6 relative z-10 shadow-lg shadow-pink-500/30">
+                            <span class="font-display text-2xl font-bold">03</span>
+                        </div>
+                        <h3 class="font-display text-xl font-bold mb-3">Дизайн</h3>
+                        <p class="text-gray-400 text-sm">Создание визуальной концепции и прототипов</p>
+                    </div>
+
+                    <div class="relative text-center process-step">
+                        <div class="w-20 h-20 mx-auto bg-cyan-600 rounded-2xl flex items-center justify-center mb-6 relative z-10 shadow-lg shadow-cyan-500/30">
+                            <span class="font-display text-2xl font-bold">04</span>
+                        </div>
+                        <h3 class="font-display text-xl font-bold mb-3">Запуск</h3>
+                        <p class="text-gray-400 text-sm">Разработка, тестирование и деплой готового продукта</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="py-32 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-20">
+                <span class="text-indigo-400 text-sm font-medium tracking-wider uppercase mb-4 block">Отзывы</span>
+                <h2 class="font-display text-4xl md:text-5xl font-bold mb-6">Что говорят клиенты</h2>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="glass-card rounded-2xl p-8 relative">
+                    <div class="flex gap-1 mb-6">
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                    </div>
+                    <p class="text-gray-300 mb-6 leading-relaxed">"Nova превзошли все наши ожидания. Новый сайт увеличил конверсию на 340% за первый месяц. Профессиональный подход на каждом этапе."</p>
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-indigo-400 to-purple-400 rounded-full flex items-center justify-center text-white font-bold">
+                            АК
+                        </div>
+                        <div>
+                            <div class="font-medium">Алексей Козлов</div>
+                            <div class="text-sm text-gray-500">CEO, TechStart</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-8 relative">
+                    <div class="flex gap-1 mb-6">
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                    </div>
+                    <p class="text-gray-300 mb-6 leading-relaxed">"Работа с командой Nova — это всегда креативно и результативно. Они не просто выполняют задачи, а предлагают инновационные решения."</p>
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-pink-400 to-rose-400 rounded-full flex items-center justify-center text-white font-bold">
+                            МР
+                        </div>
+                        <div>
+                            <div class="font-medium">Марина Романова</div>
+                            <div class="text-sm text-gray-500">Маркетинг-директор, StyleHub</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-8 relative">
+                    <div class="flex gap-1 mb-6">
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                    </div>
+                    <p class="text-gray-300 mb-6 leading-relaxed">"Мобильное приложение, которое они разработали, получило 4.9 звёзд в App Store. Пользователи в восторге от интерфейса и скорости работы."</p>
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-cyan-400 to-blue-400 rounded-full flex items-center justify-center text-white font-bold">
+                            ДС
+                        </div>
+                        <div>
+                            <div class="font-medium">Дмитрий Соколов</div>
+                            <div class="text-sm text-gray-500">Основатель, FitPro</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-32 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-indigo-600/20 to-purple-600/20"></div>
+        <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-indigo-500 to-transparent"></div>
+        <div class="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent"></div>
+        
+        <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
+            <h2 class="font-display text-4xl md:text-6xl font-bold mb-6">Готовы создать<br>что-то особенное?</h2>
+            <p class="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">Давайте обсудим ваш проект. Первый созвон бесплатный и ни к чему не обязывает.</p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button class="magnetic-btn px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-medium text-lg transition-all glow">
+                    Обсудить проект
+                </button>
+                <button class="magnetic-btn px-10 py-5 bg-white/5 hover:bg-white/10 border border-white/20 text-white rounded-full font-medium text-lg transition-all">
+                    hello@nova.agency
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 pt-20 pb-10">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid md:grid-cols-4 gap-12 mb-16">
+                <div class="md:col-span-2">
+                    <div class="flex items-center gap-2 mb-6">
+                        <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
+                            <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="font-display font-bold text-xl">Nova</span>
+                    </div>
+                    <p class="text-gray-400 max-w-sm mb-6">Создаём цифровые продукты, которые вдохновляют и приносят результат. Каждый проект — это искусство.</p>
+                    <div class="flex gap-4">
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+                            <i data-lucide="twitter" class="w-5 h-5"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+                            <i data-lucide="instagram" class="w-5 h-5"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+                            <i data-lucide="linkedin" class="w-5 h-5"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+                            <i data-lucide="github" class="w-5 h-5"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium mb-6">Услуги</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Веб-дизайн</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Разработка</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Мобильные приложения</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Брендинг</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium mb-6">Компания</h4>
+                    <ul class="space-y-4 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">О нас</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Карьера</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Блог</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Контакты</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-gray-500 text-sm"> 2024 Nova Agency. Все права защищены.</p>
+                <div class="flex gap-6 text-sm text-gray-500">
+                    <a href="#" class="hover:text-white transition-colors">Политика конфиденциальности</a>
+                    <a href="#" class="hover:text-white transition-colors">Условия использования</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Create floating particles
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 50; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 20 + 's';
+            particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+            particlesContainer.appendChild(particle);
+        }
+
+        // Custom cursor
+        const cursorDot = document.getElementById('cursorDot');
+        const cursorOutline = document.getElementById('cursorOutline');
+        
+        window.addEventListener('mousemove', (e) => {
+            const posX = e.clientX;
+            const posY = e.clientY;
+            
+            cursorDot.style.left = posX + 'px';
+            cursorDot.style.top = posY + 'px';
+            
+            cursorOutline.animate({
+                left: posX + 'px',
+                top: posY + 'px'
+            }, { duration: 500, fill: 'forwards' });
+        });
+
+        // Hover effect for cursor
+        const interactiveElements = document.querySelectorAll('a, button, .glass-card, .work-item');
+        interactiveElements.forEach(el => {
+            el.addEventListener('mouseenter', () => cursorOutline.classList.add('hover'));
+            el.addEventListener('mouseleave', () => cursorOutline.classList.remove('hover'));
+        });
+
+        // GSAP Animations
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Hero animations
+        const heroTl = gsap.timeline();
+        heroTl.to('.hero-badge', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' })
+              .to('.hero-title', { y: 0, opacity: 1, duration: 1, stagger: 0.2, ease: 'power3.out' }, '-=0.4')
+              .to('.hero-subtitle', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, '-=0.6')
+              .to('.hero-buttons', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, '-=0.4')
+              .to('.hero-stats', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, '-=0.4');
+
+        // Service cards animation
+        gsap.utils.toArray('.service-card').forEach((card, i) => {
+            gsap.from(card, {
+                scrollTrigger: {
+                    trigger: card,
+                    start: 'top 85%',
+                    toggleActions: 'play none none reverse'
+                },
+                y: 60,
+                opacity: 0,
+                duration: 0.8,
+                delay: i * 0.1,
+                ease: 'power3.out'
+            });
+        });
+
+        // Work items animation
+        gsap.utils.toArray('.work-item').forEach((item, i) => {
+            gsap.from(item, {
+                scrollTrigger: {
+                    trigger: item,
+                    start: 'top 85%',
+                    toggleActions: 'play none none reverse'
+                },
+                y: 80,
+                opacity: 0,
+                duration: 1,
+                delay: i * 0.15,
+                ease: 'power3.out'
+            });
+        });
+
+        // Process steps animation
+        gsap.utils.toArray('.process-step').forEach((step, i) => {
+            gsap.from(step, {
+                scrollTrigger: {
+                    trigger: step,
+                    start: 'top 85%',
+                    toggleActions: 'play none none reverse'
+                },
+                scale: 0.8,
+                opacity: 0,
+                duration: 0.6,
+                delay: i * 0.2,
+                ease: 'back.out(1.7)'
+            });
+        });
+
+        // Smooth scroll for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Magnetic button effect
+        const magneticBtns = document.querySelectorAll('.magnetic-btn');
+        magneticBtns.forEach(btn => {
+            btn.addEventListener('mousemove', (e) => {
+                const rect = btn.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+                
+                btn.style.transform = `translate(${x * 0.2}px, ${y * 0.2}px)`;
+            });
+            
+            btn.addEventListener('mouseleave', () => {
+                btn.style.transform = 'translate(0, 0)';
+            });
+        });
+
+        // Parallax effect on scroll
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const parallaxElements = document.querySelectorAll('.glass-card');
+            parallaxElements.forEach(el => {
+                const speed = 0.5;
+                el.style.transform = `translateY(${scrolled * speed * 0.05}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
