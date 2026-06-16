@@ -47,7 +47,7 @@
                     );
 
                     var frame = $(
-                        '<iframe src="' + directUrl + '" style="width:100%;height:100%;border:none;" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture"></iframe>'
+                        '<iframe src="https://example.com" style="width:100%;height:100%;border:none;" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture"></iframe>'
                     );
 
                     overlay.append(frame);
