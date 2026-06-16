@@ -38,49 +38,26 @@
                         directUrl = 'https://multiembed.mov/?video_id=' + tmdbId + '&tmdb=1';
                     }
 
-                    console.log('Opening URL:', directUrl);
-
-                    // Try Lampa internal browser
-                    if (Lampa.Activity && Lampa.Activity.push) {
-                        try {
-                            Lampa.Activity.push({
-                                url: directUrl,
-                                title: isSerial ? 'Online - Season 1 Episode 1' : 'Online',
-                                component: 'browser'
-                            });
-                            return;
-                        } catch (e) {
-                            console.log('Browser component failed, trying iframe...');
-                        }
-
-                        try {
-                            Lampa.Activity.push({
-                                component: 'iframe',
-                                url: directUrl,
-                                title: 'Online'
-                            });
-                            return;
-                        } catch (e) {
-                            console.log('Iframe component failed, creating webview...');
-                        }
-                    }
-
-                    // Fallback: embedded iframe overlay
-                    var container = activity.render();
-                    var webview = $(
-                        '<div class="online-webview" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:#000;">' +
-                            '<div class="online-webview-header" style="padding:10px;text-align:right;">' +
-                                '<div class="selector" style="display:inline-block;padding:8px 16px;background:#333;color:#fff;border-radius:4px;">Close</div>' +
-                            '</div>' +
-                            '<iframe src="' + directUrl + '" style="width:100%;height:calc(100% - 50px);border:none;" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture"></iframe>' +
-                        '</div>'
+                    var overlay = $(
+                        '<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:black;z-index:999999;"></div>'
                     );
 
-                    webview.find('.selector').on('hover:enter', function() {
-                        webview.remove();
+                    var close = $(
+                        '<div style="position:absolute;top:20px;right:20px;color:white;z-index:1000000;padding:10px 20px;background:rgba(255,255,255,0.1);border-radius:6px;cursor:pointer;">Close</div>'
+                    );
+
+                    var frame = $(
+                        '<iframe src="' + directUrl + '" style="width:100%;height:100%;border:none;" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture"></iframe>'
+                    );
+
+                    overlay.append(frame);
+                    overlay.append(close);
+
+                    close.on('hover:enter', function() {
+                        overlay.remove();
                     });
 
-                    container.append(webview);
+                    $('body').append(overlay);
                 });
 
                 torrentView.after(button);
