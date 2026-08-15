@@ -17,6 +17,23 @@
     // Кэш соответствий TMDB ID -> Kinopoisk ID
     const CACHE_KEY = "lampa_kinopoisk_review_ids";
 
+    // Варианты сортировки отзывов
+    const ORDER_OPTIONS = [
+        { value: "DATE_DESC", label: "Новые" },
+        { value: "DATE_ASC", label: "Старые" },
+        { value: "USER_POSITIVE_RATING_DESC", label: "Больше положительных" },
+        { value: "USER_NEGATIVE_RATING_DESC", label: "Больше отрицательных" }
+    ];
+
+
+    function getOrderLabel(value) {
+        const found = ORDER_OPTIONS.find(function (o) {
+            return o.value === value;
+        });
+
+        return found ? found.label : "Новые";
+    }
+
     let currentMovie = null;
     let currentKinopoiskId = null;
     let currentPage = 1;
@@ -967,23 +984,98 @@
                     inset 0 1px 0 rgba(255,255,255,.04);
             }
 
-            .kp-review-filter {
+            .kp-review-sort {
+                position: relative;
+            }
+
+            .kp-review-sort-trigger {
+                display: flex;
+                align-items: center;
+                gap: 8px;
                 background: rgba(255,255,255,.05);
                 color: #eee;
                 border: 1px solid rgba(255,255,255,.1);
                 border-radius: 12px;
                 padding: 10px 14px;
                 font-size: 13px;
-                outline: none;
+                font-weight: 600;
+                cursor: pointer;
                 box-shadow: 0 4px 10px rgba(0,0,0,.25);
                 transition: border-color .15s ease, background .15s ease, transform .15s ease;
             }
 
-            .kp-review-filter.focus,
-            .kp-review-filter:hover {
+            .kp-review-sort-trigger.focus,
+            .kp-review-sort-trigger:hover {
                 border-color: var(--kp-accent);
                 background: rgba(255,255,255,.08);
                 transform: translateY(-1px);
+            }
+
+            .kp-review-sort-arrow {
+                color: var(--kp-accent);
+                font-size: 11px;
+                transition: transform .15s ease;
+            }
+
+            .kp-review-sort.is-open .kp-review-sort-arrow {
+                transform: rotate(180deg);
+            }
+
+            .kp-review-sort-list {
+                display: none;
+                position: absolute;
+                top: calc(100% + 8px);
+                left: 0;
+                min-width: 240px;
+                z-index: 20;
+                background: linear-gradient(165deg, #29292e, #1c1c20);
+                border: 1px solid rgba(255,255,255,.1);
+                border-radius: 16px;
+                padding: 6px;
+                box-shadow:
+                    0 20px 40px rgba(0,0,0,.55),
+                    0 4px 12px rgba(0,0,0,.4),
+                    inset 0 1px 0 rgba(255,255,255,.05);
+                overflow: hidden;
+            }
+
+            .kp-review-sort.is-open .kp-review-sort-list {
+                display: block;
+                animation: kp-fade-in .15s ease both;
+            }
+
+            .kp-review-sort-item {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 11px 12px;
+                border-radius: 10px;
+                font-size: 13px;
+                color: #ddd;
+                cursor: pointer;
+                transition: background .12s ease, color .12s ease;
+            }
+
+            .kp-review-sort-item.focus,
+            .kp-review-sort-item:hover {
+                background: rgba(255,255,255,.08);
+                color: #fff;
+            }
+
+            .kp-review-sort-item.is-active {
+                color: var(--kp-accent-2);
+                font-weight: 700;
+            }
+
+            .kp-review-sort-item.is-active::after {
+                content: "";
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: var(--kp-accent);
+                box-shadow: 0 0 8px var(--kp-accent);
+                flex-shrink: 0;
             }
 
             .kp-reviews-count {
@@ -1736,60 +1828,59 @@
             let html = `
                 <div class="kp-reviews-toolbar">
 
-                    <select
-                        class="kp-review-filter selector"
-                        id="kp-review-order"
-                    >
+                    <div class="kp-review-sort" id="kp-review-sort">
 
-                        <option
-                            value="DATE_DESC"
-                            ${
-                                currentOrder ===
-                                "DATE_DESC"
-                                    ? "selected"
-                                    : ""
-                            }
+                        <div
+                            class="kp-review-sort-trigger selector"
+                            id="kp-review-sort-trigger"
                         >
-                            Новые
-                        </option>
+                            <span id="kp-review-sort-label">
+                                ${escapeHtml(
+                                    getOrderLabel(
+                                        currentOrder
+                                    )
+                                )}
+                            </span>
 
-                        <option
-                            value="DATE_ASC"
-                            ${
-                                currentOrder ===
-                                "DATE_ASC"
-                                    ? "selected"
-                                    : ""
-                            }
+                            <span class="kp-review-sort-arrow">
+                                ▾
+                            </span>
+                        </div>
+
+                        <div
+                            class="kp-review-sort-list"
+                            id="kp-review-sort-list"
                         >
-                            Старые
-                        </option>
 
-                        <option
-                            value="USER_POSITIVE_RATING_DESC"
-                            ${
-                                currentOrder ===
-                                "USER_POSITIVE_RATING_DESC"
-                                    ? "selected"
-                                    : ""
-                            }
-                        >
-                            Больше положительных
-                        </option>
+                            ${ORDER_OPTIONS
+                                .map(
+                                    function (o) {
+                                        return `
+                                            <div
+                                                class="
+                                                    kp-review-sort-item
+                                                    selector
+                                                    ${
+                                                        o.value ===
+                                                        currentOrder
+                                                            ? "is-active"
+                                                            : ""
+                                                    }
+                                                "
+                                                data-value="${o.value}"
+                                            >
+                                                ${escapeHtml(
+                                                    o.label
+                                                )}
+                                            </div>
+                                        `;
+                                    }
+                                )
+                                .join("")}
 
-                        <option
-                            value="USER_NEGATIVE_RATING_DESC"
-                            ${
-                                currentOrder ===
-                                "USER_NEGATIVE_RATING_DESC"
-                                    ? "selected"
-                                    : ""
-                            }
-                        >
-                            Больше отрицательных
-                        </option>
+                        </div>
 
-                    </select>
+                    </div>
 
                     <div class="kp-reviews-count">
                         Всего: ${total}
@@ -1851,16 +1942,49 @@
             // СОРТИРОВКА
             // =================================================
 
+            const sortWrap = container.find(
+                "#kp-review-sort"
+            );
+
+            const sortTrigger = container.find(
+                "#kp-review-sort-trigger"
+            );
+
+
+            sortTrigger.on(
+                "hover:enter click",
+                function () {
+                    sortWrap.toggleClass(
+                        "is-open"
+                    );
+                }
+            );
+
+
             container
                 .find(
-                    "#kp-review-order"
+                    "#kp-review-sort-list .kp-review-sort-item"
                 )
                 .on(
-                    "change",
+                    "hover:enter click",
                     function () {
 
-                        currentOrder =
-                            this.value;
+                        const value = $(this).data(
+                            "value"
+                        );
+
+                        sortWrap.removeClass(
+                            "is-open"
+                        );
+
+                        if (
+                            value ===
+                            currentOrder
+                        ) {
+                            return;
+                        }
+
+                        currentOrder = value;
 
                         loadReviewPage(
                             1
