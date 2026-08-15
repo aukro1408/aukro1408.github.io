@@ -734,8 +734,13 @@
     // РЕНДЕР ОТЗЫВА
     // =========================================================
 
+    // Порог длины текста, после которого рецензия сворачивается
+    const COLLAPSE_THRESHOLD = 420;
+
+
     function renderReview(
-        review
+        review,
+        index
     ) {
         const type =
             getReviewType(
@@ -873,10 +878,37 @@
                 }
 
 
-                <div class="kp-review-text">
-                    ${formatReviewText(
-                        description
-                    )}
+                <div class="kp-review-text-wrap">
+
+                    <div
+                        class="kp-review-text${
+                            description.length >
+                            COLLAPSE_THRESHOLD
+                                ? " is-collapsed"
+                                : ""
+                        }"
+                        id="kp-review-text-${index}"
+                    >
+                        ${formatReviewText(
+                            description
+                        )}
+                    </div>
+
+                    ${
+                        description.length >
+                        COLLAPSE_THRESHOLD
+                            ? `
+                                <div
+                                    class="kp-review-toggle selector"
+                                    id="kp-review-toggle-${index}"
+                                    data-target="kp-review-text-${index}"
+                                >
+                                    Читать полностью
+                                </div>
+                            `
+                            : ""
+                    }
+
                 </div>
 
             </div>
@@ -1240,6 +1272,10 @@
                 letter-spacing: .01em;
             }
 
+            .kp-review-text-wrap {
+                position: relative;
+            }
+
             .kp-review-text {
                 color: #cfcfd2;
                 font-size: 14px;
@@ -1249,6 +1285,37 @@
 
             .kp-review-text a {
                 color: var(--kp-accent-2);
+            }
+
+            .kp-review-text.is-collapsed {
+                max-height: 7.6em;
+                overflow: hidden;
+                -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
+                mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
+            }
+
+            .kp-review-toggle {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                margin-top: 12px;
+                padding: 8px 15px;
+                border-radius: 999px;
+                background: rgba(255,255,255,.06);
+                border: 1px solid rgba(255,255,255,.1);
+                color: var(--kp-accent-2);
+                font-size: 12px;
+                font-weight: 700;
+                cursor: pointer;
+                box-shadow: 0 4px 10px rgba(0,0,0,.25);
+                transition: background .15s ease, border-color .15s ease, transform .15s ease;
+            }
+
+            .kp-review-toggle.focus,
+            .kp-review-toggle:hover {
+                background: rgba(255,255,255,.1);
+                border-color: var(--kp-accent);
+                transform: translateY(-1px);
             }
 
             /* ===================== ПАГИНАЦИЯ ===================== */
@@ -1300,6 +1367,76 @@
                 font-size: 13px;
                 min-width: 56px;
                 text-align: center;
+            }
+
+            /* ===================== СКЕЛЕТОНЫ ЗАГРУЗКИ ===================== */
+
+            .kp-skeleton-card {
+                background: var(--kp-card-bg);
+                border: 1px solid var(--kp-border);
+                border-radius: 20px;
+                padding: 18px 18px 17px 21px;
+                margin-bottom: 16px;
+                box-shadow:
+                    0 14px 30px rgba(0,0,0,.4),
+                    0 2px 6px rgba(0,0,0,.3);
+                animation: kp-fade-in .3s ease both;
+            }
+
+            .kp-skeleton-top {
+                display: flex;
+                align-items: center;
+                gap: 13px;
+                margin-bottom: 16px;
+            }
+
+            .kp-skeleton-line,
+            .kp-skeleton-avatar {
+                background: linear-gradient(
+                    100deg,
+                    rgba(255,255,255,.06) 30%,
+                    rgba(255,255,255,.14) 50%,
+                    rgba(255,255,255,.06) 70%
+                );
+                background-size: 400% 100%;
+                animation: kp-shimmer 1.5s ease infinite;
+                border-radius: 8px;
+            }
+
+            .kp-skeleton-avatar {
+                width: 46px;
+                height: 46px;
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+
+            .kp-skeleton-lines {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .kp-skeleton-line {
+                height: 10px;
+            }
+
+            .kp-skeleton-line.w-35 { width: 35%; }
+            .kp-skeleton-line.w-20 { height: 8px; width: 20%; }
+
+            .kp-skeleton-body .kp-skeleton-line {
+                height: 11px;
+                margin-bottom: 10px;
+            }
+
+            .kp-skeleton-body .kp-skeleton-line:last-child {
+                width: 65%;
+                margin-bottom: 0;
+            }
+
+            @keyframes kp-shimmer {
+                0%   { background-position: 200% 0; }
+                100% { background-position: -200% 0; }
             }
 
             /* ===================== СОСТОЯНИЯ ===================== */
@@ -1758,6 +1895,44 @@
     // ЗАГРУЗКА СТРАНИЦЫ
     // =========================================================
 
+    function renderSkeletonCards(
+        count
+    ) {
+        let html = "";
+
+        for (
+            let i = 0;
+            i < count;
+            i++
+        ) {
+            html += `
+                <div class="kp-skeleton-card">
+
+                    <div class="kp-skeleton-top">
+
+                        <div class="kp-skeleton-avatar"></div>
+
+                        <div class="kp-skeleton-lines">
+                            <div class="kp-skeleton-line w-35"></div>
+                            <div class="kp-skeleton-line w-20"></div>
+                        </div>
+
+                    </div>
+
+                    <div class="kp-skeleton-body">
+                        <div class="kp-skeleton-line"></div>
+                        <div class="kp-skeleton-line"></div>
+                        <div class="kp-skeleton-line"></div>
+                    </div>
+
+                </div>
+            `;
+        }
+
+        return html;
+    }
+
+
     async function loadReviewPage(
         page
     ) {
@@ -1772,11 +1947,11 @@
             );
 
 
-        container.html(`
-            <div class="kp-review-loading">
-                Загрузка рецензий...
-            </div>
-        `);
+        container.html(
+            renderSkeletonCards(
+                4
+            )
+        );
 
 
         try {
@@ -1936,6 +2111,51 @@
             container.html(
                 html
             );
+
+
+            // =================================================
+            // СВОРАЧИВАНИЕ ДЛИННЫХ РЕЦЕНЗИЙ
+            // =================================================
+
+            container
+                .find(
+                    ".kp-review-toggle"
+                )
+                .on(
+                    "hover:enter click",
+                    function () {
+
+                        const button = $(
+                            this
+                        );
+
+                        const targetId =
+                            button.data(
+                                "target"
+                            );
+
+                        const textBlock =
+                            container.find(
+                                "#" +
+                                targetId
+                            );
+
+                        const isCollapsed =
+                            textBlock.hasClass(
+                                "is-collapsed"
+                            );
+
+                        textBlock.toggleClass(
+                            "is-collapsed"
+                        );
+
+                        button.text(
+                            isCollapsed
+                                ? "Свернуть"
+                                : "Читать полностью"
+                        );
+                    }
+                );
 
 
             // =================================================
