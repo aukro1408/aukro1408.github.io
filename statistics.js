@@ -33,7 +33,6 @@ function getRealStats() {
     var genresMap = {};
     var totalItemsCount = 0;
 
-    // 1. Анализируем историю просмотров
     if (Array.isArray(history)) {
         totalItemsCount += history.length;
         history.forEach(function (item) {
@@ -54,7 +53,6 @@ function getRealStats() {
         });
     }
 
-    // 2. Анализируем закладки с Cub.red (book может быть объектом по категориям)
     var bookItemsCount = 0;
     if (books) {
         var extractItems = function(collection) {
@@ -84,7 +82,6 @@ function getRealStats() {
     }
 
     var totalHours = Math.round(totalSeconds / 3600);
-    // Если точное время в секундах не заполнено в истории, оцениваем примерно по количеству записей с Cub
     if (totalHours === 0 && (totalItemsCount > 0 || bookItemsCount > 0)) {
         totalHours = Math.max(1, Math.round((totalItemsCount + bookItemsCount) * 0.8));
     }
@@ -126,7 +123,6 @@ function statsPage(object) {
         body.prepend(grid);
     }
 
-    // Слушаем обновление хранилища (когда Cub.red докачает данные в фоне)
     var storageListener = function (e) {
         if (e.name === 'history' || e.name === 'book') {
             updateGridContent();
