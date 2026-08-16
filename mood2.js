@@ -21,220 +21,100 @@
             name: '😊 Весёлое',
             description: 'Хочется смеяться и радоваться',
             genres: [35, 10751, 16],
-            keywords: ['смешной', 'весёлый', 'комедия', 'лёгкий', 'позитивный']
+            searchQuery: 'комедия семейный'
         },
         sad: {
             id: 'sad',
             name: '😔 Грустное',
             description: 'Хочется поплакать и посочувствовать',
             genres: [18, 10749],
-            keywords: ['драма', 'грустный', 'душевный', 'мелодрама', 'трогательный']
+            searchQuery: 'драма мелодрама'
         },
         scared: {
             id: 'scared',
             name: '😱 Страшное',
             description: 'Хочется испугаться и вздрогнуть',
             genres: [27, 53],
-            keywords: ['страшный', 'ужасы', 'мистика', 'напряжённый', 'хоррор']
+            searchQuery: 'ужасы триллер'
         },
         thoughtful: {
             id: 'thoughtful',
             name: '🤔 Задумчивое',
             description: 'Хочется поразмышлять о жизни',
             genres: [18, 9648, 99],
-            keywords: ['философский', 'глубокий', 'смысл', 'загадка', 'документальный']
+            searchQuery: 'драма детектив документальный'
         },
         excited: {
             id: 'excited',
             name: '🔥 Боевое',
             description: 'Хочется экшена и адреналина',
             genres: [28, 12, 10759],
-            keywords: ['боевик', 'экшен', 'напряжённый', 'адреналин', 'приключения']
+            searchQuery: 'боевик приключения'
         },
         romantic: {
             id: 'romantic',
             name: '💕 Романтичное',
             description: 'Хочется любви и нежности',
             genres: [10749, 10751],
-            keywords: ['романтика', 'любовь', 'нежный', 'красивый', 'чувства']
+            searchQuery: 'мелодрама семейный'
         },
         fantasy: {
             id: 'fantasy',
             name: '✨ Фантастическое',
             description: 'Хочется улететь в другой мир',
             genres: [14, 878, 16],
-            keywords: ['фэнтези', 'фантастика', 'магия', 'космос', 'невероятный']
+            searchQuery: 'фэнтези фантастика'
         },
         relaxing: {
             id: 'relaxing',
             name: '🌊 Расслабляющее',
             description: 'Хочется отдохнуть и успокоиться',
             genres: [10402, 10770, 99],
-            keywords: ['спокойный', 'красивый', 'музыка', 'природа', 'уютный']
+            searchQuery: 'музыкальный документальный'
         }
     };
 
     // =============================================
-    // ПОИСК ФИЛЬМОВ (ИСПРАВЛЕННЫЙ)
+    // ПОИСК ФИЛЬМОВ ЧЕРЕЗ LAMPA
     // =============================================
-    async function searchMoviesByGenres(genreIds, limit = 30) {
+    function searchMovies(query, limit = 20) {
         return new Promise((resolve) => {
-            console.log('[Mood Movies] 🔍 Поиск по жанрам:', genreIds);
+            console.log('[Mood Movies] 🔍 Поиск:', query);
 
-            // Используем TMDB API через прокси Lampa
-            const params = {
-                with_genres: genreIds.join(','),
-                sort_by: 'popularity.desc',
-                'vote_count.gte': 100,
-                page: 1
-            };
-
-            // Пробуем получить из кэша
-            const cacheKey = 'mood_search_' + genreIds.join('_');
-            const cached = sessionStorage.getItem(cacheKey);
-            if (cached) {
-                try {
-                    const data = JSON.parse(cached);
-                    if (data && data.length) {
-                        console.log('[Mood Movies] 📦 Из кэша:', data.length);
-                        resolve(data);
-                        return;
-                    }
-                } catch {}
+            if (!query || query.trim() === '') {
+                resolve([]);
+                return;
             }
 
-            // Запрос к TMDB
-            const url = Lampa.Utils.protocol() + 'tmdb.rootu.top/3/discover/movie';
+            // Используем встроенный поиск Lampa
+            const search = new Lampa.Search();
             
-            Lampa.Reguest.get(url, function(response) {
-                try {
-                    let data = response;
-                    if (typeof response === 'string') {
-                        data = JSON.parse(response);
-                    }
-                    
-                    const movies = data.results || [];
-                    console.log('[Mood Movies] 📽 Найдено:', movies.length);
-                    
-                    // Сохраняем в кэш
-                    sessionStorage.setItem(cacheKey, JSON.stringify(movies));
-                    resolve(movies);
-                } catch (e) {
-                    console.error('[Mood Movies] Ошибка парсинга:', e);
+            search.search(query, function(results) {
+                console.log('[Mood Movies] 📽 Найдено:', results ? results.length : 0);
+                
+                if (results && results.length > 0) {
+                    // Фильтруем только фильмы (не сериалы)
+                    const movies = results.filter(item => {
+                        return item.media_type === 'movie' || !item.media_type;
+                    });
+                    resolve(movies.slice(0, limit));
+                } else {
                     resolve([]);
                 }
             }, function(error) {
-                console.error('[Mood Movies] Ошибка запроса:', error);
-                // Пробуем альтернативный метод
-                searchMoviesAlternative(genreIds, resolve);
-            }, {
-                dataType: 'json',
-                params: params
+                console.error('[Mood Movies] Ошибка поиска:', error);
+                resolve([]);
             });
         });
     }
 
-    // Альтернативный метод поиска через поиск по ключевым словам
-    function searchMoviesAlternative(genreIds, resolve) {
-        console.log('[Mood Movies] 🔄 Альтернативный поиск...');
-        
-        // Получаем названия жанров для поиска
-        const genreNames = genreIds.map(id => getGenreName(id)).filter(Boolean);
-        if (!genreNames.length) {
-            resolve([]);
-            return;
-        }
-
-        // Используем поиск Lampa
-        const query = genreNames.slice(0, 3).join(' ');
-        
-        Lampa.Reguest.get(
-            Lampa.Utils.protocol() + 'tmdb.rootu.top/3/search/movie',
-            function(response) {
-                try {
-                    const data = typeof response === 'string' ? JSON.parse(response) : response;
-                    const movies = data.results || [];
-                    console.log('[Mood Movies] 🔄 Альтернативный поиск:', movies.length);
-                    resolve(movies);
-                } catch (e) {
-                    resolve([]);
-                }
-            },
-            function() {
-                resolve([]);
-            },
-            {
-                dataType: 'json',
-                params: {
-                    query: query,
-                    page: 1
-                }
-            }
-        );
-    }
-
     // =============================================
-    // ПОЛУЧЕНИЕ ИНФОРМАЦИИ О ФИЛЬМЕ
+    // ПОЛУЧЕНИЕ ПОСТЕРА
     // =============================================
-    function getMovieDetails(movieId) {
-        return new Promise((resolve) => {
-            Lampa.Reguest.get(
-                Lampa.Utils.protocol() + 'tmdb.rootu.top/3/movie/' + movieId,
-                function(response) {
-                    try {
-                        const data = typeof response === 'string' ? JSON.parse(response) : response;
-                        resolve(data);
-                    } catch {
-                        resolve(null);
-                    }
-                },
-                function() {
-                    resolve(null);
-                },
-                { dataType: 'json' }
-            );
-        });
-    }
-
-    // =============================================
-    // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-    // =============================================
-    function getGenreName(id) {
-        const genres = {
-            12: 'Приключения',
-            14: 'Фэнтези',
-            16: 'Анимация',
-            18: 'Драма',
-            27: 'Ужасы',
-            28: 'Боевик',
-            35: 'Комедия',
-            36: 'История',
-            37: 'Вестерн',
-            53: 'Триллер',
-            80: 'Криминал',
-            99: 'Документальный',
-            10749: 'Мелодрама',
-            10751: 'Семейный',
-            10752: 'Военный',
-            10759: 'Боевик-приключения',
-            10762: 'Детский',
-            10763: 'Новости',
-            10764: 'Реалити-шоу',
-            10765: 'Научная фантастика',
-            10766: 'Мыло',
-            10767: 'Ток-шоу',
-            10768: 'Политика',
-            10770: 'Телефильм',
-            878: 'Фантастика',
-            9648: 'Детектив',
-            10402: 'Музыкальный'
-        };
-        return genres[id] || '';
-    }
-
-    function getPosterUrl(path, size = 'w342') {
+    function getPosterUrl(path) {
         if (!path) return '';
-        return 'https://image.tmdb.org/t/p/' + size + path;
+        if (path.startsWith('http')) return path;
+        return 'https://image.tmdb.org/t/p/w342' + path;
     }
 
     // =============================================
@@ -242,7 +122,6 @@
     // =============================================
     function MoodPage(object) {
         let scrollInstance = null;
-        let currentMood = null;
 
         this.create = function() {
             console.log('[Mood Movies] 📄 Создание страницы');
@@ -256,7 +135,7 @@
                         </div>
                     </div>
 
-                    <div class="${PLUGIN.component}-scroll-wrap">
+                    <div class="${PLUGIN.component}-scroll-wrap" id="${PLUGIN.component}-scroll-wrap">
                         <div class="${PLUGIN.component}-content">
                             <!-- Сетка настроений -->
                             <div class="${PLUGIN.component}-moods-grid" id="${PLUGIN.component}-moods-grid">
@@ -296,16 +175,6 @@
                 </div>
             `);
 
-            // Создаём скролл
-            const scrollEl = html.find(`.${PLUGIN.component}-scroll-wrap`)[0];
-            if (scrollEl) {
-                scrollInstance = new Lampa.Scroll({
-                    element: scrollEl,
-                    step: 300
-                });
-                scrollInstance.render();
-            }
-
             // =============================================
             // ОБРАБОТЧИКИ
             // =============================================
@@ -314,7 +183,7 @@
                 Object.values(MOODS).forEach(mood => {
                     const selector = `#${PLUGIN.component}-mood-${mood.id}`;
                     $(selector).on('hover:enter click', function() {
-                        loadMoviesByMood(mood.id);
+                        loadMoviesByMood(mood);
                     });
                 });
 
@@ -323,7 +192,17 @@
                     showMoods();
                 });
 
-            }, 100);
+                // Создаём скролл
+                const wrap = document.getElementById(`${PLUGIN.component}-scroll-wrap`);
+                if (wrap) {
+                    scrollInstance = new Lampa.Scroll({
+                        element: wrap,
+                        step: 250
+                    });
+                    scrollInstance.render();
+                }
+
+            }, 200);
 
             return html;
         };
@@ -331,11 +210,7 @@
         // =============================================
         // ЗАГРУЗКА ФИЛЬМОВ
         // =============================================
-        async function loadMoviesByMood(moodId) {
-            const mood = MOODS[moodId];
-            if (!mood) return;
-
-            currentMood = mood;
+        async function loadMoviesByMood(mood) {
             console.log('[Mood Movies] 🎯 Выбрано настроение:', mood.name);
 
             showLoading(true);
@@ -343,15 +218,9 @@
             hideMoods();
 
             try {
-                // Сначала пробуем искать по жанрам
-                let movies = await searchMoviesByGenres(mood.genres, 30);
+                // Ищем фильмы по ключевым словам
+                const movies = await searchMovies(mood.searchQuery, 20);
                 
-                // Если ничего не нашли - пробуем по ключевым словам
-                if (!movies || movies.length === 0) {
-                    console.log('[Mood Movies] 🔄 Пробуем поиск по ключевым словам');
-                    movies = await searchMoviesByKeywords(mood.keywords, 30);
-                }
-
                 console.log('[Mood Movies] 📽 Итоговый результат:', movies ? movies.length : 0);
                 showResults(mood, movies || []);
             } catch (error) {
@@ -360,42 +229,6 @@
             } finally {
                 showLoading(false);
             }
-        }
-
-        // Поиск по ключевым словам
-        async function searchMoviesByKeywords(keywords, limit = 30) {
-            return new Promise((resolve) => {
-                if (!keywords || keywords.length === 0) {
-                    resolve([]);
-                    return;
-                }
-
-                const query = keywords.slice(0, 3).join(' ');
-                console.log('[Mood Movies] 🔍 Поиск по ключевым словам:', query);
-
-                Lampa.Reguest.get(
-                    Lampa.Utils.protocol() + 'tmdb.rootu.top/3/search/movie',
-                    function(response) {
-                        try {
-                            const data = typeof response === 'string' ? JSON.parse(response) : response;
-                            const movies = data.results || [];
-                            resolve(movies);
-                        } catch (e) {
-                            resolve([]);
-                        }
-                    },
-                    function() {
-                        resolve([]);
-                    },
-                    {
-                        dataType: 'json',
-                        params: {
-                            query: query,
-                            page: 1
-                        }
-                    }
-                );
-            });
         }
 
         // =============================================
@@ -425,24 +258,29 @@
                     </div>
                 `;
             } else {
-                movies.slice(0, 20).forEach(movie => {
-                    const poster = getPosterUrl(movie.poster_path);
-                    const year = movie.release_date ? movie.release_date.slice(0, 4) : '—';
-                    const rating = movie.vote_average ? movie.vote_average.toFixed(1) : '—';
-                    const genres = movie.genre_ids ? movie.genre_ids.slice(0, 3).map(g => getGenreName(g)).filter(Boolean).join(', ') : '';
+                movies.forEach(movie => {
+                    const poster = getPosterUrl(movie.poster_path || movie.poster);
+                    const title = movie.title || movie.name || 'Без названия';
+                    const year = movie.release_date ? movie.release_date.slice(0, 4) : 
+                                (movie.year || '—');
+                    const rating = movie.vote_average ? movie.vote_average.toFixed(1) : 
+                                  (movie.rating || '—');
+                    const genres = movie.genre_ids ? 
+                        movie.genre_ids.slice(0, 3).map(g => getGenreName(g)).filter(Boolean).join(', ') : 
+                        (movie.genres || '');
 
                     gridHtml += `
                         <div class="${PLUGIN.component}-movie-card selector" 
-                             data-movie-id="${movie.id}">
+                             data-movie-id="${movie.id || movie.kinopoisk_id}">
                             <div class="${PLUGIN.component}-movie-poster">
-                                ${poster ? `<img src="${poster}" alt="${movie.title}" loading="lazy">` : 
+                                ${poster ? `<img src="${poster}" alt="${title}" loading="lazy">` : 
                                             `<div class="${PLUGIN.component}-movie-no-poster">🎬</div>`}
-                                <div class="${PLUGIN.component}-movie-rating">⭐ ${rating}</div>
+                                ${rating !== '—' ? `<div class="${PLUGIN.component}-movie-rating">⭐ ${rating}</div>` : ''}
                             </div>
                             <div class="${PLUGIN.component}-movie-info">
-                                <div class="${PLUGIN.component}-movie-title">${movie.title}</div>
+                                <div class="${PLUGIN.component}-movie-title">${title}</div>
                                 <div class="${PLUGIN.component}-movie-meta">
-                                    <span>${year}</span>
+                                    ${year !== '—' ? `<span>${year}</span>` : ''}
                                     ${genres ? `<span>${genres}</span>` : ''}
                                 </div>
                             </div>
@@ -459,8 +297,12 @@
             // Обновляем скролл
             if (scrollInstance) {
                 setTimeout(() => {
-                    scrollInstance.update();
-                }, 200);
+                    try {
+                        scrollInstance.update();
+                    } catch(e) {
+                        console.log('[Mood Movies] Обновление скролла:', e);
+                    }
+                }, 300);
             }
 
             // Обработчики для карточек
@@ -471,14 +313,19 @@
 
                     const openMovie = function() {
                         console.log('[Mood Movies] 📺 Открытие фильма:', movieId);
-                        Lampa.Activity.push({
-                            id: movieId,
-                            component: 'full',
-                            movie: {
+                        // Пытаемся открыть через Lampa
+                        try {
+                            Lampa.Activity.push({
                                 id: movieId,
-                                title: card.querySelector(`.${PLUGIN.component}-movie-title`)?.textContent || ''
-                            }
-                        });
+                                component: 'full',
+                                movie: {
+                                    id: movieId,
+                                    title: card.querySelector(`.${PLUGIN.component}-movie-title`)?.textContent || ''
+                                }
+                            });
+                        } catch(e) {
+                            console.error('[Mood Movies] Ошибка открытия:', e);
+                        }
                     };
 
                     card.addEventListener('click', openMovie);
@@ -488,27 +335,36 @@
         }
 
         function showMoods() {
-            document.getElementById(`${PLUGIN.component}-moods-grid`).style.display = 'grid';
-            document.getElementById(`${PLUGIN.component}-results`).style.display = 'none';
-            document.getElementById(`${PLUGIN.component}-loading`).style.display = 'none';
+            const moodsGrid = document.getElementById(`${PLUGIN.component}-moods-grid`);
+            const results = document.getElementById(`${PLUGIN.component}-results`);
+            const loading = document.getElementById(`${PLUGIN.component}-loading`);
+            
+            if (moodsGrid) moodsGrid.style.display = 'grid';
+            if (results) results.style.display = 'none';
+            if (loading) loading.style.display = 'none';
             
             if (scrollInstance) {
                 setTimeout(() => {
-                    scrollInstance.update();
+                    try {
+                        scrollInstance.update();
+                    } catch(e) {}
                 }, 200);
             }
         }
 
         function hideMoods() {
-            document.getElementById(`${PLUGIN.component}-moods-grid`).style.display = 'none';
+            const moodsGrid = document.getElementById(`${PLUGIN.component}-moods-grid`);
+            if (moodsGrid) moodsGrid.style.display = 'none';
         }
 
         function hideResults() {
-            document.getElementById(`${PLUGIN.component}-results`).style.display = 'none';
+            const results = document.getElementById(`${PLUGIN.component}-results`);
+            if (results) results.style.display = 'none';
         }
 
         function showLoading(show) {
-            document.getElementById(`${PLUGIN.component}-loading`).style.display = show ? 'flex' : 'none';
+            const loading = document.getElementById(`${PLUGIN.component}-loading`);
+            if (loading) loading.style.display = show ? 'flex' : 'none';
         }
 
         // =============================================
@@ -519,7 +375,8 @@
             
             Lampa.Controller.add('content', {
                 back: function() {
-                    if (document.getElementById(`${PLUGIN.component}-results`).style.display !== 'none') {
+                    const results = document.getElementById(`${PLUGIN.component}-results`);
+                    if (results && results.style.display !== 'none') {
                         showMoods();
                     } else {
                         Lampa.Activity.backward();
@@ -531,7 +388,9 @@
             
             if (scrollInstance) {
                 setTimeout(() => {
-                    scrollInstance.update();
+                    try {
+                        scrollInstance.update();
+                    } catch(e) {}
                 }, 300);
             }
         };
@@ -539,7 +398,9 @@
         this.pause = function() {};
         this.stop = function() {
             if (scrollInstance) {
-                scrollInstance.destroy();
+                try {
+                    scrollInstance.destroy();
+                } catch(e) {}
                 scrollInstance = null;
             }
         };
@@ -547,6 +408,26 @@
         this.render = function() {
             return $('<div></div>').append(this.create());
         };
+    }
+
+    // =============================================
+    // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+    // =============================================
+    function getGenreName(id) {
+        const genres = {
+            12: 'Приключения', 14: 'Фэнтези', 16: 'Анимация',
+            18: 'Драма', 27: 'Ужасы', 28: 'Боевик',
+            35: 'Комедия', 36: 'История', 37: 'Вестерн',
+            53: 'Триллер', 80: 'Криминал', 99: 'Документальный',
+            10749: 'Мелодрама', 10751: 'Семейный', 10752: 'Военный',
+            10759: 'Боевик-приключения', 10762: 'Детский',
+            10763: 'Новости', 10764: 'Реалити-шоу',
+            10765: 'Научная фантастика', 10766: 'Мыло',
+            10767: 'Ток-шоу', 10768: 'Политика',
+            10770: 'Телефильм', 878: 'Фантастика',
+            9648: 'Детектив', 10402: 'Музыкальный'
+        };
+        return genres[id] || '';
     }
 
     // =============================================
@@ -595,20 +476,20 @@
                 height: 100%;
                 display: flex;
                 flex-direction: column;
-                padding: 20px;
+                padding: 16px 20px;
                 color: #fff;
                 box-sizing: border-box;
             }
 
             .${PLUGIN.component}-header {
                 flex-shrink: 0;
-                margin-bottom: 20px;
+                margin-bottom: 16px;
                 text-align: center;
             }
 
             .${PLUGIN.component}-header h1 {
-                font-size: 28px;
-                margin: 0 0 8px 0;
+                font-size: 26px;
+                margin: 0 0 6px 0;
                 font-weight: 700;
                 background: linear-gradient(135deg, #ff9800, #ff5722);
                 -webkit-background-clip: text;
@@ -617,46 +498,41 @@
 
             .${PLUGIN.component}-subheader {
                 color: rgba(255,255,255,0.5);
-                font-size: 14px;
+                font-size: 13px;
             }
 
             .${PLUGIN.component}-scroll-wrap {
                 flex: 1;
                 overflow-y: auto;
                 overflow-x: hidden;
-                padding-right: 5px;
                 min-height: 0;
             }
 
             .${PLUGIN.component}-scroll-wrap::-webkit-scrollbar {
-                width: 4px;
-            }
-
-            .${PLUGIN.component}-scroll-wrap::-webkit-scrollbar-track {
-                background: transparent;
+                width: 3px;
             }
 
             .${PLUGIN.component}-scroll-wrap::-webkit-scrollbar-thumb {
-                background: rgba(255,255,255,0.2);
+                background: rgba(255,255,255,0.15);
                 border-radius: 2px;
             }
 
             .${PLUGIN.component}-content {
-                padding-bottom: 30px;
+                padding-bottom: 20px;
             }
 
             .${PLUGIN.component}-moods-grid {
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
-                gap: 16px;
-                margin-bottom: 20px;
+                gap: 14px;
+                margin-bottom: 16px;
             }
 
             .${PLUGIN.component}-mood-card {
                 background: rgba(255,255,255,0.05);
                 border: 1px solid rgba(255,255,255,0.08);
-                border-radius: 16px;
-                padding: 20px 16px;
+                border-radius: 14px;
+                padding: 18px 14px;
                 text-align: center;
                 cursor: pointer;
                 transition: all 0.3s ease;
@@ -666,24 +542,24 @@
                 transform: translateY(-3px);
                 background: rgba(255,255,255,0.1);
                 border-color: rgba(255,152,0,0.3);
-                box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.3);
             }
 
             .${PLUGIN.component}-mood-icon {
-                font-size: 32px;
-                margin-bottom: 8px;
-            }
-
-            .${PLUGIN.component}-mood-name {
-                font-size: 18px;
-                font-weight: 700;
+                font-size: 28px;
                 margin-bottom: 6px;
             }
 
+            .${PLUGIN.component}-mood-name {
+                font-size: 16px;
+                font-weight: 700;
+                margin-bottom: 4px;
+            }
+
             .${PLUGIN.component}-mood-desc {
-                font-size: 12px;
+                font-size: 11px;
                 color: rgba(255,255,255,0.5);
-                margin-bottom: 10px;
+                margin-bottom: 8px;
             }
 
             .${PLUGIN.component}-mood-genres {
@@ -694,42 +570,41 @@
             }
 
             .mood-genre-tag {
-                font-size: 10px;
+                font-size: 9px;
                 padding: 2px 8px;
                 background: rgba(255,152,0,0.12);
-                border-radius: 12px;
+                border-radius: 10px;
                 color: #ff9800;
                 border: 1px solid rgba(255,152,0,0.08);
             }
 
             .${PLUGIN.component}-results {
                 animation: ${PLUGIN.component}-fadeIn 0.3s ease;
-                padding-bottom: 20px;
             }
 
             .${PLUGIN.component}-results-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 16px;
+                margin-bottom: 14px;
                 flex-wrap: wrap;
-                gap: 10px;
+                gap: 8px;
             }
 
             .${PLUGIN.component}-results-header h2 {
-                font-size: 20px;
+                font-size: 18px;
                 margin: 0;
             }
 
             .${PLUGIN.component}-back-btn {
-                padding: 8px 20px;
+                padding: 6px 18px;
                 border: 1px solid rgba(255,255,255,0.1);
-                border-radius: 10px;
+                border-radius: 8px;
                 background: rgba(255,255,255,0.05);
                 color: #fff;
                 cursor: pointer;
                 transition: all 0.3s ease;
-                font-size: 13px;
+                font-size: 12px;
             }
 
             .${PLUGIN.component}-back-btn:hover {
@@ -739,13 +614,13 @@
             .${PLUGIN.component}-movies-grid {
                 display: grid;
                 grid-template-columns: repeat(5, 1fr);
-                gap: 16px;
+                gap: 14px;
             }
 
             .${PLUGIN.component}-movie-card {
                 background: rgba(255,255,255,0.04);
                 border: 1px solid rgba(255,255,255,0.06);
-                border-radius: 12px;
+                border-radius: 10px;
                 overflow: hidden;
                 cursor: pointer;
                 transition: all 0.3s ease;
@@ -755,7 +630,7 @@
                 transform: translateY(-3px);
                 background: rgba(255,255,255,0.08);
                 border-color: rgba(255,152,0,0.2);
-                box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.3);
             }
 
             .${PLUGIN.component}-movie-poster {
@@ -783,41 +658,41 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 36px;
+                font-size: 30px;
                 background: rgba(255,255,255,0.03);
             }
 
             .${PLUGIN.component}-movie-rating {
                 position: absolute;
-                top: 8px;
-                right: 8px;
-                background: rgba(0,0,0,0.8);
+                top: 6px;
+                right: 6px;
+                background: rgba(0,0,0,0.75);
                 padding: 2px 8px;
-                border-radius: 12px;
-                font-size: 12px;
+                border-radius: 10px;
+                font-size: 11px;
                 font-weight: 600;
                 color: #ff9800;
             }
 
             .${PLUGIN.component}-movie-info {
-                padding: 10px 12px;
+                padding: 8px 10px;
             }
 
             .${PLUGIN.component}-movie-title {
-                font-size: 13px;
+                font-size: 12px;
                 font-weight: 600;
-                margin-bottom: 4px;
+                margin-bottom: 3px;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
 
             .${PLUGIN.component}-movie-meta {
-                font-size: 11px;
+                font-size: 10px;
                 color: rgba(255,255,255,0.4);
                 display: flex;
                 flex-wrap: wrap;
-                gap: 6px;
+                gap: 4px;
             }
 
             .${PLUGIN.component}-loading {
@@ -825,18 +700,18 @@
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                padding: 40px 20px;
+                padding: 30px 20px;
                 color: rgba(255,255,255,0.6);
             }
 
             .${PLUGIN.component}-spinner {
-                width: 40px;
-                height: 40px;
+                width: 32px;
+                height: 32px;
                 border: 3px solid rgba(255,255,255,0.05);
                 border-top: 3px solid #ff9800;
                 border-radius: 50%;
                 animation: ${PLUGIN.component}-spin 1s linear infinite;
-                margin-bottom: 16px;
+                margin-bottom: 12px;
             }
 
             @keyframes ${PLUGIN.component}-spin {
@@ -851,22 +726,21 @@
 
             .${PLUGIN.component}-empty {
                 text-align: center;
-                padding: 40px 20px;
+                padding: 30px 20px;
                 grid-column: 1 / -1;
             }
 
             .${PLUGIN.component}-empty-icon {
-                font-size: 48px;
-                margin-bottom: 16px;
+                font-size: 40px;
+                margin-bottom: 12px;
             }
 
             .${PLUGIN.component}-empty p {
-                font-size: 16px;
+                font-size: 14px;
                 color: rgba(255,255,255,0.6);
                 margin: 4px 0;
             }
 
-            /* Адаптив */
             @media (max-width: 1024px) {
                 .${PLUGIN.component}-moods-grid {
                     grid-template-columns: repeat(3, 1fr);
@@ -884,7 +758,7 @@
                     grid-template-columns: repeat(3, 1fr);
                 }
                 .${PLUGIN.component}-header h1 {
-                    font-size: 22px;
+                    font-size: 20px;
                 }
             }
 
@@ -902,14 +776,12 @@
             }
         `;
         document.head.appendChild(style);
-        console.log('[Mood Movies] 🎨 Стили добавлены');
     }
 
     // =============================================
     // РЕГИСТРАЦИЯ
     // =============================================
     function registerComponent() {
-        console.log('[Mood Movies] 📦 Регистрация компонента');
         Lampa.Component.add(PLUGIN.component, MoodPage);
     }
 
