@@ -14,7 +14,6 @@ var scroll = new Lampa.Scroll({
     step: 250
 });
 
-// Стили интерфейса личного кабинета
 Lampa.Template.add(plugin.component + '_style', '<style>\
     .personal-stats-container { padding: 2em; }\
     .stats-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5em; margin-bottom: 2em; }\
@@ -25,6 +24,62 @@ Lampa.Template.add(plugin.component + '_style', '<style>\
 </style>');
 $('body').append(Lampa.Template.get(plugin.component + '_style', {}, true));
 
+// Функция сбора реальной статистики из хранилища Lampa
+function getRealStats() {
+    var history = Lampa.Storage.get('history', []);
+    var totalSeconds = 0;
+    var moviesCount = 0;
+    var episodesCount = 0;
+    var genresMap = {};
+
+    history.forEach(function (item) {
+        // Подсчет времени просмотров (если сохранено время в секундах/минутах)
+        if (item.time) {
+            totalSeconds += (item.time.watched || item.time.time || 0);
+        }
+
+        // Подсчет типов контента
+        if (item.type === 'movie') {
+            moviesCount++;
+        } else if (item.type === 'tv' || item.number_of_seasons) {
+            episodesCount++;
+        }
+
+        // Анализ жанров, если они есть в объекте карточки
+        if (item.genres && Array.isArray(item.genres)) {
+            item.genres.forEach(function (g) {
+                var gName = typeof g === 'string' ? g : (g.name || '');
+                if (gName) {
+                    genresMap[gName] = (genresMap[gName] || 0) + 1;
+                }
+            });
+        }
+    });
+
+    // Перевод секунд в часы
+    var totalHours = Math.round(totalSeconds / 3600);
+    if (totalHours === 0 && history.length > 0) {
+        totalHours = Math.round(history.length * 1.5); // грубая примерная оценка, если точное время не трекалось
+    }
+
+    // Поиск любимого жанра
+    var favoriteGenre = 'Не определен';
+    var maxGenreCount = 0;
+    for (var genre in genresMap) {
+        if (genresMap[genre] > maxGenreCount) {
+            maxGenreCount = genresMap[genre];
+            favoriteGenre = genre;
+        }
+    }
+
+    return {
+        hours: totalHours,
+        movies: moviesCount || history.length, // фоллбек на общую историю, если тип не указан явно
+        episodes: episodesCount,
+        genre: favoriteGenre
+    };
+}
+
 function statsPage(object) {
     var _this = this;
     html = $('<div></div>');
@@ -33,20 +88,20 @@ function statsPage(object) {
     this.create = function () {
         _this.activity.loader(true);
         
-        // Заголовок раздела
+        var stats = getRealStats();
+
         var info = $('<div class="info layer--width"><div class="info__left"><div class="info__title">Личный кабинет и аналитика</div><div class="info__title-original">Ваши просмотры, статистика и рекомендации</div></div></div>');
         html.append(info);
 
-        // Блок с общей статистикой (заглушки/примеры данных, которые позже можно привязать к localStorage истории Lampa)
+        // Карточки с реальными посчитанными данными
         var grid = $('<div class="stats-cards-grid"> \
-            <div class="stats-card"><div class="stats-card__title">Время просмотров</div><div class="stats-card__value">142 часа</div></div> \
-            <div class="stats-card"><div class="stats-card__title">Просмотрено фильмов</div><div class="stats-card__value">48</div></div> \
-            <div class="stats-card"><div class="stats-card__title">Эпизодов сериалов</div><div class="stats-card__value">215</div></div> \
-            <div class="stats-card"><div class="stats-card__title">Любимый жанр</div><div class="stats-card__value">Фантастика</div></div> \
+            <div class="stats-card"><div class="stats-card__title">Время просмотров</div><div class="stats-card__value">' + stats.hours + ' ч</div></div> \
+            <div class="stats-card"><div class="stats-card__title">Просмотрено фильмов</div><div class="stats-card__value">' + stats.movies + '</div></div> \
+            <div class="stats-card"><div class="stats-card__title">Эпизодов сериалов</div><div class="stats-card__value">' + stats.episodes + '</div></div> \
+            <div class="stats-card"><div class="stats-card__title">Любимый жанр</div><div class="stats-card__value" style="font-size: 1.8em;">' + stats.genre + '</div></div> \
         </div>');
         body.append(grid);
 
-        // Блок рекомендаций
         body.append('<div class="stats-section-title">Рекомендации для вас</div>');
         var recommendationsContainer = $('<div class="cards"></div>');
         body.append(recommendationsContainer);
@@ -98,7 +153,6 @@ function statsPage(object) {
 
 Lampa.Component.add(plugin.component, statsPage);
 
-// Создание элемента в левом боковом меню (аналогично IPTV плагину)[span_1](start_span)[span_1](end_span)
 var menuElement = $('<li class="menu__item selector js-' + plugin.component + '-menu">'
                 + '<div class="menu__ico">' + plugin.icon + '</div>'
                 + '<div class="menu__text">' + plugin.name + '</div>'
@@ -116,7 +170,6 @@ function pluginStart() {
     if (window['plugin_' + plugin.component + '_ready']) return;
     window['plugin_' + plugin.component + '_ready'] = true;
     
-    // Внедряем в первый список левого меню[span_2](start_span)[span_2](end_span)
     var menu = $('.menu .menu__list').eq(0);
     menu.append(menuElement);
 }
