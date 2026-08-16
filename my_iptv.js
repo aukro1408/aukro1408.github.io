@@ -15,32 +15,22 @@
     };
 
     // =============================================
-    // ХРАНИЛИЩЕ (через localStorage напрямую)
+    // ХРАНИЛИЩЕ
     // =============================================
     const URL_STORAGE_KEY = PLUGIN.component + '_url';
+    const EPG_STORAGE_KEY = PLUGIN.component + '_epg';
 
     function getPlaylistUrl() {
         try {
-            // Пробуем через Lampa.Storage
             let url = Lampa.Storage.get(URL_STORAGE_KEY, "");
-            if (url) {
-                console.log('[IPTV] 📂 URL из Lampa.Storage:', url);
-                return url.trim();
-            }
-            
-            // Если нет - пробуем через localStorage
+            if (url) return url.trim();
             url = localStorage.getItem(URL_STORAGE_KEY) || "";
             if (url) {
-                console.log('[IPTV] 📂 URL из localStorage:', url);
-                // Сохраняем в Lampa.Storage для совместимости
                 Lampa.Storage.set(URL_STORAGE_KEY, url);
                 return url.trim();
             }
-            
-            console.log('[IPTV] ⚠️ URL не найден в хранилище');
             return "";
         } catch (e) {
-            console.error('[IPTV] Ошибка чтения хранилища:', e);
             return "";
         }
     }
@@ -48,29 +38,114 @@
     function setPlaylistUrl(value) {
         try {
             const url = String(value || "").trim();
-            console.log('[IPTV] 💾 Сохраняем URL:', url);
-            
-            // Сохраняем в оба места
             Lampa.Storage.set(URL_STORAGE_KEY, url);
             localStorage.setItem(URL_STORAGE_KEY, url);
-            
             return true;
         } catch (e) {
-            console.error('[IPTV] Ошибка сохранения:', e);
             return false;
         }
     }
 
-    // =============================================
-    // ТЕСТОВЫЙ ПЛЕЙЛИСТ (на случай если нет своего)
-    // =============================================
-    function getDefaultPlaylist() {
-        // Публичный тестовый плейлист
-        return 'https://iptv-org.github.io/iptv/index.m3u';
+    function getEpgEnabled() {
+        try {
+            return Lampa.Storage.get(EPG_STORAGE_KEY, "true") === "true";
+        } catch (e) {
+            return true;
+        }
+    }
+
+    function setEpgEnabled(value) {
+        try {
+            Lampa.Storage.set(EPG_STORAGE_KEY, value ? "true" : "false");
+        } catch (e) {}
     }
 
     // =============================================
-    // ПАРСИНГ M3U
+    // EPG (ТЕЛЕПРОГРАММА)
+    // =============================================
+    let epgCache = {};
+    let epgInterval = null;
+
+    function getEpgForChannel(channelId, callback) {
+        if (!channelId) {
+            callback(null);
+            return;
+        }
+
+        // Проверяем кэш
+        if (epgCache[channelId]) {
+            const cached = epgCache[channelId];
+            const now = Math.floor(Date.now() / 1000);
+            // Кэш на 5 минут
+            if (now - cached.time < 300) {
+                callback(cached.data);
+                return;
+            }
+        }
+
+        // Загружаем EPG
+        const url = Lampa.Utils.protocol() + 'epg.rootu.top/api/epg/' + channelId + '/now';
+        
+        console.log('[IPTV] 📡 Загрузка EPG для:', channelId);
+
+        const network = new Lampa.Reguest();
+        network.silent(
+            url,
+            function(data) {
+                console.log('[IPTV] ✅ EPG загружен для:', channelId);
+                epgCache[channelId] = {
+                    time: Math.floor(Date.now() / 1000),
+                    data: data
+                };
+                callback(data);
+            },
+            function(error) {
+                console.error('[IPTV] ❌ Ошибка EPG:', error);
+                callback(null);
+            },
+            { dataType: 'json' }
+        );
+    }
+
+    function getEpgForChannelDay(channelId, day, callback) {
+        if (!channelId) {
+            callback(null);
+            return;
+        }
+
+        const url = Lampa.Utils.protocol() + 'epg.rootu.top/api/epg/' + channelId + '/day/' + day;
+        
+        console.log('[IPTV] 📡 Загрузка EPG дня:', channelId, day);
+
+        const network = new Lampa.Reguest();
+        network.silent(
+            url,
+            function(data) {
+                callback(data);
+            },
+            function(error) {
+                console.error('[IPTV] ❌ Ошибка EPG дня:', error);
+                callback(null);
+            },
+            { dataType: 'json' }
+        );
+    }
+
+    function formatEpgTime(timestamp) {
+        const date = new Date(timestamp * 1000);
+        return ('0' + date.getHours()).substr(-2) + ':' + ('0' + date.getMinutes()).substr(-2);
+    }
+
+    function getEpgProgress(start, duration) {
+        const now = Math.floor(Date.now() / 1000);
+        const end = start + duration;
+        if (now < start) return 0;
+        if (now > end) return 100;
+        return Math.round((now - start) / duration * 100);
+    }
+
+    // =============================================
+    // ПАРСИНГ M3U (С EPG ID)
     // =============================================
     function parseM3U(data) {
         const channels = [];
@@ -111,6 +186,7 @@
                     group: group,
                     logo: params['tvg-logo'] || '',
                     id: params['tvg-id'] || '',
+                    epgId: params['tvg-id'] || '',
                     url: ''
                 };
                 continue;
@@ -127,96 +203,50 @@
     }
 
     // =============================================
-    // ЗАГРУЗКА ПЛЕЙЛИСТА (МАКСИМАЛЬНО НАДЁЖНАЯ)
+    // ЗАГРУЗКА ПЛЕЙЛИСТА
     // =============================================
     function loadPlaylist(url) {
         return new Promise((resolve, reject) => {
-            console.log('[IPTV] 📥 Загрузка плейлиста:', url);
+            console.log('[IPTV] 📥 Загрузка:', url);
 
             if (!url || url.trim() === '') {
-                reject(new Error('❌ URL не указан. Используйте настройки.'));
+                reject(new Error('URL не указан'));
                 return;
             }
 
-            // === СПОСОБ 1: Lampa.Reguest ===
-            try {
-                const network = new Lampa.Reguest();
-                
-                console.log('[IPTV] 🔄 Способ 1: Lampa.Reguest');
-                
-                network.silent(
-                    url,
-                    function(data) {
-                        console.log('[IPTV] ✅ Успешно (Reguest)!');
-                        try {
-                            const channels = parseM3U(data);
-                            console.log('[IPTV] 📺 Каналов:', channels.length);
-                            if (channels.length === 0) {
-                                reject(new Error('Плейлист пуст (0 каналов)'));
-                                return;
-                            }
-                            resolve(channels);
-                        } catch (e) {
-                            console.error('[IPTV] Ошибка парсинга:', e);
-                            reject(new Error('Ошибка парсинга'));
+            const network = new Lampa.Reguest();
+            
+            network.silent(
+                url,
+                function(data) {
+                    console.log('[IPTV] ✅ Плейлист загружен');
+                    try {
+                        const channels = parseM3U(data);
+                        console.log('[IPTV] 📺 Найдено каналов:', channels.length);
+                        if (channels.length === 0) {
+                            reject(new Error('Плейлист пуст'));
+                            return;
                         }
-                    },
-                    function(error) {
-                        console.error('[IPTV] ❌ Reguest ошибка:', error);
-                        loadPlaylistViaFetch(url, resolve, reject);
-                    },
-                    {
-                        dataType: 'text',
-                        timeout: 30000
+                        resolve(channels);
+                    } catch (e) {
+                        console.error('[IPTV] Ошибка парсинга:', e);
+                        reject(new Error('Ошибка парсинга'));
                     }
-                );
-            } catch(e) {
-                console.error('[IPTV] ❌ Reguest исключение:', e);
-                loadPlaylistViaFetch(url, resolve, reject);
-            }
-        });
-    }
-
-    // === СПОСОБ 2: fetch ===
-    function loadPlaylistViaFetch(url, resolve, reject) {
-        console.log('[IPTV] 🔄 Способ 2: fetch');
-        
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-        })
-        .then(response => {
-            console.log('[IPTV] 📡 fetch статус:', response.status);
-            if (!response.ok) {
-                throw new Error('HTTP ' + response.status);
-            }
-            return response.text();
-        })
-        .then(data => {
-            console.log('[IPTV] ✅ Успешно (fetch)!');
-            try {
-                const channels = parseM3U(data);
-                console.log('[IPTV] 📺 Каналов:', channels.length);
-                if (channels.length === 0) {
-                    reject(new Error('Плейлист пуст (0 каналов)'));
-                    return;
+                },
+                function(error) {
+                    console.error('[IPTV] ❌ Ошибка:', error);
+                    reject(new Error('Не удалось загрузить плейлист'));
+                },
+                {
+                    dataType: 'text',
+                    timeout: 30000
                 }
-                resolve(channels);
-            } catch (e) {
-                console.error('[IPTV] Ошибка парсинга:', e);
-                reject(new Error('Ошибка парсинга'));
-            }
-        })
-        .catch(error => {
-            console.error('[IPTV] ❌ fetch ошибка:', error);
-            reject(new Error('Не удалось загрузить плейлист\n\n' + error.message));
+            );
         });
     }
 
     // =============================================
-    // ГРУППИРОВКА КАНАЛОВ
+    // ГРУППИРОВКА
     // =============================================
     function groupChannels(channels) {
         const groups = {};
@@ -231,12 +261,14 @@
     }
 
     // =============================================
-    // СТРАНИЦА IPTV
+    // СТРАНИЦА IPTV С EPG
     // =============================================
     function IPTVPage(object) {
         let channels = [];
         let catalog = {};
         let isDestroyed = false;
+        let currentChannelId = null;
+        let epgUpdateInterval = null;
 
         this.create = function() {
             console.log('[IPTV] 📄 Создание страницы');
@@ -272,21 +304,15 @@
         async function loadPlaylistData() {
             let playlistUrl = getPlaylistUrl();
             
-            // Если URL не сохранён - используем тестовый
             if (!playlistUrl) {
-                console.log('[IPTV] ⚠️ URL не найден, используем тестовый плейлист');
-                playlistUrl = getDefaultPlaylist();
-                // Сохраняем тестовый URL
+                playlistUrl = 'https://iptv-org.github.io/iptv/index.m3u';
                 setPlaylistUrl(playlistUrl);
             }
 
-            console.log('[IPTV] 🔍 Используем URL:', playlistUrl);
-
             try {
                 channels = await loadPlaylist(playlistUrl);
-                
                 if (channels.length === 0) {
-                    showError('Плейлист пуст (0 каналов)');
+                    showError('Плейлист пуст');
                     return;
                 }
 
@@ -294,7 +320,7 @@
                 showGroups();
 
             } catch (error) {
-                console.error('[IPTV] ❌ Ошибка загрузки:', error);
+                console.error('[IPTV] Ошибка:', error);
                 showError('❌ Ошибка загрузки\n\n' + error.message);
             }
         }
@@ -331,10 +357,8 @@
             groupsEl.innerHTML = html;
             groupsEl.style.display = 'block';
 
-            // Обработчики
             groupsEl.querySelectorAll(`.${PLUGIN.component}-group-card`).forEach(card => {
                 const groupName = card.dataset.group;
-                
                 $(card).on('hover:enter', function(e) {
                     e.stopPropagation();
                     if (!isDestroyed) showChannels(groupName);
@@ -347,7 +371,7 @@
         }
 
         // =============================================
-        // ПОКАЗ КАНАЛОВ
+        // ПОКАЗ КАНАЛОВ С EPG
         // =============================================
         function showChannels(groupName) {
             if (isDestroyed) return;
@@ -383,17 +407,22 @@
                 const logo = channel.logo || '';
                 const title = channel.title || 'Канал';
                 const url = channel.url || '';
+                const epgId = channel.epgId || '';
                 
                 html += `
                     <div class="${PLUGIN.component}-channel-card selector" 
                          data-channel-url="${url.replace(/"/g, '&quot;')}"
-                         data-channel-title="${title.replace(/"/g, '&quot;')}">
+                         data-channel-title="${title.replace(/"/g, '&quot;')}"
+                         data-epg-id="${epgId}"
+                         data-channel-index="${index}">
                         <div class="${PLUGIN.component}-channel-logo">
                             ${logo ? `<img src="${logo}" onerror="this.style.display='none'">` : '📺'}
                         </div>
                         <div class="${PLUGIN.component}-channel-info">
                             <div class="${PLUGIN.component}-channel-name">${title}</div>
-                            <div class="${PLUGIN.component}-channel-number">#${index + 1}</div>
+                            <div class="${PLUGIN.component}-channel-epg" id="${PLUGIN.component}-epg-${index}">
+                                <span style="color:rgba(255,255,255,0.3);font-size:11px;">Загрузка программы...</span>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -402,6 +431,15 @@
             html += `</div>`;
             channelsEl.innerHTML = html;
             channelsEl.style.display = 'block';
+
+            // Загружаем EPG для каналов
+            if (getEpgEnabled()) {
+                groupChannels.forEach((channel, index) => {
+                    if (channel.epgId) {
+                        loadEpgForChannel(channel.epgId, index);
+                    }
+                });
+            }
 
             // Обработчики каналов
             channelsEl.querySelectorAll(`.${PLUGIN.component}-channel-card`).forEach(card => {
@@ -427,6 +465,10 @@
                         channelsEl.style.display = 'none';
                         if (groupsEl) groupsEl.style.display = 'block';
                         if (statusEl) statusEl.textContent = `📺 ${channels.length} каналов, ${Object.keys(catalog).length} групп`;
+                        if (epgUpdateInterval) {
+                            clearInterval(epgUpdateInterval);
+                            epgUpdateInterval = null;
+                        }
                     }
                 });
                 backBtn.addEventListener('click', function(e) {
@@ -435,9 +477,98 @@
                         channelsEl.style.display = 'none';
                         if (groupsEl) groupsEl.style.display = 'block';
                         if (statusEl) statusEl.textContent = `📺 ${channels.length} каналов, ${Object.keys(catalog).length} групп`;
+                        if (epgUpdateInterval) {
+                            clearInterval(epgUpdateInterval);
+                            epgUpdateInterval = null;
+                        }
                     }
                 });
             }
+
+            // Запускаем обновление EPG каждую минуту
+            if (epgUpdateInterval) {
+                clearInterval(epgUpdateInterval);
+            }
+            epgUpdateInterval = setInterval(function() {
+                if (!isDestroyed && getEpgEnabled()) {
+                    groupChannels.forEach((channel, index) => {
+                        if (channel.epgId) {
+                            loadEpgForChannel(channel.epgId, index);
+                        }
+                    });
+                }
+            }, 60000);
+        }
+
+        // =============================================
+        // ЗАГРУЗКА EPG ДЛЯ КАНАЛА
+        // =============================================
+        function loadEpgForChannel(epgId, index) {
+            if (!epgId) return;
+
+            getEpgForChannel(epgId, function(data) {
+                if (isDestroyed) return;
+                
+                const epgEl = document.getElementById(`${PLUGIN.component}-epg-${index}`);
+                if (!epgEl) return;
+
+                if (data && data.length > 0) {
+                    const now = Math.floor(Date.now() / 1000);
+                    let currentProgram = null;
+                    
+                    for (let i = 0; i < data.length; i++) {
+                        const prog = data[i];
+                        const start = prog[0];
+                        const end = start + prog[1];
+                        if (now >= start && now < end) {
+                            currentProgram = prog;
+                            break;
+                        }
+                    }
+
+                    if (currentProgram) {
+                        const startTime = formatEpgTime(currentProgram[0]);
+                        const endTime = formatEpgTime(currentProgram[0] + currentProgram[1]);
+                        const progress = getEpgProgress(currentProgram[0], currentProgram[1]);
+                        const title = currentProgram[2] || 'Без названия';
+                        
+                        epgEl.innerHTML = `
+                            <div class="${PLUGIN.component}-epg-program">
+                                <span class="${PLUGIN.component}-epg-time">${startTime} - ${endTime}</span>
+                                <span class="${PLUGIN.component}-epg-title">${title}</span>
+                                <div class="${PLUGIN.component}-epg-progress">
+                                    <div class="${PLUGIN.component}-epg-progress-bar" style="width:${progress}%;"></div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Следующая программа
+                        let nextProgram = null;
+                        for (let i = 0; i < data.length; i++) {
+                            const prog = data[i];
+                            const start = prog[0];
+                            if (start > now) {
+                                nextProgram = prog;
+                                break;
+                            }
+                        }
+                        if (nextProgram) {
+                            const startTime = formatEpgTime(nextProgram[0]);
+                            const title = nextProgram[2] || 'Без названия';
+                            epgEl.innerHTML = `
+                                <div class="${PLUGIN.component}-epg-program">
+                                    <span class="${PLUGIN.component}-epg-time">${startTime}</span>
+                                    <span class="${PLUGIN.component}-epg-title" style="color:rgba(255,255,255,0.4);">${title}</span>
+                                </div>
+                            `;
+                        } else {
+                            epgEl.innerHTML = `<span style="color:rgba(255,255,255,0.2);font-size:11px;">Нет данных</span>`;
+                        }
+                    }
+                } else {
+                    epgEl.innerHTML = `<span style="color:rgba(255,255,255,0.2);font-size:11px;">Нет данных</span>`;
+                }
+            });
         }
 
         // =============================================
@@ -539,6 +670,10 @@
                         if (groupsEl) groupsEl.style.display = 'block';
                         const statusEl = document.getElementById(`${PLUGIN.component}-status`);
                         if (statusEl) statusEl.textContent = `📺 ${channels.length} каналов, ${Object.keys(catalog).length} групп`;
+                        if (epgUpdateInterval) {
+                            clearInterval(epgUpdateInterval);
+                            epgUpdateInterval = null;
+                        }
                     } else {
                         Lampa.Activity.backward();
                     }
@@ -552,6 +687,10 @@
         this.stop = function() {
             console.log('[IPTV] 🛑 Стоп');
             isDestroyed = true;
+            if (epgUpdateInterval) {
+                clearInterval(epgUpdateInterval);
+                epgUpdateInterval = null;
+            }
         };
         this.render = function() {
             return $('<div></div>').append(this.create());
@@ -608,7 +747,6 @@
                 }
             } catch(error) {
                 console.error('[IPTV] Ошибка открытия:', error);
-                Lampa.Noty.show('Ошибка открытия IPTV');
             }
         }
 
@@ -643,7 +781,7 @@
         Lampa.SettingsApi.addParam({
             component: SETTINGS_COMPONENT,
             param: { type: "title" },
-            field: { name: "📺 Настройки IPTV плейлиста" }
+            field: { name: "📺 Настройки IPTV" }
         });
 
         Lampa.SettingsApi.addParam({
@@ -657,14 +795,34 @@
             },
             field: {
                 name: "URL плейлиста M3U",
-                description: "Ссылка на ваш M3U плейлист с каналами"
+                description: "Ссылка на ваш M3U плейлист"
             },
             onChange: function(value) {
                 const url = String(value || "").trim();
-                console.log("[IPTV] ✅ URL сохранён:", url);
                 setPlaylistUrl(url);
                 if (Lampa.Noty && Lampa.Noty.show) {
                     Lampa.Noty.show("URL сохранён");
+                }
+            }
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: SETTINGS_COMPONENT,
+            param: {
+                name: EPG_STORAGE_KEY,
+                type: "trigger",
+                values: "Включена|Выключена",
+                "default": "true"
+            },
+            field: {
+                name: "📡 Телепрограмма (EPG)",
+                description: "Показывать программу передач"
+            },
+            onChange: function(value) {
+                const enabled = value === "true";
+                setEpgEnabled(enabled);
+                if (Lampa.Noty && Lampa.Noty.show) {
+                    Lampa.Noty.show(enabled ? "EPG включена" : "EPG выключена");
                 }
             }
         });
@@ -676,12 +834,12 @@
                 type: "button"
             },
             field: {
-                name: "🔄 Сбросить настройки",
-                description: "Удалить сохранённый URL плейлиста"
+                name: "🔄 Сбросить настройки"
             },
             onChange: function() {
-                if (confirm("Сбросить настройки плейлиста?")) {
+                if (confirm("Сбросить настройки?")) {
                     setPlaylistUrl("");
+                    setEpgEnabled(true);
                     if (Lampa.Noty && Lampa.Noty.show) {
                         Lampa.Noty.show("Настройки сброшены");
                     }
@@ -840,111 +998,4 @@
             .${PLUGIN.component}-channels-grid {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
-                gap: 10px;
-            }
-            .${PLUGIN.component}-channel-card {
-                background: rgba(255,255,255,0.04);
-                border: 1px solid rgba(255,255,255,0.06);
-                border-radius: 10px;
-                padding: 12px 14px;
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            }
-            .${PLUGIN.component}-channel-card:hover {
-                background: rgba(255,255,255,0.08);
-                border-color: rgba(255,152,0,0.2);
-                transform: translateX(4px);
-            }
-            .${PLUGIN.component}-channel-logo {
-                width: 40px;
-                height: 40px;
-                flex-shrink: 0;
-                border-radius: 8px;
-                background: rgba(255,255,255,0.03);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 20px;
-                overflow: hidden;
-            }
-            .${PLUGIN.component}-channel-logo img {
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-            }
-            .${PLUGIN.component}-channel-info {
-                flex: 1;
-                min-width: 0;
-            }
-            .${PLUGIN.component}-channel-name {
-                font-size: 13px;
-                font-weight: 500;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            .${PLUGIN.component}-channel-number {
-                font-size: 10px;
-                color: rgba(255,255,255,0.3);
-            }
-            @media (max-width: 1024px) {
-                .${PLUGIN.component}-groups-grid { grid-template-columns: repeat(3, 1fr); }
-                .${PLUGIN.component}-channels-grid { grid-template-columns: repeat(2, 1fr); }
-            }
-            @media (max-width: 768px) {
-                .${PLUGIN.component}-groups-grid { grid-template-columns: repeat(2, 1fr); }
-                .${PLUGIN.component}-channels-grid { grid-template-columns: 1fr; }
-                .${PLUGIN.component}-header h1 { font-size: 20px; }
-                .${PLUGIN.component}-channels-header { flex-direction: column; text-align: center; }
-            }
-            @media (max-width: 480px) {
-                .${PLUGIN.component}-groups-grid { grid-template-columns: 1fr; }
-                .${PLUGIN.component}-channel-card { padding: 10px 12px; }
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    // =============================================
-    // РЕГИСТРАЦИЯ
-    // =============================================
-    function registerComponent() {
-        console.log('[IPTV] 📦 Регистрация компонента');
-        try {
-            Lampa.Component.add(PLUGIN.component, IPTVPage);
-            console.log('[IPTV] ✅ Компонент зарегистрирован');
-        } catch(e) {
-            console.error('[IPTV] ❌ Ошибка регистрации:', e);
-        }
-    }
-
-    // =============================================
-    // ЗАПУСК
-    // =============================================
-    function startPlugin() {
-        if (window[PLUGIN.component + '_plugin']) return;
-        window[PLUGIN.component + '_plugin'] = true;
-
-        console.log('[IPTV] 🚀 Запуск плагина...');
-
-        registerComponent();
-        addStyles();
-        addMenuItem();
-
-        if (window.appready) {
-            setupSettings();
-        } else {
-            Lampa.Listener.follow("app", function(e) {
-                if (e.type === "ready") setupSettings();
-            });
-        }
-
-        console.log('[IPTV] ✅ Плагин загружен!');
-    }
-
-    startPlugin();
-
-})();
+                gap: 
