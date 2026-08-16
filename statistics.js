@@ -24,45 +24,71 @@ Lampa.Template.add(plugin.component + '_style', '<style>\
 </style>');
 $('body').append(Lampa.Template.get(plugin.component + '_style', {}, true));
 
-// Функция сбора реальной статистики из хранилища Lampa
 function getRealStats() {
     var history = Lampa.Storage.get('history', []);
+    var books = Lampa.Storage.get('book', []);
     var totalSeconds = 0;
     var moviesCount = 0;
     var episodesCount = 0;
     var genresMap = {};
+    var totalItemsCount = 0;
 
-    history.forEach(function (item) {
-        // Подсчет времени просмотров (если сохранено время в секундах/минутах)
-        if (item.time) {
-            totalSeconds += (item.time.watched || item.time.time || 0);
-        }
-
-        // Подсчет типов контента
-        if (item.type === 'movie') {
-            moviesCount++;
-        } else if (item.type === 'tv' || item.number_of_seasons) {
-            episodesCount++;
-        }
-
-        // Анализ жанров, если они есть в объекте карточки
-        if (item.genres && Array.isArray(item.genres)) {
-            item.genres.forEach(function (g) {
-                var gName = typeof g === 'string' ? g : (g.name || '');
-                if (gName) {
-                    genresMap[gName] = (genresMap[gName] || 0) + 1;
-                }
-            });
-        }
-    });
-
-    // Перевод секунд в часы
-    var totalHours = Math.round(totalSeconds / 3600);
-    if (totalHours === 0 && history.length > 0) {
-        totalHours = Math.round(history.length * 1.5); // грубая примерная оценка, если точное время не трекалось
+    // 1. Анализируем историю просмотров
+    if (Array.isArray(history)) {
+        totalItemsCount += history.length;
+        history.forEach(function (item) {
+            if (item.time) {
+                totalSeconds += (item.time.watched || item.time.time || 0);
+            }
+            if (item.type === 'movie') {
+                moviesCount++;
+            } else if (item.type === 'tv' || item.number_of_seasons) {
+                episodesCount++;
+            }
+            if (item.genres && Array.isArray(item.genres)) {
+                item.genres.forEach(function (g) {
+                    var gName = typeof g === 'string' ? g : (g.name || '');
+                    if (gName) genresMap[gName] = (genresMap[gName] || 0) + 1;
+                });
+            }
+        });
     }
 
-    // Поиск любимого жанра
+    // 2. Анализируем закладки с Cub.red (book может быть объектом по категориям)
+    var bookItemsCount = 0;
+    if (books) {
+        var extractItems = function(collection) {
+            if (Array.isArray(collection)) {
+                collection.forEach(function (item) {
+                    bookItemsCount++;
+                    if (item.type === 'movie') moviesCount++;
+                    else if (item.type === 'tv') episodesCount++;
+
+                    if (item.genres && Array.isArray(item.genres)) {
+                        item.genres.forEach(function (g) {
+                            var gName = typeof g === 'string' ? g : (g.name || '');
+                            if (gName) genresMap[gName] = (genresMap[gName] || 0) + 1;
+                        });
+                    }
+                });
+            }
+        };
+
+        if (Array.isArray(books)) {
+            extractItems(books);
+        } else if (typeof books === 'object') {
+            Object.keys(books).forEach(function (category) {
+                extractItems(books[category]);
+            });
+        }
+    }
+
+    var totalHours = Math.round(totalSeconds / 3600);
+    // Если точное время в секундах не заполнено в истории, оцениваем примерно по количеству записей с Cub
+    if (totalHours === 0 && (totalItemsCount > 0 || bookItemsCount > 0)) {
+        totalHours = Math.max(1, Math.round((totalItemsCount + bookItemsCount) * 0.8));
+    }
+
     var favoriteGenre = 'Не определен';
     var maxGenreCount = 0;
     for (var genre in genresMap) {
@@ -74,7 +100,7 @@ function getRealStats() {
 
     return {
         hours: totalHours,
-        movies: moviesCount || history.length, // фоллбек на общую историю, если тип не указан явно
+        movies: moviesCount || totalItemsCount,
         episodes: episodesCount,
         genre: favoriteGenre
     };
@@ -84,23 +110,37 @@ function statsPage(object) {
     var _this = this;
     html = $('<div></div>');
     var body = $('<div class="personal-stats-container"></div>');
+    var grid;
     
-    this.create = function () {
-        _this.activity.loader(true);
-        
+    function updateGridContent() {
         var stats = getRealStats();
+        if (grid) grid.remove();
 
-        var info = $('<div class="info layer--width"><div class="info__left"><div class="info__title">Личный кабинет и аналитика</div><div class="info__title-original">Ваши просмотры, статистика и рекомендации</div></div></div>');
-        html.append(info);
-
-        // Карточки с реальными посчитанными данными
-        var grid = $('<div class="stats-cards-grid"> \
+        grid = $('<div class="stats-cards-grid"> \
             <div class="stats-card"><div class="stats-card__title">Время просмотров</div><div class="stats-card__value">' + stats.hours + ' ч</div></div> \
             <div class="stats-card"><div class="stats-card__title">Просмотрено фильмов</div><div class="stats-card__value">' + stats.movies + '</div></div> \
             <div class="stats-card"><div class="stats-card__title">Эпизодов сериалов</div><div class="stats-card__value">' + stats.episodes + '</div></div> \
-            <div class="stats-card"><div class="stats-card__title">Любимый жанр</div><div class="stats-card__value" style="font-size: 1.8em;">' + stats.genre + '</div></div> \
+            <div class="stats-card"><div class="stats-card__title">Любимый жанр</div><div class="stats-card__value" style="font-size: 1.6em;">' + stats.genre + '</div></div> \
         </div>');
-        body.append(grid);
+        
+        body.prepend(grid);
+    }
+
+    // Слушаем обновление хранилища (когда Cub.red докачает данные в фоне)
+    var storageListener = function (e) {
+        if (e.name === 'history' || e.name === 'book') {
+            updateGridContent();
+        }
+    };
+    Lampa.Storage.listener.follow('change', storageListener);
+
+    this.create = function () {
+        _this.activity.loader(true);
+        
+        var info = $('<div class="info layer--width"><div class="info__left"><div class="info__title">Личный кабинет и аналитика</div><div class="info__title-original">Данные синхронизированы с Cub.red</div></div></div>');
+        html.append(info);
+
+        updateGridContent();
 
         body.append('<div class="stats-section-title">Рекомендации для вас</div>');
         var recommendationsContainer = $('<div class="cards"></div>');
@@ -146,6 +186,7 @@ function statsPage(object) {
     };
 
     this.destroy = function () {
+        Lampa.Storage.listener.remove('change', storageListener);
         scroll.destroy();
         html.remove();
     };
