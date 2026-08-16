@@ -1,17 +1,6 @@
 (function () {
     "use strict";
 
-    function getMovieTitle(movie) {
-        if (!movie) return "";
-        return (
-            movie.title ||
-            movie.name ||
-            movie.original_title ||
-            movie.original_name ||
-            ""
-        ).trim();
-    }
-
     function escapeHtml(value) {
         return String(value || "")
             .replace(/&/g, "&amp;")
@@ -21,33 +10,41 @@
             .replace(/'/g, "&#039;");
     }
 
-    async function searchBook(title) {
-        if (!title) return null;
-        let url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(title)}&maxResults=3`;
-        try {
-            let response = await fetch(url);
-            if (!response.ok) return null;
-            let data = await response.json();
-            if (data && data.items && data.items.length > 0) {
-                let found = data.items.find(item => item.volumeInfo && item.volumeInfo.authors) || data.items[0];
-                return found.volumeInfo;
+    async function searchBook(movie) {
+        // Собираем всевозможные варианты названий из карточки фильма
+        let queries = [];
+        if (movie.title) queries.push(movie.title);
+        if (movie.original_title && movie.original_title !== movie.title) queries.push(movie.original_title);
+        if (movie.name) queries.push(movie.name);
+        if (movie.original_name && movie.original_name !== movie.name) queries.push(movie.original_name);
+
+        // Убираем дубликаты
+        queries = [...new Set(queries)];
+
+        for (let q of queries) {
+            if (!q) continue;
+            let url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=3`;
+            try {
+                let response = await fetch(url);
+                if (!response.ok) continue;
+                let data = await response.json();
+                if (data && data.items && data.items.length > 0) {
+                    let found = data.items.find(item => item.volumeInfo && item.volumeInfo.authors) || data.items[0];
+                    if (found && found.volumeInfo) {
+                        return found.volumeInfo;
+                    }
+                }
+            } catch (e) {
+                console.error("[Book Bridge] Fetch error for query:", q, e);
             }
-        } catch (e) {
-            console.error("[Book Bridge] Fetch error:", e);
         }
         return null;
     }
 
     function openBookModal(movie) {
-        let title = getMovieTitle(movie);
-        if (!title) {
-            Lampa.Noty.show("Не удалось получить название фильма");
-            return;
-        }
-
         Lampa.Loading.start();
 
-        searchBook(title).then(book => {
+        searchBook(movie).then(book => {
             Lampa.Loading.stop();
 
             if (!book) {
@@ -110,10 +107,8 @@
             const movie = e.data && e.data.movie;
             if (!movie) return;
 
-            // Удаляем старую кнопку, если уже создана
             $(".button--book-bridge").remove();
 
-            // Добавляем кнопку в панель действий карточки (аналогично комментариям)
             $(".full-start-new__buttons").append(`
                 <div class="full-start__button selector button--book-bridge">
                     <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -125,7 +120,6 @@
                 </div>
             `);
 
-            // Обработка нажатия на пульте / клика
             $(".button--book-bridge").on("hover:enter", function () {
                 openBookModal(movie);
             });
