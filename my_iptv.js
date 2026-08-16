@@ -15,7 +15,7 @@
     };
 
     // =============================================
-    // ХРАНИЛИЩЕ (как в плагине рецензий)
+    // ХРАНИЛИЩЕ
     // =============================================
     const URL_STORAGE_KEY = PLUGIN.component + '_url';
 
@@ -29,10 +29,6 @@
 
     function setPlaylistUrl(value) {
         Lampa.Storage.set(URL_STORAGE_KEY, String(value || "").trim());
-    }
-
-    function hasPlaylistUrl() {
-        return !!getPlaylistUrl();
     }
 
     // =============================================
@@ -347,7 +343,6 @@
                 plugin: PLUGIN.component
             };
 
-            // Создаём плейлист для переключения каналов
             const playlist = channels.map(ch => ({
                 title: ch.title,
                 url: ch.url,
@@ -482,27 +477,96 @@
     }
 
     // =============================================
-    // ПУНКТ В МЕНЮ НАСТРОЕК (как в плагине рецензий)
+    // ПУНКТ В МЕНЮ LAMPA (УЛУЧШЕННЫЙ)
+    // =============================================
+    function addMenuItem() {
+        console.log('[IPTV] 📌 Добавление пункта меню');
+        
+        // Ждём загрузки меню
+        function tryAddMenu() {
+            const menu = $('.menu .menu__list').eq(0);
+            if (!menu.length) {
+                console.log('[IPTV] ⏳ Меню ещё не загружено, ждём...');
+                setTimeout(tryAddMenu, 500);
+                return;
+            }
+
+            // Проверяем, есть ли уже такой пункт
+            if ($(`.${PLUGIN.component}-menu`).length) {
+                console.log('[IPTV] ℹ️ Пункт уже добавлен');
+                return;
+            }
+
+            const menuItem = $(`
+                <li class="menu__item selector ${PLUGIN.component}-menu">
+                    <div class="menu__ico">${PLUGIN.icon}</div>
+                    <div class="menu__text">${PLUGIN.name}</div>
+                </li>
+            `);
+
+            menuItem.on('hover:enter', function(e) {
+                e.stopPropagation();
+                console.log('[IPTV] 👆 Клик по пункту меню');
+                
+                try {
+                    const activity = {
+                        id: PLUGIN.component,
+                        component: PLUGIN.component,
+                        title: PLUGIN.name
+                    };
+                    
+                    // Проверяем, не открыт ли уже
+                    if (Lampa.Activity.active().component === PLUGIN.component) {
+                        Lampa.Activity.replace(activity);
+                    } else {
+                        Lampa.Activity.push(activity);
+                    }
+                } catch(error) {
+                    console.error('[IPTV] Ошибка открытия:', error);
+                    Lampa.Noty.show('Ошибка открытия IPTV');
+                }
+            });
+
+            // Добавляем в конец меню
+            menu.append(menuItem);
+            console.log('[IPTV] ✅ Пункт меню добавлен');
+        }
+
+        // Пробуем добавить сразу или ждём
+        if (document.querySelector('.menu .menu__list')) {
+            tryAddMenu();
+        } else {
+            // Ждём появления меню
+            const observer = new MutationObserver(function() {
+                if (document.querySelector('.menu .menu__list')) {
+                    observer.disconnect();
+                    tryAddMenu();
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+            
+            // Запасной вариант
+            setTimeout(tryAddMenu, 3000);
+        }
+    }
+
+    // =============================================
+    // ПУНКТ В МЕНЮ НАСТРОЕК
     // =============================================
     const SETTINGS_COMPONENT = PLUGIN.component + '_settings';
 
     function setupSettings() {
         if (!Lampa.SettingsApi || !Lampa.SettingsApi.addComponent) {
+            console.log('[IPTV] ⚠️ SettingsApi не найден');
             return;
         }
 
-        // -----------------------------------------------------
-        // Пункт верхнего уровня в настройках Lampa
-        // -----------------------------------------------------
         Lampa.SettingsApi.addComponent({
             component: SETTINGS_COMPONENT,
             name: PLUGIN.name,
             icon: PLUGIN.icon
         });
 
-        // -----------------------------------------------------
-        // Пояснение
-        // -----------------------------------------------------
         Lampa.SettingsApi.addParam({
             component: SETTINGS_COMPONENT,
             param: {
@@ -513,9 +577,6 @@
             }
         });
 
-        // -----------------------------------------------------
-        // Поле ввода URL плейлиста
-        // -----------------------------------------------------
         Lampa.SettingsApi.addParam({
             component: SETTINGS_COMPONENT,
             param: {
@@ -538,9 +599,6 @@
             }
         });
 
-        // -----------------------------------------------------
-        // Кнопка сброса
-        // -----------------------------------------------------
         Lampa.SettingsApi.addParam({
             component: SETTINGS_COMPONENT,
             param: {
@@ -560,38 +618,8 @@
                 }
             }
         });
-    }
 
-    // =============================================
-    // ПУНКТ В МЕНЮ LAMPA
-    // =============================================
-    function addMenuItem() {
-        console.log('[IPTV] 📌 Добавление пункта меню');
-        
-        const menuItem = $(`
-            <li class="menu__item selector ${PLUGIN.component}-menu">
-                <div class="menu__ico">${PLUGIN.icon}</div>
-                <div class="menu__text">${PLUGIN.name}</div>
-            </li>
-        `);
-
-        menuItem.on('hover:enter', function() {
-            const activity = {
-                id: PLUGIN.component,
-                component: PLUGIN.component,
-                title: PLUGIN.name
-            };
-            
-            if (Lampa.Activity.active().component === PLUGIN.component) {
-                Lampa.Activity.replace(activity);
-            } else {
-                Lampa.Activity.push(activity);
-            }
-        });
-
-        const menu = $('.menu .menu__list').eq(0);
-        menu.append(menuItem);
-        console.log('[IPTV] ✅ Пункт меню добавлен');
+        console.log('[IPTV] ✅ Настройки добавлены');
     }
 
     // =============================================
@@ -867,19 +895,36 @@
     // =============================================
     function registerComponent() {
         console.log('[IPTV] 📦 Регистрация компонента');
-        Lampa.Component.add(PLUGIN.component, IPTVPage);
+        try {
+            Lampa.Component.add(PLUGIN.component, IPTVPage);
+            console.log('[IPTV] ✅ Компонент зарегистрирован');
+        } catch(e) {
+            console.error('[IPTV] ❌ Ошибка регистрации:', e);
+        }
     }
 
     // =============================================
-    // ЗАПУСК ПЛАГИНА (как в плагине рецензий)
+    // ЗАПУСК ПЛАГИНА
     // =============================================
     function startPlugin() {
         if (window[PLUGIN.component + '_plugin']) {
+            console.log('[IPTV] ℹ️ Плагин уже запущен');
             return;
         }
         window[PLUGIN.component + '_plugin'] = true;
 
-        // Регистрируем пункт в общих настройках Lampa
+        console.log('[IPTV] 🚀 Запуск плагина...');
+
+        // Регистрируем компонент
+        registerComponent();
+
+        // Добавляем стили
+        addStyles();
+
+        // Добавляем пункт в меню
+        addMenuItem();
+
+        // Настройки
         if (window.appready) {
             setupSettings();
         } else {
@@ -889,11 +934,6 @@
                 }
             });
         }
-
-        // Регистрируем компонент
-        registerComponent();
-        addMenuItem();
-        addStyles();
 
         console.log('[IPTV] ✅ Плагин загружен!');
     }
