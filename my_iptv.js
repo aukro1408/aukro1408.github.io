@@ -15,55 +15,38 @@
     };
 
     // =============================================
-    // КЛЮЧИ ДЛЯ ХРАНИЛИЩА
+    // ХРАНИЛИЩЕ
     // =============================================
     const URL_STORAGE_KEY = PLUGIN.component + '_url';
-    const EPG_URL_STORAGE_KEY = PLUGIN.component + '_epg_url';
-    const EPG_ENABLED_KEY = PLUGIN.component + '_epg_enabled';
 
-    // =============================================
-    // ФУНКЦИИ РАБОТЫ С ХРАНИЛИЩЕМ
-    // =============================================
-    function getStorage(key, defaultVal) {
+    function getPlaylistUrl() {
         try {
-            return Lampa.Storage.get(key, defaultVal);
-        } catch(e) {
-            return defaultVal;
+            let url = Lampa.Storage.get(URL_STORAGE_KEY, "");
+            if (url) return url.trim();
+            url = localStorage.getItem(URL_STORAGE_KEY) || "";
+            if (url) {
+                Lampa.Storage.set(URL_STORAGE_KEY, url);
+                return url.trim();
+            }
+            return "";
+        } catch (e) {
+            return "";
         }
     }
 
-    function setStorage(key, val) {
+    function setPlaylistUrl(value) {
         try {
-            Lampa.Storage.set(key, val);
-        } catch(e) {}
-    }
-
-    function getPlaylistUrl() {
-        return getStorage(URL_STORAGE_KEY, '');
-    }
-
-    function setPlaylistUrl(url) {
-        setStorage(URL_STORAGE_KEY, url);
-    }
-
-    function getEpgUrl() {
-        return getStorage(EPG_URL_STORAGE_KEY, 'https://epg.it999.ru/epg.xml.gz');
-    }
-
-    function setEpgUrl(url) {
-        setStorage(EPG_URL_STORAGE_KEY, url);
-    }
-
-    function getEpgEnabled() {
-        return getStorage(EPG_ENABLED_KEY, 'true') === 'true';
-    }
-
-    function setEpgEnabled(val) {
-        setStorage(EPG_ENABLED_KEY, val ? 'true' : 'false');
+            const url = String(value || "").trim();
+            Lampa.Storage.set(URL_STORAGE_KEY, url);
+            localStorage.setItem(URL_STORAGE_KEY, url);
+            return true;
+        } catch (e) {
+            return false;
+        }
     }
 
     // =============================================
-    // ПАРСИНГ M3U
+    // ПАРСИНГ M3U (БЕЗ EPG)
     // =============================================
     function parseM3U(data) {
         const channels = [];
@@ -103,8 +86,6 @@
                     title: title,
                     group: group,
                     logo: params['tvg-logo'] || '',
-                    id: params['tvg-id'] || '',
-                    epgId: params['tvg-id'] || '',
                     url: ''
                 };
                 continue;
@@ -173,110 +154,12 @@
     }
 
     // =============================================
-    // EPG
-    // =============================================
-    let epgCache = {};
-    let epgInterval = null;
-    let epgData = {};
-
-    function loadEpgData(url, callback) {
-        if (!url) {
-            callback(null);
-            return;
-        }
-
-        const network = new Lampa.Reguest();
-        network.silent(
-            url,
-            function(data) {
-                try {
-                    // Парсим XML EPG
-                    const parser = new DOMParser();
-                    const xml = parser.parseFromString(data, 'text/xml');
-                    const programmes = xml.getElementsByTagName('programme');
-                    
-                    const epg = {};
-                    for (let i = 0; i < programmes.length; i++) {
-                        const prog = programmes[i];
-                        const channelId = prog.getAttribute('channel');
-                        const start = parseInt(prog.getAttribute('start'));
-                        const stop = parseInt(prog.getAttribute('stop'));
-                        const title = prog.getElementsByTagName('title')[0]?.textContent || 'Без названия';
-                        
-                        if (!epg[channelId]) epg[channelId] = [];
-                        epg[channelId].push({
-                            start: start,
-                            stop: stop,
-                            title: title,
-                            duration: (stop - start) / 1000 // в секундах
-                        });
-                    }
-                    
-                    epgData = epg;
-                    callback(epg);
-                } catch(e) {
-                    console.error('[IPTV] Ошибка парсинга EPG:', e);
-                    callback(null);
-                }
-            },
-            function(error) {
-                console.error('[IPTV] Ошибка загрузки EPG:', error);
-                callback(null);
-            },
-            { dataType: 'text' }
-        );
-    }
-
-    function getEpgForChannel(channelId, callback) {
-        if (!channelId || !epgData[channelId]) {
-            callback(null);
-            return;
-        }
-
-        const now = Math.floor(Date.now() / 1000);
-        const programs = epgData[channelId] || [];
-        
-        // Ищем текущую программу
-        let current = null;
-        let next = null;
-        
-        for (let i = 0; i < programs.length; i++) {
-            const prog = programs[i];
-            const start = Math.floor(prog.start / 1000);
-            const stop = Math.floor(prog.stop / 1000);
-            
-            if (now >= start && now < stop) {
-                current = prog;
-                break;
-            }
-            if (start > now && !next) {
-                next = prog;
-            }
-        }
-        
-        callback({ current: current, next: next });
-    }
-
-    function formatEpgTime(timestamp) {
-        const date = new Date(timestamp * 1000);
-        return ('0' + date.getHours()).substr(-2) + ':' + ('0' + date.getMinutes()).substr(-2);
-    }
-
-    function getEpgProgress(start, stop) {
-        const now = Math.floor(Date.now() / 1000);
-        if (now < start) return 0;
-        if (now > stop) return 100;
-        return Math.round((now - start) / (stop - start) * 100);
-    }
-
-    // =============================================
     // СТРАНИЦА IPTV
     // =============================================
     function IPTVPage(object) {
         let channels = [];
         let catalog = {};
         let isDestroyed = false;
-        let epgLoaded = false;
 
         this.create = function() {
             const html = $(`
@@ -323,97 +206,12 @@
                 }
 
                 catalog = groupChannels(channels);
-                
-                // Загружаем EPG если включено
-                if (getEpgEnabled()) {
-                    loadEpg();
-                }
-                
                 showGroups();
 
             } catch (error) {
                 console.error('[IPTV] Ошибка:', error);
                 showError('❌ Ошибка загрузки\n\n' + error.message);
             }
-        }
-
-        // =============================================
-        // ЗАГРУЗКА EPG
-        // =============================================
-        function loadEpg() {
-            const epgUrl = getEpgUrl();
-            if (!epgUrl) return;
-            
-            const statusEl = document.getElementById(`${PLUGIN.component}-status`);
-            if (statusEl) statusEl.textContent = '📡 Загрузка EPG...';
-            
-            loadEpgData(epgUrl, function(data) {
-                epgLoaded = true;
-                if (statusEl) {
-                    const count = Object.keys(epgData).length;
-                    statusEl.textContent = `📺 ${channels.length} каналов, EPG: ${count} каналов`;
-                }
-                
-                // Обновляем EPG на странице
-                updateEpgOnPage();
-                
-                // Запускаем обновление каждые 5 минут
-                if (epgInterval) clearInterval(epgInterval);
-                epgInterval = setInterval(function() {
-                    if (!isDestroyed) {
-                        loadEpgData(epgUrl, function() {
-                            updateEpgOnPage();
-                        });
-                    }
-                }, 300000);
-            });
-        }
-
-        // =============================================
-        // ОБНОВЛЕНИЕ EPG НА СТРАНИЦЕ
-        // =============================================
-        function updateEpgOnPage() {
-            if (isDestroyed || !getEpgEnabled()) return;
-            
-            const cards = document.querySelectorAll(`.${PLUGIN.component}-channel-card`);
-            cards.forEach(card => {
-                const epgId = card.dataset.epgId;
-                const index = card.dataset.channelIndex;
-                if (!epgId) return;
-                
-                getEpgForChannel(epgId, function(data) {
-                    const epgEl = document.getElementById(`${PLUGIN.component}-epg-${index}`);
-                    if (!epgEl) return;
-                    
-                    if (data && data.current) {
-                        const prog = data.current;
-                        const startTime = formatEpgTime(Math.floor(prog.start / 1000));
-                        const stopTime = formatEpgTime(Math.floor(prog.stop / 1000));
-                        const progress = getEpgProgress(Math.floor(prog.start / 1000), Math.floor(prog.stop / 1000));
-                        
-                        epgEl.innerHTML = `
-                            <div class="${PLUGIN.component}-epg-program">
-                                <span class="${PLUGIN.component}-epg-time">${startTime} - ${stopTime}</span>
-                                <span class="${PLUGIN.component}-epg-title">${prog.title}</span>
-                                <div class="${PLUGIN.component}-epg-progress">
-                                    <div class="${PLUGIN.component}-epg-progress-bar" style="width:${progress}%;"></div>
-                                </div>
-                            </div>
-                        `;
-                    } else if (data && data.next) {
-                        const prog = data.next;
-                        const startTime = formatEpgTime(Math.floor(prog.start / 1000));
-                        epgEl.innerHTML = `
-                            <div class="${PLUGIN.component}-epg-program">
-                                <span class="${PLUGIN.component}-epg-time">→ ${startTime}</span>
-                                <span class="${PLUGIN.component}-epg-title" style="color:rgba(255,255,255,0.4);">${prog.title}</span>
-                            </div>
-                        `;
-                    } else {
-                        epgEl.innerHTML = `<span style="color:rgba(255,255,255,0.2);font-size:11px;">Нет данных</span>`;
-                    }
-                });
-            });
         }
 
         // =============================================
@@ -429,10 +227,7 @@
             if (!groupsEl) return;
 
             if (loadingEl) loadingEl.style.display = 'none';
-            if (statusEl) {
-                const epgCount = Object.keys(epgData).length;
-                statusEl.textContent = `📺 ${channels.length} каналов, ${Object.keys(catalog).length} групп${epgCount > 0 ? `, EPG: ${epgCount}` : ''}`;
-            }
+            if (statusEl) statusEl.textContent = `📺 ${channels.length} каналов, ${Object.keys(catalog).length} групп`;
 
             const groupNames = Object.keys(catalog);
             
@@ -501,22 +296,17 @@
                 const logo = channel.logo || '';
                 const title = channel.title || 'Канал';
                 const url = channel.url || '';
-                const epgId = channel.epgId || '';
                 
                 html += `
                     <div class="${PLUGIN.component}-channel-card selector" 
                          data-channel-url="${url.replace(/"/g, '&quot;')}"
-                         data-channel-title="${title.replace(/"/g, '&quot;')}"
-                         data-epg-id="${epgId}"
-                         data-channel-index="${index}">
+                         data-channel-title="${title.replace(/"/g, '&quot;')}">
                         <div class="${PLUGIN.component}-channel-logo">
                             ${logo ? `<img src="${logo}" onerror="this.style.display='none'">` : '📺'}
                         </div>
                         <div class="${PLUGIN.component}-channel-info">
                             <div class="${PLUGIN.component}-channel-name">${title}</div>
-                            <div class="${PLUGIN.component}-channel-epg" id="${PLUGIN.component}-epg-${index}">
-                                ${getEpgEnabled() && epgId ? '<span style="color:rgba(255,255,255,0.3);font-size:11px;">Загрузка...</span>' : ''}
-                            </div>
+                            <div class="${PLUGIN.component}-channel-number">#${index + 1}</div>
                         </div>
                     </div>
                 `;
@@ -526,14 +316,6 @@
             channelsEl.innerHTML = html;
             channelsEl.style.display = 'block';
 
-            // Обновляем EPG для каналов
-            if (getEpgEnabled() && epgLoaded) {
-                setTimeout(function() {
-                    updateEpgOnPage();
-                }, 500);
-            }
-
-            // Обработчики каналов
             channelsEl.querySelectorAll(`.${PLUGIN.component}-channel-card`).forEach(card => {
                 const url = card.dataset.channelUrl;
                 const name = card.dataset.channelTitle || 'Канал';
@@ -548,7 +330,6 @@
                 });
             });
 
-            // Кнопка назад
             const backBtn = document.getElementById(`${PLUGIN.component}-back-groups`);
             if (backBtn) {
                 $(backBtn).on('hover:enter', function(e) {
@@ -679,10 +460,6 @@
         this.pause = function() {};
         this.stop = function() {
             isDestroyed = true;
-            if (epgInterval) {
-                clearInterval(epgInterval);
-                epgInterval = null;
-            }
         };
         this.render = function() {
             return $('<div></div>').append(this.create());
@@ -758,21 +535,19 @@
     function setupSettings() {
         if (!Lampa.SettingsApi || !Lampa.SettingsApi.addComponent) return;
 
-        // Регистрируем компонент в настройках
         Lampa.SettingsApi.addComponent({
             component: PLUGIN.component,
             name: PLUGIN.name,
             icon: PLUGIN.icon
         });
 
-        // --- Настройки плейлиста ---
         Lampa.SettingsApi.addParam({
             component: PLUGIN.component,
             param: {
                 type: 'title'
             },
             field: {
-                name: '📺 Плейлист'
+                name: '📺 Настройки IPTV'
             }
         });
 
@@ -786,7 +561,7 @@
             },
             field: {
                 name: 'URL плейлиста M3U',
-                description: 'Ссылка на ваш M3U плейлист'
+                description: 'Ссылка на ваш M3U плейлист с каналами'
             },
             onChange: function(value) {
                 setPlaylistUrl(value);
@@ -796,59 +571,6 @@
             }
         });
 
-        // --- Настройки EPG ---
-        Lampa.SettingsApi.addParam({
-            component: PLUGIN.component,
-            param: {
-                type: 'title'
-            },
-            field: {
-                name: '📡 Телепрограмма (EPG)'
-            }
-        });
-
-        Lampa.SettingsApi.addParam({
-            component: PLUGIN.component,
-            param: {
-                name: EPG_ENABLED_KEY,
-                type: 'trigger',
-                values: 'Включена|Выключена',
-                default: 'true'
-            },
-            field: {
-                name: 'EPG',
-                description: 'Включить отображение телепрограммы'
-            },
-            onChange: function(value) {
-                const enabled = value === 'true';
-                setEpgEnabled(enabled);
-                if (Lampa.Noty && Lampa.Noty.show) {
-                    Lampa.Noty.show(enabled ? 'EPG включена' : 'EPG выключена');
-                }
-            }
-        });
-
-        Lampa.SettingsApi.addParam({
-            component: PLUGIN.component,
-            param: {
-                name: EPG_URL_STORAGE_KEY,
-                type: 'input',
-                placeholder: 'https://epg.it999.ru/epg.xml.gz',
-                default: 'https://epg.it999.ru/epg.xml.gz'
-            },
-            field: {
-                name: 'URL EPG',
-                description: 'Ссылка на файл EPG в формате XML'
-            },
-            onChange: function(value) {
-                setEpgUrl(value);
-                if (Lampa.Noty && Lampa.Noty.show) {
-                    Lampa.Noty.show('URL EPG сохранён');
-                }
-            }
-        });
-
-        // --- Сброс ---
         Lampa.SettingsApi.addParam({
             component: PLUGIN.component,
             param: {
@@ -856,14 +578,12 @@
                 type: 'button'
             },
             field: {
-                name: '🔄 Сбросить все настройки',
+                name: '🔄 Сбросить настройки',
                 description: 'Восстановить настройки по умолчанию'
             },
             onChange: function() {
-                if (confirm('Сбросить все настройки?')) {
+                if (confirm('Сбросить настройки?')) {
                     setPlaylistUrl('https://iptv-org.github.io/iptv/index.m3u');
-                    setEpgUrl('https://epg.it999.ru/epg.xml.gz');
-                    setEpgEnabled(true);
                     if (Lampa.Noty && Lampa.Noty.show) {
                         Lampa.Noty.show('Настройки сброшены');
                     }
@@ -1068,45 +788,10 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
-            .${PLUGIN.component}-channel-epg {
-                font-size: 11px;
-                color: rgba(255,255,255,0.5);
-                margin-top: 2px;
-            }
-            .${PLUGIN.component}-epg-program {
-                display: flex;
-                flex-wrap: wrap;
-                align-items: center;
-                gap: 4px 8px;
-            }
-            .${PLUGIN.component}-epg-time {
-                color: rgba(255,255,255,0.3);
+            .${PLUGIN.component}-channel-number {
                 font-size: 10px;
-                white-space: nowrap;
+                color: rgba(255,255,255,0.3);
             }
-            .${PLUGIN.component}-epg-title {
-                flex: 1;
-                min-width: 50px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                font-size: 11px;
-            }
-            .${PLUGIN.component}-epg-progress {
-                width: 60px;
-                height: 3px;
-                background: rgba(255,255,255,0.1);
-                border-radius: 2px;
-                overflow: hidden;
-                flex-shrink: 0;
-            }
-            .${PLUGIN.component}-epg-progress-bar {
-                height: 100%;
-                background: linear-gradient(90deg, #ff9800, #ff5722);
-                border-radius: 2px;
-                transition: width 1s ease;
-            }
-
             @media (max-width: 1024px) {
                 .${PLUGIN.component}-groups-grid { grid-template-columns: repeat(3, 1fr); }
                 .${PLUGIN.component}-channels-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1147,7 +832,6 @@
         addStyles();
         addMenuItem();
 
-        // Настройки регистрируем после готовности приложения
         if (window.appready) {
             setupSettings();
         } else {
@@ -1159,9 +843,6 @@
         }
     }
 
-    // =============================================
-    // СТАРТ
-    // =============================================
     startPlugin();
 
 })();
