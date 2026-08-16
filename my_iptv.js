@@ -32,7 +32,7 @@
     }
 
     // =============================================
-    // ПАРСИНГ M3U (УЛУЧШЕННЫЙ ДЛЯ ГРУПП)
+    // ПАРСИНГ M3U (КАК В tv.js)
     // =============================================
     function parseM3U(data) {
         const channels = [];
@@ -46,32 +46,31 @@
             if (!line) continue;
 
             // Группа
-            if (line.startsWith('#EXTGRP:')) {
-                currentGroup = line.replace('#EXTGRP:', '').trim();
-                if (!currentGroup) currentGroup = 'Без группы';
+            if (line.match(/^#EXTGRP:\s*(.+?)\s*$/i)) {
+                const match = line.match(/^#EXTGRP:\s*(.+?)\s*$/i);
+                if (match && match[1].trim() !== '') {
+                    currentGroup = match[1].trim();
+                }
                 continue;
             }
 
             // Информация о канале
-            if (line.startsWith('#EXTINF:')) {
-                // Извлекаем название
-                let title = 'Канал';
-                const titleMatch = line.match(/,([^,]+)$/);
-                if (titleMatch) {
-                    title = titleMatch[1].trim();
-                }
+            if (line.match(/^#EXTINF:\s*-?\d+(\s+\S.*?\s*)?,(.+)$/i)) {
+                const match = line.match(/^#EXTINF:\s*-?\d+(\s+\S.*?\s*)?,(.+)$/i);
+                const title = match[2].trim();
 
-                // Извлекаем параметры
+                // Извлекаем параметры как в tv.js
                 const params = {};
-                const attrRegex = /([a-zA-Z-]+)="([^"]*)"/g;
-                let match;
-                while ((match = attrRegex.exec(line)) !== null) {
-                    params[match[1]] = match[2];
+                if (match[1]) {
+                    const attrRegex = /([^\s=]+)=((["'])(.*?)\3|\S+)/g;
+                    let m;
+                    while ((m = attrRegex.exec(match[1])) !== null) {
+                        params[m[1].toLowerCase()] = m[4] || m[2];
+                    }
                 }
 
-                // Если есть group-title в параметрах - используем его
-                let group = params['group-title'] || currentGroup;
-                if (!group) group = 'Без группы';
+                // Берём group-title из параметров или текущую группу
+                const group = params['group-title'] || currentGroup;
 
                 currentChannel = {
                     title: title,
@@ -84,7 +83,7 @@
             }
 
             // URL канала
-            if (currentChannel && (line.startsWith('http') || line.startsWith('rtmp') || line.startsWith('udp'))) {
+            if (currentChannel && line.match(/^(https?):\/\/(.+)$/i)) {
                 currentChannel.url = line;
                 channels.push(currentChannel);
                 currentChannel = null;
@@ -95,7 +94,7 @@
     }
 
     // =============================================
-    // ЗАГРУЗКА ПЛЕЙЛИСТА
+    // ЗАГРУЗКА ПЛЕЙЛИСТА (КАК В tv.js)
     // =============================================
     function loadPlaylist(url) {
         return new Promise((resolve, reject) => {
@@ -106,9 +105,9 @@
                 return;
             }
 
-            const request = new Lampa.Reguest();
+            const network = new Lampa.Reguest();
             
-            request.silent(
+            network.silent(
                 url,
                 function(data) {
                     console.log('[IPTV] ✅ Плейлист загружен');
@@ -139,7 +138,7 @@
     }
 
     // =============================================
-    // ГРУППИРОВКА КАНАЛОВ
+    // ГРУППИРОВКА (КАК В tv.js)
     // =============================================
     function groupChannels(channels) {
         const groups = {};
@@ -147,18 +146,15 @@
         channels.forEach(channel => {
             const groupName = channel.group || 'Без группы';
             if (!groups[groupName]) {
-                groups[groupName] = [];
+                groups[groupName] = {
+                    title: groupName,
+                    channels: []
+                };
             }
-            groups[groupName].push(channel);
+            groups[groupName].channels.push(channel);
         });
 
-        // Сортируем группы по алфавиту
-        const sortedGroups = {};
-        Object.keys(groups).sort().forEach(key => {
-            sortedGroups[key] = groups[key];
-        });
-
-        return sortedGroups;
+        return groups;
     }
 
     // =============================================
@@ -167,8 +163,10 @@
     function IPTVPage(object) {
         let channels = [];
         let groups = {};
+        let catalog = {};
         let scrollInstance = null;
         let isDestroyed = false;
+        let currentGroup = null;
 
         this.create = function() {
             console.log('[IPTV] 📄 Создание страницы');
@@ -224,7 +222,15 @@
                     return;
                 }
 
-                groups = groupChannels(channels);
+                // Группируем как в tv.js
+                catalog = groupChannels(channels);
+                
+                // Создаём список групп для навигации
+                const groupNames = Object.keys(catalog);
+                if (groupNames.length > 0) {
+                    currentGroup = groupNames[0];
+                }
+                
                 showGroups();
 
             } catch (error) {
@@ -234,7 +240,7 @@
         }
 
         // =============================================
-        // ПОКАЗ ГРУПП (С ПРИНУДИТЕЛЬНЫМ ОБНОВЛЕНИЕМ)
+        // ПОКАЗ ГРУПП (КАК В tv.js)
         // =============================================
         function showGroups() {
             if (isDestroyed) return;
@@ -246,14 +252,14 @@
             if (!groupsEl) return;
 
             if (loadingEl) loadingEl.style.display = 'none';
-            if (statusEl) statusEl.textContent = `📺 ${channels.length} каналов, ${Object.keys(groups).length} групп`;
+            if (statusEl) statusEl.textContent = `📺 ${channels.length} каналов, ${Object.keys(catalog).length} групп`;
 
-            const groupNames = Object.keys(groups);
+            const groupNames = Object.keys(catalog);
             
             let html = `<div class="${PLUGIN.component}-groups-grid">`;
             
             groupNames.forEach(name => {
-                const count = groups[name].length;
+                const count = catalog[name].channels.length;
                 html += `
                     <div class="${PLUGIN.component}-group-card selector" data-group="${name.replace(/"/g, '&quot;')}">
                         <div class="${PLUGIN.component}-group-icon">📂</div>
@@ -267,19 +273,11 @@
             groupsEl.innerHTML = html;
             groupsEl.style.display = 'block';
 
-            // Обработчики для групп (используем оба события)
+            // Обработчики как в tv.js - через hover:enter
             groupsEl.querySelectorAll(`.${PLUGIN.component}-group-card`).forEach(card => {
                 const groupName = card.dataset.group;
                 
-                // Для пульта
                 $(card).on('hover:enter', function(e) {
-                    e.stopPropagation();
-                    console.log('[IPTV] 📂 Выбрана группа:', groupName);
-                    if (!isDestroyed) showChannels(groupName);
-                });
-                
-                // Для мыши
-                card.addEventListener('click', function(e) {
                     e.stopPropagation();
                     console.log('[IPTV] 📂 Выбрана группа:', groupName);
                     if (!isDestroyed) showChannels(groupName);
@@ -290,7 +288,7 @@
         }
 
         // =============================================
-        // ПОКАЗ КАНАЛОВ (С ПРИНУДИТЕЛЬНЫМ ОБНОВЛЕНИЕМ)
+        // ПОКАЗ КАНАЛОВ (КАК В tv.js)
         // =============================================
         function showChannels(groupName) {
             if (isDestroyed) return;
@@ -303,7 +301,10 @@
 
             if (!channelsEl) return;
 
-            const groupChannels = groups[groupName] || [];
+            const groupData = catalog[groupName];
+            if (!groupData) return;
+
+            const groupChannels = groupData.channels || [];
             
             if (statusEl) {
                 statusEl.textContent = `📺 ${groupName} — ${groupChannels.length} каналов`;
@@ -345,49 +346,28 @@
             channelsEl.innerHTML = html;
             channelsEl.style.display = 'block';
 
-            // Обработчики для каналов
+            // Обработчики как в tv.js
             channelsEl.querySelectorAll(`.${PLUGIN.component}-channel-card`).forEach(card => {
                 const url = card.dataset.channelUrl;
                 const name = card.dataset.channelTitle || 'Канал';
 
-                // Для пульта
                 $(card).on('hover:enter', function(e) {
-                    e.stopPropagation();
-                    console.log('[IPTV] ▶️ Выбран канал:', name);
-                    if (!isDestroyed) playChannelUrl(url, name);
-                });
-                
-                // Для мыши
-                card.addEventListener('click', function(e) {
                     e.stopPropagation();
                     console.log('[IPTV] ▶️ Выбран канал:', name);
                     if (!isDestroyed) playChannelUrl(url, name);
                 });
             });
 
-            // Кнопка назад
+            // Кнопка назад как в tv.js
             const backBtn = document.getElementById(`${PLUGIN.component}-back-groups`);
             if (backBtn) {
-                // Для пульта
                 $(backBtn).on('hover:enter', function(e) {
                     e.stopPropagation();
                     console.log('[IPTV] ↩️ Назад к группам');
                     if (!isDestroyed) {
                         channelsEl.style.display = 'none';
                         if (groupsEl) groupsEl.style.display = 'block';
-                        if (statusEl) statusEl.textContent = `📺 ${channels.length} каналов, ${Object.keys(groups).length} групп`;
-                        updateScroll();
-                    }
-                });
-                
-                // Для мыши
-                backBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    console.log('[IPTV] ↩️ Назад к группам');
-                    if (!isDestroyed) {
-                        channelsEl.style.display = 'none';
-                        if (groupsEl) groupsEl.style.display = 'block';
-                        if (statusEl) statusEl.textContent = `📺 ${channels.length} каналов, ${Object.keys(groups).length} групп`;
+                        if (statusEl) statusEl.textContent = `📺 ${channels.length} каналов, ${Object.keys(catalog).length} групп`;
                         updateScroll();
                     }
                 });
@@ -408,19 +388,21 @@
                 return;
             }
 
-            const video = {
-                title: title,
-                url: url,
-                tv: true,
-                plugin: PLUGIN.component
-            };
-
+            // Создаём плейлист как в tv.js
             const playlist = channels.map(ch => ({
                 title: ch.title,
                 url: ch.url,
                 tv: true,
                 plugin: PLUGIN.component
             }));
+
+            const video = {
+                title: title,
+                url: url,
+                tv: true,
+                plugin: PLUGIN.component,
+                playlist: playlist
+            };
 
             const currentIndex = playlist.findIndex(item => item.url === url);
 
@@ -493,7 +475,7 @@
         }
 
         // =============================================
-        // УПРАВЛЕНИЕ
+        // УПРАВЛЕНИЕ (КАК В tv.js)
         // =============================================
         this.start = function() {
             console.log('[IPTV] 🚀 Запуск');
@@ -509,7 +491,7 @@
                         channelsEl.style.display = 'none';
                         if (groupsEl) groupsEl.style.display = 'block';
                         const statusEl = document.getElementById(`${PLUGIN.component}-status`);
-                        if (statusEl) statusEl.textContent = `📺 ${channels.length} каналов, ${Object.keys(groups).length} групп`;
+                        if (statusEl) statusEl.textContent = `📺 ${channels.length} каналов, ${Object.keys(catalog).length} групп`;
                         updateScroll();
                     } else {
                         Lampa.Activity.backward();
@@ -687,7 +669,7 @@
     }
 
     // =============================================
-    // СТИЛИ
+    // СТИЛИ (НАШ ДИЗАЙН)
     // =============================================
     function addStyles() {
         const styleId = PLUGIN.component + '-styles';
