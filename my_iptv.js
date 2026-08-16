@@ -1,9 +1,6 @@
 (function() {
     "use strict";
 
-    // =============================================
-    // НАСТРОЙКИ ПЛАГИНА
-    // =============================================
     const PLUGIN = {
         component: 'simple_iptv',
         name: 'IPTV',
@@ -18,21 +15,18 @@
     // ХРАНИЛИЩЕ
     // =============================================
     const STORAGE_KEY = PLUGIN.component + '_data';
+    const URL_STORAGE_KEY = PLUGIN.component + '_url';
 
-    function getSettings() {
-        try {
-            return JSON.parse(Lampa.Storage.get(STORAGE_KEY, '{}'));
-        } catch {
-            return {};
-        }
+    function getPlaylistUrl() {
+        return Lampa.Storage.get(URL_STORAGE_KEY, '') || '';
     }
 
-    function saveSettings(data) {
-        Lampa.Storage.set(STORAGE_KEY, JSON.stringify(data));
+    function savePlaylistUrl(url) {
+        Lampa.Storage.set(URL_STORAGE_KEY, url);
     }
 
     // =============================================
-    // ПАРСИНГ M3U
+    // ПАРСИНГ M3U (УЛУЧШЕННЫЙ)
     // =============================================
     function parseM3U(data) {
         const channels = [];
@@ -44,7 +38,6 @@
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
 
-            // Пропускаем пустые строки
             if (!line) continue;
 
             // Группа
@@ -78,7 +71,7 @@
             }
 
             // URL канала
-            if (currentChannel && line.startsWith('http')) {
+            if (currentChannel && (line.startsWith('http') || line.startsWith('rtmp') || line.startsWith('udp'))) {
                 currentChannel.url = line;
                 channels.push(currentChannel);
                 currentChannel = null;
@@ -89,13 +82,18 @@
     }
 
     // =============================================
-    // ЗАГРУЗКА ПЛЕЙЛИСТА
+    // ЗАГРУЗКА ПЛЕЙЛИСТА (С ОБХОДОМ CORS)
     // =============================================
     function loadPlaylist(url) {
         return new Promise((resolve, reject) => {
             console.log('[IPTV] 📥 Загрузка плейлиста:', url);
 
-            // Используем Lampa.Reguest для загрузки
+            if (!url || url.trim() === '') {
+                reject(new Error('URL плейлиста не указан'));
+                return;
+            }
+
+            // Пробуем через Lampa.Reguest
             const request = new Lampa.Reguest();
             
             request.silent(
@@ -105,19 +103,66 @@
                     try {
                         const channels = parseM3U(data);
                         console.log('[IPTV] 📺 Найдено каналов:', channels.length);
+                        
+                        if (channels.length === 0) {
+                            reject(new Error('Плейлист пуст'));
+                            return;
+                        }
+                        
                         resolve(channels);
                     } catch (e) {
+                        console.error('[IPTV] Ошибка парсинга:', e);
                         reject(new Error('Ошибка парсинга плейлиста'));
                     }
                 },
                 function(error) {
                     console.error('[IPTV] ❌ Ошибка загрузки:', error);
-                    reject(new Error('Не удалось загрузить плейлист'));
+                    // Пробуем альтернативный метод через fetch
+                    fetchPlaylist(url, resolve, reject);
                 },
                 {
-                    dataType: 'text'
+                    dataType: 'text',
+                    timeout: 30000
                 }
             );
+        });
+    }
+
+    // Альтернативная загрузка через fetch
+    function fetchPlaylist(url, resolve, reject) {
+        console.log('[IPTV] 🔄 Альтернативная загрузка через fetch...');
+        
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'User-Agent': 'Mozilla/5.0'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            return response.text();
+        })
+        .then(data => {
+            console.log('[IPTV] ✅ Плейлист загружен через fetch');
+            try {
+                const channels = parseM3U(data);
+                console.log('[IPTV] 📺 Найдено каналов:', channels.length);
+                
+                if (channels.length === 0) {
+                    reject(new Error('Плейлист пуст'));
+                    return;
+                }
+                
+                resolve(channels);
+            } catch (e) {
+                reject(new Error('Ошибка парсинга плейлиста'));
+            }
+        })
+        .catch(error => {
+            console.error('[IPTV] ❌ Ошибка fetch:', error);
+            reject(new Error('Не удалось загрузить плейлист: ' + error.message));
         });
     }
 
@@ -144,7 +189,6 @@
     function IPTVPage(object) {
         let channels = [];
         let groups = {};
-        let currentGroup = null;
         let scrollInstance = null;
 
         this.create = function() {
@@ -167,11 +211,9 @@
                             </div>
 
                             <div class="${PLUGIN.component}-groups" id="${PLUGIN.component}-groups" style="display:none;">
-                                <!-- Группы будут здесь -->
                             </div>
 
                             <div class="${PLUGIN.component}-channels" id="${PLUGIN.component}-channels" style="display:none;">
-                                <!-- Каналы будут здесь -->
                             </div>
                         </div>
                     </div>
@@ -179,14 +221,20 @@
             `);
 
             // Создаём скролл
-            const wrap = document.getElementById(`${PLUGIN.component}-scroll-wrap`);
-            if (wrap) {
-                scrollInstance = new Lampa.Scroll({
-                    element: wrap,
-                    step: 200
-                });
-                scrollInstance.render();
-            }
+            setTimeout(() => {
+                const wrap = document.getElementById(`${PLUGIN.component}-scroll-wrap`);
+                if (wrap) {
+                    try {
+                        scrollInstance = new Lampa.Scroll({
+                            element: wrap,
+                            step: 200
+                        });
+                        scrollInstance.render();
+                    } catch(e) {
+                        console.log('[IPTV] Скролл:', e);
+                    }
+                }
+            }, 100);
 
             // Загружаем плейлист
             loadPlaylistData();
@@ -198,11 +246,10 @@
         // ЗАГРУЗКА ДАННЫХ
         // =============================================
         async function loadPlaylistData() {
-            const settings = getSettings();
-            const playlistUrl = settings.url || getDefaultPlaylist();
+            const playlistUrl = getPlaylistUrl() || 'https://iptv-org.github.io/iptv/index.m3u';
 
             if (!playlistUrl) {
-                showError('Не указан URL плейлиста.\nНастройте его в меню настроек.');
+                showError('URL плейлиста не указан.\nНастройте его в меню настроек.');
                 return;
             }
 
@@ -218,6 +265,7 @@
                 showGroups();
 
             } catch (error) {
+                console.error('[IPTV] Ошибка:', error);
                 showError(error.message || 'Ошибка загрузки плейлиста');
             }
         }
@@ -232,11 +280,9 @@
 
             if (!groupsEl) return;
 
-            // Скрываем загрузку
             if (loadingEl) loadingEl.style.display = 'none';
             if (statusEl) statusEl.textContent = `📺 ${channels.length} каналов`;
 
-            // Строим группы
             const groupNames = Object.keys(groups).sort();
             
             let html = `<div class="${PLUGIN.component}-groups-grid">`;
@@ -256,12 +302,11 @@
             groupsEl.innerHTML = html;
             groupsEl.style.display = 'block';
 
-            // Обработчики для групп
+            // Обработчики
             groupsEl.querySelectorAll(`.${PLUGIN.component}-group-card`).forEach(card => {
                 const groupName = card.dataset.group;
                 
                 const selectGroup = function() {
-                    currentGroup = groupName;
                     showChannels(groupName);
                 };
 
@@ -269,12 +314,7 @@
                 $(card).on('hover:enter', selectGroup);
             });
 
-            // Обновляем скролл
-            if (scrollInstance) {
-                setTimeout(() => {
-                    try { scrollInstance.update(); } catch(e) {}
-                }, 200);
-            }
+            updateScroll();
         }
 
         // =============================================
@@ -293,10 +333,8 @@
                 statusEl.textContent = `📺 ${groupName} — ${groupChannels.length} каналов`;
             }
 
-            // Скрываем группы
             if (groupsEl) groupsEl.style.display = 'none';
 
-            // Строим каналы
             let html = `
                 <div class="${PLUGIN.component}-channels-header">
                     <button class="${PLUGIN.component}-back-btn selector" id="${PLUGIN.component}-back-groups">
@@ -311,7 +349,6 @@
                 const logo = channel.logo || '';
                 html += `
                     <div class="${PLUGIN.component}-channel-card selector" 
-                         data-channel-index="${index}"
                          data-channel-url="${channel.url}">
                         <div class="${PLUGIN.component}-channel-logo">
                             ${logo ? `<img src="${logo}" onerror="this.style.display='none'">` : '📺'}
@@ -328,7 +365,7 @@
             channelsEl.innerHTML = html;
             channelsEl.style.display = 'block';
 
-            // Обработчики для каналов
+            // Обработчики
             channelsEl.querySelectorAll(`.${PLUGIN.component}-channel-card`).forEach(card => {
                 const url = card.dataset.channelUrl;
                 const name = card.querySelector(`.${PLUGIN.component}-channel-name`)?.textContent || 'Канал';
@@ -341,34 +378,24 @@
                 $(card).on('hover:enter', playChannel);
             });
 
-            // Кнопка "Назад"
+            // Кнопка назад
             const backBtn = document.getElementById(`${PLUGIN.component}-back-groups`);
             if (backBtn) {
                 const goBack = function() {
                     channelsEl.style.display = 'none';
                     if (groupsEl) groupsEl.style.display = 'block';
                     if (statusEl) statusEl.textContent = `📺 ${channels.length} каналов`;
-                    
-                    if (scrollInstance) {
-                        setTimeout(() => {
-                            try { scrollInstance.update(); } catch(e) {}
-                        }, 200);
-                    }
+                    updateScroll();
                 };
                 backBtn.addEventListener('click', goBack);
                 $(backBtn).on('hover:enter', goBack);
             }
 
-            // Обновляем скролл
-            if (scrollInstance) {
-                setTimeout(() => {
-                    try { scrollInstance.update(); } catch(e) {}
-                }, 200);
-            }
+            updateScroll();
         }
 
         // =============================================
-        // ВОСПРОИЗВЕДЕНИЕ КАНАЛА
+        // ВОСПРОИЗВЕДЕНИЕ
         // =============================================
         function playChannelUrl(url, title) {
             console.log('[IPTV] ▶️ Воспроизведение:', title);
@@ -378,7 +405,6 @@
                 return;
             }
 
-            // Создаём видео для плеера
             const video = {
                 title: title,
                 url: url,
@@ -386,7 +412,6 @@
                 plugin: PLUGIN.component
             };
 
-            // Создаём плейлист (для переключения каналов)
             const playlist = channels.map(ch => ({
                 title: ch.title,
                 url: ch.url,
@@ -394,76 +419,19 @@
                 plugin: PLUGIN.component
             }));
 
-            // Находим текущий канал в плейлисте
             const currentIndex = playlist.findIndex(item => item.url === url);
 
-            // Запускаем плеер
             Lampa.Player.runas(Lampa.Storage.field('player_iptv') || '');
             Lampa.Player.play(video);
             Lampa.Player.playlist(playlist);
 
-            // Если нужно, переключаем на нужный канал
             if (currentIndex !== -1) {
                 Lampa.PlayerPlaylist.position(currentIndex);
             }
-
-            // Добавляем управление с пульта
-            setupRemoteControl(playlist);
         }
 
         // =============================================
-        // УПРАВЛЕНИЕ С ПУЛЬТА
-        // =============================================
-        let remoteControlActive = false;
-
-        function setupRemoteControl(playlist) {
-            if (remoteControlActive) return;
-            remoteControlActive = true;
-
-            Lampa.Keypad.listener.follow('keydown', function(e) {
-                const code = e.code;
-
-                // Проверяем, что плеер открыт и это наш плейлист
-                if (!Lampa.Player.opened()) return;
-                if (!playlist || playlist.length === 0) return;
-
-                const currentPos = Lampa.PlayerPlaylist.position() || 0;
-                let newPos = currentPos;
-
-                // Влево/Вправо - переключение каналов
-                if (code === 37 || code === 4) { // Left
-                    newPos = currentPos === 0 ? playlist.length - 1 : currentPos - 1;
-                    e.event.preventDefault();
-                } else if (code === 39 || code === 5) { // Right
-                    newPos = currentPos === playlist.length - 1 ? 0 : currentPos + 1;
-                    e.event.preventDefault();
-                }
-
-                if (newPos !== currentPos) {
-                    const item = playlist[newPos];
-                    Lampa.PlayerPlaylist.listener.send('select', {
-                        playlist: playlist,
-                        position: newPos,
-                        item: item
-                    });
-                    Lampa.Player.runas(Lampa.Storage.field('player_iptv') || '');
-
-                    // Показываем название канала
-                    Lampa.Noty.show(item.title);
-                }
-            });
-        }
-
-        // =============================================
-        // ПОЛУЧЕНИЕ ПЛЕЙЛИСТА ПО УМОЛЧАНИЮ
-        // =============================================
-        function getDefaultPlaylist() {
-            // Публичный тестовый плейлист (можно заменить на свой)
-            return 'https://iptv-org.github.io/iptv/index.m3u';
-        }
-
-        // =============================================
-        // ОТОБРАЖЕНИЕ ОШИБКИ
+        // ОШИБКА
         // =============================================
         function showError(message) {
             const loadingEl = document.getElementById(`${PLUGIN.component}-loading`);
@@ -472,7 +440,7 @@
             if (loadingEl) {
                 loadingEl.innerHTML = `
                     <div style="font-size:40px;margin-bottom:12px;">😕</div>
-                    <p style="color:rgba(255,255,255,0.6);">${message}</p>
+                    <p style="color:rgba(255,255,255,0.6);white-space:pre-line;text-align:center;">${message}</p>
                     <button class="${PLUGIN.component}-retry-btn selector" id="${PLUGIN.component}-retry">
                         🔄 Повторить
                     </button>
@@ -484,18 +452,34 @@
                 statusEl.textContent = '❌ Ошибка загрузки';
             }
 
-            // Кнопка повторной загрузки
             setTimeout(() => {
                 const retryBtn = document.getElementById(`${PLUGIN.component}-retry`);
                 if (retryBtn) {
-                    retryBtn.addEventListener('click', function() {
-                        location.reload();
-                    });
-                    $(retryBtn).on('hover:enter', function() {
-                        location.reload();
-                    });
+                    const reload = function() {
+                        const loadingEl2 = document.getElementById(`${PLUGIN.component}-loading`);
+                        if (loadingEl2) {
+                            loadingEl2.innerHTML = `
+                                <div class="${PLUGIN.component}-spinner"></div>
+                                <p>Загрузка каналов...</p>
+                            `;
+                        }
+                        loadPlaylistData();
+                    };
+                    retryBtn.addEventListener('click', reload);
+                    $(retryBtn).on('hover:enter', reload);
                 }
             }, 100);
+        }
+
+        // =============================================
+        // ОБНОВЛЕНИЕ СКРОЛЛА
+        // =============================================
+        function updateScroll() {
+            if (scrollInstance) {
+                setTimeout(() => {
+                    try { scrollInstance.update(); } catch(e) {}
+                }, 300);
+            }
         }
 
         // =============================================
@@ -510,18 +494,13 @@
                     const groupsEl = document.getElementById(`${PLUGIN.component}-groups`);
                     
                     if (channelsEl && channelsEl.style.display !== 'none') {
-                        // Возврат к группам
                         channelsEl.style.display = 'none';
                         if (groupsEl) groupsEl.style.display = 'block';
                         
                         const statusEl = document.getElementById(`${PLUGIN.component}-status`);
                         if (statusEl) statusEl.textContent = `📺 ${channels.length} каналов`;
                         
-                        if (scrollInstance) {
-                            setTimeout(() => {
-                                try { scrollInstance.update(); } catch(e) {}
-                            }, 200);
-                        }
+                        updateScroll();
                     } else {
                         Lampa.Activity.backward();
                     }
@@ -529,12 +508,7 @@
             });
             
             Lampa.Controller.toggle('content');
-            
-            if (scrollInstance) {
-                setTimeout(() => {
-                    try { scrollInstance.update(); } catch(e) {}
-                }, 300);
-            }
+            updateScroll();
         };
 
         this.pause = function() {};
@@ -543,7 +517,6 @@
                 try { scrollInstance.destroy(); } catch(e) {}
                 scrollInstance = null;
             }
-            remoteControlActive = false;
         };
         
         this.render = function() {
@@ -552,7 +525,7 @@
     }
 
     // =============================================
-    // ДОБАВЛЯЕМ ПУНКТ В МЕНЮ
+    // ПУНКТ В МЕНЮ
     // =============================================
     function addMenuItem() {
         console.log('[IPTV] 📌 Добавление пункта меню');
@@ -584,11 +557,19 @@
     }
 
     // =============================================
-    // НАСТРОЙКИ ПЛАГИНА
+    // НАСТРОЙКИ (ИСПРАВЛЕННЫЕ)
     // =============================================
     function addSettings() {
-        Lampa.SettingsApi.addComponent(PLUGIN);
+        console.log('[IPTV] ⚙️ Добавление настроек');
 
+        // Добавляем компонент в настройки
+        Lampa.SettingsApi.addComponent({
+            component: PLUGIN.component,
+            name: 'IPTV',
+            icon: PLUGIN.icon
+        });
+
+        // Заголовок
         Lampa.SettingsApi.addParam({
             component: PLUGIN.component,
             param: {
@@ -599,26 +580,27 @@
             }
         });
 
+        // Поле для URL
         Lampa.SettingsApi.addParam({
             component: PLUGIN.component,
             param: {
-                name: PLUGIN.component + '_url',
+                name: URL_STORAGE_KEY,
                 type: 'input',
                 placeholder: 'https://example.com/playlist.m3u',
-                default: getDefaultPlaylist()
+                default: 'https://iptv-org.github.io/iptv/index.m3u'
             },
             field: {
                 name: 'URL плейлиста M3U',
                 description: 'Ссылка на плейлист в формате M3U'
             },
             onChange: function(value) {
-                const settings = getSettings();
-                settings.url = value;
-                saveSettings(settings);
                 console.log('[IPTV] ✅ URL сохранён:', value);
+                savePlaylistUrl(value);
+                Lampa.Noty.show('URL сохранён');
             }
         });
 
+        // Кнопка сброса
         Lampa.SettingsApi.addParam({
             component: PLUGIN.component,
             param: {
@@ -630,11 +612,13 @@
             },
             onChange: function() {
                 if (confirm('Сбросить настройки плейлиста?')) {
-                    saveSettings({});
+                    savePlaylistUrl('');
                     Lampa.Noty.show('Настройки сброшены');
                 }
             }
         });
+
+        console.log('[IPTV] ✅ Настройки добавлены');
     }
 
     // =============================================
@@ -696,7 +680,6 @@
                 padding-bottom: 20px;
             }
 
-            /* Загрузка */
             .${PLUGIN.component}-loading {
                 display: flex;
                 flex-direction: column;
@@ -737,7 +720,6 @@
                 background: rgba(255,255,255,0.1);
             }
 
-            /* Группы */
             .${PLUGIN.component}-groups-grid {
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
@@ -780,7 +762,6 @@
                 color: rgba(255,255,255,0.4);
             }
 
-            /* Каналы */
             .${PLUGIN.component}-channels-header {
                 display: flex;
                 align-items: center;
