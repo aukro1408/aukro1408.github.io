@@ -6,15 +6,20 @@
 
         this.init = function () {
             Lampa.Listener.follow('full', (e) => {
-                if (e.type === 'complite') {
+                if (e.type === 'complite' || e.type === 'render') {
                     let card = e.data.movie;
-                    let title = card.original_title || card.title;
+                    // Пробуем искать по русскому названию, если его нет — по оригинальному
+                    let title = card.title || card.original_title;
 
                     if (!title) return;
+                    console.log('BookBridge: Ищем книгу для:', title);
 
                     this.searchBook(title, (book) => {
                         if (book) {
+                            console.log('BookBridge: Книга найдена:', book.title);
                             this.render(e.object.activity.render(), book);
+                        } else {
+                            console.log('BookBridge: Книга не найдена для:', title);
                         }
                     });
                 }
@@ -22,21 +27,16 @@
         };
 
         this.searchBook = function (title, callback) {
-            let url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(title)}&maxResults=1&langRestrict=ru`;
+            // Убираем ограничение по языку, чтобы корректно находить «It» (Стивен Кинг) и другие книги
+            let url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(title)}&maxResults=3`;
             
             network.silent(url, (data) => {
                 if (data && data.items && data.items.length > 0) {
-                    callback(data.items[0].volumeInfo);
+                    // Ищем наиболее подходящий результат (желательно с авторами и описанием)
+                    let found = data.items.find(item => item.volumeInfo && item.volumeInfo.authors) || data.items[0];
+                    callback(found.volumeInfo);
                 } else {
-                    // Если на русском не нашлось, ищем по общему каталогу
-                    let url_en = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(title)}&maxResults=1`;
-                    network.silent(url_en, (data_en) => {
-                        if (data_en && data_en.items && data_en.items.length > 0) {
-                            callback(data_en.items[0].volumeInfo);
-                        } else {
-                            callback(null);
-                        }
-                    });
+                    callback(null);
                 }
             }, () => {
                 callback(null);
@@ -44,8 +44,11 @@
         };
 
         this.render = function ($render, book) {
+            // Защита от дублирования блоков
+            if ($render.find('.book-bridge-plugin').length > 0) return;
+
             let html = $(`
-                <div class="full-start__tag book-bridge-plugin" style="margin-top: 15px; background: rgba(0,0,0,0.4); border-radius: 8px; padding: 15px; display: flex; gap: 15px; align-items: flex-start; border: 1px solid rgba(255,255,255,0.1);">
+                <div class="full-start__tag book-bridge-plugin" style="margin-top: 15px; background: rgba(0,0,0,0.5); border-radius: 8px; padding: 15px; display: flex; gap: 15px; align-items: flex-start; border: 1px solid rgba(255,255,255,0.1);">
                     ${book.imageLinks && book.imageLinks.thumbnail ? `<img src="${book.imageLinks.thumbnail}" style="width: 80px; border-radius: 4px; object-fit: cover;">` : ''}
                     <div style="flex: 1;">
                         <div style="font-size: 1.1em; font-weight: bold; color: #fff; margin-bottom: 5px;">📖 Литературный первоисточник</div>
@@ -63,7 +66,7 @@
                 </div>
             `);
 
-            // Обработка нажатия на кнопку с пульта или мыши
+            // Кнопка поиска книги
             html.find('.book-bridge-read').on('hover:enter', () => {
                 let searchQuery = encodeURIComponent(book.title + ' ' + (book.authors ? book.authors[0] : '') + ' читать онлайн');
                 let searchUrl = `https://www.google.com/search?q=${searchQuery}`;
@@ -75,7 +78,9 @@
                 }
             });
 
-            $render.find('.full-start__actions').after(html);
+            // Универсальная вставка после описания или блока действий
+            let target = $render.find('.full-descr').length ? $render.find('.full-descr') : $render.find('.full-start__actions');
+            target.after(html);
         };
     }
 
