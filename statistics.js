@@ -1,217 +1,715 @@
-;(function () {
-'use strict';
+(function() {
+    "use strict";
 
-var plugin = {
-    component: 'personal_stats',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>',
-    name: 'Статистика'
-};
+    const PLUGIN = {
+        component: 'lampa_stats',
+        name: 'Моя статистика',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12v-2a5 5 0 0 0-5-5H8a5 5 0 0 0-5 5v2"/>
+            <circle cx="12" cy="16" r="5"/>
+            <path d="M12 11v5"/>
+            <path d="M8 16h8"/>
+            <path d="M3 12h2"/>
+            <path d="M19 12h2"/>
+            <path d="M5 20l14-4"/>
+            <path d="M5 4l14 4"/>
+        </svg>`
+    };
 
-var html = $('<div></div>');
-var scroll = new Lampa.Scroll({
-    mask: true,
-    over: true,
-    step: 250
-});
+    // =============================================
+    // ХРАНИЛИЩЕ
+    // =============================================
+    const STORAGE_KEY = PLUGIN.component + '_data';
 
-Lampa.Template.add(plugin.component + '_style', '<style>\
-    .personal-stats-container { padding: 2em; }\
-    .stats-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5em; margin-bottom: 2em; }\
-    .stats-card { background: rgba(53, 53, 53, 0.65); border-radius: 1em; padding: 1.5em; text-align: center; }\
-    .stats-card__value { font-size: 2.5em; font-weight: 700; margin-top: 0.2em; color: #fff; }\
-    .stats-card__title { font-size: 1.1em; opacity: 0.7; }\
-    .stats-section-title { font-size: 1.5em; font-weight: 600; margin-bottom: 1em; margin-top: 1.5em; }\
-</style>');
-$('body').append(Lampa.Template.get(plugin.component + '_style', {}, true));
+    function getStats() {
+        try {
+            return JSON.parse(Lampa.Storage.get(STORAGE_KEY, '{}'));
+        } catch {
+            return {};
+        }
+    }
 
-function getRealStats() {
-    var history = Lampa.Storage.get('history', []);
-    var books = Lampa.Storage.get('book', []);
-    var totalSeconds = 0;
-    var moviesCount = 0;
-    var episodesCount = 0;
-    var genresMap = {};
-    var totalItemsCount = 0;
+    function saveStats(data) {
+        Lampa.Storage.set(STORAGE_KEY, JSON.stringify(data));
+    }
 
-    if (Array.isArray(history)) {
-        totalItemsCount += history.length;
-        history.forEach(function (item) {
-            if (item.time) {
-                totalSeconds += (item.time.watched || item.time.time || 0);
-            }
-            if (item.type === 'movie') {
-                moviesCount++;
-            } else if (item.type === 'tv' || item.number_of_seasons) {
-                episodesCount++;
-            }
-            if (item.genres && Array.isArray(item.genres)) {
-                item.genres.forEach(function (g) {
-                    var gName = typeof g === 'string' ? g : (g.name || '');
-                    if (gName) genresMap[gName] = (genresMap[gName] || 0) + 1;
-                });
+    // =============================================
+    // ТРЕКИНГ ПРОСМОТРОВ
+    // =============================================
+    let watchSessions = {};
+    let isWatching = false;
+    let currentMovieId = null;
+
+    function setupTracking() {
+        Lampa.Listener.follow('player', function(event) {
+            const movie = event.data?.movie;
+            const progress = event.data?.progress || 0;
+            const movieId = movie?.id ? String(movie.id) : null;
+
+            if (!movieId) return;
+
+            switch(event.type) {
+                case 'play':
+                    // Реально начал смотреть
+                    isWatching = true;
+                    currentMovieId = movieId;
+                    
+                    if (!watchSessions[movieId]) {
+                        watchSessions[movieId] = {
+                            id: movieId,
+                            title: movie.title || movie.name || 'Без названия',
+                            genre_ids: movie.genre_ids || [],
+                            first_watch: Date.now(),
+                            last_update: Date.now(),
+                            total_seconds: 0,
+                            last_progress: 0,
+                            status: 'watching'
+                        };
+                    }
+                    console.log(`▶️ Смотрю: ${watchSessions[movieId].title}`);
+                    break;
+
+                case 'timeupdate':
+                    // Идёт воспроизведение
+                    if (isWatching && currentMovieId === movieId) {
+                        const session = watchSessions[movieId];
+                        if (session && progress > session.last_progress) {
+                            // Прибавляем время (примерно)
+                            const delta = (progress - session.last_progress) * 0.5;
+                            session.total_seconds += delta;
+                            session.last_progress = progress;
+                            session.last_update = Date.now();
+
+                            // Сохраняем раз в 5 секунд
+                            if (Math.floor(session.total_seconds) % 5 === 0) {
+                                saveWatchSession(movieId);
+                            }
+                        }
+                    }
+                    break;
+
+                case 'end':
+                    // Досмотрел до конца
+                    if (watchSessions[movieId]) {
+                        const session = watchSessions[movieId];
+                        session.status = 'completed';
+                        session.progress = 100;
+                        session.completed_at = Date.now();
+                        saveWatchSession(movieId);
+                        console.log(`✅ Досмотрел: ${session.title}`);
+                        delete watchSessions[movieId];
+                        isWatching = false;
+                        currentMovieId = null;
+                    }
+                    break;
+
+                case 'stop':
+                    // Остановил (не досмотрел)
+                    if (watchSessions[movieId]) {
+                        const session = watchSessions[movieId];
+                        // Если посмотрел больше 30% - сохраняем как "в процессе"
+                        if (progress > 30 && session.total_seconds > 60) {
+                            session.status = 'watching';
+                            session.progress = progress;
+                            session.last_stop = Date.now();
+                            saveWatchSession(movieId);
+                            console.log(`⏸ В процессе: ${session.title} (${Math.round(progress)}%)`);
+                        } else if (session.total_seconds > 60) {
+                            // Посмотрел меньше 30% но больше минуты
+                            session.status = 'dropped';
+                            session.progress = progress;
+                            saveWatchSession(movieId);
+                            console.log(`⏹ Бросил: ${session.title} (${Math.round(progress)}%)`);
+                        } else {
+                            // Меньше минуты - не сохраняем
+                            console.log(`⏹ Просмотр прерван: ${session.title} (< 1 мин)`);
+                        }
+                        delete watchSessions[movieId];
+                        isWatching = false;
+                        currentMovieId = null;
+                    }
+                    break;
             }
         });
     }
 
-    var bookItemsCount = 0;
-    if (books) {
-        var extractItems = function(collection) {
-            if (Array.isArray(collection)) {
-                collection.forEach(function (item) {
-                    bookItemsCount++;
-                    if (item.type === 'movie') moviesCount++;
-                    else if (item.type === 'tv') episodesCount++;
+    function saveWatchSession(movieId) {
+        const session = watchSessions[movieId];
+        if (!session) return;
 
-                    if (item.genres && Array.isArray(item.genres)) {
-                        item.genres.forEach(function (g) {
-                            var gName = typeof g === 'string' ? g : (g.name || '');
-                            if (gName) genresMap[gName] = (genresMap[gName] || 0) + 1;
-                        });
-                    }
-                });
-            }
+        // Минимальные требования для сохранения
+        const MIN_WATCH_TIME = 60; // 60 секунд
+        if (session.total_seconds < MIN_WATCH_TIME && session.status !== 'completed') {
+            return;
+        }
+
+        const stats = getStats();
+        const history = stats.history || {};
+
+        history[movieId] = {
+            title: session.title,
+            genre_ids: session.genre_ids || [],
+            first_watch: session.first_watch,
+            last_watch: session.last_update || Date.now(),
+            total_seconds: Math.round(session.total_seconds),
+            progress: session.progress || 0,
+            status: session.status,
+            completed_at: session.completed_at || null
         };
 
-        if (Array.isArray(books)) {
-            extractItems(books);
-        } else if (typeof books === 'object') {
-            Object.keys(books).forEach(function (category) {
-                extractItems(books[category]);
-            });
-        }
+        // Обновляем счётчики жанров
+        const genres = stats.genres || {};
+        (session.genre_ids || []).forEach(g => {
+            genres[g] = (genres[g] || 0) + 1;
+        });
+
+        stats.history = history;
+        stats.genres = genres;
+        stats.last_update = Date.now();
+
+        saveStats(stats);
     }
 
-    var totalHours = Math.round(totalSeconds / 3600);
-    if (totalHours === 0 && (totalItemsCount > 0 || bookItemsCount > 0)) {
-        totalHours = Math.max(1, Math.round((totalItemsCount + bookItemsCount) * 0.8));
-    }
-
-    var favoriteGenre = 'Не определен';
-    var maxGenreCount = 0;
-    for (var genre in genresMap) {
-        if (genresMap[genre] > maxGenreCount) {
-            maxGenreCount = genresMap[genre];
-            favoriteGenre = genre;
-        }
-    }
-
-    return {
-        hours: totalHours,
-        movies: moviesCount || totalItemsCount,
-        episodes: episodesCount,
-        genre: favoriteGenre
-    };
-}
-
-function statsPage(object) {
-    var _this = this;
-    html = $('<div></div>');
-    var body = $('<div class="personal-stats-container"></div>');
-    var grid;
-    
-    function updateGridContent() {
-        var stats = getRealStats();
-        if (grid) grid.remove();
-
-        grid = $('<div class="stats-cards-grid"> \
-            <div class="stats-card"><div class="stats-card__title">Время просмотров</div><div class="stats-card__value">' + stats.hours + ' ч</div></div> \
-            <div class="stats-card"><div class="stats-card__title">Просмотрено фильмов</div><div class="stats-card__value">' + stats.movies + '</div></div> \
-            <div class="stats-card"><div class="stats-card__title">Эпизодов сериалов</div><div class="stats-card__value">' + stats.episodes + '</div></div> \
-            <div class="stats-card"><div class="stats-card__title">Любимый жанр</div><div class="stats-card__value" style="font-size: 1.6em;">' + stats.genre + '</div></div> \
-        </div>');
+    // =============================================
+    // АНАЛИТИКА
+    // =============================================
+    function getTopGenres(limit = 5) {
+        const stats = getStats();
+        const genres = stats.genres || {};
         
-        body.prepend(grid);
+        return Object.entries(genres)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, limit)
+            .map(([id, count]) => ({
+                id: Number(id),
+                count: count
+            }));
     }
 
-    var storageListener = function (e) {
-        if (e.name === 'history' || e.name === 'book') {
-            updateGridContent();
-        }
-    };
-    Lampa.Storage.listener.follow('change', storageListener);
+    function getWatchStats() {
+        const stats = getStats();
+        const history = stats.history || {};
+        const entries = Object.values(history);
 
-    this.create = function () {
-        _this.activity.loader(true);
-        
-        var info = $('<div class="info layer--width"><div class="info__left"><div class="info__title">Личный кабинет и аналитика</div><div class="info__title-original">Данные синхронизированы с Cub.red</div></div></div>');
-        html.append(info);
+        // Считаем общее время
+        let totalMinutes = 0;
+        entries.forEach(e => {
+            totalMinutes += e.total_seconds / 60;
+        });
 
-        updateGridContent();
+        return {
+            total: entries.length,
+            completed: entries.filter(e => e.status === 'completed').length,
+            watching: entries.filter(e => e.status === 'watching').length,
+            dropped: entries.filter(e => e.status === 'dropped').length,
+            total_minutes: Math.round(totalMinutes),
+            total_hours: Math.round(totalMinutes / 60 * 10) / 10,
+            recent: entries
+                .sort((a, b) => b.last_watch - a.last_watch)
+                .slice(0, 10)
+        };
+    }
 
-        body.append('<div class="stats-section-title">Рекомендации для вас</div>');
-        var recommendationsContainer = $('<div class="cards"></div>');
-        body.append(recommendationsContainer);
+    function getGenreName(id) {
+        // Маппинг популярных жанров TMDB
+        const genres = {
+            12: 'Приключения',
+            14: 'Фэнтези',
+            16: 'Анимация',
+            18: 'Драма',
+            27: 'Ужасы',
+            28: 'Боевик',
+            35: 'Комедия',
+            36: 'История',
+            37: 'Вестерн',
+            53: 'Триллер',
+            80: 'Криминал',
+            99: 'Документальный',
+            10749: 'Мелодрама',
+            10751: 'Семейный',
+            10752: 'Военный',
+            10759: 'Боевик и приключения',
+            10762: 'Детский',
+            10763: 'Новости',
+            10764: 'Реалити-шоу',
+            10765: 'Научная фантастика',
+            10766: 'Мыло',
+            10767: 'Ток-шоу',
+            10768: 'Политика',
+            10770: 'Телефильм',
+            878: 'Фантастика',
+            9648: 'Детектив',
+            10402: 'Музыкальный'
+        };
+        return genres[id] || `Жанр ${id}`;
+    }
 
-        scroll.render().addClass('layer--wheight').data('mheight', info);
-        scroll.append(body);
-        html.append(scroll.render());
+    // =============================================
+    // ИНТЕРФЕЙС СТАТИСТИКИ
+    // =============================================
+    function createStatsPage() {
+        const stats = getWatchStats();
+        const topGenres = getTopGenres();
 
-        _this.activity.loader(false);
-        _this.activity.toggle();
-    };
+        const html = `
+            <div class="${PLUGIN.component}-container">
+                <div class="${PLUGIN.component}-header">
+                    <h1>📊 Моя статистика</h1>
+                    <div class="${PLUGIN.component}-subheader">
+                        Последнее обновление: ${new Date().toLocaleDateString('ru-RU')}
+                    </div>
+                </div>
 
-    this.start = function () {
-        Lampa.Controller.add('content', {
-            toggle: function () {
-                Lampa.Controller.collectionSet(scroll.render());
-                Lampa.Controller.collectionFocus(scroll.render().find('.selector').eq(0), scroll.render());
-            },
-            left: function () {
-                if (Navigator.canmove('left')) Navigator.move('left');
-                else Lampa.Controller.toggle('menu');
-            },
-            right: function () {
-                if (Navigator.canmove('right')) Navigator.move('right');
-            },
-            up: function () {
-                if (Navigator.canmove('up')) Navigator.move('up');
-                else Lampa.Controller.toggle('head');
-            },
-            down: function () {
-                if (Navigator.canmove('down')) Navigator.move('down');
-            },
-            back: function () {
-                Lampa.Activity.backward();
+                <div class="${PLUGIN.component}-grid">
+                    <div class="${PLUGIN.component}-stat-card">
+                        <div class="${PLUGIN.component}-stat-number">${stats.total}</div>
+                        <div class="${PLUGIN.component}-stat-label">Всего просмотров</div>
+                    </div>
+                    <div class="${PLUGIN.component}-stat-card">
+                        <div class="${PLUGIN.component}-stat-number">${stats.completed}</div>
+                        <div class="${PLUGIN.component}-stat-label">Завершено</div>
+                    </div>
+                    <div class="${PLUGIN.component}-stat-card">
+                        <div class="${PLUGIN.component}-stat-number">${stats.watching}</div>
+                        <div class="${PLUGIN.component}-stat-label">В процессе</div>
+                    </div>
+                    <div class="${PLUGIN.component}-stat-card">
+                        <div class="${PLUGIN.component}-stat-number">${stats.total_hours}</div>
+                        <div class="${PLUGIN.component}-stat-label">Часов просмотра</div>
+                    </div>
+                </div>
+
+                ${topGenres.length ? `
+                    <div class="${PLUGIN.component}-section">
+                        <h3>🎭 Любимые жанры</h3>
+                        <div class="${PLUGIN.component}-genre-bars">
+                            ${topGenres.map((g, i) => `
+                                <div class="${PLUGIN.component}-genre-bar">
+                                    <span class="${PLUGIN.component}-genre-name">${getGenreName(g.id)}</span>
+                                    <div class="${PLUGIN.component}-bar-track">
+                                        <div class="${PLUGIN.component}-bar-fill" 
+                                             style="width: ${(g.count / topGenres[0].count) * 100}%; 
+                                                    animation-delay: ${i * 0.1}s">
+                                        </div>
+                                    </div>
+                                    <span class="${PLUGIN.component}-genre-count">${g.count}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${stats.recent.length ? `
+                    <div class="${PLUGIN.component}-section">
+                        <h3>🕐 Недавние просмотры</h3>
+                        <div class="${PLUGIN.component}-recent-list">
+                            ${stats.recent.map(item => `
+                                <div class="${PLUGIN.component}-recent-item">
+                                    <div class="${PLUGIN.component}-recent-title">${item.title}</div>
+                                    <div class="${PLUGIN.component}-recent-info">
+                                        <span class="${PLUGIN.component}-recent-status status-${item.status}">
+                                            ${item.status === 'completed' ? '✅' : 
+                                              item.status === 'watching' ? '⏳' : '❌'}
+                                            ${item.status === 'completed' ? 'Досмотрен' : 
+                                              item.status === 'watching' ? 'В процессе' : 'Брошен'}
+                                        </span>
+                                        <span>${Math.round(item.total_seconds / 60)} мин</span>
+                                        <span>${new Date(item.last_watch).toLocaleDateString('ru-RU')}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <div class="${PLUGIN.component}-actions">
+                    <button class="${PLUGIN.component}-btn selector" id="${PLUGIN.component}-clear">
+                        🗑 Очистить статистику
+                    </button>
+                    <button class="${PLUGIN.component}-btn selector" id="${PLUGIN.component}-export">
+                        📤 Экспорт
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // Открываем в Lampa
+        Lampa.Modal.open({
+            title: PLUGIN.name,
+            html: html,
+            size: 'large',
+            mask: true,
+            onBack: function() {
+                Lampa.Modal.close();
+                Lampa.Controller.toggle('content');
             }
         });
-        Lampa.Controller.toggle('content');
-    };
 
-    this.render = function () {
-        return html;
-    };
-
-    this.destroy = function () {
-        Lampa.Storage.listener.remove('change', storageListener);
-        scroll.destroy();
-        html.remove();
-    };
-}
-
-Lampa.Component.add(plugin.component, statsPage);
-
-var menuElement = $('<li class="menu__item selector js-' + plugin.component + '-menu">'
-                + '<div class="menu__ico">' + plugin.icon + '</div>'
-                + '<div class="menu__text">' + plugin.name + '</div>'
-            + '</li>')
-    .on('hover:enter', function(){
-        Lampa.Activity.push({
-            url: '',
-            title: plugin.name,
-            component: plugin.component,
-            page: 1
+        // Обработчики
+        $('#' + PLUGIN.component + '-clear').on('hover:enter click', function() {
+            if (confirm('Точно очистить всю статистику?')) {
+                saveStats({});
+                Lampa.Modal.close();
+                openStatsPage();
+            }
         });
-    });
 
-function pluginStart() {
-    if (window['plugin_' + plugin.component + '_ready']) return;
-    window['plugin_' + plugin.component + '_ready'] = true;
-    
-    var menu = $('.menu .menu__list').eq(0);
-    menu.append(menuElement);
-}
+        $('#' + PLUGIN.component + '-export').on('hover:enter click', function() {
+            const data = getStats();
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `lampa_stats_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    }
 
-if (window.appready) pluginStart();
-else Lampa.Listener.follow('app', function(e){ if (e.type === 'ready') pluginStart(); });
+    function openStatsPage() {
+        // Создаём активность для Lampa
+        const activity = {
+            id: PLUGIN.component,
+            component: PLUGIN.component,
+            title: PLUGIN.name
+        };
+
+        // Если уже на этой странице - обновляем
+        if (Lampa.Activity.active().component === PLUGIN.component) {
+            Lampa.Activity.replace(activity);
+        } else {
+            Lampa.Activity.push(activity);
+        }
+    }
+
+    // =============================================
+    // КОМПОНЕНТ ДЛЯ LAMPA
+    // =============================================
+    function StatsPage(object) {
+        this.create = function() {
+            const html = $('<div></div>');
+            const stats = getWatchStats();
+            const topGenres = getTopGenres();
+
+            // Строим страницу
+            let content = `
+                <div class="${PLUGIN.component}-container">
+                    <div class="${PLUGIN.component}-header">
+                        <h1>📊 Моя статистика</h1>
+                        <div class="${PLUGIN.component}-subheader">
+                            ${stats.total ? `Посмотрено ${stats.total} фильмов` : 'Пока ничего не посмотрено'}
+                        </div>
+                    </div>
+
+                    <div class="${PLUGIN.component}-grid">
+                        <div class="${PLUGIN.component}-stat-card">
+                            <div class="${PLUGIN.component}-stat-number">${stats.total}</div>
+                            <div class="${PLUGIN.component}-stat-label">Всего</div>
+                        </div>
+                        <div class="${PLUGIN.component}-stat-card">
+                            <div class="${PLUGIN.component}-stat-number">${stats.completed}</div>
+                            <div class="${PLUGIN.component}-stat-label">Завершено</div>
+                        </div>
+                        <div class="${PLUGIN.component}-stat-card">
+                            <div class="${PLUGIN.component}-stat-number">${stats.watching}</div>
+                            <div class="${PLUGIN.component}-stat-label">В процессе</div>
+                        </div>
+                        <div class="${PLUGIN.component}-stat-card">
+                            <div class="${PLUGIN.component}-stat-number">${stats.total_hours}</div>
+                            <div class="${PLUGIN.component}-stat-label">Часов</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            html.append(content);
+            return html;
+        };
+
+        this.start = function() {
+            // Управление навигацией
+            Lampa.Controller.add('content', {
+                back: function() {
+                    Lampa.Activity.backward();
+                }
+            });
+            Lampa.Controller.toggle('content');
+        };
+
+        this.pause = function() {};
+        this.stop = function() {};
+        this.render = function() {
+            return $('<div></div>').append(this.create());
+        };
+    }
+
+    // =============================================
+    // ДОБАВЛЯЕМ ПУНКТ В МЕНЮ
+    // =============================================
+    function addMenuItem() {
+        const menuItem = $(`
+            <li class="menu__item selector ${PLUGIN.component}-menu">
+                <div class="menu__ico">${PLUGIN.icon}</div>
+                <div class="menu__text">${PLUGIN.name}</div>
+            </li>
+        `);
+
+        menuItem.on('hover:enter', function() {
+            // Создаём активность
+            const activity = {
+                id: PLUGIN.component,
+                component: PLUGIN.component,
+                title: PLUGIN.name
+            };
+            
+            if (Lampa.Activity.active().component === PLUGIN.component) {
+                Lampa.Activity.replace(activity);
+            } else {
+                Lampa.Activity.push(activity);
+            }
+        });
+
+        // Добавляем в меню
+        const menu = $('.menu .menu__list').eq(0);
+        menu.append(menuItem);
+    }
+
+    // =============================================
+    // СТИЛИ
+    // =============================================
+    function addStyles() {
+        const style = document.createElement('style');
+        style.id = PLUGIN.component + '-styles';
+        style.textContent = `
+            .${PLUGIN.component}-container {
+                padding: 20px;
+                color: #fff;
+            }
+
+            .${PLUGIN.component}-header {
+                margin-bottom: 30px;
+            }
+
+            .${PLUGIN.component}-header h1 {
+                font-size: 28px;
+                margin: 0 0 8px 0;
+                font-weight: 700;
+            }
+
+            .${PLUGIN.component}-subheader {
+                color: rgba(255,255,255,0.5);
+                font-size: 14px;
+            }
+
+            .${PLUGIN.component}-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 15px;
+                margin-bottom: 30px;
+            }
+
+            .${PLUGIN.component}-stat-card {
+                background: rgba(255,255,255,0.06);
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: 16px;
+                padding: 20px;
+                text-align: center;
+                transition: all 0.3s ease;
+            }
+
+            .${PLUGIN.component}-stat-card:hover {
+                background: rgba(255,255,255,0.1);
+                transform: translateY(-2px);
+            }
+
+            .${PLUGIN.component}-stat-number {
+                font-size: 32px;
+                font-weight: 700;
+                color: #ff9800;
+                margin-bottom: 8px;
+            }
+
+            .${PLUGIN.component}-stat-label {
+                font-size: 14px;
+                color: rgba(255,255,255,0.6);
+            }
+
+            .${PLUGIN.component}-section {
+                margin-bottom: 30px;
+            }
+
+            .${PLUGIN.component}-section h3 {
+                font-size: 18px;
+                margin-bottom: 15px;
+                font-weight: 600;
+            }
+
+            .${PLUGIN.component}-genre-bars {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .${PLUGIN.component}-genre-bar {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            }
+
+            .${PLUGIN.component}-genre-name {
+                min-width: 120px;
+                font-size: 14px;
+            }
+
+            .${PLUGIN.component}-bar-track {
+                flex: 1;
+                height: 8px;
+                background: rgba(255,255,255,0.08);
+                border-radius: 4px;
+                overflow: hidden;
+            }
+
+            .${PLUGIN.component}-bar-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #ff9800, #ff5722);
+                border-radius: 4px;
+                width: 0%;
+                animation: ${PLUGIN.component}-bar-grow 0.8s ease forwards;
+            }
+
+            @keyframes ${PLUGIN.component}-bar-grow {
+                from { width: 0%; }
+                to { width: var(--target-width); }
+            }
+
+            .${PLUGIN.component}-genre-count {
+                min-width: 30px;
+                text-align: right;
+                font-size: 14px;
+                color: rgba(255,255,255,0.6);
+            }
+
+            .${PLUGIN.component}-recent-list {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .${PLUGIN.component}-recent-item {
+                background: rgba(255,255,255,0.04);
+                border-radius: 12px;
+                padding: 14px 18px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border: 1px solid rgba(255,255,255,0.06);
+            }
+
+            .${PLUGIN.component}-recent-title {
+                font-weight: 500;
+                font-size: 15px;
+            }
+
+            .${PLUGIN.component}-recent-info {
+                display: flex;
+                gap: 15px;
+                font-size: 13px;
+                color: rgba(255,255,255,0.5);
+                align-items: center;
+            }
+
+            .${PLUGIN.component}-recent-status {
+                padding: 4px 10px;
+                border-radius: 20px;
+                font-size: 12px;
+                font-weight: 500;
+            }
+
+            .status-completed {
+                background: rgba(76, 175, 80, 0.2);
+                color: #4caf50;
+            }
+
+            .status-watching {
+                background: rgba(255, 152, 0, 0.2);
+                color: #ff9800;
+            }
+
+            .status-dropped {
+                background: rgba(244, 67, 54, 0.2);
+                color: #f44336;
+            }
+
+            .${PLUGIN.component}-actions {
+                display: flex;
+                gap: 12px;
+                margin-top: 20px;
+                flex-wrap: wrap;
+            }
+
+            .${PLUGIN.component}-btn {
+                padding: 10px 24px;
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 12px;
+                background: rgba(255,255,255,0.05);
+                color: #fff;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                font-size: 14px;
+            }
+
+            .${PLUGIN.component}-btn:hover {
+                background: rgba(255,255,255,0.1);
+                transform: translateY(-2px);
+            }
+
+            @media (max-width: 768px) {
+                .${PLUGIN.component}-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+                .${PLUGIN.component}-genre-name {
+                    min-width: 80px;
+                    font-size: 12px;
+                }
+                .${PLUGIN.component}-recent-item {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 8px;
+                }
+                .${PLUGIN.component}-recent-info {
+                    flex-wrap: wrap;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // =============================================
+    // РЕГИСТРАЦИЯ КОМПОНЕНТА В LAMPA
+    // =============================================
+    function registerComponent() {
+        Lampa.Component.add(PLUGIN.component, StatsPage);
+    }
+
+    // =============================================
+    // ЗАПУСК
+    // =============================================
+    function init() {
+        addStyles();
+        registerComponent();
+        setupTracking();
+        addMenuItem();
+
+        console.log(`[${PLUGIN.name}] Плагин загружен!`);
+    }
+
+    if (window.appready) {
+        init();
+    } else {
+        Lampa.Listener.follow('app', function(e) {
+            if (e.type === 'ready') init();
+        });
+    }
 
 })();
