@@ -94,7 +94,7 @@
     }
 
     // =============================================
-    // ЗАГРУЗКА ПЛЕЙЛИСТА (КАК В tv.js)
+    // ЗАГРУЗКА ПЛЕЙЛИСТА
     // =============================================
     function loadPlaylist(url) {
         return new Promise((resolve, reject) => {
@@ -158,15 +158,13 @@
     }
 
     // =============================================
-    // СТРАНИЦА IPTV
+    // СТРАНИЦА IPTV (БЕЗ ПРОБЛЕМНОГО SCROLL)
     // =============================================
     function IPTVPage(object) {
         let channels = [];
         let groups = {};
         let catalog = {};
-        let scrollInstance = null;
         let isDestroyed = false;
-        let currentGroup = null;
 
         this.create = function() {
             console.log('[IPTV] 📄 Создание страницы');
@@ -181,7 +179,7 @@
                     </div>
 
                     <div class="${PLUGIN.component}-scroll-wrap" id="${PLUGIN.component}-scroll-wrap">
-                        <div class="${PLUGIN.component}-content">
+                        <div class="${PLUGIN.component}-content" id="${PLUGIN.component}-content">
                             <div class="${PLUGIN.component}-loading" id="${PLUGIN.component}-loading">
                                 <div class="${PLUGIN.component}-spinner"></div>
                                 <p>Загрузка каналов...</p>
@@ -225,12 +223,6 @@
                 // Группируем как в tv.js
                 catalog = groupChannels(channels);
                 
-                // Создаём список групп для навигации
-                const groupNames = Object.keys(catalog);
-                if (groupNames.length > 0) {
-                    currentGroup = groupNames[0];
-                }
-                
                 showGroups();
 
             } catch (error) {
@@ -240,7 +232,7 @@
         }
 
         // =============================================
-        // ПОКАЗ ГРУПП (КАК В tv.js)
+        // ПОКАЗ ГРУПП
         // =============================================
         function showGroups() {
             if (isDestroyed) return;
@@ -273,7 +265,7 @@
             groupsEl.innerHTML = html;
             groupsEl.style.display = 'block';
 
-            // Обработчики как в tv.js - через hover:enter
+            // Обработчики
             groupsEl.querySelectorAll(`.${PLUGIN.component}-group-card`).forEach(card => {
                 const groupName = card.dataset.group;
                 
@@ -284,11 +276,12 @@
                 });
             });
 
+            // Обновляем скролл через setTimeout
             updateScroll();
         }
 
         // =============================================
-        // ПОКАЗ КАНАЛОВ (КАК В tv.js)
+        // ПОКАЗ КАНАЛОВ
         // =============================================
         function showChannels(groupName) {
             if (isDestroyed) return;
@@ -346,7 +339,7 @@
             channelsEl.innerHTML = html;
             channelsEl.style.display = 'block';
 
-            // Обработчики как в tv.js
+            // Обработчики для каналов
             channelsEl.querySelectorAll(`.${PLUGIN.component}-channel-card`).forEach(card => {
                 const url = card.dataset.channelUrl;
                 const name = card.dataset.channelTitle || 'Канал';
@@ -358,7 +351,7 @@
                 });
             });
 
-            // Кнопка назад как в tv.js
+            // Кнопка назад
             const backBtn = document.getElementById(`${PLUGIN.component}-back-groups`);
             if (backBtn) {
                 $(backBtn).on('hover:enter', function(e) {
@@ -459,23 +452,26 @@
         }
 
         // =============================================
-        // ОБНОВЛЕНИЕ СКРОЛЛА
+        // ОБНОВЛЕНИЕ СКРОЛЛА (БЕЗ getBoundingClientRect)
         // =============================================
         function updateScroll() {
             if (isDestroyed) return;
-            if (scrollInstance) {
-                try { 
-                    setTimeout(() => {
-                        scrollInstance.update();
-                    }, 100);
+            
+            // Просто прокручиваем к началу контента через setTimeout
+            setTimeout(function() {
+                try {
+                    const wrap = document.getElementById(`${PLUGIN.component}-scroll-wrap`);
+                    if (wrap) {
+                        wrap.scrollTop = 0;
+                    }
                 } catch(e) {
-                    console.log('[IPTV] Скролл обновление:', e);
+                    // Игнорируем ошибки
                 }
-            }
+            }, 100);
         }
 
         // =============================================
-        // УПРАВЛЕНИЕ (КАК В tv.js)
+        // УПРАВЛЕНИЕ
         // =============================================
         this.start = function() {
             console.log('[IPTV] 🚀 Запуск');
@@ -500,24 +496,6 @@
             });
             
             Lampa.Controller.toggle('content');
-            
-            setTimeout(() => {
-                if (!isDestroyed) {
-                    const wrap = document.getElementById(`${PLUGIN.component}-scroll-wrap`);
-                    if (wrap) {
-                        try {
-                            scrollInstance = new Lampa.Scroll({
-                                element: wrap,
-                                step: 200
-                            });
-                            scrollInstance.render();
-                            updateScroll();
-                        } catch(e) {
-                            console.log('[IPTV] Скролл создание:', e);
-                        }
-                    }
-                }
-            }, 300);
         };
 
         this.pause = function() {};
@@ -525,10 +503,6 @@
         this.stop = function() {
             console.log('[IPTV] 🛑 Стоп');
             isDestroyed = true;
-            if (scrollInstance) {
-                try { scrollInstance.destroy(); } catch(e) {}
-                scrollInstance = null;
-            }
         };
         
         this.render = function() {
