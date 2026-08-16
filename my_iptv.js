@@ -32,7 +32,7 @@
     }
 
     // =============================================
-    // ПАРСИНГ M3U
+    // ПАРСИНГ M3U (УЛУЧШЕННЫЙ)
     // =============================================
     function parseM3U(data) {
         const channels = [];
@@ -40,20 +40,27 @@
         
         let currentChannel = null;
         let currentGroup = 'Без группы';
+        let extinfFound = false;
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line) continue;
 
+            // Группа
             if (line.startsWith('#EXTGRP:')) {
                 currentGroup = line.replace('#EXTGRP:', '').trim();
                 continue;
             }
 
+            // Информация о канале
             if (line.startsWith('#EXTINF:')) {
+                extinfFound = true;
+                
+                // Извлекаем название (после последней запятой)
                 const titleMatch = line.match(/,([^,]+)$/);
                 const title = titleMatch ? titleMatch[1].trim() : 'Канал';
 
+                // Извлекаем параметры
                 const params = {};
                 const attrRegex = /([a-zA-Z-]+)="([^"]*)"/g;
                 let match;
@@ -61,28 +68,51 @@
                     params[match[1]] = match[2];
                 }
 
+                // Длительность (первое число после #EXTINF:)
+                const durationMatch = line.match(/^#EXTINF:\s*([\d.]+)/);
+                const duration = durationMatch ? durationMatch[1] : '-1';
+
                 currentChannel = {
                     title: title,
                     group: currentGroup,
                     logo: params['tvg-logo'] || '',
                     id: params['tvg-id'] || '',
+                    duration: duration,
                     url: ''
                 };
                 continue;
             }
 
-            if (currentChannel && (line.startsWith('http') || line.startsWith('rtmp') || line.startsWith('udp'))) {
-                currentChannel.url = line;
-                channels.push(currentChannel);
-                currentChannel = null;
+            // URL канала (может быть несколько строк)
+            if (currentChannel) {
+                // Проверяем, является ли строка URL
+                const isUrl = line.match(/^(https?|rtmp|udp|rtsp|mms):\/\//i) || 
+                             line.match(/^\/\/[^\/]/) ||
+                             line.match(/^[a-zA-Z0-9\-]+:\/\/./);
+                
+                if (isUrl) {
+                    currentChannel.url = line;
+                    channels.push(currentChannel);
+                    currentChannel = null;
+                    extinfFound = false;
+                } else if (line.startsWith('#') && !line.startsWith('#EXTINF:')) {
+                    // Если встретили другую директиву, сбрасываем
+                    currentChannel = null;
+                    extinfFound = false;
+                }
             }
+        }
+
+        // Если остался текущий канал без URL
+        if (currentChannel && currentChannel.url) {
+            channels.push(currentChannel);
         }
 
         return channels;
     }
 
     // =============================================
-    // ЗАГРУЗКА ПЛЕЙЛИСТА
+    // ЗАГРУЗКА ПЛЕЙЛИСТА (С ОБХОДОМ CORS)
     // =============================================
     function loadPlaylist(url) {
         return new Promise((resolve, reject) => {
@@ -93,29 +123,128 @@
                 return;
             }
 
-            const request = new Lampa.Reguest();
-            
-            request.silent(
-                url,
-                function(data) {
-                    try {
-                        const channels = parseM3U(data);
-                        console.log('[IPTV] ✅ Найдено каналов:', channels.length);
-                        resolve(channels);
-                    } catch (e) {
-                        reject(new Error('Ошибка парсинга'));
+            // === СПОСОБ 1: Через Lampa.Reguest ===
+            try {
+                const request = new Lampa.Reguest();
+                
+                request.silent(
+                    url,
+                    function(data) {
+                        console.log('[IPTV] ✅ Плейлист загружен (Reguest)');
+                        try {
+                            const channels = parseM3U(data);
+                            console.log('[IPTV] 📺 Найдено каналов:', channels.length);
+                            
+                            if (channels.length === 0) {
+                                reject(new Error('Плейлист пуст'));
+                                return;
+                            }
+                            resolve(channels);
+                        } catch (e) {
+                            console.error('[IPTV] Ошибка парсинга:', e);
+                            reject(new Error('Ошибка парсинга плейлиста'));
+                        }
+                    },
+                    function(error) {
+                        console.error('[IPTV] ❌ Ошибка Reguest:', error);
+                        // Пробуем следующий способ
+                        loadPlaylistViaFetch(url, resolve, reject);
+                    },
+                    {
+                        dataType: 'text',
+                        timeout: 30000
                     }
-                },
-                function(error) {
-                    console.error('[IPTV] ❌ Ошибка:', error);
-                    reject(new Error('Не удалось загрузить плейлист'));
-                },
-                {
-                    dataType: 'text',
-                    timeout: 30000
-                }
-            );
+                );
+            } catch(e) {
+                console.error('[IPTV] ❌ Ошибка Reguest:', e);
+                loadPlaylistViaFetch(url, resolve, reject);
+            }
         });
+    }
+
+    // === СПОСОБ 2: Через fetch ===
+    function loadPlaylistViaFetch(url, resolve, reject) {
+        console.log('[IPTV] 🔄 Пробуем через fetch...');
+        
+        // Пробуем через прокси если нужно
+        let fetchUrl = url;
+        
+        // Если URL не начинается с http, добавляем
+        if (!url.match(/^https?:\/\//i)) {
+            fetchUrl = 'https://' + url;
+        }
+
+        fetch(fetchUrl, {
+            method: 'GET',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip, deflate, br'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            return response.text();
+        })
+        .then(data => {
+            console.log('[IPTV] ✅ Плейлист загружен (fetch)');
+            try {
+                const channels = parseM3U(data);
+                console.log('[IPTV] 📺 Найдено каналов:', channels.length);
+                
+                if (channels.length === 0) {
+                    reject(new Error('Плейлист пуст'));
+                    return;
+                }
+                resolve(channels);
+            } catch (e) {
+                console.error('[IPTV] Ошибка парсинга:', e);
+                reject(new Error('Ошибка парсинга плейлиста'));
+            }
+        })
+        .catch(error => {
+            console.error('[IPTV] ❌ Ошибка fetch:', error);
+            
+            // === СПОСОБ 3: Через прокси ===
+            loadPlaylistViaProxy(url, resolve, reject);
+        });
+    }
+
+    // === СПОСОБ 3: Через прокси ===
+    function loadPlaylistViaProxy(url, resolve, reject) {
+        console.log('[IPTV] 🔄 Пробуем через прокси...');
+        
+        // Используем публичный прокси для обхода CORS
+        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+        
+        fetch(proxyUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                return response.text();
+            })
+            .then(data => {
+                console.log('[IPTV] ✅ Плейлист загружен (прокси)');
+                try {
+                    const channels = parseM3U(data);
+                    console.log('[IPTV] 📺 Найдено каналов:', channels.length);
+                    
+                    if (channels.length === 0) {
+                        reject(new Error('Плейлист пуст'));
+                        return;
+                    }
+                    resolve(channels);
+                } catch (e) {
+                    reject(new Error('Ошибка парсинга'));
+                }
+            })
+            .catch(error => {
+                console.error('[IPTV] ❌ Все способы загрузки не удались');
+                reject(new Error('Не удалось загрузить плейлист\n\nПроверьте:\n1. Доступность URL\n2. Интернет-соединение'));
+            });
     }
 
     // =============================================
@@ -139,6 +268,7 @@
         let groups = {};
         let scrollInstance = null;
         let isDestroyed = false;
+        let isLoading = false;
 
         this.create = function() {
             console.log('[IPTV] 📄 Создание страницы');
@@ -179,10 +309,14 @@
         // ЗАГРУЗКА ДАННЫХ
         // =============================================
         async function loadPlaylistData() {
+            if (isLoading) return;
+            isLoading = true;
+
             const playlistUrl = getPlaylistUrl();
 
             if (!playlistUrl) {
                 showError('❌ URL плейлиста не указан\n\nНастройте его в:\nНастройки → IPTV');
+                isLoading = false;
                 return;
             }
 
@@ -191,6 +325,7 @@
                 
                 if (channels.length === 0) {
                     showError('Плейлист пуст');
+                    isLoading = false;
                     return;
                 }
 
@@ -201,6 +336,8 @@
                 console.error('[IPTV] Ошибка:', error);
                 showError('❌ Ошибка загрузки\n\n' + error.message);
             }
+            
+            isLoading = false;
         }
 
         // =============================================
@@ -477,23 +614,19 @@
     }
 
     // =============================================
-    // ПУНКТ В МЕНЮ LAMPA (УЛУЧШЕННЫЙ)
+    // ПУНКТ В МЕНЮ
     // =============================================
     function addMenuItem() {
         console.log('[IPTV] 📌 Добавление пункта меню');
         
-        // Ждём загрузки меню
         function tryAddMenu() {
             const menu = $('.menu .menu__list').eq(0);
             if (!menu.length) {
-                console.log('[IPTV] ⏳ Меню ещё не загружено, ждём...');
                 setTimeout(tryAddMenu, 500);
                 return;
             }
 
-            // Проверяем, есть ли уже такой пункт
             if ($(`.${PLUGIN.component}-menu`).length) {
-                console.log('[IPTV] ℹ️ Пункт уже добавлен');
                 return;
             }
 
@@ -515,7 +648,6 @@
                         title: PLUGIN.name
                     };
                     
-                    // Проверяем, не открыт ли уже
                     if (Lampa.Activity.active().component === PLUGIN.component) {
                         Lampa.Activity.replace(activity);
                     } else {
@@ -523,20 +655,16 @@
                     }
                 } catch(error) {
                     console.error('[IPTV] Ошибка открытия:', error);
-                    Lampa.Noty.show('Ошибка открытия IPTV');
                 }
             });
 
-            // Добавляем в конец меню
             menu.append(menuItem);
             console.log('[IPTV] ✅ Пункт меню добавлен');
         }
 
-        // Пробуем добавить сразу или ждём
         if (document.querySelector('.menu .menu__list')) {
             tryAddMenu();
         } else {
-            // Ждём появления меню
             const observer = new MutationObserver(function() {
                 if (document.querySelector('.menu .menu__list')) {
                     observer.disconnect();
@@ -544,20 +672,17 @@
                 }
             });
             observer.observe(document.body, { childList: true, subtree: true });
-            
-            // Запасной вариант
             setTimeout(tryAddMenu, 3000);
         }
     }
 
     // =============================================
-    // ПУНКТ В МЕНЮ НАСТРОЕК
+    // НАСТРОЙКИ
     // =============================================
     const SETTINGS_COMPONENT = PLUGIN.component + '_settings';
 
     function setupSettings() {
         if (!Lampa.SettingsApi || !Lampa.SettingsApi.addComponent) {
-            console.log('[IPTV] ⚠️ SettingsApi не найден');
             return;
         }
 
@@ -618,8 +743,6 @@
                 }
             }
         });
-
-        console.log('[IPTV] ✅ Настройки добавлены');
     }
 
     // =============================================
@@ -891,7 +1014,7 @@
     }
 
     // =============================================
-    // РЕГИСТРАЦИЯ КОМПОНЕНТА
+    // РЕГИСТРАЦИЯ
     // =============================================
     function registerComponent() {
         console.log('[IPTV] 📦 Регистрация компонента');
@@ -904,27 +1027,20 @@
     }
 
     // =============================================
-    // ЗАПУСК ПЛАГИНА
+    // ЗАПУСК
     // =============================================
     function startPlugin() {
         if (window[PLUGIN.component + '_plugin']) {
-            console.log('[IPTV] ℹ️ Плагин уже запущен');
             return;
         }
         window[PLUGIN.component + '_plugin'] = true;
 
         console.log('[IPTV] 🚀 Запуск плагина...');
 
-        // Регистрируем компонент
         registerComponent();
-
-        // Добавляем стили
         addStyles();
-
-        // Добавляем пункт в меню
         addMenuItem();
 
-        // Настройки
         if (window.appready) {
             setupSettings();
         } else {
@@ -938,9 +1054,6 @@
         console.log('[IPTV] ✅ Плагин загружен!');
     }
 
-    // =============================================
-    // START
-    // =============================================
     startPlugin();
 
 })();
