@@ -2,7 +2,7 @@
     "use strict";
 
     // =========================================================
-    // IPTV FOR LAMPA — VERSION 2.0
+    // IPTV FOR LAMPA — 2.1
     // =========================================================
 
     const PLUGIN = {
@@ -10,9 +10,13 @@
         name: "IPTV",
 
         icon: `<svg xmlns="http://www.w3.org/2000/svg"
-            width="24" height="24" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
             stroke-linejoin="round">
             <rect x="2" y="7" width="20" height="14" rx="2"/>
             <polyline points="16 21 12 17 8 21"/>
@@ -38,15 +42,24 @@
 
     function storageGet(key, fallback) {
         try {
-            let value = Lampa.Storage.get(key, null);
+            const value = Lampa.Storage.get(key, null);
 
-            if (value !== null && value !== undefined && value !== "") {
+            if (
+                value !== null &&
+                value !== undefined &&
+                value !== ""
+            ) {
                 return value;
             }
+        } catch (e) {}
 
+        try {
             const local = localStorage.getItem(key);
 
-            if (local !== null && local !== undefined) {
+            if (
+                local !== null &&
+                local !== undefined
+            ) {
                 try {
                     return JSON.parse(local);
                 } catch (e) {
@@ -74,9 +87,9 @@
     }
 
     function getPlaylistUrl() {
-        const value = storageGet(STORAGE.playlist, "");
-
-        return String(value || "").trim();
+        return String(
+            storageGet(STORAGE.playlist, "") || ""
+        ).trim();
     }
 
     function setPlaylistUrl(value) {
@@ -87,9 +100,9 @@
     }
 
     function getEpgUrl() {
-        const value = storageGet(STORAGE.epg, "");
-
-        return String(value || "").trim();
+        return String(
+            storageGet(STORAGE.epg, "") || ""
+        ).trim();
     }
 
     function setEpgUrl(value) {
@@ -104,33 +117,47 @@
     // =========================================================
 
     function getFavorites() {
-        const value = storageGet(STORAGE.favorites, []);
+        const value = storageGet(
+            STORAGE.favorites,
+            []
+        );
 
-        return Array.isArray(value) ? value : [];
+        return Array.isArray(value)
+            ? value
+            : [];
     }
 
     function saveFavorites(value) {
-        storageSet(STORAGE.favorites, value);
+        storageSet(
+            STORAGE.favorites,
+            value
+        );
     }
 
     function isFavorite(id) {
-        return getFavorites().indexOf(id) !== -1;
+        return (
+            getFavorites().indexOf(id) !== -1
+        );
     }
 
     function toggleFavorite(id) {
-        let favorites = getFavorites();
+        let favorites =
+            getFavorites();
 
-        if (favorites.indexOf(id) !== -1) {
-            favorites = favorites.filter(function (item) {
-                return item !== id;
-            });
+        const index =
+            favorites.indexOf(id);
+
+        if (index !== -1) {
+            favorites.splice(index, 1);
         } else {
             favorites.push(id);
         }
 
         saveFavorites(favorites);
 
-        return favorites.indexOf(id) !== -1;
+        return (
+            favorites.indexOf(id) !== -1
+        );
     }
 
     // =========================================================
@@ -138,33 +165,53 @@
     // =========================================================
 
     function getHistory() {
-        const value = storageGet(STORAGE.history, []);
+        const value = storageGet(
+            STORAGE.history,
+            []
+        );
 
-        return Array.isArray(value) ? value : [];
+        return Array.isArray(value)
+            ? value
+            : [];
     }
 
     function saveHistory(value) {
-        storageSet(STORAGE.history, value);
+        storageSet(
+            STORAGE.history,
+            value
+        );
     }
 
     function addHistory(channel) {
-        if (!channel || !channel.id) return;
+        if (!channel) return;
 
-        let history = getHistory();
+        const id =
+            channel.id ||
+            channel.tvgId ||
+            channel.title;
 
-        history = history.filter(function (item) {
-            return item.id !== channel.id;
-        });
+        if (!id) return;
+
+        let history =
+            getHistory();
+
+        history = history.filter(
+            function (item) {
+                return item.id !== id;
+            }
+        );
 
         history.unshift({
-            id: channel.id,
+            id: id,
             title: channel.title,
             url: channel.url,
             logo: channel.logo || "",
-            group: channel.group || ""
+            group: channel.group || "",
+            tvgId: channel.tvgId || ""
         });
 
-        history = history.slice(0, 30);
+        history =
+            history.slice(0, 30);
 
         saveHistory(history);
     }
@@ -173,30 +220,151 @@
     // CACHE
     // =========================================================
 
-    function getCache() {
-        return storageGet(STORAGE.cache, null);
+    function savePlaylistCache(
+        channels
+    ) {
+        try {
+            storageSet(
+                STORAGE.cache,
+                {
+                    timestamp: Date.now(),
+                    data: channels
+                }
+            );
+        } catch (e) {}
     }
 
-    function setCache(data) {
+    function getPlaylistCache() {
         try {
-            storageSet(STORAGE.cache, {
-                timestamp: Date.now(),
-                data: data
-            });
+            const cache =
+                storageGet(
+                    STORAGE.cache,
+                    null
+                );
+
+            if (
+                cache &&
+                Array.isArray(cache.data)
+            ) {
+                return cache;
+            }
+        } catch (e) {}
+
+        return null;
+    }
+
+    function saveEpgCache(epg) {
+        try {
+            /*
+             * Date превращаем в timestamp,
+             * чтобы JSON-хранилище не ломало EPG.
+             */
+
+            const prepared = {};
+
+            Object.keys(epg || {})
+                .forEach(function (id) {
+                    prepared[id] =
+                        (epg[id] || [])
+                            .map(function (item) {
+                                return {
+                                    channel:
+                                        item.channel,
+
+                                    title:
+                                        item.title,
+
+                                    description:
+                                        item.description,
+
+                                    categories:
+                                        item.categories,
+
+                                    start:
+                                        item.start
+                                            ? item.start.getTime()
+                                            : 0,
+
+                                    stop:
+                                        item.stop
+                                            ? item.stop.getTime()
+                                            : 0
+                                };
+                            });
+                });
+
+            storageSet(
+                STORAGE.epgCache,
+                {
+                    timestamp: Date.now(),
+                    data: prepared
+                }
+            );
         } catch (e) {}
     }
 
     function getEpgCache() {
-        return storageGet(STORAGE.epgCache, null);
-    }
-
-    function setEpgCache(data) {
         try {
-            storageSet(STORAGE.epgCache, {
-                timestamp: Date.now(),
-                data: data
-            });
-        } catch (e) {}
+            const cache =
+                storageGet(
+                    STORAGE.epgCache,
+                    null
+                );
+
+            if (
+                !cache ||
+                !cache.data
+            ) {
+                return null;
+            }
+
+            const result = {};
+
+            Object.keys(cache.data)
+                .forEach(function (id) {
+                    result[id] =
+                        (cache.data[id] || [])
+                            .map(function (item) {
+                                return {
+                                    channel:
+                                        item.channel,
+
+                                    title:
+                                        item.title,
+
+                                    description:
+                                        item.description,
+
+                                    categories:
+                                        item.categories,
+
+                                    start:
+                                        new Date(
+                                            item.start
+                                        ),
+
+                                    stop:
+                                        new Date(
+                                            item.stop
+                                        )
+                                };
+                            })
+                            .filter(function (item) {
+                                return (
+                                    !isNaN(
+                                        item.start.getTime()
+                                    ) &&
+                                    !isNaN(
+                                        item.stop.getTime()
+                                    )
+                                );
+                            });
+                });
+
+            return result;
+        } catch (e) {
+            return null;
+        }
     }
 
     // =========================================================
@@ -213,9 +381,21 @@
     }
 
     function decodeHtml(value) {
-        const textarea = document.createElement("textarea");
-        textarea.innerHTML = value || "";
-        return textarea.value;
+        try {
+            const textarea =
+                document.createElement(
+                    "textarea"
+                );
+
+            textarea.innerHTML =
+                value || "";
+
+            return textarea.value;
+        } catch (e) {
+            return String(
+                value || ""
+            );
+        }
     }
 
     function normalizeId(value) {
@@ -224,65 +404,109 @@
             .toLowerCase();
     }
 
-    function formatTime(date) {
-        if (!date || isNaN(date.getTime())) {
-            return "--:--";
-        }
-
-        return date.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit"
-        });
-    }
-
-    function formatDate(date) {
-        if (!date || isNaN(date.getTime())) {
-            return "";
-        }
-
-        return date.toLocaleDateString([], {
-            day: "2-digit",
-            month: "2-digit"
-        });
-    }
-
     function getChannelId(channel) {
         return (
             channel.id ||
             channel.tvgId ||
+            channel.tvgName ||
             channel.title
         );
     }
 
-    function parseDate(value) {
+    function formatTime(date) {
+        if (
+            !date ||
+            isNaN(date.getTime())
+        ) {
+            return "--:--";
+        }
+
+        return date.toLocaleTimeString(
+            [],
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+    }
+
+    function formatDate(date) {
+        if (
+            !date ||
+            isNaN(date.getTime())
+        ) {
+            return "";
+        }
+
+        return date.toLocaleDateString(
+            [],
+            {
+                day: "2-digit",
+                month: "2-digit"
+            }
+        );
+    }
+
+    function parseXmltvDate(value) {
         if (!value) return null;
 
-        let string = String(value).trim();
+        const string =
+            String(value).trim();
 
-        /*
-         * XMLTV:
-         * 20260816120000 +0300
-         * 20260816120000
-         */
-
-        const match = string.match(
-            /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/
-        );
+        const match =
+            string.match(
+                /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/
+            );
 
         if (match) {
-            const year = Number(match[1]);
-            const month = Number(match[2]) - 1;
-            const day = Number(match[3]);
-            const hour = Number(match[4]);
-            const minute = Number(match[5]);
-            const second = Number(match[6]);
+            const year =
+                Number(match[1]);
 
-            const tz = string.substring(14).trim();
+            const month =
+                Number(match[2]) - 1;
 
-            if (/^[+-]\d{4}$/.test(tz)) {
-                const sign = tz.charAt(0) === "-" ? -1 : 1;
-                const tzHour = Number(tz.substring(1, 3));
-                const tzMinute = Number(tz.substring(3, 5));
+            const day =
+                Number(match[3]);
+
+            const hour =
+                Number(match[4]);
+
+            const minute =
+                Number(match[5]);
+
+            const second =
+                Number(match[6]);
+
+            const timezone =
+                string
+                    .substring(14)
+                    .trim();
+
+            if (
+                /^[+-]\d{4}$/.test(
+                    timezone
+                )
+            ) {
+                const sign =
+                    timezone.charAt(0) === "-"
+                        ? -1
+                        : 1;
+
+                const tzHour =
+                    Number(
+                        timezone.substring(
+                            1,
+                            3
+                        )
+                    );
+
+                const tzMinute =
+                    Number(
+                        timezone.substring(
+                            3,
+                            5
+                        )
+                    );
 
                 const utc =
                     Date.UTC(
@@ -294,10 +518,18 @@
                         second
                     ) -
                     sign *
-                        ((tzHour * 60 + tzMinute) *
-                            60000);
+                        (
+                            (
+                                tzHour *
+                                    60 +
+                                tzMinute
+                            ) *
+                            60000
+                        );
 
-                return new Date(utc);
+                return new Date(
+                    utc
+                );
             }
 
             return new Date(
@@ -310,11 +542,89 @@
             );
         }
 
-        const parsed = new Date(string);
+        const parsed =
+            new Date(string);
 
-        return isNaN(parsed.getTime())
+        return isNaN(
+            parsed.getTime()
+        )
             ? null
             : parsed;
+    }
+
+    // =========================================================
+    // NETWORK
+    // =========================================================
+
+    /*
+     * ВАЖНО:
+     *
+     * Lampa.Reguest.silent имеет сигнатуру:
+     *
+     * silent(url, success, error, post_data, params)
+     *
+     * dataType и timeout должны находиться
+     * именно в ПЯТОМ аргументе.
+     */
+
+    function request(
+        url,
+        success,
+        error,
+        options
+    ) {
+        try {
+            const network =
+                new Lampa.Reguest();
+
+            options =
+                options || {};
+
+            if (
+                options.timeout
+            ) {
+                network.timeout(
+                    options.timeout
+                );
+            }
+
+            network.silent(
+                url,
+
+                success,
+
+                error,
+
+                false,
+
+                {
+                    dataType:
+                        options.dataType ||
+                        "text",
+
+                    timeout:
+                        options.timeout ||
+                        30000,
+
+                    headers:
+                        options.headers ||
+                        undefined
+                }
+            );
+
+            return network;
+        } catch (e) {
+            console.error(
+                "[IPTV] Request error:",
+                e
+            );
+
+            if (error) {
+                error(e);
+            }
+
+            return null;
+        }
     }
 
     // =========================================================
@@ -323,31 +633,47 @@
 
     function parseM3U(data) {
         const channels = [];
-        const lines = String(data || "").split(/\r?\n/);
 
-        let currentChannel = null;
-        let currentGroup = "Без группы";
+        const lines =
+            String(data || "")
+                .split(/\r?\n/);
 
-        let playlistEpg = "";
+        let current =
+            null;
 
-        for (let i = 0; i < lines.length; i++) {
-            const original = lines[i];
-            const line = original.trim();
+        let currentGroup =
+            "Без группы";
+
+        let epgUrl =
+            "";
+
+        for (
+            let i = 0;
+            i < lines.length;
+            i++
+        ) {
+            const line =
+                lines[i].trim();
 
             if (!line) continue;
 
             // -------------------------------------------------
-            // M3U HEADER / EPG
+            // EXTM3U
             // -------------------------------------------------
 
-            if (line.indexOf("#EXTM3U") === 0) {
+            if (
+                line
+                    .toUpperCase()
+                    .indexOf("#EXTM3U") === 0
+            ) {
                 const epgMatch =
                     line.match(
                         /(?:url-tvg|x-tvg-url)\s*=\s*["']([^"']+)["']/i
                     );
 
                 if (epgMatch) {
-                    playlistEpg = epgMatch[1];
+                    epgUrl =
+                        epgMatch[1];
                 }
 
                 continue;
@@ -357,13 +683,15 @@
             // EXTGRP
             // -------------------------------------------------
 
-            const extgrp = line.match(
-                /^#EXTGRP:\s*(.+?)\s*$/i
-            );
+            const groupMatch =
+                line.match(
+                    /^#EXTGRP:\s*(.+?)\s*$/i
+                );
 
-            if (extgrp) {
+            if (groupMatch) {
                 currentGroup =
-                    extgrp[1].trim() || "Без группы";
+                    groupMatch[1].trim() ||
+                    "Без группы";
 
                 continue;
             }
@@ -372,188 +700,274 @@
             // EXTINF
             // -------------------------------------------------
 
-            if (line.indexOf("#EXTINF:") === 0) {
-                const comma = line.indexOf(",");
+            if (
+                line
+                    .toUpperCase()
+                    .indexOf("#EXTINF:") === 0
+            ) {
+                const comma =
+                    line.indexOf(",");
 
-                if (comma === -1) continue;
+                if (
+                    comma === -1
+                ) {
+                    continue;
+                }
 
-                const info = line.substring(8, comma);
+                const info =
+                    line.substring(
+                        8,
+                        comma
+                    );
+
                 const title =
-                    line.substring(comma + 1).trim();
+                    line
+                        .substring(
+                            comma + 1
+                        )
+                        .trim();
 
-                const params = {};
+                const params =
+                    {};
 
-                const attrRegex =
+                const regex =
                     /([^\s=]+)=((["'])(.*?)\3|\S+)/g;
 
                 let match;
 
                 while (
-                    (match = attrRegex.exec(info)) !== null
+                    (match =
+                        regex.exec(
+                            info
+                        )) !== null
                 ) {
                     params[
-                        String(match[1]).toLowerCase()
+                        String(
+                            match[1]
+                        ).toLowerCase()
                     ] =
-                        match[4] !== undefined
+                        match[4] !==
+                        undefined
                             ? match[4]
                             : match[2];
                 }
 
                 const tvgId =
-                    params["tvg-id"] ||
-                    params["tvgid"] ||
+                    params[
+                        "tvg-id"
+                    ] ||
+                    params[
+                        "tvgid"
+                    ] ||
                     "";
 
                 const tvgName =
-                    params["tvg-name"] ||
+                    params[
+                        "tvg-name"
+                    ] ||
                     "";
 
                 const group =
-                    params["group-title"] ||
+                    params[
+                        "group-title"
+                    ] ||
                     currentGroup ||
                     "Без группы";
 
-                currentChannel = {
+                current = {
                     id:
                         tvgId ||
                         tvgName ||
                         title,
 
-                    tvgId: tvgId,
+                    tvgId:
+                        tvgId,
 
-                    tvgName: tvgName,
+                    tvgName:
+                        tvgName,
 
-                    title: title,
+                    title:
+                        title,
 
-                    group: group,
+                    group:
+                        group,
 
                     logo:
-                        params["tvg-logo"] ||
-                        params["logo"] ||
+                        params[
+                            "tvg-logo"
+                        ] ||
+                        params[
+                            "logo"
+                        ] ||
                         "",
 
                     language:
-                        params["tvg-language"] ||
+                        params[
+                            "tvg-language"
+                        ] ||
                         "",
 
                     country:
-                        params["tvg-country"] ||
+                        params[
+                            "tvg-country"
+                        ] ||
                         "",
 
-                    url: ""
+                    url:
+                        ""
                 };
 
                 continue;
             }
 
             // -------------------------------------------------
-            // URL
+            // CHANNEL URL
             // -------------------------------------------------
 
             if (
-                currentChannel &&
-                /^(https?|rtmp|rtsp):\/\//i.test(line)
+                current &&
+                /^(https?|rtmp|rtsp):\/\//i.test(
+                    line
+                )
             ) {
-                currentChannel.url = line;
+                current.url =
+                    line;
 
-                channels.push(currentChannel);
+                channels.push(
+                    current
+                );
 
-                currentChannel = null;
+                current = null;
             }
         }
 
         return {
-            channels: channels,
-            epgUrl: playlistEpg
+            channels:
+                channels,
+
+            epgUrl:
+                epgUrl
         };
     }
 
     // =========================================================
-    // NETWORK
+    // LOAD M3U
     // =========================================================
 
-    function request(url, callback, errorCallback, options) {
-        try {
-            const network = new Lampa.Reguest();
-
-            network.silent(
-                url,
-                callback,
-                errorCallback,
-                options || {
-                    dataType: "text",
-                    timeout: 30000
-                }
-            );
-        } catch (e) {
-            if (errorCallback) {
-                errorCallback(e);
-            }
-        }
-    }
-
-    function loadPlaylist(url) {
-        return new Promise(function (resolve, reject) {
-            request(
-                url,
-                function (data) {
-                    try {
-                        const parsed = parseM3U(data);
-
-                        if (!parsed.channels.length) {
-                            reject(
-                                new Error(
-                                    "Плейлист не содержит каналов"
-                                )
-                            );
-
-                            return;
-                        }
-
-                        resolve(parsed);
-                    } catch (e) {
-                        reject(
-                            new Error(
-                                "Ошибка обработки M3U"
-                            )
-                        );
-                    }
-                },
-                function () {
+    function loadPlaylist(
+        url
+    ) {
+        return new Promise(
+            function (
+                resolve,
+                reject
+            ) {
+                if (!url) {
                     reject(
                         new Error(
-                            "Не удалось загрузить M3U"
+                            "URL плейлиста не указан"
                         )
                     );
-                },
-                {
-                    dataType: "text",
-                    timeout: 30000
+
+                    return;
                 }
-            );
-        });
+
+                request(
+                    url,
+
+                    function (data) {
+                        try {
+                            const parsed =
+                                parseM3U(
+                                    data
+                                );
+
+                            if (
+                                !parsed
+                                    .channels
+                                    .length
+                            ) {
+                                reject(
+                                    new Error(
+                                        "В M3U не найдено ни одного канала"
+                                    )
+                                );
+
+                                return;
+                            }
+
+                            resolve(
+                                parsed
+                            );
+                        } catch (e) {
+                            reject(
+                                new Error(
+                                    "Ошибка разбора M3U: " +
+                                        e.message
+                                )
+                            );
+                        }
+                    },
+
+                    function (
+                        error
+                    ) {
+                        console.error(
+                            "[IPTV] M3U error:",
+                            error
+                        );
+
+                        reject(
+                            new Error(
+                                "Не удалось загрузить M3U"
+                            )
+                        );
+                    },
+
+                    {
+                        dataType:
+                            "text",
+
+                        timeout:
+                            45000
+                    }
+                );
+            }
+        );
     }
 
     // =========================================================
-    // XMLTV PARSER
+    // XMLTV
     // =========================================================
 
-    function parseXMLTV(xml) {
-        const result = {};
+    function parseXMLTV(
+        xml
+    ) {
+        const result =
+            {};
 
         try {
-            const parser = new DOMParser();
+            const parser =
+                new DOMParser();
 
             const doc =
                 parser.parseFromString(
-                    String(xml || ""),
+                    String(
+                        xml || ""
+                    ),
                     "text/xml"
                 );
 
-            const parserError =
-                doc.querySelector("parsererror");
+            const error =
+                doc.querySelector(
+                    "parsererror"
+                );
 
-            if (parserError) {
+            if (error) {
+                console.error(
+                    "[IPTV] XMLTV parser error"
+                );
+
                 return result;
             }
 
@@ -562,89 +976,125 @@
                     "programme"
                 );
 
-            programmes.forEach(function (node) {
-                const channelId =
-                    node.getAttribute("channel");
+            programmes.forEach(
+                function (
+                    node
+                ) {
+                    const channelId =
+                        node.getAttribute(
+                            "channel"
+                        );
 
-                if (!channelId) return;
+                    if (!channelId) {
+                        return;
+                    }
 
-                const id = normalizeId(channelId);
+                    const id =
+                        normalizeId(
+                            channelId
+                        );
 
-                if (!result[id]) {
-                    result[id] = [];
-                }
+                    if (
+                        !result[id]
+                    ) {
+                        result[id] =
+                            [];
+                    }
 
-                const titleNode =
-                    node.querySelector("title");
+                    const titleNode =
+                        node.querySelector(
+                            "title"
+                        );
 
-                const descNode =
-                    node.querySelector("desc");
+                    const descNode =
+                        node.querySelector(
+                            "desc"
+                        );
 
-                const categoryNodes =
+                    const categories =
+                        [];
+
                     node.querySelectorAll(
                         "category"
+                    ).forEach(
+                        function (
+                            category
+                        ) {
+                            categories.push(
+                                decodeHtml(
+                                    category.textContent
+                                ).trim()
+                            );
+                        }
                     );
 
-                const categories = [];
-
-                categoryNodes.forEach(
-                    function (category) {
-                        categories.push(
-                            decodeHtml(
-                                category.textContent
+                    const start =
+                        parseXmltvDate(
+                            node.getAttribute(
+                                "start"
                             )
                         );
+
+                    const stop =
+                        parseXmltvDate(
+                            node.getAttribute(
+                                "stop"
+                            )
+                        );
+
+                    if (
+                        !start ||
+                        !stop
+                    ) {
+                        return;
                     }
-                );
 
-                const programme = {
-                    channel: channelId,
-
-                    title:
-                        titleNode
-                            ? decodeHtml(
-                                  titleNode.textContent
-                              ).trim()
-                            : "Без названия",
-
-                    description:
-                        descNode
-                            ? decodeHtml(
-                                  descNode.textContent
-                              ).trim()
-                            : "",
-
-                    categories: categories,
-
-                    start: parseDate(
-                        node.getAttribute(
-                            "start"
-                        )
-                    ),
-
-                    stop: parseDate(
-                        node.getAttribute(
-                            "stop"
-                        )
-                    )
-                };
-
-                if (
-                    programme.start &&
-                    programme.stop
-                ) {
                     result[id].push(
-                        programme
+                        {
+                            channel:
+                                channelId,
+
+                            title:
+                                titleNode
+                                    ? decodeHtml(
+                                          titleNode.textContent
+                                      ).trim()
+                                    : "Без названия",
+
+                            description:
+                                descNode
+                                    ? decodeHtml(
+                                          descNode.textContent
+                                      ).trim()
+                                    : "",
+
+                            categories:
+                                categories,
+
+                            start:
+                                start,
+
+                            stop:
+                                stop
+                        }
                     );
                 }
-            });
+            );
 
-            Object.keys(result).forEach(
-                function (id) {
+            Object.keys(
+                result
+            ).forEach(
+                function (
+                    id
+                ) {
                     result[id].sort(
-                        function (a, b) {
+                        function (
+                            a,
+                            b
+                        ) {
                             return (
-                                a.start - b.start
+                                a.start -
+                                b.start
                             );
                         }
                     );
@@ -660,33 +1110,68 @@
         return result;
     }
 
-    function loadEPG(url) {
-        return new Promise(function (resolve) {
-            if (!url) {
-                resolve({});
-                return;
-            }
+    function loadEPG(
+        url
+    ) {
+        return new Promise(
+            function (
+                resolve
+            ) {
+                if (!url) {
+                    resolve(
+                        {}
+                    );
 
-            request(
-                url,
-                function (data) {
-                    try {
-                        resolve(
-                            parseXMLTV(data)
-                        );
-                    } catch (e) {
-                        resolve({});
-                    }
-                },
-                function () {
-                    resolve({});
-                },
-                {
-                    dataType: "text",
-                    timeout: 45000
+                    return;
                 }
-            );
-        });
+
+                request(
+                    url,
+
+                    function (
+                        data
+                    ) {
+                        try {
+                            resolve(
+                                parseXMLTV(
+                                    data
+                                )
+                            );
+                        } catch (e) {
+                            console.error(
+                                "[IPTV] EPG parse:",
+                                e
+                            );
+
+                            resolve(
+                                {}
+                            );
+                        }
+                    },
+
+                    function (
+                        error
+                    ) {
+                        console.warn(
+                            "[IPTV] EPG unavailable:",
+                            error
+                        );
+
+                        resolve(
+                            {}
+                        );
+                    },
+
+                    {
+                        dataType:
+                            "text",
+
+                        timeout:
+                            60000
+                    }
+                );
+            }
+        );
     }
 
     // =========================================================
@@ -697,17 +1182,26 @@
         channel,
         epg
     ) {
-        if (!epg) return [];
+        if (!epg) {
+            return [];
+        }
 
         const ids = [
             channel.tvgId,
             channel.tvgName,
-            channel.title,
-            channel.id
+            channel.id,
+            channel.title
         ];
 
-        for (let i = 0; i < ids.length; i++) {
-            const id = normalizeId(ids[i]);
+        for (
+            let i = 0;
+            i < ids.length;
+            i++
+        ) {
+            const id =
+                normalizeId(
+                    ids[i]
+                );
 
             if (
                 id &&
@@ -731,18 +1225,22 @@
                 epg
             );
 
-        const now = Date.now();
+        const now =
+            Date.now();
 
         for (
             let i = 0;
             i < list.length;
             i++
         ) {
-            const item = list[i];
+            const item =
+                list[i];
 
             if (
-                item.start.getTime() <= now &&
-                item.stop.getTime() > now
+                item.start.getTime() <=
+                    now &&
+                item.stop.getTime() >
+                    now
             ) {
                 return item;
             }
@@ -761,7 +1259,8 @@
                 epg
             );
 
-        const now = Date.now();
+        const now =
+            Date.now();
 
         for (
             let i = 0;
@@ -769,7 +1268,9 @@
             i++
         ) {
             if (
-                list[i].start.getTime() >
+                list[i]
+                    .start
+                    .getTime() >
                 now
             ) {
                 return list[i];
@@ -779,8 +1280,12 @@
         return null;
     }
 
-    function getProgrammeProgress(programme) {
-        if (!programme) return 0;
+    function getProgrammeProgress(
+        programme
+    ) {
+        if (!programme) {
+            return 0;
+        }
 
         const start =
             programme.start.getTime();
@@ -788,14 +1293,22 @@
         const stop =
             programme.stop.getTime();
 
-        const now = Date.now();
+        const now =
+            Date.now();
 
-        if (now <= start) return 0;
-        if (now >= stop) return 100;
+        if (now <= start) {
+            return 0;
+        }
+
+        if (now >= stop) {
+            return 100;
+        }
 
         return Math.round(
-            ((now - start) /
-                (stop - start)) *
+            (
+                (now - start) /
+                (stop - start)
+            ) *
                 100
         );
     }
@@ -804,20 +1317,32 @@
     // GROUPS
     // =========================================================
 
-    function groupChannels(channels) {
-        const groups = {};
+    function groupChannels(
+        channels
+    ) {
+        const groups =
+            {};
 
-        channels.forEach(function (channel) {
-            const name =
-                channel.group ||
-                "Без группы";
+        channels.forEach(
+            function (
+                channel
+            ) {
+                const name =
+                    channel.group ||
+                    "Без группы";
 
-            if (!groups[name]) {
-                groups[name] = [];
+                if (
+                    !groups[name]
+                ) {
+                    groups[name] =
+                        [];
+                }
+
+                groups[name].push(
+                    channel
+                );
             }
-
-            groups[name].push(channel);
-        });
+        );
 
         return groups;
     }
@@ -826,151 +1351,175 @@
     // IPTV PAGE
     // =========================================================
 
-    function IPTVPage(object) {
-        let channels = [];
-        let catalog = {};
-        let epg = {};
+    function IPTVPage(
+        object
+    ) {
+        let channels =
+            [];
 
-        let playlistEpgUrl = "";
+        let catalog =
+            {};
 
-        let currentGroup = null;
-        let currentView = "groups";
+        let epg =
+            {};
 
-        let destroyed = false;
+        let playlistEpgUrl =
+            "";
 
-        let searchQuery = "";
+        let currentGroup =
+            null;
 
-        let refreshTimer = null;
+        let currentView =
+            "groups";
 
-        // -----------------------------------------------------
+        let searchQuery =
+            "";
+
+        let destroyed =
+            false;
+
+        let refreshTimer =
+            null;
+
+        // =====================================================
         // CREATE
-        // -----------------------------------------------------
+        // =====================================================
 
-        this.create = function () {
-            const html = $(`
-                <div class="${PLUGIN.component}-container">
+        this.create =
+            function () {
+                const html =
+                    $(`
+                    <div class="${PLUGIN.component}-container">
 
-                    <div class="${PLUGIN.component}-top">
+                        <div class="${PLUGIN.component}-top">
 
-                        <div class="${PLUGIN.component}-title">
-                            <div class="${PLUGIN.component}-title-main">
-                                <span class="${PLUGIN.component}-title-icon">📺</span>
-                                IPTV
+                            <div class="${PLUGIN.component}-title">
+
+                                <div class="${PLUGIN.component}-title-main">
+                                    <span class="${PLUGIN.component}-title-icon">
+                                        📺
+                                    </span>
+                                    IPTV
+                                </div>
+
+                                <div
+                                    class="${PLUGIN.component}-status"
+                                    id="${PLUGIN.component}-status">
+                                    Загрузка...
+                                </div>
+
+                            </div>
+
+                            <div class="${PLUGIN.component}-toolbar">
+
+                                <button
+                                    class="${PLUGIN.component}-tool selector"
+                                    id="${PLUGIN.component}-favorites">
+                                    ⭐ Избранное
+                                </button>
+
+                                <button
+                                    class="${PLUGIN.component}-tool selector"
+                                    id="${PLUGIN.component}-history">
+                                    🕘 Недавние
+                                </button>
+
+                                <button
+                                    class="${PLUGIN.component}-tool selector"
+                                    id="${PLUGIN.component}-search-button">
+                                    🔎 Поиск
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                        <div
+                            class="${PLUGIN.component}-search"
+                            id="${PLUGIN.component}-search"
+                            style="display:none;">
+
+                            <input
+                                class="${PLUGIN.component}-search-input"
+                                id="${PLUGIN.component}-search-input"
+                                type="text"
+                                placeholder="Название канала..."
+                                autocomplete="off"
+                            />
+
+                            <button
+                                class="${PLUGIN.component}-search-clear selector"
+                                id="${PLUGIN.component}-search-clear">
+                                ×
+                            </button>
+
+                        </div>
+
+                        <div
+                            class="${PLUGIN.component}-scroll"
+                            id="${PLUGIN.component}-scroll">
+
+                            <div
+                                class="${PLUGIN.component}-loading"
+                                id="${PLUGIN.component}-loading">
+
+                                <div class="${PLUGIN.component}-spinner"></div>
+
+                                <div>
+                                    Загрузка каналов...
+                                </div>
+
                             </div>
 
                             <div
-                                class="${PLUGIN.component}-status"
-                                id="${PLUGIN.component}-status">
-                                Загрузка...
-                            </div>
-                        </div>
-
-                        <div class="${PLUGIN.component}-toolbar">
-
-                            <button
-                                class="${PLUGIN.component}-tool selector"
-                                id="${PLUGIN.component}-favorites-btn">
-                                ⭐ Избранное
-                            </button>
-
-                            <button
-                                class="${PLUGIN.component}-tool selector"
-                                id="${PLUGIN.component}-history-btn">
-                                🕘 Недавние
-                            </button>
-
-                            <button
-                                class="${PLUGIN.component}-tool selector"
-                                id="${PLUGIN.component}-search-btn">
-                                🔎 Поиск
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                    <div
-                        class="${PLUGIN.component}-search"
-                        id="${PLUGIN.component}-search"
-                        style="display:none;">
-
-                        <input
-                            id="${PLUGIN.component}-search-input"
-                            class="${PLUGIN.component}-search-input"
-                            type="text"
-                            placeholder="Название канала..."
-                            autocomplete="off"
-                        />
-
-                        <button
-                            id="${PLUGIN.component}-search-clear"
-                            class="${PLUGIN.component}-search-clear selector">
-                            ×
-                        </button>
-
-                    </div>
-
-                    <div
-                        class="${PLUGIN.component}-scroll"
-                        id="${PLUGIN.component}-scroll">
-
-                        <div
-                            class="${PLUGIN.component}-loading"
-                            id="${PLUGIN.component}-loading">
-
-                            <div class="${PLUGIN.component}-spinner"></div>
-
-                            <div>
-                                Загрузка каналов...
+                                class="${PLUGIN.component}-content"
+                                id="${PLUGIN.component}-content"
+                                style="display:none;">
                             </div>
 
                         </div>
 
-                        <div
-                            class="${PLUGIN.component}-content"
-                            id="${PLUGIN.component}-content"
-                            style="display:none;">
-
-                        </div>
-
                     </div>
+                `);
 
-                </div>
-            `);
+                bindToolbar(
+                    html
+                );
 
-            bindToolbar(html);
+                loadData();
 
-            loadData();
+                return html;
+            };
 
-            return html;
-        };
-
-        // -----------------------------------------------------
+        // =====================================================
         // TOOLBAR
-        // -----------------------------------------------------
+        // =====================================================
 
-        function bindToolbar(html) {
-            const root = html[0];
+        function bindToolbar(
+            html
+        ) {
+            const root =
+                html[0];
 
             const searchButton =
                 root.querySelector(
                     "#" +
                         PLUGIN.component +
-                        "-search-btn"
+                        "-search-button"
                 );
 
             const favoritesButton =
                 root.querySelector(
                     "#" +
                         PLUGIN.component +
-                        "-favorites-btn"
+                        "-favorites"
                 );
 
             const historyButton =
                 root.querySelector(
                     "#" +
                         PLUGIN.component +
-                        "-history-btn"
+                        "-history"
                 );
 
             const searchBox =
@@ -994,77 +1543,86 @@
                         "-search-clear"
                 );
 
-            function openSearch() {
-                if (destroyed) return;
-
+            function toggleSearch() {
                 if (
-                    searchBox.style.display ===
+                    searchBox.style
+                        .display ===
                     "none"
                 ) {
                     searchBox.style.display =
                         "flex";
 
-                    setTimeout(function () {
-                        searchInput.focus();
-                    }, 100);
+                    setTimeout(
+                        function () {
+                            try {
+                                searchInput.focus();
+                            } catch (e) {}
+                        },
+                        100
+                    );
                 } else {
                     searchBox.style.display =
                         "none";
 
-                    searchQuery = "";
+                    searchQuery =
+                        "";
 
-                    searchInput.value = "";
+                    searchInput.value =
+                        "";
 
                     renderCurrent();
                 }
             }
 
-            $(searchButton).on(
-                "hover:enter",
+            const searchAction =
                 function (e) {
                     e.stopPropagation();
-                    openSearch();
-                }
+
+                    toggleSearch();
+                };
+
+            $(searchButton).on(
+                "hover:enter",
+                searchAction
             );
 
             searchButton.addEventListener(
                 "click",
+                searchAction
+            );
+
+            const favoritesAction =
                 function (e) {
                     e.stopPropagation();
-                    openSearch();
-                }
-            );
+
+                    showFavorites();
+                };
 
             $(favoritesButton).on(
                 "hover:enter",
-                function (e) {
-                    e.stopPropagation();
-                    showFavorites();
-                }
+                favoritesAction
             );
 
             favoritesButton.addEventListener(
                 "click",
+                favoritesAction
+            );
+
+            const historyAction =
                 function (e) {
                     e.stopPropagation();
-                    showFavorites();
-                }
-            );
+
+                    showHistory();
+                };
 
             $(historyButton).on(
                 "hover:enter",
-                function (e) {
-                    e.stopPropagation();
-                    showHistory();
-                }
+                historyAction
             );
 
             historyButton.addEventListener(
                 "click",
-                function (e) {
-                    e.stopPropagation();
-                    showHistory();
-                }
+                historyAction
             );
 
             searchInput.addEventListener(
@@ -1086,30 +1644,45 @@
                 }
             );
 
-            $(clearButton).on(
-                "hover:enter",
+            const clearAction =
                 function (e) {
                     e.stopPropagation();
 
-                    searchInput.value = "";
+                    searchInput.value =
+                        "";
 
-                    searchQuery = "";
+                    searchQuery =
+                        "";
 
                     renderCurrent();
-                }
+                };
+
+            $(clearButton).on(
+                "hover:enter",
+                clearAction
+            );
+
+            clearButton.addEventListener(
+                "click",
+                clearAction
             );
         }
 
-        // -----------------------------------------------------
+        // =====================================================
         // LOAD DATA
-        // -----------------------------------------------------
+        // =====================================================
 
         async function loadData() {
-            let url = getPlaylistUrl();
+            let url =
+                getPlaylistUrl();
 
             if (!url) {
-                url = DEFAULT_PLAYLIST;
-                setPlaylistUrl(url);
+                url =
+                    DEFAULT_PLAYLIST;
+
+                setPlaylistUrl(
+                    url
+                );
             }
 
             showLoading(
@@ -1126,22 +1699,28 @@
                     parsed.channels;
 
                 playlistEpgUrl =
-                    parsed.epgUrl || "";
+                    parsed.epgUrl ||
+                    "";
 
                 catalog =
                     groupChannels(
                         channels
                     );
 
-                setCache(channels);
+                savePlaylistCache(
+                    channels
+                );
+
+                /*
+                 * Если EPG URL задан в настройках —
+                 * используем его.
+                 *
+                 * Если нет —
+                 * используем url-tvg из M3U.
+                 */
 
                 let epgUrl =
                     getEpgUrl();
-
-                /*
-                 * Если пользователь не указал EPG,
-                 * пробуем взять url-tvg из M3U.
-                 */
 
                 if (!epgUrl) {
                     epgUrl =
@@ -1153,27 +1732,43 @@
                         "Загрузка программы передач..."
                     );
 
-                    epg =
+                    const loaded =
                         await loadEPG(
                             epgUrl
                         );
 
                     if (
-                        Object.keys(epg)
-                            .length
+                        loaded &&
+                        Object.keys(
+                            loaded
+                        ).length
                     ) {
-                        setEpgCache(epg);
+                        epg =
+                            loaded;
+
+                        saveEpgCache(
+                            epg
+                        );
+                    } else {
+                        const cached =
+                            getEpgCache();
+
+                        if (
+                            cached
+                        ) {
+                            epg =
+                                cached;
+                        }
                     }
                 } else {
                     const cached =
                         getEpgCache();
 
                     if (
-                        cached &&
-                        cached.data
+                        cached
                     ) {
                         epg =
-                            cached.data;
+                            cached;
                     }
                 }
 
@@ -1183,23 +1778,23 @@
 
             } catch (error) {
                 console.error(
-                    "[IPTV] load:",
+                    "[IPTV] Load:",
                     error
                 );
 
                 /*
-                 * Пробуем кэш.
+                 * При ошибке сети используем M3U из кэша.
                  */
 
                 const cache =
-                    getCache();
+                    getPlaylistCache();
 
                 if (
                     cache &&
-                    cache.data &&
                     Array.isArray(
                         cache.data
-                    )
+                    ) &&
+                    cache.data.length
                 ) {
                     channels =
                         cache.data;
@@ -1213,11 +1808,10 @@
                         getEpgCache();
 
                     if (
-                        cachedEpg &&
-                        cachedEpg.data
+                        cachedEpg
                     ) {
                         epg =
-                            cachedEpg.data;
+                            cachedEpg;
                     }
 
                     showGroups();
@@ -1225,21 +1819,33 @@
                     notify(
                         "Используется сохранённый плейлист"
                     );
-                } else {
-                    showError(
-                        error.message ||
-                            "Ошибка загрузки"
-                    );
+
+                    startEPGRefresh();
+
+                    return;
                 }
+
+                showError(
+                    error &&
+                    error.message
+                        ? error.message
+                        : "Не удалось загрузить плейлист"
+                );
             }
         }
 
-        // -----------------------------------------------------
+        // =====================================================
         // LOADING
-        // -----------------------------------------------------
+        // =====================================================
 
-        function showLoading(text) {
-            if (destroyed) return;
+        function showLoading(
+            text
+        ) {
+            if (
+                destroyed
+            ) {
+                return;
+            }
 
             const loading =
                 document.getElementById(
@@ -1259,9 +1865,11 @@
 
                 loading.innerHTML = `
                     <div class="${PLUGIN.component}-spinner"></div>
-                    <div>${escapeHtml(
-                        text
-                    )}</div>
+                    <div>
+                        ${escapeHtml(
+                            text
+                        )}
+                    </div>
                 `;
             }
 
@@ -1271,23 +1879,34 @@
             }
         }
 
-        // -----------------------------------------------------
+        // =====================================================
         // GROUPS
-        // -----------------------------------------------------
+        // =====================================================
 
         function showGroups() {
-            if (destroyed) return;
+            if (
+                destroyed
+            ) {
+                return;
+            }
 
-            currentView = "groups";
-            currentGroup = null;
+            currentView =
+                "groups";
+
+            currentGroup =
+                null;
 
             const content =
                 getContent();
 
-            if (!content) return;
+            if (!content) {
+                return;
+            }
 
             const groupNames =
-                Object.keys(catalog);
+                Object.keys(
+                    catalog
+                );
 
             updateStatus(
                 channels.length +
@@ -1308,37 +1927,52 @@
                         <div
                             class="${PLUGIN.component}-quick selector"
                             data-action="all">
+
                             <div class="${PLUGIN.component}-quick-icon">
                                 📺
                             </div>
+
                             <div>
                                 <b>Все каналы</b>
-                                <small>${channels.length}</small>
+                                <small>
+                                    ${channels.length}
+                                </small>
                             </div>
+
                         </div>
 
                         <div
                             class="${PLUGIN.component}-quick selector"
                             data-action="favorites">
+
                             <div class="${PLUGIN.component}-quick-icon">
                                 ⭐
                             </div>
+
                             <div>
                                 <b>Избранное</b>
-                                <small>${getFavorites().length}</small>
+                                <small>
+                                    ${getFavorites().length}
+                                </small>
                             </div>
+
                         </div>
 
                         <div
                             class="${PLUGIN.component}-quick selector"
                             data-action="history">
+
                             <div class="${PLUGIN.component}-quick-icon">
                                 🕘
                             </div>
+
                             <div>
                                 <b>Недавние</b>
-                                <small>${getHistory().length}</small>
+                                <small>
+                                    ${getHistory().length}
+                                </small>
                             </div>
+
                         </div>
 
                     </div>
@@ -1351,7 +1985,9 @@
             `;
 
             groupNames.forEach(
-                function (name) {
+                function (
+                    name
+                ) {
                     html += `
                         <div
                             class="${PLUGIN.component}-group selector"
@@ -1395,44 +2031,53 @@
                 </div>
             `;
 
-            content.innerHTML = html;
+            content.innerHTML =
+                html;
 
             showContent();
 
-            bindGroups(content);
+            bindGroups(
+                content
+            );
         }
 
-        function bindGroups(content) {
+        function bindGroups(
+            content
+        ) {
             content
                 .querySelectorAll(
                     "." +
                         PLUGIN.component +
                         "-group"
                 )
-                .forEach(function (element) {
-                    const name =
-                        element.dataset
-                            .group;
+                .forEach(
+                    function (
+                        element
+                    ) {
+                        const name =
+                            element.dataset
+                                .group;
 
-                    const enter =
-                        function (e) {
-                            e.stopPropagation();
+                        const action =
+                            function (e) {
+                                e.stopPropagation();
 
-                            showChannels(
-                                name
-                            );
-                        };
+                                showChannels(
+                                    name
+                                );
+                            };
 
-                    $(element).on(
-                        "hover:enter",
-                        enter
-                    );
+                        $(element).on(
+                            "hover:enter",
+                            action
+                        );
 
-                    element.addEventListener(
-                        "click",
-                        enter
-                    );
-                });
+                        element.addEventListener(
+                            "click",
+                            action
+                        );
+                    }
+                );
 
             content
                 .querySelectorAll(
@@ -1440,61 +2085,65 @@
                         PLUGIN.component +
                         "-quick"
                 )
-                .forEach(function (element) {
-                    const action =
-                        element.dataset
-                            .action;
+                .forEach(
+                    function (
+                        element
+                    ) {
+                        const actionName =
+                            element.dataset
+                                .action;
 
-                    const enter =
-                        function (e) {
-                            e.stopPropagation();
+                        const action =
+                            function (e) {
+                                e.stopPropagation();
 
-                            if (
-                                action ===
-                                "all"
-                            ) {
-                                showChannels(
-                                    null
-                                );
-                            }
+                                if (
+                                    actionName ===
+                                    "all"
+                                ) {
+                                    showChannels(
+                                        null
+                                    );
+                                }
 
-                            if (
-                                action ===
-                                "favorites"
-                            ) {
-                                showFavorites();
-                            }
+                                if (
+                                    actionName ===
+                                    "favorites"
+                                ) {
+                                    showFavorites();
+                                }
 
-                            if (
-                                action ===
-                                "history"
-                            ) {
-                                showHistory();
-                            }
-                        };
+                                if (
+                                    actionName ===
+                                    "history"
+                                ) {
+                                    showHistory();
+                                }
+                            };
 
-                    $(element).on(
-                        "hover:enter",
-                        enter
-                    );
+                        $(element).on(
+                            "hover:enter",
+                            action
+                        );
 
-                    element.addEventListener(
-                        "click",
-                        enter
-                    );
-                });
+                        element.addEventListener(
+                            "click",
+                            action
+                        );
+                    }
+                );
         }
 
-        // -----------------------------------------------------
+        // =====================================================
         // CHANNELS
-        // -----------------------------------------------------
+        // =====================================================
 
         function showChannels(
             groupName
         ) {
-            if (destroyed) return;
+            currentView =
+                "channels";
 
-            currentView = "channels";
             currentGroup =
                 groupName;
 
@@ -1509,15 +2158,19 @@
             const content =
                 getContent();
 
-            if (!content) return;
+            if (!content) {
+                return;
+            }
 
-            let list = [];
+            let list;
 
             if (groupName) {
                 list =
-                    catalog[
-                        groupName
-                    ] || [];
+                    (
+                        catalog[
+                            groupName
+                        ] || []
+                    ).slice();
             } else {
                 list =
                     channels.slice();
@@ -1529,29 +2182,44 @@
                         function (
                             channel
                         ) {
-                            return (
-                                channel.title
-                                    .toLowerCase()
-                                    .indexOf(
-                                        searchQuery
-                                    ) !==
-                                    -1 ||
+                            const title =
+                                String(
+                                    channel.title ||
+                                        ""
+                                ).toLowerCase();
+
+                            const group =
                                 String(
                                     channel.group ||
                                         ""
-                                )
-                                    .toLowerCase()
-                                    .indexOf(
-                                        searchQuery
-                                    ) !== -1
+                                ).toLowerCase();
+
+                            const tvg =
+                                String(
+                                    channel.tvgId ||
+                                        ""
+                                ).toLowerCase();
+
+                            return (
+                                title.indexOf(
+                                    searchQuery
+                                ) !== -1 ||
+                                group.indexOf(
+                                    searchQuery
+                                ) !== -1 ||
+                                tvg.indexOf(
+                                    searchQuery
+                                ) !== -1
                             );
                         }
                     );
             }
 
             updateStatus(
-                (groupName ||
-                    "Все каналы") +
+                (
+                    groupName ||
+                    "Все каналы"
+                ) +
                     " • " +
                     list.length
             );
@@ -1581,6 +2249,8 @@
                         </div>
 
                     </div>
+
+                    <div class="${PLUGIN.component}-channel-list">
             `;
 
             if (!list.length) {
@@ -1593,10 +2263,6 @@
                     </div>
                 `;
             } else {
-                html += `
-                    <div class="${PLUGIN.component}-channel-list">
-                `;
-
                 list.forEach(
                     function (
                         channel,
@@ -1609,17 +2275,15 @@
                             );
                     }
                 );
-
-                html += `
-                    </div>
-                `;
             }
 
             html += `
+                    </div>
                 </div>
             `;
 
-            content.innerHTML = html;
+            content.innerHTML =
+                html;
 
             showContent();
 
@@ -1725,8 +2389,7 @@
 
                                 <div class="${PLUGIN.component}-programme-current">
 
-                                    <span class="${PLUGIN.component}-live-dot">
-                                    </span>
+                                    <span class="${PLUGIN.component}-live-dot"></span>
 
                                     <span class="${PLUGIN.component}-programme-time">
                                         ${formatTime(
@@ -1777,6 +2440,14 @@
 
                     </div>
 
+                    <button
+                        class="${PLUGIN.component}-epg-button selector"
+                        data-epg="${escapeHtml(
+                            id
+                        )}">
+                        📅
+                    </button>
+
                     <div class="${PLUGIN.component}-channel-arrow">
                         ›
                     </div>
@@ -1796,7 +2467,7 @@
                 );
 
             if (back) {
-                const backAction =
+                const action =
                     function (e) {
                         e.stopPropagation();
 
@@ -1805,12 +2476,12 @@
 
                 $(back).on(
                     "hover:enter",
-                    backAction
+                    action
                 );
 
                 back.addEventListener(
                     "click",
-                    backAction
+                    action
                 );
             }
 
@@ -1820,39 +2491,43 @@
                         PLUGIN.component +
                         "-channel"
                 )
-                .forEach(function (element) {
-                    const id =
-                        element.dataset
-                            .id;
+                .forEach(
+                    function (
+                        element
+                    ) {
+                        const id =
+                            element.dataset
+                                .id;
 
-                    const channel =
-                        findChannel(
-                            id
+                        const channel =
+                            findChannel(
+                                id
+                            );
+
+                        const action =
+                            function (e) {
+                                e.stopPropagation();
+
+                                if (
+                                    channel
+                                ) {
+                                    playChannel(
+                                        channel
+                                    );
+                                }
+                            };
+
+                        $(element).on(
+                            "hover:enter",
+                            action
                         );
 
-                    const enter =
-                        function (e) {
-                            e.stopPropagation();
-
-                            if (
-                                channel
-                            ) {
-                                playChannel(
-                                    channel
-                                );
-                            }
-                        };
-
-                    $(element).on(
-                        "hover:enter",
-                        enter
-                    );
-
-                    element.addEventListener(
-                        "click",
-                        enter
-                    );
-                });
+                        element.addEventListener(
+                            "click",
+                            action
+                        );
+                    }
+                );
 
             content
                 .querySelectorAll(
@@ -1860,62 +2535,110 @@
                         PLUGIN.component +
                         "-star"
                 )
-                .forEach(function (star) {
-                    const id =
-                        star.dataset
-                            .favorite;
+                .forEach(
+                    function (
+                        star
+                    ) {
+                        const id =
+                            star.dataset
+                                .favorite;
 
-                    const action =
-                        function (e) {
-                            e.stopPropagation();
+                        const action =
+                            function (e) {
+                                e.stopPropagation();
 
-                            const state =
-                                toggleFavorite(
-                                    id
+                                const state =
+                                    toggleFavorite(
+                                        id
+                                    );
+
+                                star.textContent =
+                                    state
+                                        ? "★"
+                                        : "☆";
+
+                                notify(
+                                    state
+                                        ? "Добавлено в избранное"
+                                        : "Удалено из избранного"
                                 );
+                            };
 
-                            star.textContent =
-                                state
-                                    ? "★"
-                                    : "☆";
+                        $(star).on(
+                            "hover:enter",
+                            action
+                        );
 
-                            notify(
-                                state
-                                    ? "Добавлено в избранное"
-                                    : "Удалено из избранного"
-                            );
-                        };
+                        star.addEventListener(
+                            "click",
+                            action
+                        );
+                    }
+                );
 
-                    $(star).on(
-                        "hover:enter",
-                        action
-                    );
+            content
+                .querySelectorAll(
+                    "." +
+                        PLUGIN.component +
+                        "-epg-button"
+                )
+                .forEach(
+                    function (
+                        button
+                    ) {
+                        const id =
+                            button.dataset
+                                .epg;
 
-                    star.addEventListener(
-                        "click",
-                        action
-                    );
-                });
+                        const action =
+                            function (e) {
+                                e.stopPropagation();
+
+                                const channel =
+                                    findChannel(
+                                        id
+                                    );
+
+                                if (
+                                    channel
+                                ) {
+                                    showProgramme(
+                                        channel
+                                    );
+                                }
+                            };
+
+                        $(button).on(
+                            "hover:enter",
+                            action
+                        );
+
+                        button.addEventListener(
+                            "click",
+                            action
+                        );
+                    }
+                );
         }
 
-        // -----------------------------------------------------
+        // =====================================================
         // FAVORITES
-        // -----------------------------------------------------
+        // =====================================================
 
         function showFavorites() {
-            if (destroyed) return;
-
             currentView =
                 "favorites";
 
-            const favoriteIds =
+            const ids =
                 getFavorites();
 
             const list =
                 channels.filter(
-                    function (channel) {
+                    function (
+                        channel
+                    ) {
                         return (
-                            favoriteIds.indexOf(
+                            ids.indexOf(
                                 getChannelId(
                                     channel
                                 )
@@ -1930,13 +2653,11 @@
             );
         }
 
-        // -----------------------------------------------------
+        // =====================================================
         // HISTORY
-        // -----------------------------------------------------
+        // =====================================================
 
         function showHistory() {
-            if (destroyed) return;
-
             currentView =
                 "history";
 
@@ -1945,14 +2666,21 @@
 
             const list =
                 history
-                    .map(function (item) {
-                        return (
-                            findChannel(
-                                item.id
-                            ) || item
-                        );
-                    })
-                    .filter(Boolean);
+                    .map(
+                        function (
+                            item
+                        ) {
+                            return (
+                                findChannel(
+                                    item.id
+                                ) ||
+                                item
+                            );
+                        }
+                    )
+                    .filter(
+                        Boolean
+                    );
 
             renderSpecialList(
                 "🕘 Недавние",
@@ -1967,7 +2695,9 @@
             const content =
                 getContent();
 
-            if (!content) return;
+            if (!content) {
+                return;
+            }
 
             updateStatus(
                 title +
@@ -1986,7 +2716,9 @@
                         </button>
 
                         <div class="${PLUGIN.component}-channel-header-title">
-                            ${title}
+                            ${escapeHtml(
+                                title
+                            )}
                         </div>
 
                         <div class="${PLUGIN.component}-channel-header-count">
@@ -2027,7 +2759,8 @@
                 </div>
             `;
 
-            content.innerHTML = html;
+            content.innerHTML =
+                html;
 
             showContent();
 
@@ -2036,26 +2769,19 @@
             );
         }
 
-        // -----------------------------------------------------
-        // SEARCH
-        // -----------------------------------------------------
-
-        // Search uses the same channel rendering,
-        // therefore no second data model is needed.
-
-        // -----------------------------------------------------
+        // =====================================================
         // PROGRAMME
-        // -----------------------------------------------------
+        // =====================================================
 
         function showProgramme(
             channel
         ) {
-            if (destroyed) return;
-
             const content =
                 getContent();
 
-            if (!content) return;
+            if (!content) {
+                return;
+            }
 
             currentView =
                 "programme";
@@ -2086,9 +2812,10 @@
                             ${
                                 channel.logo
                                     ? `
-                                <img src="${escapeHtml(
-                                    channel.logo
-                                )}">
+                                <img
+                                    src="${escapeHtml(
+                                        channel.logo
+                                    )}">
                             `
                                     : "📺"
                             }
@@ -2111,7 +2838,7 @@
                     <div class="${PLUGIN.component}-empty">
                         <div>📅</div>
                         <span>
-                            Для этого канала программа передач недоступна
+                            Программа передач недоступна
                         </span>
                     </div>
                 `;
@@ -2161,15 +2888,21 @@
                                 <div class="${PLUGIN.component}-programme-data">
 
                                     <div class="${PLUGIN.component}-programme-row-title">
+
                                         ${
                                             active
-                                                ? `<span class="${PLUGIN.component}-live-label">СЕЙЧАС</span>`
+                                                ? `
+                                            <span class="${PLUGIN.component}-live-label">
+                                                СЕЙЧАС
+                                            </span>
+                                        `
                                                 : ""
                                         }
 
                                         ${escapeHtml(
                                             programme.title
                                         )}
+
                                     </div>
 
                                     ${
@@ -2210,7 +2943,8 @@
                 </div>
             `;
 
-            content.innerHTML = html;
+            content.innerHTML =
+                html;
 
             showContent();
 
@@ -2243,9 +2977,9 @@
             }
         }
 
-        // -----------------------------------------------------
-        // PLAY CHANNEL
-        // -----------------------------------------------------
+        // =====================================================
+        // PLAY
+        // =====================================================
 
         function playChannel(
             channel
@@ -2266,28 +3000,41 @@
             );
 
             const playlist =
-                channels.map(
-                    function (item) {
-                        return {
-                            title:
-                                item.title,
+                channels
+                    .filter(
+                        function (
+                            item
+                        ) {
+                            return (
+                                item.url
+                            );
+                        }
+                    )
+                    .map(
+                        function (
+                            item
+                        ) {
+                            return {
+                                title:
+                                    item.title,
 
-                            url:
-                                item.url,
+                                url:
+                                    item.url,
 
-                            tv: true,
+                                tv:
+                                    true,
 
-                            plugin:
-                                PLUGIN.component,
+                                plugin:
+                                    PLUGIN.component,
 
-                            logo:
-                                item.logo,
+                                logo:
+                                    item.logo,
 
-                            tvg_id:
-                                item.tvgId
-                        };
-                    }
-                );
+                                tvg_id:
+                                    item.tvgId
+                            };
+                        }
+                    );
 
             const video = {
                 title:
@@ -2296,7 +3043,8 @@
                 url:
                     channel.url,
 
-                tv: true,
+                tv:
+                    true,
 
                 plugin:
                     PLUGIN.component,
@@ -2337,11 +3085,13 @@
             } catch (e) {}
         }
 
-        // -----------------------------------------------------
-        // FIND CHANNEL
-        // -----------------------------------------------------
+        // =====================================================
+        // FIND
+        // =====================================================
 
-        function findChannel(id) {
+        function findChannel(
+            id
+        ) {
             const normalized =
                 normalizeId(id);
 
@@ -2350,32 +3100,36 @@
                 i < channels.length;
                 i++
             ) {
+                const channel =
+                    channels[i];
+
                 if (
                     normalizeId(
                         getChannelId(
-                            channels[i]
+                            channel
                         )
-                    ) === normalized
+                    ) ===
+                    normalized
                 ) {
-                    return channels[i];
+                    return channel;
                 }
 
                 if (
                     normalizeId(
-                        channels[i]
-                            .tvgId
-                    ) === normalized
+                        channel.tvgId
+                    ) ===
+                    normalized
                 ) {
-                    return channels[i];
+                    return channel;
                 }
             }
 
             return null;
         }
 
-        // -----------------------------------------------------
-        // CONTENT
-        // -----------------------------------------------------
+        // =====================================================
+        // RENDER HELPERS
+        // =====================================================
 
         function getContent() {
             return document.getElementById(
@@ -2408,20 +3162,20 @@
         function updateStatus(
             text
         ) {
-            const element =
+            const status =
                 document.getElementById(
                     PLUGIN.component +
                         "-status"
                 );
 
-            if (element) {
-                element.textContent =
+            if (status) {
+                status.textContent =
                     text;
             }
         }
 
         function notify(
-            message
+            text
         ) {
             try {
                 if (
@@ -2429,28 +3183,68 @@
                     Lampa.Noty.show
                 ) {
                     Lampa.Noty.show(
-                        message
+                        text
                     );
                 }
             } catch (e) {}
         }
 
-        // -----------------------------------------------------
+        function renderCurrent() {
+            if (
+                currentView ===
+                "groups"
+            ) {
+                showGroups();
+
+                return;
+            }
+
+            if (
+                currentView ===
+                "channels"
+            ) {
+                renderChannels(
+                    currentGroup
+                );
+
+                return;
+            }
+
+            if (
+                currentView ===
+                "favorites"
+            ) {
+                showFavorites();
+
+                return;
+            }
+
+            if (
+                currentView ===
+                "history"
+            ) {
+                showHistory();
+
+                return;
+            }
+        }
+
+        // =====================================================
         // ERROR
-        // -----------------------------------------------------
+        // =====================================================
 
         function showError(
             message
         ) {
-            if (destroyed) return;
-
             const loading =
                 document.getElementById(
                     PLUGIN.component +
                         "-loading"
                 );
 
-            if (!loading) return;
+            if (!loading) {
+                return;
+            }
 
             loading.style.display =
                 "flex";
@@ -2471,8 +3265,8 @@
                 </div>
 
                 <button
-                    id="${PLUGIN.component}-retry"
-                    class="${PLUGIN.component}-retry selector">
+                    class="${PLUGIN.component}-retry selector"
+                    id="${PLUGIN.component}-retry">
                     🔄 Повторить
                 </button>
             `;
@@ -2507,12 +3301,14 @@
             }
         }
 
-        // -----------------------------------------------------
+        // =====================================================
         // EPG REFRESH
-        // -----------------------------------------------------
+        // =====================================================
 
         function startEPGRefresh() {
-            if (refreshTimer) {
+            if (
+                refreshTimer
+            ) {
                 clearInterval(
                     refreshTimer
                 );
@@ -2540,77 +3336,88 @@
                 );
         }
 
-        // -----------------------------------------------------
-        // CONTROLLER
-        // -----------------------------------------------------
+        // =====================================================
+        // START
+        // =====================================================
 
-        this.start = function () {
-            destroyed = false;
+        this.start =
+            function () {
+                destroyed =
+                    false;
 
-            Lampa.Controller.add(
-                "content",
-                {
-                    back: function () {
-                        if (
-                            destroyed
-                        ) {
-                            return;
-                        }
+                Lampa.Controller.add(
+                    "content",
+                    {
+                        back:
+                            function () {
+                                if (
+                                    destroyed
+                                ) {
+                                    return;
+                                }
 
-                        if (
-                            currentView ===
-                            "programme"
-                        ) {
-                            renderChannels(
-                                currentGroup
-                            );
+                                if (
+                                    currentView ===
+                                    "programme"
+                                ) {
+                                    renderChannels(
+                                        currentGroup
+                                    );
 
-                            return;
-                        }
+                                    return;
+                                }
 
-                        if (
-                            currentView ===
-                                "channels" ||
-                            currentView ===
-                                "favorites" ||
-                            currentView ===
-                                "history"
-                        ) {
-                            showGroups();
+                                if (
+                                    currentView ===
+                                        "channels" ||
+                                    currentView ===
+                                        "favorites" ||
+                                    currentView ===
+                                        "history"
+                                ) {
+                                    showGroups();
 
-                            return;
-                        }
+                                    return;
+                                }
 
-                        Lampa.Activity.backward();
+                                Lampa.Activity.backward();
+                            }
                     }
-                }
-            );
-
-            Lampa.Controller.toggle(
-                "content"
-            );
-        };
-
-        this.pause = function () {};
-
-        this.stop = function () {
-            destroyed = true;
-
-            if (refreshTimer) {
-                clearInterval(
-                    refreshTimer
                 );
 
-                refreshTimer = null;
-            }
-        };
+                Lampa.Controller.toggle(
+                    "content"
+                );
+            };
 
-        this.render = function () {
-            return $("<div></div>")
-                .append(
+        this.pause =
+            function () {};
+
+        this.stop =
+            function () {
+                destroyed =
+                    true;
+
+                if (
+                    refreshTimer
+                ) {
+                    clearInterval(
+                        refreshTimer
+                    );
+
+                    refreshTimer =
+                        null;
+                }
+            };
+
+        this.render =
+            function () {
+                return $(
+                    "<div></div>"
+                ).append(
                     this.create()
                 );
-        };
+            };
     }
 
     // =========================================================
@@ -2642,7 +3449,8 @@
                 return;
             }
 
-            const menuItem = $(`
+            const item =
+                $(`
                 <li
                     class="menu__item selector ${PLUGIN.component}-menu">
 
@@ -2657,7 +3465,7 @@
                 </li>
             `);
 
-            function openIPTV(e) {
+            function open(e) {
                 if (e) {
                     e.stopPropagation();
                 }
@@ -2689,24 +3497,24 @@
                     }
                 } catch (error) {
                     console.error(
-                        "[IPTV] Activity:",
+                        "[IPTV] Open:",
                         error
                     );
                 }
             }
 
-            menuItem.on(
+            item.on(
                 "hover:enter",
-                openIPTV
+                open
             );
 
-            menuItem.on(
+            item.on(
                 "click",
-                openIPTV
+                open
             );
 
             menu.append(
-                menuItem
+                item
             );
         }
 
@@ -2783,18 +3591,19 @@
                         PLUGIN.component,
 
                     param: {
-                        type: "title"
+                        type:
+                            "title"
                     },
 
                     field: {
                         name:
-                            "📺 IPTV"
+                            "📺 Настройки IPTV"
                     }
                 }
             );
 
             // -------------------------------------------------
-            // PLAYLIST
+            // M3U
             // -------------------------------------------------
 
             Lampa.SettingsApi.addParam(
@@ -2806,7 +3615,8 @@
                         name:
                             STORAGE.playlist,
 
-                        type: "input",
+                        type:
+                            "input",
 
                         placeholder:
                             DEFAULT_PLAYLIST,
@@ -2820,7 +3630,7 @@
                             "URL плейлиста M3U",
 
                         description:
-                            "Ссылка на M3U/M3U8 плейлист"
+                            "Ссылка на ваш M3U/M3U8 плейлист"
                     },
 
                     onChange:
@@ -2851,18 +3661,19 @@
                         name:
                             STORAGE.epg,
 
-                        type: "input",
+                        type:
+                            "input",
 
                         placeholder:
-                            "https://.../guide.xml"
+                            "https://example.com/epg.xml"
                     },
 
                     field: {
                         name:
-                            "URL EPG / XMLTV",
+                            "URL программы EPG",
 
                         description:
-                            "Можно оставить пустым — плагин попробует взять url-tvg из M3U"
+                            "XMLTV. Если пусто — используется url-tvg из M3U"
                     },
 
                     onChange:
@@ -2877,30 +3688,6 @@
                                 "URL EPG сохранён"
                             );
                         }
-                }
-            );
-
-            // -------------------------------------------------
-            // INFO
-            // -------------------------------------------------
-
-            Lampa.SettingsApi.addParam(
-                {
-                    component:
-                        PLUGIN.component,
-
-                    param: {
-                        type:
-                            "title"
-                    },
-
-                    field: {
-                        name:
-                            "ℹ️ Информация",
-
-                        description:
-                            "Поддерживаются M3U/M3U8, tvg-id, tvg-logo, group-title и XMLTV EPG."
-                    }
                 }
             );
 
@@ -2927,7 +3714,7 @@
                             "🔄 Сбросить настройки",
 
                         description:
-                            "Восстановить M3U по умолчанию и очистить EPG"
+                            "Вернуть M3U по умолчанию и очистить URL EPG"
                     },
 
                     onChange:
@@ -2954,7 +3741,7 @@
             );
 
             // -------------------------------------------------
-            // CLEAR FAVORITES
+            // FAVORITES
             // -------------------------------------------------
 
             Lampa.SettingsApi.addParam(
@@ -2976,7 +3763,7 @@
                             "⭐ Очистить избранное",
 
                         description:
-                            "Удалить все сохранённые избранные каналы"
+                            "Удалить все избранные каналы"
                     },
 
                     onChange:
@@ -2993,7 +3780,7 @@
             );
 
             // -------------------------------------------------
-            // CLEAR HISTORY
+            // HISTORY
             // -------------------------------------------------
 
             Lampa.SettingsApi.addParam(
@@ -3030,6 +3817,7 @@
                         }
                 }
             );
+
         } catch (e) {
             console.error(
                 "[IPTV] Settings:",
@@ -3060,22 +3848,27 @@
                 "style"
             );
 
-        style.id = styleId;
+        style.id =
+            styleId;
 
         style.textContent = `
 
         /* =====================================================
-           CONTAINER
+           MAIN
         ===================================================== */
 
         .${PLUGIN.component}-container {
             width: 100%;
             height: 100%;
             box-sizing: border-box;
+
             display: flex;
             flex-direction: column;
+
             color: #fff;
-            padding: 18px 24px 24px;
+
+            padding:
+                18px 24px 24px;
         }
 
         .${PLUGIN.component}-top {
@@ -3087,27 +3880,34 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+
             gap: 20px;
+
             margin-bottom: 14px;
         }
 
         .${PLUGIN.component}-title-main {
             display: flex;
             align-items: center;
+
             gap: 10px;
+
             font-size: 27px;
             font-weight: 800;
-            letter-spacing: -.4px;
         }
 
         .${PLUGIN.component}-title-icon {
-            font-size: 26px;
+            font-size: 27px;
         }
 
         .${PLUGIN.component}-status {
-            color: rgba(255,255,255,.45);
+            color:
+                rgba(255,255,255,.42);
+
             font-size: 13px;
-            white-space: nowrap;
+
+            white-space:
+                nowrap;
         }
 
         /* =====================================================
@@ -3116,25 +3916,44 @@
 
         .${PLUGIN.component}-toolbar {
             display: flex;
-            gap: 8px;
             flex-wrap: wrap;
+            gap: 8px;
         }
 
         .${PLUGIN.component}-tool {
-            border: 1px solid rgba(255,255,255,.08);
-            background: rgba(255,255,255,.045);
-            color: rgba(255,255,255,.8);
-            border-radius: 10px;
-            padding: 9px 14px;
-            font-size: 12px;
-            cursor: pointer;
+            border:
+                1px solid
+                rgba(255,255,255,.08);
+
+            background:
+                rgba(255,255,255,.045);
+
+            color:
+                rgba(255,255,255,.82);
+
+            border-radius:
+                10px;
+
+            padding:
+                9px 14px;
+
+            font-size:
+                12px;
+
+            cursor:
+                pointer;
         }
 
         .${PLUGIN.component}-tool:hover,
         .${PLUGIN.component}-tool.focus {
-            background: rgba(255,152,0,.14);
-            border-color: rgba(255,152,0,.35);
-            color: #fff;
+            background:
+                rgba(255,152,0,.14);
+
+            border-color:
+                rgba(255,152,0,.35);
+
+            color:
+                #fff;
         }
 
         /* =====================================================
@@ -3142,39 +3961,81 @@
         ===================================================== */
 
         .${PLUGIN.component}-search {
-            display: flex;
             position: relative;
-            margin-bottom: 14px;
+
+            display: flex;
+
+            margin-bottom:
+                14px;
         }
 
         .${PLUGIN.component}-search-input {
             width: 100%;
-            box-sizing: border-box;
-            border: 1px solid rgba(255,255,255,.1);
-            background: rgba(255,255,255,.06);
-            color: #fff;
-            border-radius: 12px;
-            padding: 12px 44px 12px 15px;
-            outline: none;
-            font-size: 14px;
+
+            box-sizing:
+                border-box;
+
+            border:
+                1px solid
+                rgba(255,255,255,.1);
+
+            background:
+                rgba(255,255,255,.06);
+
+            color:
+                #fff;
+
+            border-radius:
+                12px;
+
+            padding:
+                12px 44px 12px 15px;
+
+            outline:
+                none;
+
+            font-size:
+                14px;
         }
 
         .${PLUGIN.component}-search-input:focus {
-            border-color: rgba(255,152,0,.5);
-            background: rgba(255,255,255,.08);
+            border-color:
+                rgba(255,152,0,.5);
+
+            background:
+                rgba(255,255,255,.08);
         }
 
         .${PLUGIN.component}-search-clear {
-            position: absolute;
-            right: 7px;
-            top: 5px;
-            width: 32px;
-            height: 32px;
-            border: 0;
-            background: transparent;
-            color: rgba(255,255,255,.5);
-            font-size: 24px;
-            cursor: pointer;
+            position:
+                absolute;
+
+            right:
+                7px;
+
+            top:
+                5px;
+
+            width:
+                32px;
+
+            height:
+                32px;
+
+            border:
+                0;
+
+            background:
+                transparent;
+
+            color:
+                rgba(255,255,255,.5);
+
+            font-size:
+                24px;
+
+            cursor:
+                pointer;
         }
 
         /* =====================================================
@@ -3182,23 +4043,35 @@
         ===================================================== */
 
         .${PLUGIN.component}-scroll {
-            flex: 1;
-            min-height: 0;
-            overflow-y: auto;
-            overflow-x: hidden;
+            flex:
+                1;
+
+            min-height:
+                0;
+
+            overflow-y:
+                auto;
+
+            overflow-x:
+                hidden;
         }
 
         .${PLUGIN.component}-scroll::-webkit-scrollbar {
-            width: 4px;
+            width:
+                4px;
         }
 
         .${PLUGIN.component}-scroll::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,.14);
-            border-radius: 5px;
+            background:
+                rgba(255,255,255,.14);
+
+            border-radius:
+                5px;
         }
 
         .${PLUGIN.component}-content {
-            padding-bottom: 35px;
+            padding-bottom:
+                35px;
         }
 
         /* =====================================================
@@ -3206,33 +4079,65 @@
         ===================================================== */
 
         .${PLUGIN.component}-loading {
-            min-height: 240px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            color: rgba(255,255,255,.55);
-            font-size: 14px;
+            min-height:
+                240px;
+
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            gap:
+                12px;
+
+            color:
+                rgba(255,255,255,.55);
+
+            font-size:
+                14px;
         }
 
         .${PLUGIN.component}-spinner {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            border: 3px solid rgba(255,255,255,.07);
-            border-top-color: #ff9800;
-            animation: ${PLUGIN.component}-spin .8s linear infinite;
+            width:
+                34px;
+
+            height:
+                34px;
+
+            border-radius:
+                50%;
+
+            border:
+                3px solid
+                rgba(255,255,255,.07);
+
+            border-top-color:
+                #ff9800;
+
+            animation:
+                ${PLUGIN.component}-spin
+                .8s linear infinite;
         }
 
         @keyframes ${PLUGIN.component}-spin {
+
             from {
-                transform: rotate(0deg);
+                transform:
+                    rotate(0deg);
             }
 
             to {
-                transform: rotate(360deg);
+                transform:
+                    rotate(360deg);
             }
+
         }
 
         /* =====================================================
@@ -3240,9 +4145,14 @@
         ===================================================== */
 
         .${PLUGIN.component}-section-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin: 8px 0 12px;
+            font-size:
+                18px;
+
+            font-weight:
+                700;
+
+            margin:
+                8px 0 12px;
         }
 
         /* =====================================================
@@ -3250,46 +4160,91 @@
         ===================================================== */
 
         .${PLUGIN.component}-quick-grid {
-            display: grid;
+            display:
+                grid;
+
             grid-template-columns:
-                repeat(3, minmax(0, 1fr));
-            gap: 10px;
-            margin-bottom: 24px;
+                repeat(
+                    3,
+                    minmax(0, 1fr)
+                );
+
+            gap:
+                10px;
+
+            margin-bottom:
+                24px;
         }
 
         .${PLUGIN.component}-quick {
-            display: flex;
-            align-items: center;
-            gap: 13px;
-            min-height: 64px;
-            padding: 12px 15px;
-            box-sizing: border-box;
-            border-radius: 13px;
-            background: rgba(255,255,255,.045);
-            border: 1px solid rgba(255,255,255,.07);
-            cursor: pointer;
-            transition: .2s;
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                13px;
+
+            min-height:
+                64px;
+
+            padding:
+                12px 15px;
+
+            box-sizing:
+                border-box;
+
+            border-radius:
+                13px;
+
+            background:
+                rgba(255,255,255,.045);
+
+            border:
+                1px solid
+                rgba(255,255,255,.07);
+
+            cursor:
+                pointer;
+
+            transition:
+                .2s;
         }
 
         .${PLUGIN.component}-quick:hover {
-            transform: translateY(-2px);
-            background: rgba(255,152,0,.1);
-            border-color: rgba(255,152,0,.3);
+            transform:
+                translateY(-2px);
+
+            background:
+                rgba(255,152,0,.1);
+
+            border-color:
+                rgba(255,152,0,.3);
         }
 
         .${PLUGIN.component}-quick-icon {
-            font-size: 27px;
+            font-size:
+                27px;
         }
 
         .${PLUGIN.component}-quick b {
-            display: block;
-            font-size: 14px;
-            margin-bottom: 4px;
+            display:
+                block;
+
+            font-size:
+                14px;
+
+            margin-bottom:
+                4px;
         }
 
         .${PLUGIN.component}-quick small {
-            color: rgba(255,255,255,.4);
-            font-size: 11px;
+            color:
+                rgba(255,255,255,.4);
+
+            font-size:
+                11px;
         }
 
         /* =====================================================
@@ -3297,279 +4252,608 @@
         ===================================================== */
 
         .${PLUGIN.component}-groups {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            gap:
+                6px;
         }
 
         .${PLUGIN.component}-group {
-            width: 100%;
-            min-height: 66px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 10px 15px;
-            box-sizing: border-box;
-            border-radius: 12px;
-            background: rgba(255,255,255,.035);
-            border: 1px solid rgba(255,255,255,.055);
-            cursor: pointer;
-            transition: .2s;
+            width:
+                100%;
+
+            min-height:
+                66px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                14px;
+
+            padding:
+                10px 15px;
+
+            box-sizing:
+                border-box;
+
+            border-radius:
+                12px;
+
+            background:
+                rgba(255,255,255,.035);
+
+            border:
+                1px solid
+                rgba(255,255,255,.055);
+
+            cursor:
+                pointer;
+
+            transition:
+                .2s;
         }
 
         .${PLUGIN.component}-group:hover {
-            background: rgba(255,255,255,.075);
-            border-color: rgba(255,152,0,.25);
-            transform: translateX(3px);
+            background:
+                rgba(255,255,255,.075);
+
+            border-color:
+                rgba(255,152,0,.25);
+
+            transform:
+                translateX(3px);
         }
 
         .${PLUGIN.component}-group-icon {
-            width: 38px;
-            height: 38px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 9px;
-            background: rgba(255,152,0,.1);
-            font-size: 20px;
-            flex-shrink: 0;
+            width:
+                38px;
+
+            height:
+                38px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            border-radius:
+                9px;
+
+            background:
+                rgba(255,152,0,.1);
+
+            font-size:
+                20px;
+
+            flex-shrink:
+                0;
         }
 
         .${PLUGIN.component}-group-main {
-            min-width: 0;
-            flex: 1;
+            min-width:
+                0;
+
+            flex:
+                1;
         }
 
         .${PLUGIN.component}-group-name {
-            font-size: 14px;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size:
+                14px;
+
+            font-weight:
+                600;
+
+            white-space:
+                nowrap;
+
+            overflow:
+                hidden;
+
+            text-overflow:
+                ellipsis;
         }
 
         .${PLUGIN.component}-group-count {
-            margin-top: 4px;
-            font-size: 11px;
-            color: rgba(255,255,255,.35);
+            margin-top:
+                4px;
+
+            font-size:
+                11px;
+
+            color:
+                rgba(255,255,255,.35);
         }
 
         .${PLUGIN.component}-group-arrow {
-            font-size: 27px;
-            color: rgba(255,255,255,.25);
+            font-size:
+                27px;
+
+            color:
+                rgba(255,255,255,.25);
         }
 
         /* =====================================================
-           CHANNEL PAGE
+           CHANNEL HEADER
         ===================================================== */
 
         .${PLUGIN.component}-channel-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                12px;
+
+            margin-bottom:
+                12px;
         }
 
         .${PLUGIN.component}-back {
-            border: 1px solid rgba(255,255,255,.08);
-            background: rgba(255,255,255,.045);
-            color: rgba(255,255,255,.8);
-            border-radius: 9px;
-            padding: 8px 13px;
-            font-size: 12px;
-            cursor: pointer;
+            border:
+                1px solid
+                rgba(255,255,255,.08);
+
+            background:
+                rgba(255,255,255,.045);
+
+            color:
+                rgba(255,255,255,.8);
+
+            border-radius:
+                9px;
+
+            padding:
+                8px 13px;
+
+            font-size:
+                12px;
+
+            cursor:
+                pointer;
         }
 
         .${PLUGIN.component}-back:hover {
-            background: rgba(255,152,0,.12);
-            border-color: rgba(255,152,0,.3);
+            background:
+                rgba(255,152,0,.12);
+
+            border-color:
+                rgba(255,152,0,.3);
         }
 
         .${PLUGIN.component}-channel-header-title {
-            font-size: 19px;
-            font-weight: 700;
-            flex: 1;
+            flex:
+                1;
+
+            font-size:
+                19px;
+
+            font-weight:
+                700;
         }
 
         .${PLUGIN.component}-channel-header-count {
-            color: rgba(255,255,255,.35);
-            font-size: 12px;
+            color:
+                rgba(255,255,255,.35);
+
+            font-size:
+                12px;
         }
 
         /* =====================================================
-           CHANNEL LIST
+           CHANNELS
         ===================================================== */
 
         .${PLUGIN.component}-channel-list {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            gap:
+                6px;
         }
 
         .${PLUGIN.component}-channel {
-            width: 100%;
-            min-height: 76px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 9px 13px;
-            box-sizing: border-box;
-            background: rgba(255,255,255,.035);
-            border: 1px solid rgba(255,255,255,.055);
-            border-radius: 11px;
-            cursor: pointer;
-            transition: .18s;
+            width:
+                100%;
+
+            min-height:
+                76px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                12px;
+
+            padding:
+                9px 13px;
+
+            box-sizing:
+                border-box;
+
+            background:
+                rgba(255,255,255,.035);
+
+            border:
+                1px solid
+                rgba(255,255,255,.055);
+
+            border-radius:
+                11px;
+
+            cursor:
+                pointer;
+
+            transition:
+                .18s;
         }
 
         .${PLUGIN.component}-channel:hover {
-            background: rgba(255,255,255,.075);
-            border-color: rgba(255,152,0,.3);
-            transform: translateX(3px);
+            background:
+                rgba(255,255,255,.075);
+
+            border-color:
+                rgba(255,152,0,.3);
+
+            transform:
+                translateX(3px);
         }
 
         .${PLUGIN.component}-channel-number {
-            width: 34px;
-            text-align: center;
-            color: rgba(255,255,255,.25);
-            font-size: 11px;
-            font-variant-numeric: tabular-nums;
-            flex-shrink: 0;
+            width:
+                34px;
+
+            text-align:
+                center;
+
+            color:
+                rgba(255,255,255,.25);
+
+            font-size:
+                11px;
+
+            font-variant-numeric:
+                tabular-nums;
+
+            flex-shrink:
+                0;
         }
 
         .${PLUGIN.component}-logo {
-            width: 55px;
-            height: 55px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 9px;
-            background: rgba(255,255,255,.045);
-            overflow: hidden;
+            width:
+                55px;
+
+            height:
+                55px;
+
+            flex-shrink:
+                0;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            border-radius:
+                9px;
+
+            background:
+                rgba(255,255,255,.045);
+
+            overflow:
+                hidden;
         }
 
         .${PLUGIN.component}-logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
+            width:
+                100%;
+
+            height:
+                100%;
+
+            object-fit:
+                contain;
         }
 
         .${PLUGIN.component}-default-logo {
-            font-size: 25px;
+            font-size:
+                25px;
         }
 
         .${PLUGIN.component}-channel-body {
-            min-width: 0;
-            flex: 1;
+            min-width:
+                0;
+
+            flex:
+                1;
         }
 
         .${PLUGIN.component}-channel-name-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                8px;
         }
 
         .${PLUGIN.component}-channel-name {
-            min-width: 0;
-            flex: 1;
-            font-size: 14px;
-            font-weight: 650;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            min-width:
+                0;
+
+            flex:
+                1;
+
+            font-size:
+                14px;
+
+            font-weight:
+                650;
+
+            white-space:
+                nowrap;
+
+            overflow:
+                hidden;
+
+            text-overflow:
+                ellipsis;
         }
 
         .${PLUGIN.component}-star {
-            border: 0;
-            background: transparent;
-            color: #ffb300;
-            font-size: 21px;
-            line-height: 1;
-            padding: 3px;
-            cursor: pointer;
-            flex-shrink: 0;
+            border:
+                0;
+
+            background:
+                transparent;
+
+            color:
+                #ffb300;
+
+            font-size:
+                21px;
+
+            line-height:
+                1;
+
+            padding:
+                3px;
+
+            cursor:
+                pointer;
+
+            flex-shrink:
+                0;
         }
 
         /* =====================================================
-           EPG
+           EPG IN CHANNEL
         ===================================================== */
 
         .${PLUGIN.component}-programme {
-            margin-top: 6px;
-            min-width: 0;
+            margin-top:
+                6px;
+
+            min-width:
+                0;
         }
 
         .${PLUGIN.component}-programme-current {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            min-width: 0;
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                6px;
+
+            min-width:
+                0;
         }
 
         .${PLUGIN.component}-live-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #ff4d4d;
+            width:
+                6px;
+
+            height:
+                6px;
+
+            border-radius:
+                50%;
+
+            background:
+                #ff4d4d;
+
             box-shadow:
-                0 0 7px rgba(255,77,77,.7);
-            flex-shrink: 0;
+                0 0 7px
+                rgba(255,77,77,.7);
+
+            flex-shrink:
+                0;
         }
 
         .${PLUGIN.component}-programme-time {
-            color: rgba(255,255,255,.42);
-            font-size: 11px;
-            font-variant-numeric: tabular-nums;
-            flex-shrink: 0;
+            color:
+                rgba(255,255,255,.42);
+
+            font-size:
+                11px;
+
+            font-variant-numeric:
+                tabular-nums;
+
+            flex-shrink:
+                0;
         }
 
         .${PLUGIN.component}-programme-title {
-            color: rgba(255,255,255,.72);
-            font-size: 12px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            color:
+                rgba(255,255,255,.72);
+
+            font-size:
+                12px;
+
+            white-space:
+                nowrap;
+
+            overflow:
+                hidden;
+
+            text-overflow:
+                ellipsis;
         }
 
         .${PLUGIN.component}-progress {
-            height: 3px;
-            width: 100%;
-            margin-top: 5px;
-            background: rgba(255,255,255,.07);
-            border-radius: 3px;
-            overflow: hidden;
+            height:
+                3px;
+
+            width:
+                100%;
+
+            margin-top:
+                5px;
+
+            background:
+                rgba(255,255,255,.07);
+
+            border-radius:
+                3px;
+
+            overflow:
+                hidden;
         }
 
         .${PLUGIN.component}-progress-value {
-            height: 100%;
-            background: #ff9800;
-            border-radius: 3px;
+            height:
+                100%;
+
+            background:
+                #ff9800;
+
+            border-radius:
+                3px;
         }
 
         .${PLUGIN.component}-next {
-            margin-top: 4px;
-            color: rgba(255,255,255,.3);
-            font-size: 10px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            margin-top:
+                4px;
+
+            color:
+                rgba(255,255,255,.3);
+
+            font-size:
+                10px;
+
+            white-space:
+                nowrap;
+
+            overflow:
+                hidden;
+
+            text-overflow:
+                ellipsis;
         }
 
         .${PLUGIN.component}-next b {
-            color: rgba(255,255,255,.45);
-            margin-left: 3px;
+            color:
+                rgba(255,255,255,.45);
+
+            margin-left:
+                3px;
         }
 
         .${PLUGIN.component}-no-epg {
-            margin-top: 6px;
-            color: rgba(255,255,255,.25);
-            font-size: 10px;
+            margin-top:
+                6px;
+
+            color:
+                rgba(255,255,255,.25);
+
+            font-size:
+                10px;
+        }
+
+        /* =====================================================
+           EPG BUTTON
+        ===================================================== */
+
+        .${PLUGIN.component}-epg-button {
+            width:
+                34px;
+
+            height:
+                34px;
+
+            flex-shrink:
+                0;
+
+            border:
+                1px solid
+                rgba(255,255,255,.06);
+
+            background:
+                rgba(255,255,255,.035);
+
+            color:
+                rgba(255,255,255,.5);
+
+            border-radius:
+                8px;
+
+            cursor:
+                pointer;
+
+            font-size:
+                15px;
+        }
+
+        .${PLUGIN.component}-epg-button:hover {
+            background:
+                rgba(255,152,0,.14);
+
+            border-color:
+                rgba(255,152,0,.3);
+
+            color:
+                #fff;
         }
 
         .${PLUGIN.component}-channel-arrow {
-            color: rgba(255,255,255,.2);
-            font-size: 27px;
-            flex-shrink: 0;
+            color:
+                rgba(255,255,255,.2);
+
+            font-size:
+                27px;
+
+            flex-shrink:
+                0;
         }
 
         /* =====================================================
@@ -3577,96 +4861,192 @@
         ===================================================== */
 
         .${PLUGIN.component}-programme-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                15px;
+
+            margin-bottom:
+                15px;
         }
 
         .${PLUGIN.component}-programme-channel {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 18px;
-            font-weight: 700;
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                10px;
+
+            font-size:
+                18px;
+
+            font-weight:
+                700;
         }
 
         .${PLUGIN.component}-programme-channel img {
-            width: 38px;
-            height: 38px;
-            object-fit: contain;
-            border-radius: 7px;
+            width:
+                38px;
+
+            height:
+                38px;
+
+            object-fit:
+                contain;
+
+            border-radius:
+                7px;
         }
 
         .${PLUGIN.component}-programme-list {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            gap:
+                4px;
         }
 
         .${PLUGIN.component}-programme-row {
-            display: flex;
-            gap: 13px;
-            padding: 12px;
-            border-radius: 9px;
-            background: rgba(255,255,255,.03);
-            border: 1px solid rgba(255,255,255,.045);
+            display:
+                flex;
+
+            gap:
+                13px;
+
+            padding:
+                12px;
+
+            border-radius:
+                9px;
+
+            background:
+                rgba(255,255,255,.03);
+
+            border:
+                1px solid
+                rgba(255,255,255,.045);
         }
 
         .${PLUGIN.component}-programme-row.active {
-            background: rgba(255,152,0,.09);
-            border-color: rgba(255,152,0,.25);
+            background:
+                rgba(255,152,0,.09);
+
+            border-color:
+                rgba(255,152,0,.25);
         }
 
         .${PLUGIN.component}-programme-date {
-            width: 42px;
-            color: rgba(255,255,255,.28);
-            font-size: 10px;
-            padding-top: 2px;
-            flex-shrink: 0;
+            width:
+                42px;
+
+            color:
+                rgba(255,255,255,.28);
+
+            font-size:
+                10px;
+
+            padding-top:
+                2px;
+
+            flex-shrink:
+                0;
         }
 
         .${PLUGIN.component}-programme-hours {
-            width: 86px;
-            color: rgba(255,255,255,.5);
-            font-size: 11px;
-            white-space: nowrap;
-            padding-top: 2px;
-            flex-shrink: 0;
+            width:
+                86px;
+
+            color:
+                rgba(255,255,255,.5);
+
+            font-size:
+                11px;
+
+            white-space:
+                nowrap;
+
+            padding-top:
+                2px;
+
+            flex-shrink:
+                0;
         }
 
         .${PLUGIN.component}-programme-hours span {
-            margin: 0 3px;
-            color: rgba(255,255,255,.2);
+            margin:
+                0 3px;
+
+            color:
+                rgba(255,255,255,.2);
         }
 
         .${PLUGIN.component}-programme-data {
-            flex: 1;
-            min-width: 0;
+            flex:
+                1;
+
+            min-width:
+                0;
         }
 
         .${PLUGIN.component}-programme-row-title {
-            font-size: 13px;
-            font-weight: 600;
+            font-size:
+                13px;
+
+            font-weight:
+                600;
         }
 
         .${PLUGIN.component}-live-label {
-            display: inline-block;
-            margin-right: 7px;
-            padding: 2px 5px;
-            border-radius: 4px;
-            background: #ff9800;
-            color: #111;
-            font-size: 8px;
-            font-weight: 800;
-            vertical-align: 2px;
+            display:
+                inline-block;
+
+            margin-right:
+                7px;
+
+            padding:
+                2px 5px;
+
+            border-radius:
+                4px;
+
+            background:
+                #ff9800;
+
+            color:
+                #111;
+
+            font-size:
+                8px;
+
+            font-weight:
+                800;
+
+            vertical-align:
+                2px;
         }
 
         .${PLUGIN.component}-programme-desc {
-            margin-top: 5px;
-            color: rgba(255,255,255,.38);
-            font-size: 11px;
-            line-height: 1.4;
+            margin-top:
+                5px;
+
+            color:
+                rgba(255,255,255,.38);
+
+            font-size:
+                11px;
+
+            line-height:
+                1.4;
         }
 
         /* =====================================================
@@ -3674,48 +5054,90 @@
         ===================================================== */
 
         .${PLUGIN.component}-empty {
-            min-height: 220px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            color: rgba(255,255,255,.35);
+            min-height:
+                220px;
+
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            gap:
+                10px;
+
+            color:
+                rgba(255,255,255,.35);
         }
 
         .${PLUGIN.component}-empty div {
-            font-size: 42px;
+            font-size:
+                42px;
         }
 
         .${PLUGIN.component}-empty span {
-            font-size: 13px;
+            font-size:
+                13px;
         }
 
         .${PLUGIN.component}-error-icon {
-            font-size: 42px;
+            font-size:
+                42px;
         }
 
         .${PLUGIN.component}-error-title {
-            color: #fff;
-            font-size: 17px;
-            font-weight: 700;
+            color:
+                #fff;
+
+            font-size:
+                17px;
+
+            font-weight:
+                700;
         }
 
         .${PLUGIN.component}-error-text {
-            max-width: 500px;
-            color: rgba(255,255,255,.4);
-            text-align: center;
-            font-size: 12px;
+            max-width:
+                500px;
+
+            color:
+                rgba(255,255,255,.4);
+
+            text-align:
+                center;
+
+            font-size:
+                12px;
         }
 
         .${PLUGIN.component}-retry {
-            margin-top: 8px;
-            padding: 9px 18px;
-            border-radius: 9px;
-            border: 1px solid rgba(255,255,255,.1);
-            background: rgba(255,255,255,.06);
-            color: #fff;
-            cursor: pointer;
+            margin-top:
+                8px;
+
+            padding:
+                9px 18px;
+
+            border-radius:
+                9px;
+
+            border:
+                1px solid
+                rgba(255,255,255,.1);
+
+            background:
+                rgba(255,255,255,.06);
+
+            color:
+                #fff;
+
+            cursor:
+                pointer;
         }
 
         /* =====================================================
@@ -3725,13 +5147,19 @@
         @media (max-width: 900px) {
 
             .${PLUGIN.component}-container {
-                padding-left: 16px;
-                padding-right: 16px;
+                padding-left:
+                    16px;
+
+                padding-right:
+                    16px;
             }
 
             .${PLUGIN.component}-quick-grid {
                 grid-template-columns:
-                    repeat(3, minmax(0, 1fr));
+                    repeat(
+                        3,
+                        minmax(0, 1fr)
+                    );
             }
 
         }
@@ -3739,11 +5167,13 @@
         @media (max-width: 650px) {
 
             .${PLUGIN.component}-title {
-                display: block;
+                display:
+                    block;
             }
 
             .${PLUGIN.component}-status {
-                margin-top: 4px;
+                margin-top:
+                    4px;
             }
 
             .${PLUGIN.component}-quick-grid {
@@ -3752,29 +5182,39 @@
             }
 
             .${PLUGIN.component}-channel-number {
-                display: none;
+                display:
+                    none;
             }
 
             .${PLUGIN.component}-logo {
-                width: 48px;
-                height: 48px;
+                width:
+                    48px;
+
+                height:
+                    48px;
             }
 
             .${PLUGIN.component}-channel {
-                min-height: 68px;
-                padding: 8px 10px;
+                min-height:
+                    68px;
+
+                padding:
+                    8px 10px;
             }
 
             .${PLUGIN.component}-programme-row {
-                flex-wrap: wrap;
+                flex-wrap:
+                    wrap;
             }
 
             .${PLUGIN.component}-programme-date {
-                display: none;
+                display:
+                    none;
             }
 
             .${PLUGIN.component}-programme-hours {
-                width: auto;
+                width:
+                    auto;
             }
 
         }
@@ -3787,21 +5227,37 @@
             }
 
             .${PLUGIN.component}-title-main {
-                font-size: 21px;
+                font-size:
+                    21px;
             }
 
             .${PLUGIN.component}-tool {
                 padding:
                     8px 10px;
-                font-size: 11px;
+
+                font-size:
+                    11px;
             }
 
             .${PLUGIN.component}-channel-name {
-                font-size: 13px;
+                font-size:
+                    13px;
             }
 
             .${PLUGIN.component}-programme-title {
-                font-size: 11px;
+                font-size:
+                    11px;
+            }
+
+            .${PLUGIN.component}-epg-button {
+                width:
+                    30px;
+
+                height:
+                    30px;
+
+                font-size:
+                    13px;
             }
 
         }
@@ -3814,7 +5270,7 @@
     }
 
     // =========================================================
-    // REGISTER COMPONENT
+    // REGISTER
     // =========================================================
 
     function registerComponent() {
@@ -3825,14 +5281,14 @@
             );
         } catch (e) {
             console.error(
-                "[IPTV] Component:",
+                "[IPTV] Register:",
                 e
             );
         }
     }
 
     // =========================================================
-    // START
+    // START PLUGIN
     // =========================================================
 
     function startPlugin() {
@@ -3856,12 +5312,16 @@
 
         addMenuItem();
 
-        if (window.appready) {
+        if (
+            window.appready
+        ) {
             setupSettings();
         } else {
             Lampa.Listener.follow(
                 "app",
-                function (event) {
+                function (
+                    event
+                ) {
                     if (
                         event.type ===
                         "ready"
