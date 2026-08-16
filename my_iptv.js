@@ -856,6 +856,71 @@ function pluginPage(object) {
 	if (!enableCardEpg) epgEl.hide();
 	if (epg.length < 3) epgUpdateData(epgId);
     }
+    // Принудительно задаёт inline-стиль с !important — побеждает
+    // любые правила CSS темы, независимо от их специфичности
+    function forceStyleImportant(el, styles) {
+	if (!el || !el.style) return;
+	for (var prop in styles) {
+	    if (styles.hasOwnProperty(prop)) {
+		el.style.setProperty(prop, styles[prop], 'important');
+	    }
+	}
+    }
+    function applyFullWidthRowStyle(card) {
+	forceStyleImportant(card[0], {
+	    'display': 'grid',
+	    'grid-template-columns': '3.6em 1fr',
+	    'grid-template-rows': 'auto auto',
+	    'grid-template-areas': '"logo title" "logo age"',
+	    'align-items': 'center',
+	    'column-gap': '1em',
+	    'width': '100%',
+	    'max-width': '100%',
+	    'float': 'none',
+	    'margin': '0 0 .6em 0',
+	    'padding': '.7em .9em',
+	    'background': '#2a2a2ac2',
+	    'border-radius': '1em',
+	    'box-sizing': 'border-box',
+	    'height': 'auto',
+	    'min-height': '0'
+	});
+	forceStyleImportant(card.find('.card__view')[0], {
+	    'grid-area': 'logo',
+	    'padding-bottom': '0',
+	    'width': '3.6em',
+	    'height': '3.6em',
+	    'position': 'relative',
+	    'background': '#3a3a3aa6'
+	});
+	forceStyleImportant(card.find('.card__title')[0], {
+	    'grid-area': 'title',
+	    'display': 'block',
+	    'position': 'static',
+	    'opacity': '1',
+	    'color': '#fff',
+	    'font-size': '1.05em',
+	    'font-weight': '600',
+	    'white-space': 'nowrap',
+	    'overflow': 'hidden',
+	    'text-overflow': 'ellipsis',
+	    'margin': '0'
+	});
+	forceStyleImportant(card.find('.card__age')[0], {
+	    'grid-area': 'age',
+	    'display': 'block',
+	    'position': 'relative',
+	    'width': '100%',
+	    'height': 'auto',
+	    'min-height': '0',
+	    'margin-top': '.3em',
+	    'border': 'none',
+	    'padding': '0',
+	    'background': 'rgba(255,255,255,.06)',
+	    'overflow': 'hidden',
+	    'border-radius': '.3em'
+	});
+    }
     this.append = function (data) {
 	var catEpg = [];
 	var chIndex = 0;
@@ -908,6 +973,27 @@ function pluginPage(object) {
 		tvgDay = 0;
 	    }
 	    card.find('.card__age').html('<div class="card__epg-progress js-epgProgress"></div><div class="card__epg-title js-epgTitle"></div>')
+	    if (getSettings('full_width_channels')) {
+		applyFullWidthRowStyle(card);
+		forceStyleImportant(card.find('.card__epg-progress')[0], {
+		    'position': 'absolute',
+		    'top': '0',
+		    'left': '0',
+		    'height': '100%',
+		    'background': '#f2b53d',
+		    'opacity': '.3'
+		});
+		forceStyleImportant(card.find('.card__epg-title')[0], {
+		    'position': 'relative',
+		    'display': 'block',
+		    'padding': '.25em .4em',
+		    'font-size': '.85em',
+		    'color': '#f2b53d',
+		    'white-space': 'nowrap',
+		    'overflow': 'hidden',
+		    'text-overflow': 'ellipsis'
+		});
+	    }
 	    if (object.currentGroup !== '' && favorite.indexOf(favID(channel.Title)) !== -1) {
 		favIcon.toggleClass('hide', false);
 	    }
