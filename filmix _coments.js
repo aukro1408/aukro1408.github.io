@@ -1,10 +1,10 @@
-/* ===== Filmix Comments V7 — реальные комментарии ===== */
+/* ===== Filmix Comments V8 — реальные комментарии ===== */
 (function () {
     'use strict';
 
-    const PLUGIN_FLAG = 'filmix_comments_v7';
-    const BUTTON_CLASS = 'button--filmix-comments-v7';
-    const STYLE_ID = 'filmix-comments-v7-style';
+    const PLUGIN_FLAG = 'filmix_comments_v8';
+    const BUTTON_CLASS = 'button--filmix-comments-v8';
+    const STYLE_ID = 'filmix-comments-v8-style';
 
     // Текущий рабочий Worker. Слэш в конце оставляем намеренно.
     const WORKER_URL = 'https://rezka-comments-proxy.aukro1408.workers.dev/';
@@ -40,8 +40,26 @@
         ).trim();
     }
 
-    // Ищем Filmix-путь внутри объекта фильма. В разных сборках Lampa
-    // источник может находиться в разных полях.
+    // Filmix в Lampa не всегда передаёт готовый URL источника.
+    // Поэтому V8 умеет строить путь напрямую из ID фильма/сериала.
+    function getMovieId(movie) {
+        const values = [
+            movie && movie.id,
+            movie && movie.tmdb_id,
+            movie && movie.tmdbId,
+            movie && movie.kinopoisk_id,
+            movie && movie.kinopoiskId
+        ];
+
+        for (const value of values) {
+            if (value !== undefined && value !== null && /^\d+$/.test(String(value).trim())) {
+                return String(value).trim();
+            }
+        }
+
+        return '';
+    }
+
     function findFilmixPath(movie) {
         const visited = new Set();
         const candidates = [];
@@ -51,17 +69,16 @@
 
             if (typeof value === 'string') {
                 const s = value.trim();
-                if (
-                    /filmix\.(?:gg|ru|tv|cc|to|site)/i.test(s) ||
-                    /\/(?:seria|serial|film|movie|show)\//i.test(s)
-                ) candidates.push(s);
+                if (/filmix\./i.test(s) || /\/(?:seria|serial|film|movie|show)\//i.test(s)) {
+                    candidates.push(s);
+                }
                 return;
             }
 
             if (typeof value !== 'object' || visited.has(value)) return;
             visited.add(value);
 
-            Object.keys(value).forEach(function (key) {
+            Object.keys(value).forEach(function(key) {
                 const item = value[key];
                 if (/url|href|link|path|source|iframe/i.test(key) || depth < 2) {
                     walk(item, depth + 1);
@@ -75,14 +92,98 @@
             try {
                 if (/^https?:\/\//i.test(candidate)) {
                     const url = new URL(candidate);
-                    if (/filmix\./i.test(url.hostname)) return url.pathname;
+                    if (/filmix\./i.test(url.hostname)) return url.pathname.replace(/\/$/, '');
                 } else if (candidate.startsWith('/')) {
-                    return candidate.split('?')[0];
+                    const path = candidate.split('?')[0].replace(/\/$/, '');
+                    if (/\/(?:seria|serial|film|movie|show)\//i.test(path)) return path;
                 }
             } catch (e) {}
         }
 
         return '';
+    }
+
+    // Строим возможные Filmix URL по ID.
+    // Для сериалов Filmix использует /seria/<жанр>/<id>/commentary.
+    function buildFilmixPaths(movie) {
+        const paths = [];
+        const seen = new Set();
+        const direct = findFilmixPath(movie);
+        const id = getMovieId(movie);
+
+        function add(path) {
+            if (!path) return;
+            path = path.replace(/\/$/, '');
+            if (!seen.has(path)) {
+                seen.add(path);
+                paths.push(path);
+            }
+        }
+
+        if (direct) add(direct);
+        if (!id) return paths;
+
+        const type = String((movie && (movie.type || movie.media_type || movie.category)) || '').toLowerCase();
+        const title = getMovieTitle(movie).toLowerCase();
+        const isSeries = type.includes('tv') || type.includes('serial') || type.includes('serie') ||
+            type.includes('show') || type.includes('сериал') ||
+            !!(movie && (movie.number_of_seasons || movie.seasons || movie.season));
+
+        const genres = [];
+        const rawGenres = movie && (movie.genres || movie.genre);
+        if (Array.isArray(rawGenres)) {
+            rawGenres.forEach(function(g) {
+                const name = typeof g === 'string' ? g : (g && (g.name || g.title || ''));
+                if (name) genres.push(String(name).toLowerCase());
+            });
+        } else if (typeof rawGenres === 'string') {
+            genres.push(rawGenres.toLowerCase());
+        }
+
+        const genreMap = {
+            'драма':'drama', 'drama':'drama',
+            'детектив':'detective', 'детективы':'detective', 'detective':'detective',
+            'триллер':'thriller', 'thriller':'thriller',
+            'ужасы':'horror', 'ужас':'horror', 'horror':'horror',
+            'фантастика':'fantastika', 'fantasy':'fantasy', 'фэнтези':'fantasy',
+            'боевик':'boevik', 'action':'boevik',
+            'комедия':'comedy', 'comedy':'comedy',
+            'мелодрама':'melodrama', 'романтика':'melodrama',
+            'криминал':'crime', 'crime':'crime',
+            'приключения':'adventure', 'adventure':'adventure',
+            'семейный':'family', 'семейное':'family', 'family':'family',
+            'мультфильм':'multfilm', 'мультфильмы':'multfilm', 'animation':'multfilm',
+            'военный':'voenniy', 'военное':'voenniy',
+            'история':'history', 'исторический':'history',
+            'музыка':'music', 'music':'music',
+            'спорт':'sport', 'sport':'sport'
+        };
+
+        const mapped = [];
+        genres.forEach(function(g) {
+            if (genreMap[g] && mapped.indexOf(genreMap[g]) < 0) mapped.push(genreMap[g]);
+        });
+
+        // Для сериалов сначала пробуем жанры из карточки, затем самые частые.
+        // Для неизвестного типа также проверяем оба варианта Filmix.
+        const seriesGenres = mapped.concat(['drama','detective','thriller','horror','fantastika','comedy','crime','melodrama']);
+        const filmGenres = mapped.concat(['drama','thriller','comedy','boevik','fantastika','horror','crime']);
+        const list = isSeries ? seriesGenres : filmGenres;
+
+        list.forEach(function(genre) {
+            add('/seria/' + genre + '/' + id + '/commentary');
+        });
+
+        // Filmix иногда использует /film/ вместо /seria/.
+        filmGenres.slice(0, 5).forEach(function(genre) {
+            add('/film/' + genre + '/' + id + '/commentary');
+        });
+
+        // Последняя попытка: ID без жанра — полезно для нестандартных страниц.
+        add('/seria/' + id + '/commentary');
+        add('/film/' + id + '/commentary');
+
+        return paths;
     }
 
     // У Worker уже приходят реальные items, но его универсальный HTML-парсер
@@ -142,31 +243,31 @@
         const style = document.createElement('style');
         style.id = STYLE_ID;
         style.textContent = `
-            .fcv7-container {
+            .fcv8-container {
                 box-sizing:border-box;
                 width:100%;
                 padding:4px 12px 34px;
                 background:#292929;
                 border-radius:20px;
             }
-            .fcv7-container *, .fcv7-container *::before, .fcv7-container *::after {
+            .fcv8-container *, .fcv8-container *::before, .fcv8-container *::after {
                 box-sizing:border-box;
             }
-            .fcv7-header {
+            .fcv8-header {
                 display:flex;
                 align-items:center;
                 justify-content:space-between;
                 gap:12px;
                 padding:8px 4px 18px;
             }
-            .fcv7-header-title {
+            .fcv8-header-title {
                 color:#fff;
                 font-size:20px;
                 line-height:1.2;
                 font-weight:800;
                 letter-spacing:-.02em;
             }
-            .fcv7-header-count {
+            .fcv8-header-count {
                 min-width:42px;
                 padding:7px 12px;
                 border-radius:999px;
@@ -177,12 +278,12 @@
                 font-weight:800;
                 box-shadow:0 7px 18px rgba(79,140,255,.24);
             }
-            .fcv7-subtitle {
+            .fcv8-subtitle {
                 padding:0 4px 16px;
                 color:rgba(255,255,255,.48);
                 font-size:12px;
             }
-            .fcv7-comment {
+            .fcv8-comment {
                 position:relative;
                 margin:0 0 13px;
                 padding:20px 18px 20px 28px;
@@ -193,7 +294,7 @@
                 box-shadow:0 12px 28px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.035);
                 transition:transform .16s ease,background .16s ease,border-color .16s ease,box-shadow .16s ease;
             }
-            .fcv7-comment::before {
+            .fcv8-comment::before {
                 content:"";
                 position:absolute;
                 left:0;
@@ -203,23 +304,23 @@
                 border-radius:0 8px 8px 0;
                 background:linear-gradient(180deg,#4f8cff 0%,#7c5cff 16%,#c45cff 32%,#ff4fa3 48%,#ff6b6b 64%,#ffbd4a 80%,#45d483 92%,#4f8cff 100%);
                 background-size:100% 260%;
-                animation:fcv7Rainbow 3.6s ease-in-out infinite;
+                animation:fcv8Rainbow 3.6s ease-in-out infinite;
                 box-shadow:0 0 8px rgba(79,140,255,.55),0 0 18px rgba(196,92,255,.30);
                 pointer-events:none;
                 z-index:2;
             }
-            @keyframes fcv7Rainbow {
+            @keyframes fcv8Rainbow {
                 0%{background-position:0 0%;filter:hue-rotate(0deg)}
                 50%{background-position:0 100%;filter:hue-rotate(22deg)}
                 100%{background-position:0 0%;filter:hue-rotate(0deg)}
             }
-            .fcv7-comment.focus,.fcv7-comment:hover {
+            .fcv8-comment.focus,.fcv8-comment:hover {
                 transform:translateY(-2px) scale(1.003);
                 background:linear-gradient(165deg,#2b2b30,#1e1e22);
                 border-color:rgba(79,140,255,.25);
                 box-shadow:0 18px 34px rgba(0,0,0,.44),0 0 0 1px rgba(79,140,255,.05);
             }
-            .fcv7-text {
+            .fcv8-text {
                 display:block;
                 margin:0!important;
                 padding:0!important;
@@ -231,14 +332,14 @@
                 overflow-wrap:anywhere;
                 white-space:pre-wrap;
             }
-            .fcv7-empty,.fcv7-error {
+            .fcv8-empty,.fcv8-error {
                 padding:45px 20px;
                 color:rgba(255,255,255,.58);
                 text-align:center;
                 line-height:1.5;
             }
-            .fcv7-error { color:#ff8f8f; }
-            .button--filmix-comments-v7 svg {
+            .fcv8-error { color:#ff8f8f; }
+            .button--filmix-comments-v8 svg {
                 width:22px;height:22px;margin-right:7px;fill:currentColor;
             }
         `;
@@ -247,19 +348,19 @@
 
     function renderComments(title, comments) {
         let html = `
-            <div class="fcv7-container">
-                <div class="fcv7-header">
-                    <div class="fcv7-header-title">Комментарии</div>
-                    <div class="fcv7-header-count">${comments.length}</div>
+            <div class="fcv8-container">
+                <div class="fcv8-header">
+                    <div class="fcv8-header-title">Комментарии</div>
+                    <div class="fcv8-header-count">${comments.length}</div>
                 </div>
-                <div class="fcv7-subtitle">${escapeHtml(title)}</div>
+                <div class="fcv8-subtitle">${escapeHtml(title)}</div>
         `;
 
         if (!comments.length) {
-            html += '<div class="fcv7-empty">Комментариев пока нет</div>';
+            html += '<div class="fcv8-empty">Комментариев пока нет</div>';
         } else {
             comments.forEach(function (comment) {
-                html += `<div class="fcv7-comment selector" tabindex="0"><div class="fcv7-text">${escapeHtml(comment)}</div></div>`;
+                html += `<div class="fcv8-comment selector" tabindex="0"><div class="fcv8-text">${escapeHtml(comment)}</div></div>`;
             });
         }
 
@@ -267,21 +368,36 @@
     }
 
     async function loadComments(movie) {
-        const path = findFilmixPath(movie);
-        if (!path) throw new Error('Не найден путь Filmix у текущего фильма');
+        const paths = buildFilmixPaths(movie);
+        if (!paths.length) throw new Error('Не найден ID текущего фильма');
 
-        const cleanPath = path.endsWith('/') ? path.slice(0, -1) : path;
-        const url = WORKER_URL + 'comments?path=' + encodeURIComponent(cleanPath);
+        let lastError = null;
 
-        const response = await fetch(url, { method:'GET', cache:'no-store' });
-        if (!response.ok) throw new Error('Worker HTTP ' + response.status);
+        for (const path of paths) {
+            try {
+                const url = WORKER_URL + 'comments?path=' + encodeURIComponent(path);
+                const response = await fetch(url, { method:'GET', cache:'no-store' });
+                if (!response.ok) {
+                    lastError = new Error('Worker HTTP ' + response.status);
+                    continue;
+                }
 
-        const data = await response.json();
-        if (!data || data.success !== true) {
-            throw new Error(data && data.message ? data.message : 'Worker вернул ошибку');
+                const data = await response.json();
+                if (!data || data.success !== true) {
+                    lastError = new Error(data && data.message ? data.message : 'Worker вернул ошибку');
+                    continue;
+                }
+
+                const comments = normalizeComments(data);
+                if (comments.length) return comments;
+
+                lastError = new Error('Комментарии не найдены по пути ' + path);
+            } catch (error) {
+                lastError = error;
+            }
         }
 
-        return normalizeComments(data);
+        throw lastError || new Error('Комментарии не найдены');
     }
 
     function openComments(movie) {
@@ -289,13 +405,13 @@
         const title = getMovieTitle(movie);
 
         const loading = $(`
-            <div class="fcv7-container">
-                <div class="fcv7-header">
-                    <div class="fcv7-header-title">Комментарии</div>
-                    <div class="fcv7-header-count">…</div>
+            <div class="fcv8-container">
+                <div class="fcv8-header">
+                    <div class="fcv8-header-title">Комментарии</div>
+                    <div class="fcv8-header-count">…</div>
                 </div>
-                <div class="fcv7-subtitle">${escapeHtml(title)}</div>
-                <div class="fcv7-empty">Загружаем комментарии…</div>
+                <div class="fcv8-subtitle">${escapeHtml(title)}</div>
+                <div class="fcv8-empty">Загружаем комментарии…</div>
             </div>
         `);
 
@@ -318,22 +434,22 @@
             modalHtml.find('.selector').on('hover:enter',function(){ $(this).addClass('focus'); });
             modalHtml.find('.selector').on('hover:leave',function(){ $(this).removeClass('focus'); });
         }).catch(function(error){
-            console.error('[Filmix Comments V7]', error);
+            console.error('[Filmix Comments V8]', error);
             loading.replaceWith($(`
-                <div class="fcv7-container">
-                    <div class="fcv7-header">
-                        <div class="fcv7-header-title">Комментарии</div>
-                        <div class="fcv7-header-count">!</div>
+                <div class="fcv8-container">
+                    <div class="fcv8-header">
+                        <div class="fcv8-header-title">Комментарии</div>
+                        <div class="fcv8-header-count">!</div>
                     </div>
-                    <div class="fcv7-subtitle">${escapeHtml(title)}</div>
-                    <div class="fcv7-error">Не удалось загрузить комментарии</div>
+                    <div class="fcv8-subtitle">${escapeHtml(title)}</div>
+                    <div class="fcv8-error">Не удалось загрузить комментарии</div>
                 </div>
             `));
         });
     }
 
     function addButton(movie) {
-        $('.button--filmix-comments-v7').remove();
+        $('.button--filmix-comments-v8').remove();
 
         const button = $(`
             <div class="full-start__button selector ${BUTTON_CLASS}">
