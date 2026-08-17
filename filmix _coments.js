@@ -1,3 +1,45 @@
+<style>
+/* V6.2 — animated rainbow accent */
+.comments-ui-v62 .comment-card,
+.comment-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.comments-ui-v62 .comment-card::before,
+.comment-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 18px;
+    bottom: 18px;
+    width: 5px;
+    border-radius: 0 8px 8px 0;
+    background: linear-gradient(
+        180deg,
+        #5b8cff 0%,
+        #8b5cf6 20%,
+        #ec4899 40%,
+        #ff4d6d 58%,
+        #ffb020 76%,
+        #35d07f 90%,
+        #5b8cff 100%
+    );
+    background-size: 100% 260%;
+    animation: commentsGradientFlow 4s linear infinite;
+    box-shadow:
+        0 0 10px rgba(91,140,255,.45),
+        0 0 20px rgba(236,72,153,.18);
+    z-index: 2;
+    pointer-events: none;
+}
+
+@keyframes commentsGradientFlow {
+    0%   { background-position: 0 0%; }
+    50%  { background-position: 0 100%; }
+    100% { background-position: 0 0%; }
+}
+</style>
 (function () {
     "use strict";
 
@@ -198,14 +240,14 @@
             .fcv6-footer {
                 padding: 10px 4px 0;
                 color: rgba(255,255,255,.26);
-                text-align: center;
+                text-align: left;
                 font-size: 10px;
             }
 
             .fcv6-empty {
                 padding: 45px 20px;
                 color: #aaa;
-                text-align: center;
+                text-align: left;
             }
 
             .button--filmix-comments-v6 svg {
