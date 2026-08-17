@@ -5,14 +5,14 @@
      * ============================================================
      * LAMPA — COMMENTS UI V6
      * ------------------------------------------------------------
-     * Только UI-прототип.
-     * Никаких API, fetch, прокси, ключей и внешних запросов.
+     * Реальные комментарии Filmix через наш Cloudflare Worker.
      * ============================================================
      */
 
-    const PLUGIN_FLAG = "filmix_comments_ui_v6";
-    const BUTTON_CLASS = "button--filmix-comments-v6";
-    const STYLE_ID = "filmix-comments-ui-v6-style";
+    const PLUGIN_FLAG = "filmix_comments_ui_v7";
+    const BUTTON_CLASS = "button--filmix-comments-v7";
+    const STYLE_ID = "filmix-comments-ui-v7-style";
+    const PROXY_URL = "https://rezka-comments-proxy.aukro1408.workers.dev";
 
     // ------------------------------------------------------------
     // Тестовые комментарии.
@@ -20,26 +20,7 @@
     // данными Filmix, не меняя сам интерфейс.
     // ------------------------------------------------------------
 
-    const COMMENTS = [
-        "Сериал отличный, могу рекомендовать. Но есть одно огромное но. Его надо смотреть на перемотке. Половина каждой серии — пустая бессмысленная болтовня, чтобы растянуть время. Если тупые диалоги скипать, то вполне сериал зайдет.",
-        "Я убью тебя лодочник. Это к продюсерам...)",
-        "Интересный сериал жду 5 сезон.",
-        "Суть современных сериалов, они делаются не для зрителей. А для стриминговых площадок. Цель тянуть как можно дальше для рекламных пауз. Что там в сериале, последовательность событий, логика никого уже не волнует. Цель удержать зрителя тайной, и пофиг на качество. Ушло то хорошее кино.",
-        "Теперь целый год будем ждать как камни из сумки упадут на дно, дно, оставленное нам создателями сего творения...",
-        "Закончил смотреть на 2 сезоне, потому что слишком затянуто. Что там, стало что-то понятно?",
-        "Начитавшись много говоря плохих отзывов чуть было не сделал ошибку и не забросил его. Но к моему большому удивлению при просмотре даже и близко не хотелось. Более того, сезон вышел достаточно комплексным и последовательным продолжением предыдущих. Ничего не понравилось смотреть трейлеры сезона, хотя ожидалось назад, понимал, что отталкивает. Прозрачность сюжета мне нравится и не обидели. Единственная вещь, которую для себя тогда предположил, что атмосфернее сериалы нужно смотреть с хорошим погружением. Иначе теряется настроение и весь интерес. Таким образом четвертый сезон начался на самом моем такого рода, как он полностью. И заломило первый в целом. В общем очень понравилось. Естественно не было таких же эмоций, как от первого сезона. Но снова же, на тот момент сериал был совсем не знакомым и ожидает от него такой же загадочности как сейчас, так и в будущем, наверное все-таки не стоит. Это как знакомый с одной и той же девушкой несколько раз — но всё будет полностью и новым.",
-        "Я первый на постере такое же лицо как у меня после просмотра 4 сезона. О чем он был когда он был и зачем. Я все еще в полном ахуи, что это смотрю. Кажется примитивная тема где-то работает, но мы все помним чем такие длинные сериалы заканчиваются. Писанина сценария видимо происходит не сразу — а месте съемок. Последняя серия вообще высер. Разочарование ведь была атмосфера, загадка. А теперь что?",
-        "Так и есть. Сейчас все сериалы и сезоны пишутся быстро на коленке. Даже концовка может быть не придумана. Типо серии вариант сценаристы на ходу.",
-        "4 сезон самый интересный! И закончился интригующе! Так что жду финальный сезон и надеюсь что не споганят конец.",
-        "Сезон ни о чем. Что он был, что его не было...",
-        "Ну так же закрутили, шо не знают как выкрутитись! Якщо далі так піде, то треба ще 4 сезони знімати.",
-        "Четвертым сезоном можно было и закончить. Тем более, что закончился он так, будто пол серии до финала не хватает.",
-        "Согласен! Эта интрига уже надоела! Думаю что сценаристы тоже не знают, что происходит! Показали что купол разбился и все попали домой и это был страшный сон Бойда, который был под кислотой.",
-        "Всё, хватит. Объявляйте о закрытии. Имейте сострадание, заберите кактус.",
-        "Поддерживаю!",
-        "В прошлых сезонах они хоть в последние 10 секунд последней серии сезона делали интригу, а в 4 сезоне даже на это забили.)",
-        "Что-то попна, затянули дали никуда, типа 3-4 сезон одне бла бла бла."
-    ];
+    const COMMENTS = [];
 
     function escapeHtml(value) {
         return String(value || "")
@@ -69,30 +50,30 @@
         style.id = STYLE_ID;
 
         style.textContent = `
-            .fcv6-container {
-                --fcv6-accent: #4f8cff;
-                --fcv6-accent-soft: rgba(79, 140, 255, .14);
-                --fcv6-bg: #131316;
-                --fcv6-card: linear-gradient(165deg, #252529, #1a1a1d);
-                --fcv6-card-hover: linear-gradient(165deg, #2b2b30, #1e1e22);
-                --fcv6-border: rgba(255,255,255,.075);
-                --fcv6-text: #f2f2f4;
-                --fcv6-muted: rgba(255,255,255,.48);
+            .fcv7-container {
+                --fcv7-accent: #4f8cff;
+                --fcv7-accent-soft: rgba(79, 140, 255, .14);
+                --fcv7-bg: #131316;
+                --fcv7-card: linear-gradient(165deg, #252529, #1a1a1d);
+                --fcv7-card-hover: linear-gradient(165deg, #2b2b30, #1e1e22);
+                --fcv7-border: rgba(255,255,255,.075);
+                --fcv7-text: #f2f2f4;
+                --fcv7-muted: rgba(255,255,255,.48);
 
                 box-sizing: border-box;
                 width: 100%;
                 padding: 4px 12px 34px;
-                background: var(--fcv6-bg);
+                background: var(--fcv7-bg);
                 border-radius: 20px;
             }
 
-            .fcv6-container *,
-            .fcv6-container *::before,
-            .fcv6-container *::after {
+            .fcv7-container *,
+            .fcv7-container *::before,
+            .fcv7-container *::after {
                 box-sizing: border-box;
             }
 
-            .fcv6-header {
+            .fcv7-header {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
@@ -100,7 +81,7 @@
                 padding: 8px 4px 18px;
             }
 
-            .fcv6-header-title {
+            .fcv7-header-title {
                 color: #fff;
                 font-size: 20px;
                 line-height: 1.2;
@@ -108,29 +89,29 @@
                 letter-spacing: -.02em;
             }
 
-            .fcv6-header-count {
+            .fcv7-header-count {
                 flex: 0 0 auto;
                 padding: 7px 12px;
                 border-radius: 999px;
-                background: var(--fcv6-accent);
+                background: var(--fcv7-accent);
                 color: #19120a;
                 font-size: 12px;
                 font-weight: 800;
                 box-shadow: 0 7px 18px rgba(255,152,0,.25);
             }
 
-            .fcv6-subtitle {
+            .fcv7-subtitle {
                 padding: 0 4px 16px;
-                color: var(--fcv6-muted);
+                color: var(--fcv7-muted);
                 font-size: 12px;
             }
 
-            .fcv6-comment {
+            .fcv7-comment {
                 position: relative;
                 margin: 0 0 13px;
                 padding: 22px 20px 22px 24px;
-                background: var(--fcv6-card);
-                border: 1px solid var(--fcv6-border);
+                background: var(--fcv7-card);
+                border: 1px solid var(--fcv7-border);
                 border-radius: 18px;
                 overflow: hidden;
                 box-shadow:
@@ -144,7 +125,7 @@
             }
 
             /* Полоска начинается строго от верхнего края карточки. */
-            .fcv6-comment::before {
+            .fcv7-comment::before {
                 content: "";
                 position: absolute;
                 left: 0;
@@ -161,7 +142,7 @@
                     #35d07f 84%,
                     #5b8cff 100%);
                 background-size: 100% 280%;
-                animation: fcv6RainbowFlow 4.5s linear infinite;
+                animation: fcv7RainbowFlow 4.5s linear infinite;
                 box-shadow:
                     0 0 10px rgba(91,140,255,.5),
                     0 0 20px rgba(236,72,153,.24);
@@ -169,23 +150,23 @@
                 z-index: 2;
             }
 
-            @keyframes fcv6RainbowFlow {
+            @keyframes fcv7RainbowFlow {
                 0% { background-position: 0 0%; }
                 50% { background-position: 0 100%; }
                 100% { background-position: 0 0%; }
             }
 
-            .fcv6-comment.focus,
-            .fcv6-comment:hover {
+            .fcv7-comment.focus,
+            .fcv7-comment:hover {
                 transform: translateY(-2px) scale(1.003);
-                background: var(--fcv6-card-hover);
+                background: var(--fcv7-card-hover);
                 border-color: rgba(255,152,0,.3);
                 box-shadow:
                     0 18px 34px rgba(0,0,0,.44),
                     0 0 0 1px rgba(255,152,0,.05);
             }
 
-            .fcv6-text {
+            .fcv7-text {
                 color: #dedee2;
                 text-align: left !important;
                 font-size: 15px;
@@ -194,20 +175,20 @@
                 white-space: pre-wrap;
             }
 
-            .fcv6-footer {
+            .fcv7-footer {
                 padding: 10px 4px 0;
                 color: rgba(255,255,255,.26);
                 text-align: left;
                 font-size: 10px;
             }
 
-            .fcv6-empty {
+            .fcv7-empty {
                 padding: 45px 20px;
                 color: #aaa;
                 text-align: left;
             }
 
-            .button--filmix-comments-v6 svg {
+            .button--filmix-comments-v7 svg {
                 width: 22px;
                 height: 22px;
                 margin-right: 7px;
@@ -218,80 +199,145 @@
         document.head.appendChild(style);
     }
 
-    function renderComments(movie) {
+    function renderComments(movie, comments) {
         const title = getMovieTitle(movie);
+        const list = Array.isArray(comments) ? comments : [];
 
         let html = `
-            <div class="fcv6-container">
-                <div class="fcv6-header">
-                    <div class="fcv6-header-title">Комментарии</div>
-                    <div class="fcv6-header-count">${COMMENTS.length}</div>
+            <div class="fcv7-container">
+                <div class="fcv7-header">
+                    <div class="fcv7-header-title">Комментарии</div>
+                    <div class="fcv7-header-count">${list.length}</div>
                 </div>
 
-                <div class="fcv6-subtitle">
+                <div class="fcv7-subtitle">
                     ${escapeHtml(title)}
                 </div>
         `;
 
-        if (!COMMENTS.length) {
+        if (!list.length) {
             html += `
-                <div class="fcv6-empty">
+                <div class="fcv7-empty">
                     Комментариев пока нет
                 </div>
             `;
         } else {
-            COMMENTS.forEach(function (comment, index) {
+            list.forEach(function (item) {
+                const text = typeof item === 'string' ? item : (item && item.text) || '';
+                if (!text.trim()) return;
+
                 html += `
-                    <div class="fcv6-comment selector" tabindex="0">
-<div class="fcv6-text">
-                            ${escapeHtml(comment)}
-                        </div>
+                    <div class="fcv7-comment selector" tabindex="0">
+                        <div class="fcv7-text">${escapeHtml(text)}</div>
                     </div>
                 `;
             });
         }
 
         html += `
-                <div class="fcv6-footer">
-                    UI-прототип • данные пока тестовые
-                </div>
+                <div class="fcv7-footer"></div>
             </div>
         `;
 
         return html;
     }
 
+    function getMovieYear(movie) {
+        if (!movie) return '';
+        const value = movie.release_date || movie.first_air_date || movie.year || '';
+        const match = String(value).match(/\d{4}/);
+        return match ? match[0] : '';
+    }
+
+    function isSerial(movie) {
+        return !!(movie && (
+            movie.name ||
+            movie.first_air_date ||
+            movie.number_of_seasons ||
+            movie.number_of_episodes
+        ));
+    }
+
+    function loadComments(movie, done, fail) {
+        const params = [
+            'title=' + encodeURIComponent(getMovieTitle(movie)),
+            'original_title=' + encodeURIComponent(
+                movie && (movie.original_title || movie.original_name) || ''
+            ),
+            'year=' + encodeURIComponent(getMovieYear(movie)),
+            'serial=' + (isSerial(movie) ? '1' : '0')
+        ].join('&');
+
+        const url = PROXY_URL + '/comments?' + params;
+        const network = new Lampa.Reguest();
+        network.timeout(20000);
+
+        network.silent(url, function (response) {
+            try {
+                const data = typeof response === 'string'
+                    ? JSON.parse(response)
+                    : response;
+
+                if (!data || !data.success) {
+                    fail((data && data.message) || 'Не удалось получить комментарии');
+                    return;
+                }
+
+                done(Array.isArray(data.items) ? data.items : []);
+            } catch (error) {
+                fail('Некорректный ответ сервера');
+            }
+        }, function () {
+            fail('Не удалось подключиться к серверу комментариев');
+        }, false, {
+            dataType: 'json'
+        });
+
+        return network;
+    }
+
+
     function openComments(movie) {
         addStyles();
 
-        const modalHtml = $(renderComments(movie));
+        Lampa.Loading.start();
 
-        Lampa.Modal.open({
-            title: "Комментарии",
-            html: modalHtml,
-            size: "large",
-            style: "margin-top:10px;",
-            mask: true,
+        const network = loadComments(movie, function (comments) {
+            Lampa.Loading.stop();
 
-            onBack: function () {
-                Lampa.Modal.close();
-                $(".modal--large").remove();
-                Lampa.Controller.toggle("content");
-            }
+            const modalHtml = $(renderComments(movie, comments));
+
+            Lampa.Modal.open({
+                title: "Комментарии",
+                html: modalHtml,
+                size: "large",
+                style: "margin-top:10px;",
+                mask: true,
+
+                onBack: function () {
+                    Lampa.Modal.close();
+                    $(".modal--large").remove();
+                    Lampa.Controller.toggle("content");
+                }
+            });
+
+            modalHtml.find(".selector").on("hover:enter", function () {
+                $(this).addClass("focus");
+            });
+
+            modalHtml.find(".selector").on("hover:leave", function () {
+                $(this).removeClass("focus");
+            });
+        }, function (message) {
+            Lampa.Loading.stop();
+            Lampa.Noty.show(message);
         });
 
-        // Даём Lampa возможность управлять карточками стрелками/пультом.
-        modalHtml.find(".selector").on("hover:enter", function () {
-            $(this).addClass("focus");
-        });
-
-        modalHtml.find(".selector").on("hover:leave", function () {
-            $(this).removeClass("focus");
-        });
+        return network;
     }
 
     function addButton(movie) {
-        $(".button--filmix-comments-v6").remove();
+        $(".button--filmix-comments-v7").remove();
 
         const button = $(`
             <div class="
