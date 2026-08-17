@@ -128,7 +128,7 @@
             .fcv6-comment {
                 position: relative;
                 margin: 0 0 13px;
-                padding: 17px 18px 18px 21px;
+                padding: 22px 20px 22px 24px;
                 background: var(--fcv6-card);
                 border: 1px solid var(--fcv6-border);
                 border-radius: 18px;
@@ -143,6 +143,7 @@
                     box-shadow .16s ease;
             }
 
+            /* Полоска начинается строго от верхнего края карточки. */
             .fcv6-comment::before {
                 content: "";
                 position: absolute;
@@ -150,94 +151,60 @@
                 top: 0;
                 bottom: 0;
                 width: 5px;
-                border-radius: 0 6px 6px 0;
-                background: linear-gradient(
-                    180deg,
-                    #4f8cff 0%,
-                    #7c5cff 18%,
-                    #c45cff 34%,
-                    #ff4fa3 50%,
-                    #ff6b6b 64%,
-                    #ffbd4a 78%,
-                    #45d483 90%,
-                    #4f8cff 100%
-                );
-                background-size: 100% 260%;
-                animation: fcv6-rainbow-line 4s ease-in-out infinite;
+                border-radius: 0 5px 5px 0;
+                background: linear-gradient(180deg,
+                    #5b8cff 0%,
+                    #8b5cf6 18%,
+                    #ec4899 36%,
+                    #ff4d6d 52%,
+                    #ffb020 68%,
+                    #35d07f 84%,
+                    #5b8cff 100%);
+                background-size: 100% 280%;
+                animation: fcv6RainbowFlow 4.5s linear infinite;
                 box-shadow:
-                    0 0 8px rgba(79,140,255,.55),
-                    0 0 18px rgba(196,92,255,.28);
+                    0 0 10px rgba(91,140,255,.5),
+                    0 0 20px rgba(236,72,153,.24);
                 pointer-events: none;
                 z-index: 2;
             }
 
-            @keyframes fcv6-rainbow-line {
-                0% {
-                    background-position: 0 0%;
-                    filter: hue-rotate(0deg);
-                }
-                50% {
-                    background-position: 0 100%;
-                    filter: hue-rotate(20deg);
-                }
-                100% {
-                    background-position: 0 0%;
-                    filter: hue-rotate(0deg);
-                }
+            @keyframes fcv6RainbowFlow {
+                0% { background-position: 0 0%; }
+                50% { background-position: 0 100%; }
+                100% { background-position: 0 0%; }
             }
 
             .fcv6-comment.focus,
             .fcv6-comment:hover {
                 transform: translateY(-2px) scale(1.003);
                 background: var(--fcv6-card-hover);
-                border-color: rgba(79,140,255,.28);
+                border-color: rgba(255,152,0,.3);
                 box-shadow:
                     0 18px 34px rgba(0,0,0,.44),
-                    0 0 0 1px rgba(79,140,255,.05);
-            }
-
-            .fcv6-number {
-                display: inline-flex;
-                align-items: center;
-                min-height: 27px;
-                padding: 5px 10px;
-                margin-bottom: 10px;
-                border-radius: 9px;
-                background: var(--fcv6-accent-soft);
-                border: 1px solid rgba(79,140,255,.18);
-                color: #7fa9ff;
-                font-size: 12px;
-                line-height: 1;
-                font-weight: 800;
-                letter-spacing: .02em;
+                    0 0 0 1px rgba(255,152,0,.05);
             }
 
             .fcv6-text {
                 color: #dedee2;
-                text-align: left;
+                text-align: left !important;
                 font-size: 15px;
                 line-height: 1.58;
                 word-break: break-word;
                 white-space: pre-wrap;
             }
 
-            .fcv6-comment:nth-child(3n) .fcv6-number {
-                background: rgba(255,255,255,.055);
-                border-color: rgba(255,255,255,.09);
-                color: #fff;
-            }
-
             .fcv6-footer {
                 padding: 10px 4px 0;
                 color: rgba(255,255,255,.26);
-                text-align: center;
+                text-align: left;
                 font-size: 10px;
             }
 
             .fcv6-empty {
                 padding: 45px 20px;
                 color: #aaa;
-                text-align: center;
+                text-align: left;
             }
 
             .button--filmix-comments-v6 svg {
@@ -276,10 +243,7 @@
             COMMENTS.forEach(function (comment, index) {
                 html += `
                     <div class="fcv6-comment selector" tabindex="0">
-                        <div class="fcv6-number">
-                            Комментарий ${index + 1}
-                        </div>
-                        <div class="fcv6-text">
+<div class="fcv6-text">
                             ${escapeHtml(comment)}
                         </div>
                     </div>
