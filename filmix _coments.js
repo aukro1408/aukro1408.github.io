@@ -3,16 +3,16 @@
 
     /*
      * ============================================================
-     * LAMPA — COMMENTS UI V8
+     * LAMPA — COMMENTS UI V9
      * ------------------------------------------------------------
      * Реальные комментарии Filmix через наш Cloudflare Worker.
      * ============================================================
      */
 
-    const PLUGIN_FLAG = "filmix_comments_ui_v8";
-    const BUTTON_CLASS = "button--filmix-comments-v8";
-    const STYLE_ID = "filmix-comments-ui-v8-style";
-    const PROXY_URL = "https://rezka-comments-proxy.aukro1408.workers.dev";
+    const PLUGIN_FLAG = "filmix_comments_ui_v9";
+    const BUTTON_CLASS = "button--filmix-comments-v9";
+    const STYLE_ID = "filmix-comments-ui-v9-style";
+    const PROXY_URL = "https://roxy.aukro1408.workers.dev";
 
     // ------------------------------------------------------------
     // Тестовые комментарии.
@@ -188,7 +188,7 @@
                 text-align: left;
             }
 
-            .button--filmix-comments-v8 svg {
+            .button--filmix-comments-v9 svg {
                 width: 22px;
                 height: 22px;
                 margin-right: 7px;
@@ -367,7 +367,7 @@
     }
 
     function addButton(movie) {
-        $(".button--filmix-comments-v8").remove();
+        $(".button--filmix-comments-v9").remove();
 
         const button = $(`
             <div class="
