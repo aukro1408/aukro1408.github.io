@@ -1,8 +1,9 @@
 /* ===== Filmix Comments V14 — Android Lampa resolver + comments-only Worker =====
-   Поиск фильма выполняется ЛОКАЛЬНО на устройстве через Lampa.Reguest
-   (прямой запрос на https://hdrezka.ag с IP устройства, как в online_mod.js).
-   Cloudflare Worker получает ТОЛЬКО числовой news_id и отдаёт комментарии.
-   Никаких Cloudflare-прокси/Worker для поиска не используется. */
+   Поиск фильма выполняется ЛОКАЛЬНО на устройстве обычным fetch()
+   (как в rezkacomment.js): только GET /search/?do=search&subaction=search&q=...
+   Без search.php, без Cloudflare-прокси, без Origin/Referer/User-Agent/Cookie,
+   без Lampa.Reguest().native().
+   Cloudflare Worker получает ТОЛЬКО числовой news_id и отдаёт комментарии. */
 (function () {
     'use strict';
 
@@ -13,10 +14,6 @@
     // Комментарии отдаёт наш Worker (у него есть CORS), поиск — только с устройства.
     const WORKER_URL = 'https://rezka-comments-proxy.aukro1408.workers.dev/';
     const SEARCH_HOST = 'https://hdrezka.ag';
-    const SEARCH_UA =
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
-        'AppleWebKit/537.36 (KHTML, like Gecko) ' +
-        'Chrome/150.0.0.0 Safari/537.36';
 
     /* ============================================================
        UI (без изменений по сравнению с v12)
@@ -318,8 +315,10 @@
     }
 
     /* ============================================================
-       RESOLVER — логика STEP 7 (rezka-resolver.mjs),
-       запускается ЛОКАЛЬНО на устройстве через Lampa.Reguest.
+       RESOLVER — поиск на HDRezka напрямую с устройства.
+       ТОЛЬКО GET /search/?do=search&subaction=search&q=...
+       Запрещено: search.php, Cloudflare-прокси, Origin, Referer,
+       User-Agent, Cookie, Lampa.Reguest().native().
        ============================================================ */
 
     function cleanTitle(str) {
@@ -384,31 +383,6 @@
 
     function isSeriesFromUrl(link) {
         return /\/series\//.test(link || '');
-    }
-
-    function parseLiveLink(li) {
-        const a = li.match(/<a href="([^"]+)">([\s\S]*?)<\/a>/);
-        if (!a) return null;
-        const href = a[1];
-        const inner = a[2];
-        const entyMatch = inner.match(/<span class="enty">([\s\S]*?)<\/span>/);
-        const ratingMatch = inner.match(/<span class="rating">[\s\S]*?<\/span>/);
-        const title = entyMatch ? decodeEntities(stripTags(entyMatch[1])).trim() : '';
-        let alt = inner;
-        if (entyMatch) alt = alt.replace(entyMatch[0], '');
-        if (ratingMatch) alt = alt.replace(ratingMatch[0], '');
-        const altTitle = decodeEntities(stripTags(alt)).trim();
-        let origTitle = '';
-        let year;
-        const found = altTitle.match(/\((.*,\s*)?\b(\d{4})(\s*-\s*[\d.]*)?\)$/);
-        if (found) {
-            if (found[1]) {
-                const foundAlt = found[1].match(/^([^а-яА-ЯёЁ]+),/);
-                if (foundAlt) origTitle = foundAlt[1].trim();
-            }
-            year = parseInt(found[2], 10);
-        }
-        return { year: year, title: title, orig_title: origTitle, link: href };
     }
 
     function parseInlineLinkBlock(block) {
@@ -491,112 +465,6 @@
         return null;
     }
 
-    // Безопасное строковое представление для логов: НИКОГДА не печатает заголовки/куки.
-    function safeDescribe(value) {
-        if (value === null || value === undefined) return String(value);
-        if (typeof value === 'string') {
-            return value.length > 200 ? value.slice(0, 200) + '…(' + value.length + ' chars)' : value;
-        }
-        if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-        try {
-            const clone = {};
-            Object.keys(value).forEach(function (k) {
-                if (k === 'responseText' || k === 'response' || k === 'responseURL') {
-                    clone[k] = String(value[k]).slice(0, 200);
-                } else if (
-                    k === 'status' || k === 'statusText' || k === 'readyState' ||
-                    k === 'timeout' || k === 'message' || k === 'name' || k === 'code' ||
-                    k === 'url' || k === 'text' || k === 'type' || k === 'length'
-                ) {
-                    clone[k] = value[k];
-                } else if (typeof value[k] === 'function') {
-                    clone[k] = '[function]';
-                }
-                // любые другие ключи (headers, cookie и т.п.) намеренно пропускаем
-            });
-            const json = JSON.stringify(clone);
-            if (json === undefined) return String(value);
-            return json.length > 400 ? json.slice(0, 400) + '…' : json;
-        } catch (e) {
-            const s = String(value);
-            return s.length > 400 ? s.slice(0, 400) + '…' : s;
-        }
-    }
-
-    // Сеть как в online_mod.js: Lampa.Reguest.native, прямой запрос с IP устройства.
-    function createSearchRequest() {
-        const network = new Lampa.Reguest();
-
-        return function request(url, postdata) {
-            return new Promise(function (resolve, reject) {
-                console.log('[Filmix Comments V14] TRACE 4 request');
-                // Диагностика STEP 11.1: плагин работает напрямую, без прокси.
-                let isAndroid = false;
-                try {
-                    isAndroid = !!(Lampa.Platform && Lampa.Platform.is && Lampa.Platform.is('android'));
-                } catch (e) { isAndroid = false; }
-                const prox = ''; // в этом плагине прокси не используется (всегда пусто)
-
-                const headers = {
-                    Origin: SEARCH_HOST,
-                    Referer: SEARCH_HOST + '/',
-                    'User-Agent': SEARCH_UA,
-                    'Cookie': 'PHPSESSID=' + randomId(26)
-                };
-
-                console.log('[Filmix Comments V14] SEARCH START');
-                console.log('[Filmix Comments V14] SEARCH URL: ' + url);
-                console.log('[Filmix Comments V14] SEARCH POST: ' + (typeof postdata === 'string' ? postdata : '(GET, no body)'));
-                console.log('[Filmix Comments V14] SEARCH HEADERS: ' + Object.keys(headers).join(', '));
-                console.log('[Filmix Comments V14] ANDROID: ' + isAndroid + ' | PROX empty: ' + (prox === ''));
-
-                network.clear();
-                network.timeout(10000);
-
-                console.log('[Filmix Comments V14] ANDROID_NATIVE_START');
-
-                network['native'](
-                    url,
-                    function (str) {
-                        str = str || '';
-                        console.log('[Filmix Comments V14] ANDROID_NATIVE_SUCCESS');
-                        console.log('[Filmix Comments V14] SEARCH SUCCESS: len=' + str.length + ' preview=' + str.slice(0, 120).replace(/\s+/g, ' '));
-                        resolve(str);
-                    },
-                    function (a, c) {
-                        console.log('[Filmix Comments V14] ANDROID_NATIVE_ERROR: ' + String(a));
-                        // Логируем СЫРЫЕ аргументы ДО преобразования в общее сообщение.
-                        console.log('[Filmix Comments V14] SEARCH ERROR');
-                        console.log('[Filmix Comments V14] ERROR TYPE: ' + (a && a.constructor ? a.constructor.name : typeof a));
-                        console.log('[Filmix Comments V14] ERROR VALUE: ' + safeDescribe(a));
-                        console.log('[Filmix Comments V14] ERROR ARGS: ' + safeDescribe(c));
-                        let msg = '';
-                        if (network.errorDecode) {
-                            try { msg = network.errorDecode(a, c) || ''; }
-                            catch (e) { msg = ''; }
-                        }
-                        if (!msg) msg = (a && (a.responseText || a.status)) || c || 'network error';
-                        reject(new Error(String(msg)));
-                    },
-                    postdata || false,
-                    {
-                        dataType: 'text',
-                        withCredentials: false,
-                        headers: headers
-                    }
-                );
-            });
-        };
-    }
-
-    function randomId(len) {
-        const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-        len = len || 26;
-        let s = '';
-        while (s.length < len) s += chars.charAt(Math.floor(Math.random() * chars.length));
-        return s;
-    }
-
     function checkSearchError(str) {
         if (!str) throw new Error('пустой ответ HDRezka');
         if (str.indexOf('anubis') !== -1 || str.indexOf('<div>105</div>') !== -1) {
@@ -608,29 +476,30 @@
         if (str.indexOf('Fatal error:') === 0) throw new Error('HDRezka: ' + str);
     }
 
-    function searchLive(request, query) {
-        const url = SEARCH_HOST + '/engine/ajax/search.php';
-        return request(url, 'q=' + encodeURIComponent(query)).then(function (str) {
-            str = (str || '').replace(/\n/g, '');
-            checkSearchError(str);
-            const links = str.match(/<li><a href=.*?<\/li>/g) || [];
-            return links.map(parseLiveLink).filter(Boolean);
-        });
-    }
-
-    function searchMore(request, query, page) {
+    // Один GET на страницу результатов поиска. Без каких-либо заголовков.
+    function searchPage(query, page) {
         const url =
             SEARCH_HOST +
             '/search/?do=search&subaction=search&q=' +
             encodeURIComponent(query) +
             '&page=' +
             encodeURIComponent(page);
-        return request(url).then(function (str) {
+
+        console.log('[Filmix Comments V14] SEARCH URL: ' + url);
+
+        return fetch(url, {
+            method: 'GET',
+            cache: 'no-store'
+        }).then(function (response) {
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.text();
+        }).then(function (str) {
             str = (str || '').replace(/\n/g, '');
             checkSearchError(str);
             const blocks = str.match(
                 /<div class="b-content__inline_item-link">\s*<a [^>]*>[^<]*<\/a>\s*<div>[^<]*<\/div>\s*<\/div>/g
             ) || [];
+            console.log('[Filmix Comments V14] SEARCH blocks: ' + blocks.length);
             return blocks.map(parseInlineLinkBlock).filter(Boolean);
         });
     }
@@ -659,30 +528,20 @@
 
         if (!select_title) return Promise.resolve(null);
 
-        const request = createSearchRequest();
         const query = cleanTitle(select_title);
 
-        return searchLive(request, query).then(function (cards) {
-            let result = evaluateCards(cards, select_title, search_year, orig_titles, preferredOrigTitle);
-            if (result) return result;
-
-            // Fallback /search/ — напрямую с устройства (без Cloudflare).
-            // При любой ошибке (например 403) — чисто останавливаемся.
-            let page = 0;
-            const step = function () {
-                if (page >= 3) return null;
-                page += 1;
-                return searchMore(request, query, page).then(function (more) {
-                    if (!more.length) return null;
-                    const r = evaluateCards(more, select_title, search_year, orig_titles, preferredOrigTitle);
-                    if (r) return r;
-                    return step();
-                }).catch(function () {
-                    return null;
-                });
-            };
-            return step();
-        });
+        let page = 0;
+        const step = function () {
+            if (page >= 3) return null;
+            page += 1;
+            return searchPage(query, page).then(function (cards) {
+                if (!cards.length) return null;
+                const result = evaluateCards(cards, select_title, search_year, orig_titles, preferredOrigTitle);
+                if (result) return result;
+                return step();
+            });
+        };
+        return step();
     }
 
     /* ============================================================
