@@ -1,45 +1,69 @@
-<style>
-/* V6.2 — animated rainbow accent */
-.comments-ui-v62 .comment-card,
-.comment-card {
-    position: relative;
-    overflow: hidden;
+
+/* ===== Filmix Comments V6.2.1 ===== */
+/* Текст комментариев — слева */
+.comments-ui-v62 .comment-text,
+.comments-ui-v62 .comments-text,
+.comment-text,
+.comments-text {
+    text-align: left !important;
 }
 
+/* Радужная переливающаяся полоска */
+.comments-ui-v62 .comment-card,
+.comments-ui-v62 .comment-item,
+.comment-card,
+.comment-item {
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+/* Отключаем старую одноцветную полосу */
 .comments-ui-v62 .comment-card::before,
-.comment-card::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 18px;
-    bottom: 18px;
-    width: 5px;
-    border-radius: 0 8px 8px 0;
+.comments-ui-v62 .comment-item::before,
+.comment-card::before,
+.comment-item::before {
+    content: "" !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 18px !important;
+    bottom: 18px !important;
+    width: 5px !important;
+    border-radius: 0 8px 8px 0 !important;
     background: linear-gradient(
         180deg,
-        #5b8cff 0%,
-        #8b5cf6 20%,
-        #ec4899 40%,
-        #ff4d6d 58%,
-        #ffb020 76%,
-        #35d07f 90%,
-        #5b8cff 100%
-    );
-    background-size: 100% 260%;
-    animation: commentsGradientFlow 4s linear infinite;
+        #4f8cff 0%,
+        #7c5cff 18%,
+        #c45cff 34%,
+        #ff4fa3 50%,
+        #ff6b6b 64%,
+        #ffbd4a 78%,
+        #45d483 90%,
+        #4f8cff 100%
+    ) !important;
+    background-size: 100% 260% !important;
+    animation: filmixCommentsRainbow 4s ease-in-out infinite !important;
     box-shadow:
-        0 0 10px rgba(91,140,255,.45),
-        0 0 20px rgba(236,72,153,.18);
-    z-index: 2;
-    pointer-events: none;
+        0 0 8px rgba(79,140,255,.55),
+        0 0 18px rgba(196,92,255,.28) !important;
+    pointer-events: none !important;
+    z-index: 10 !important;
 }
 
-@keyframes commentsGradientFlow {
-    0%   { background-position: 0 0%; }
-    50%  { background-position: 0 100%; }
-    100% { background-position: 0 0%; }
+@keyframes filmixCommentsRainbow {
+    0% {
+        background-position: 0 0%;
+        filter: hue-rotate(0deg);
+    }
+    50% {
+        background-position: 0 100%;
+        filter: hue-rotate(20deg);
+    }
+    100% {
+        background-position: 0 0%;
+        filter: hue-rotate(0deg);
+    }
 }
-</style>
+
 (function () {
     "use strict";
 
