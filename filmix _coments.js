@@ -70,8 +70,8 @@
 
         style.textContent = `
             .fcv6-container {
-                --fcv6-accent: #ff9800;
-                --fcv6-accent-soft: rgba(255, 152, 0, .14);
+                --fcv6-accent: #4f8cff;
+                --fcv6-accent-soft: rgba(79, 140, 255, .14);
                 --fcv6-bg: #131316;
                 --fcv6-card: linear-gradient(165deg, #252529, #1a1a1d);
                 --fcv6-card-hover: linear-gradient(165deg, #2b2b30, #1e1e22);
