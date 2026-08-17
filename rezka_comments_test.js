@@ -491,21 +491,80 @@
         return null;
     }
 
+    // Безопасное строковое представление для логов: НИКОГДА не печатает заголовки/куки.
+    function safeDescribe(value) {
+        if (value === null || value === undefined) return String(value);
+        if (typeof value === 'string') {
+            return value.length > 200 ? value.slice(0, 200) + '…(' + value.length + ' chars)' : value;
+        }
+        if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+        try {
+            const clone = {};
+            Object.keys(value).forEach(function (k) {
+                if (k === 'responseText' || k === 'response' || k === 'responseURL') {
+                    clone[k] = String(value[k]).slice(0, 200);
+                } else if (
+                    k === 'status' || k === 'statusText' || k === 'readyState' ||
+                    k === 'timeout' || k === 'message' || k === 'name' || k === 'code' ||
+                    k === 'url' || k === 'text' || k === 'type' || k === 'length'
+                ) {
+                    clone[k] = value[k];
+                } else if (typeof value[k] === 'function') {
+                    clone[k] = '[function]';
+                }
+                // любые другие ключи (headers, cookie и т.п.) намеренно пропускаем
+            });
+            const json = JSON.stringify(clone);
+            if (json === undefined) return String(value);
+            return json.length > 400 ? json.slice(0, 400) + '…' : json;
+        } catch (e) {
+            const s = String(value);
+            return s.length > 400 ? s.slice(0, 400) + '…' : s;
+        }
+    }
+
     // Сеть как в online_mod.js: Lampa.Reguest.native, прямой запрос с IP устройства.
     function createSearchRequest() {
         const network = new Lampa.Reguest();
 
         return function request(url, postdata) {
             return new Promise(function (resolve, reject) {
+                // Диагностика STEP 11.1: плагин работает напрямую, без прокси.
+                let isAndroid = false;
+                try {
+                    isAndroid = !!(Lampa.Platform && Lampa.Platform.is && Lampa.Platform.is('android'));
+                } catch (e) { isAndroid = false; }
+                const prox = ''; // в этом плагине прокси не используется (всегда пусто)
+
+                const headers = {
+                    Origin: SEARCH_HOST,
+                    Referer: SEARCH_HOST + '/',
+                    'User-Agent': SEARCH_UA,
+                    'Cookie': 'PHPSESSID=' + randomId(26)
+                };
+
+                console.log('[Filmix Comments V13] SEARCH START');
+                console.log('[Filmix Comments V13] SEARCH URL: ' + url);
+                console.log('[Filmix Comments V13] SEARCH POST: ' + (typeof postdata === 'string' ? postdata : '(GET, no body)'));
+                console.log('[Filmix Comments V13] SEARCH HEADERS: ' + Object.keys(headers).join(', '));
+                console.log('[Filmix Comments V13] ANDROID: ' + isAndroid + ' | PROX empty: ' + (prox === ''));
+
                 network.clear();
                 network.timeout(10000);
 
                 network['native'](
                     url,
                     function (str) {
-                        resolve(str || '');
+                        str = str || '';
+                        console.log('[Filmix Comments V13] SEARCH SUCCESS: len=' + str.length + ' preview=' + str.slice(0, 120).replace(/\s+/g, ' '));
+                        resolve(str);
                     },
                     function (a, c) {
+                        // Логируем СЫРЫЕ аргументы ДО преобразования в общее сообщение.
+                        console.log('[Filmix Comments V13] SEARCH ERROR');
+                        console.log('[Filmix Comments V13] ERROR TYPE: ' + (a && a.constructor ? a.constructor.name : typeof a));
+                        console.log('[Filmix Comments V13] ERROR VALUE: ' + safeDescribe(a));
+                        console.log('[Filmix Comments V13] ERROR ARGS: ' + safeDescribe(c));
                         let msg = '';
                         if (network.errorDecode) {
                             try { msg = network.errorDecode(a, c) || ''; }
@@ -518,12 +577,7 @@
                     {
                         dataType: 'text',
                         withCredentials: false,
-                        headers: {
-                            Origin: SEARCH_HOST,
-                            Referer: SEARCH_HOST + '/',
-                            'User-Agent': SEARCH_UA,
-                            'Cookie': 'PHPSESSID=' + randomId(26)
-                        }
+                        headers: headers
                     }
                 );
             });
