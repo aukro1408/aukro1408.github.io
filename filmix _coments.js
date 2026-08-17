@@ -1,69 +1,3 @@
-
-/* ===== Filmix Comments V6.2.1 ===== */
-/* Текст комментариев — слева */
-.comments-ui-v62 .comment-text,
-.comments-ui-v62 .comments-text,
-.comment-text,
-.comments-text {
-    text-align: left !important;
-}
-
-/* Радужная переливающаяся полоска */
-.comments-ui-v62 .comment-card,
-.comments-ui-v62 .comment-item,
-.comment-card,
-.comment-item {
-    position: relative !important;
-    overflow: hidden !important;
-}
-
-/* Отключаем старую одноцветную полосу */
-.comments-ui-v62 .comment-card::before,
-.comments-ui-v62 .comment-item::before,
-.comment-card::before,
-.comment-item::before {
-    content: "" !important;
-    position: absolute !important;
-    left: 0 !important;
-    top: 18px !important;
-    bottom: 18px !important;
-    width: 5px !important;
-    border-radius: 0 8px 8px 0 !important;
-    background: linear-gradient(
-        180deg,
-        #4f8cff 0%,
-        #7c5cff 18%,
-        #c45cff 34%,
-        #ff4fa3 50%,
-        #ff6b6b 64%,
-        #ffbd4a 78%,
-        #45d483 90%,
-        #4f8cff 100%
-    ) !important;
-    background-size: 100% 260% !important;
-    animation: filmixCommentsRainbow 4s ease-in-out infinite !important;
-    box-shadow:
-        0 0 8px rgba(79,140,255,.55),
-        0 0 18px rgba(196,92,255,.28) !important;
-    pointer-events: none !important;
-    z-index: 10 !important;
-}
-
-@keyframes filmixCommentsRainbow {
-    0% {
-        background-position: 0 0%;
-        filter: hue-rotate(0deg);
-    }
-    50% {
-        background-position: 0 100%;
-        filter: hue-rotate(20deg);
-    }
-    100% {
-        background-position: 0 0%;
-        filter: hue-rotate(0deg);
-    }
-}
-
 (function () {
     "use strict";
 
@@ -213,22 +147,53 @@
                 content: "";
                 position: absolute;
                 left: 0;
-                top: 12px;
-                bottom: 12px;
-                width: 4px;
-                border-radius: 0 4px 4px 0;
-                background: linear-gradient(180deg, #ffb74d, #e65100);
-                box-shadow: 0 0 12px rgba(255,152,0,.35);
+                top: 0;
+                bottom: 0;
+                width: 5px;
+                border-radius: 0 6px 6px 0;
+                background: linear-gradient(
+                    180deg,
+                    #4f8cff 0%,
+                    #7c5cff 18%,
+                    #c45cff 34%,
+                    #ff4fa3 50%,
+                    #ff6b6b 64%,
+                    #ffbd4a 78%,
+                    #45d483 90%,
+                    #4f8cff 100%
+                );
+                background-size: 100% 260%;
+                animation: fcv6-rainbow-line 4s ease-in-out infinite;
+                box-shadow:
+                    0 0 8px rgba(79,140,255,.55),
+                    0 0 18px rgba(196,92,255,.28);
+                pointer-events: none;
+                z-index: 2;
+            }
+
+            @keyframes fcv6-rainbow-line {
+                0% {
+                    background-position: 0 0%;
+                    filter: hue-rotate(0deg);
+                }
+                50% {
+                    background-position: 0 100%;
+                    filter: hue-rotate(20deg);
+                }
+                100% {
+                    background-position: 0 0%;
+                    filter: hue-rotate(0deg);
+                }
             }
 
             .fcv6-comment.focus,
             .fcv6-comment:hover {
                 transform: translateY(-2px) scale(1.003);
                 background: var(--fcv6-card-hover);
-                border-color: rgba(255,152,0,.3);
+                border-color: rgba(79,140,255,.28);
                 box-shadow:
                     0 18px 34px rgba(0,0,0,.44),
-                    0 0 0 1px rgba(255,152,0,.05);
+                    0 0 0 1px rgba(79,140,255,.05);
             }
 
             .fcv6-number {
@@ -239,8 +204,8 @@
                 margin-bottom: 10px;
                 border-radius: 9px;
                 background: var(--fcv6-accent-soft);
-                border: 1px solid rgba(255,152,0,.18);
-                color: #ffb74d;
+                border: 1px solid rgba(79,140,255,.18);
+                color: #7fa9ff;
                 font-size: 12px;
                 line-height: 1;
                 font-weight: 800;
@@ -249,6 +214,7 @@
 
             .fcv6-text {
                 color: #dedee2;
+                text-align: left;
                 font-size: 15px;
                 line-height: 1.58;
                 word-break: break-word;
@@ -264,14 +230,14 @@
             .fcv6-footer {
                 padding: 10px 4px 0;
                 color: rgba(255,255,255,.26);
-                text-align: left;
+                text-align: center;
                 font-size: 10px;
             }
 
             .fcv6-empty {
                 padding: 45px 20px;
                 color: #aaa;
-                text-align: left;
+                text-align: center;
             }
 
             .button--filmix-comments-v6 svg {
