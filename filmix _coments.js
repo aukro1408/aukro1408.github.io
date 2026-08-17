@@ -1,10 +1,10 @@
-/* ===== Filmix Comments V8 — реальные комментарии ===== */
+/* ===== Filmix Comments V9 — реальные комментарии ===== */
 (function () {
     'use strict';
 
-    const PLUGIN_FLAG = 'filmix_comments_v8';
-    const BUTTON_CLASS = 'button--filmix-comments-v8';
-    const STYLE_ID = 'filmix-comments-v8-style';
+    const PLUGIN_FLAG = 'filmix_comments_v9';
+    const BUTTON_CLASS = 'button--filmix-comments-v9';
+    const STYLE_ID = 'filmix-comments-v9-style';
 
     // Текущий рабочий Worker. Слэш в конце оставляем намеренно.
     const WORKER_URL = 'https://rezka-comments-proxy.aukro1408.workers.dev/';
@@ -103,87 +103,11 @@
         return '';
     }
 
-    // Строим возможные Filmix URL по ID.
-    // Для сериалов Filmix использует /seria/<жанр>/<id>/commentary.
+    // Если Lampa уже передала URL Filmix — используем его.
+    // Если URL нет, Worker сам найдёт Filmix по названию/году/типу.
     function buildFilmixPaths(movie) {
-        const paths = [];
-        const seen = new Set();
         const direct = findFilmixPath(movie);
-        const id = getMovieId(movie);
-
-        function add(path) {
-            if (!path) return;
-            path = path.replace(/\/$/, '');
-            if (!seen.has(path)) {
-                seen.add(path);
-                paths.push(path);
-            }
-        }
-
-        if (direct) add(direct);
-        if (!id) return paths;
-
-        const type = String((movie && (movie.type || movie.media_type || movie.category)) || '').toLowerCase();
-        const title = getMovieTitle(movie).toLowerCase();
-        const isSeries = type.includes('tv') || type.includes('serial') || type.includes('serie') ||
-            type.includes('show') || type.includes('сериал') ||
-            !!(movie && (movie.number_of_seasons || movie.seasons || movie.season));
-
-        const genres = [];
-        const rawGenres = movie && (movie.genres || movie.genre);
-        if (Array.isArray(rawGenres)) {
-            rawGenres.forEach(function(g) {
-                const name = typeof g === 'string' ? g : (g && (g.name || g.title || ''));
-                if (name) genres.push(String(name).toLowerCase());
-            });
-        } else if (typeof rawGenres === 'string') {
-            genres.push(rawGenres.toLowerCase());
-        }
-
-        const genreMap = {
-            'драма':'drama', 'drama':'drama',
-            'детектив':'detective', 'детективы':'detective', 'detective':'detective',
-            'триллер':'thriller', 'thriller':'thriller',
-            'ужасы':'horror', 'ужас':'horror', 'horror':'horror',
-            'фантастика':'fantastika', 'fantasy':'fantasy', 'фэнтези':'fantasy',
-            'боевик':'boevik', 'action':'boevik',
-            'комедия':'comedy', 'comedy':'comedy',
-            'мелодрама':'melodrama', 'романтика':'melodrama',
-            'криминал':'crime', 'crime':'crime',
-            'приключения':'adventure', 'adventure':'adventure',
-            'семейный':'family', 'семейное':'family', 'family':'family',
-            'мультфильм':'multfilm', 'мультфильмы':'multfilm', 'animation':'multfilm',
-            'военный':'voenniy', 'военное':'voenniy',
-            'история':'history', 'исторический':'history',
-            'музыка':'music', 'music':'music',
-            'спорт':'sport', 'sport':'sport'
-        };
-
-        const mapped = [];
-        genres.forEach(function(g) {
-            if (genreMap[g] && mapped.indexOf(genreMap[g]) < 0) mapped.push(genreMap[g]);
-        });
-
-        // Для сериалов сначала пробуем жанры из карточки, затем самые частые.
-        // Для неизвестного типа также проверяем оба варианта Filmix.
-        const seriesGenres = mapped.concat(['drama','detective','thriller','horror','fantastika','comedy','crime','melodrama']);
-        const filmGenres = mapped.concat(['drama','thriller','comedy','boevik','fantastika','horror','crime']);
-        const list = isSeries ? seriesGenres : filmGenres;
-
-        list.forEach(function(genre) {
-            add('/seria/' + genre + '/' + id + '/commentary');
-        });
-
-        // Filmix иногда использует /film/ вместо /seria/.
-        filmGenres.slice(0, 5).forEach(function(genre) {
-            add('/film/' + genre + '/' + id + '/commentary');
-        });
-
-        // Последняя попытка: ID без жанра — полезно для нестандартных страниц.
-        add('/seria/' + id + '/commentary');
-        add('/film/' + id + '/commentary');
-
-        return paths;
+        return direct ? [direct] : [];
     }
 
     // У Worker уже приходят реальные items, но его универсальный HTML-парсер
@@ -216,20 +140,16 @@
 
         data.items.forEach(function (item) {
             let text = '';
-
-            if (typeof item === 'string') {
-                text = item;
-                item = {};
-            } else if (item && typeof item === 'object') {
+            if (typeof item === 'string') text = item;
+            else if (item && typeof item === 'object') {
                 text = item.text || item.comment || item.description || item.body || item.content || '';
             }
 
             text = cleanText(text);
-            if (isNoiseComment(text, item)) return;
+            if (!text) return;
 
             const key = text.toLowerCase().replace(/\s+/g, ' ');
-            if (!key || seen.has(key)) return;
-
+            if (seen.has(key)) return;
             seen.add(key);
             result.push(text);
         });
@@ -243,31 +163,31 @@
         const style = document.createElement('style');
         style.id = STYLE_ID;
         style.textContent = `
-            .fcv8-container {
+            .fcv9-container {
                 box-sizing:border-box;
                 width:100%;
                 padding:4px 12px 34px;
                 background:#292929;
                 border-radius:20px;
             }
-            .fcv8-container *, .fcv8-container *::before, .fcv8-container *::after {
+            .fcv9-container *, .fcv9-container *::before, .fcv9-container *::after {
                 box-sizing:border-box;
             }
-            .fcv8-header {
+            .fcv9-header {
                 display:flex;
                 align-items:center;
                 justify-content:space-between;
                 gap:12px;
                 padding:8px 4px 18px;
             }
-            .fcv8-header-title {
+            .fcv9-header-title {
                 color:#fff;
                 font-size:20px;
                 line-height:1.2;
                 font-weight:800;
                 letter-spacing:-.02em;
             }
-            .fcv8-header-count {
+            .fcv9-header-count {
                 min-width:42px;
                 padding:7px 12px;
                 border-radius:999px;
@@ -278,12 +198,12 @@
                 font-weight:800;
                 box-shadow:0 7px 18px rgba(79,140,255,.24);
             }
-            .fcv8-subtitle {
+            .fcv9-subtitle {
                 padding:0 4px 16px;
                 color:rgba(255,255,255,.48);
                 font-size:12px;
             }
-            .fcv8-comment {
+            .fcv9-comment {
                 position:relative;
                 margin:0 0 13px;
                 padding:20px 18px 20px 28px;
@@ -294,7 +214,7 @@
                 box-shadow:0 12px 28px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.035);
                 transition:transform .16s ease,background .16s ease,border-color .16s ease,box-shadow .16s ease;
             }
-            .fcv8-comment::before {
+            .fcv9-comment::before {
                 content:"";
                 position:absolute;
                 left:0;
@@ -304,23 +224,23 @@
                 border-radius:0 8px 8px 0;
                 background:linear-gradient(180deg,#4f8cff 0%,#7c5cff 16%,#c45cff 32%,#ff4fa3 48%,#ff6b6b 64%,#ffbd4a 80%,#45d483 92%,#4f8cff 100%);
                 background-size:100% 260%;
-                animation:fcv8Rainbow 3.6s ease-in-out infinite;
+                animation:fcv9Rainbow 3.6s ease-in-out infinite;
                 box-shadow:0 0 8px rgba(79,140,255,.55),0 0 18px rgba(196,92,255,.30);
                 pointer-events:none;
                 z-index:2;
             }
-            @keyframes fcv8Rainbow {
+            @keyframes fcv9Rainbow {
                 0%{background-position:0 0%;filter:hue-rotate(0deg)}
                 50%{background-position:0 100%;filter:hue-rotate(22deg)}
                 100%{background-position:0 0%;filter:hue-rotate(0deg)}
             }
-            .fcv8-comment.focus,.fcv8-comment:hover {
+            .fcv9-comment.focus,.fcv9-comment:hover {
                 transform:translateY(-2px) scale(1.003);
                 background:linear-gradient(165deg,#2b2b30,#1e1e22);
                 border-color:rgba(79,140,255,.25);
                 box-shadow:0 18px 34px rgba(0,0,0,.44),0 0 0 1px rgba(79,140,255,.05);
             }
-            .fcv8-text {
+            .fcv9-text {
                 display:block;
                 margin:0!important;
                 padding:0!important;
@@ -332,51 +252,105 @@
                 overflow-wrap:anywhere;
                 white-space:pre-wrap;
             }
-            .fcv8-empty,.fcv8-error {
+            .fcv9-empty,.fcv9-error {
                 padding:45px 20px;
                 color:rgba(255,255,255,.58);
                 text-align:center;
                 line-height:1.5;
             }
-            .fcv8-error { color:#ff8f8f; }
-            .button--filmix-comments-v8 svg {
+            .fcv9-error { color:#ff8f8f; }
+            .button--filmix-comments-v9 svg {
                 width:22px;height:22px;margin-right:7px;fill:currentColor;
+            }
+
+            .fcv9-more {
+                margin:6px 0 16px;
+                padding:14px 18px;
+                border-radius:14px;
+                background:rgba(79,140,255,.12);
+                border:1px solid rgba(79,140,255,.25);
+                color:#8fb2ff;
+                text-align:center;
+                font-size:14px;
+                font-weight:700;
+                cursor:pointer;
+            }
+            .fcv9-more.focus,.fcv9-more:hover {
+                background:rgba(79,140,255,.2);
             }
         `;
         document.head.appendChild(style);
     }
 
-    function renderComments(title, comments) {
+    function renderComments(title, comments, total) {
+        const initial = Math.min(30, comments.length);
         let html = `
-            <div class="fcv8-container">
-                <div class="fcv8-header">
-                    <div class="fcv8-header-title">Комментарии</div>
-                    <div class="fcv8-header-count">${comments.length}</div>
+            <div class="fcv9-container" data-total="${Number(total) || comments.length}">
+                <div class="fcv9-header">
+                    <div class="fcv9-header-title">Комментарии</div>
+                    <div class="fcv9-header-count">${Number(total) || comments.length}</div>
                 </div>
-                <div class="fcv8-subtitle">${escapeHtml(title)}</div>
+                <div class="fcv9-subtitle">${escapeHtml(title)}</div>
+                <div class="fcv9-list">
         `;
 
         if (!comments.length) {
-            html += '<div class="fcv8-empty">Комментариев пока нет</div>';
+            html += '<div class="fcv9-empty">Комментариев пока нет</div>';
         } else {
-            comments.forEach(function (comment) {
-                html += `<div class="fcv8-comment selector" tabindex="0"><div class="fcv8-text">${escapeHtml(comment)}</div></div>`;
+            comments.slice(0, initial).forEach(function(comment) {
+                html += `<div class="fcv9-comment selector" tabindex="0"><div class="fcv9-text">${escapeHtml(comment)}</div></div>`;
             });
+            if (comments.length > initial) {
+                html += `<div class="fcv9-more selector" tabindex="0">Показать ещё</div>`;
+            }
         }
 
-        return html + '</div>';
+        html += '</div></div>';
+        return html;
+    }
+
+    function bindCommentControls(container, comments) {
+        container.find('.selector').on('hover:enter', function(){ $(this).addClass('focus'); });
+        container.find('.selector').on('hover:leave', function(){ $(this).removeClass('focus'); });
+
+        container.find('.fcv9-more').on('click hover:enter', function(){
+            const list = container.find('.fcv9-list');
+            const current = list.find('.fcv9-comment').length;
+            const next = Math.min(current + 30, comments.length);
+            const html = comments.slice(current, next).map(function(comment){
+                return `<div class="fcv9-comment selector" tabindex="0"><div class="fcv9-text">${escapeHtml(comment)}</div></div>`;
+            }).join('');
+            $(this).before(html);
+            if (next >= comments.length) $(this).remove();
+            bindCommentControls(container, comments);
+        });
     }
 
     async function loadComments(movie) {
-        const paths = buildFilmixPaths(movie);
-        if (!paths.length) throw new Error('Не найден ID текущего фильма');
+        const title = getMovieTitle(movie);
+        const directPaths = buildFilmixPaths(movie);
+        const candidates = directPaths.length ? directPaths : [''];
 
         let lastError = null;
 
-        for (const path of paths) {
+        for (const path of candidates) {
             try {
-                const url = WORKER_URL + 'comments?path=' + encodeURIComponent(path);
+                const params = new URLSearchParams();
+                if (path) params.set('path', path);
+                params.set('title', title);
+
+                const original = movie && (movie.original_title || movie.original_name);
+                if (original) params.set('original_title', String(original));
+
+                const year = movie && (movie.year || movie.release_date || movie.first_air_date);
+                if (year) params.set('year', String(year).slice(0, 4));
+
+                const type = movie && (movie.type || movie.media_type || movie.category || '');
+                if (type) params.set('type', String(type));
+
+                const url = WORKER_URL + 'comments?' + params.toString();
                 const response = await fetch(url, { method:'GET', cache:'no-store' });
+
                 if (!response.ok) {
                     lastError = new Error('Worker HTTP ' + response.status);
                     continue;
@@ -389,9 +363,11 @@
                 }
 
                 const comments = normalizeComments(data);
-                if (comments.length) return comments;
-
-                lastError = new Error('Комментарии не найдены по пути ' + path);
+                return {
+                    items: comments,
+                    total: Number(data.total) || comments.length,
+                    resolved: data.resolved || null
+                };
             } catch (error) {
                 lastError = error;
             }
@@ -405,13 +381,13 @@
         const title = getMovieTitle(movie);
 
         const loading = $(`
-            <div class="fcv8-container">
-                <div class="fcv8-header">
-                    <div class="fcv8-header-title">Комментарии</div>
-                    <div class="fcv8-header-count">…</div>
+            <div class="fcv9-container">
+                <div class="fcv9-header">
+                    <div class="fcv9-header-title">Комментарии</div>
+                    <div class="fcv9-header-count">…</div>
                 </div>
-                <div class="fcv8-subtitle">${escapeHtml(title)}</div>
-                <div class="fcv8-empty">Загружаем комментарии…</div>
+                <div class="fcv9-subtitle">${escapeHtml(title)}</div>
+                <div class="fcv9-empty">Загружаем комментарии…</div>
             </div>
         `);
 
@@ -428,28 +404,27 @@
             }
         });
 
-        loadComments(movie).then(function(comments){
-            const modalHtml = $(renderComments(title, comments));
+        loadComments(movie).then(function(result){
+            const modalHtml = $(renderComments(title, result.items, result.total));
             loading.replaceWith(modalHtml);
-            modalHtml.find('.selector').on('hover:enter',function(){ $(this).addClass('focus'); });
-            modalHtml.find('.selector').on('hover:leave',function(){ $(this).removeClass('focus'); });
+            bindCommentControls(modalHtml, result.items);
         }).catch(function(error){
-            console.error('[Filmix Comments V8]', error);
+            console.error('[Filmix Comments V9]', error);
             loading.replaceWith($(`
-                <div class="fcv8-container">
-                    <div class="fcv8-header">
-                        <div class="fcv8-header-title">Комментарии</div>
-                        <div class="fcv8-header-count">!</div>
+                <div class="fcv9-container">
+                    <div class="fcv9-header">
+                        <div class="fcv9-header-title">Комментарии</div>
+                        <div class="fcv9-header-count">!</div>
                     </div>
-                    <div class="fcv8-subtitle">${escapeHtml(title)}</div>
-                    <div class="fcv8-error">Не удалось загрузить комментарии</div>
+                    <div class="fcv9-subtitle">${escapeHtml(title)}</div>
+                    <div class="fcv9-error">Не удалось загрузить комментарии</div>
                 </div>
             `));
         });
     }
 
     function addButton(movie) {
-        $('.button--filmix-comments-v8').remove();
+        $('.button--filmix-comments-v9').remove();
 
         const button = $(`
             <div class="full-start__button selector ${BUTTON_CLASS}">
