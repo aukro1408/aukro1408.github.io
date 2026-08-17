@@ -1,4 +1,4 @@
-/* ===== Filmix Comments V13 — Android Lampa resolver + comments-only Worker =====
+/* ===== Filmix Comments V14 — Android Lampa resolver + comments-only Worker =====
    Поиск фильма выполняется ЛОКАЛЬНО на устройстве через Lampa.Reguest
    (прямой запрос на https://hdrezka.ag с IP устройства, как в online_mod.js).
    Cloudflare Worker получает ТОЛЬКО числовой news_id и отдаёт комментарии.
@@ -6,9 +6,9 @@
 (function () {
     'use strict';
 
-    const PLUGIN_FLAG = 'filmix_comments_v13';
-    const BUTTON_CLASS = 'button--filmix-comments-v13';
-    const STYLE_ID = 'filmix-comments-v13-style';
+    const PLUGIN_FLAG = 'filmix_comments_v14';
+    const BUTTON_CLASS = 'button--filmix-comments-v14';
+    const STYLE_ID = 'filmix-comments-v14-style';
 
     // Комментарии отдаёт наш Worker (у него есть CORS), поиск — только с устройства.
     const WORKER_URL = 'https://rezka-comments-proxy.aukro1408.workers.dev/';
@@ -64,31 +64,31 @@
         const style = document.createElement('style');
         style.id = STYLE_ID;
         style.textContent = `
-            .fcv13-container {
+            .fcv14-container {
                 box-sizing:border-box;
                 width:100%;
                 padding:4px 12px 34px;
                 background:#292929;
                 border-radius:20px;
             }
-            .fcv13-container *, .fcv13-container *::before, .fcv13-container *::after {
+            .fcv14-container *, .fcv14-container *::before, .fcv14-container *::after {
                 box-sizing:border-box;
             }
-            .fcv13-header {
+            .fcv14-header {
                 display:flex;
                 align-items:center;
                 justify-content:space-between;
                 gap:12px;
                 padding:8px 4px 18px;
             }
-            .fcv13-header-title {
+            .fcv14-header-title {
                 color:#fff;
                 font-size:20px;
                 line-height:1.2;
                 font-weight:800;
                 letter-spacing:-.02em;
             }
-            .fcv13-header-count {
+            .fcv14-header-count {
                 min-width:42px;
                 padding:7px 12px;
                 border-radius:999px;
@@ -99,12 +99,12 @@
                 font-weight:800;
                 box-shadow:0 7px 18px rgba(79,140,255,.24);
             }
-            .fcv13-subtitle {
+            .fcv14-subtitle {
                 padding:0 4px 16px;
                 color:rgba(255,255,255,.48);
                 font-size:12px;
             }
-            .fcv13-comment {
+            .fcv14-comment {
                 position:relative;
                 margin:0 0 13px;
                 padding:20px 18px 20px 28px;
@@ -115,7 +115,7 @@
                 box-shadow:0 12px 28px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.035);
                 transition:transform .16s ease,background .16s ease,border-color .16s ease,box-shadow .16s ease;
             }
-            .fcv13-comment::before {
+            .fcv14-comment::before {
                 content:"";
                 position:absolute;
                 left:0;
@@ -125,23 +125,23 @@
                 border-radius:0 8px 8px 0;
                 background:linear-gradient(180deg,#4f8cff 0%,#7c5cff 16%,#c45cff 32%,#ff4fa3 48%,#ff6b6b 64%,#ffbd4a 80%,#45d483 92%,#4f8cff 100%);
                 background-size:100% 260%;
-                animation:fcv13Rainbow 3.6s ease-in-out infinite;
+                animation:fcv14Rainbow 3.6s ease-in-out infinite;
                 box-shadow:0 0 8px rgba(79,140,255,.55),0 0 18px rgba(196,92,255,.30);
                 pointer-events:none;
                 z-index:2;
             }
-            @keyframes fcv13Rainbow {
+            @keyframes fcv14Rainbow {
                 0%{background-position:0 0%;filter:hue-rotate(0deg)}
                 50%{background-position:0 100%;filter:hue-rotate(22deg)}
                 100%{background-position:0 0%;filter:hue-rotate(0deg)}
             }
-            .fcv13-comment.focus,.fcv13-comment:hover {
+            .fcv14-comment.focus,.fcv14-comment:hover {
                 transform:translateY(-2px) scale(1.003);
                 background:linear-gradient(165deg,#2b2b30,#1e1e22);
                 border-color:rgba(79,140,255,.25);
                 box-shadow:0 18px 34px rgba(0,0,0,.44),0 0 0 1px rgba(79,140,255,.05);
             }
-            .fcv13-text {
+            .fcv14-text {
                 display:block;
                 margin:0!important;
                 padding:0!important;
@@ -153,14 +153,14 @@
                 overflow-wrap:anywhere;
                 white-space:pre-wrap;
             }
-            .fcv13-empty,.fcv13-error {
+            .fcv14-empty,.fcv14-error {
                 padding:45px 20px;
                 color:rgba(255,255,255,.58);
                 text-align:center;
                 line-height:1.5;
             }
-            .fcv13-error { color:#ff8f8f; }
-            .button--filmix-comments-v13 svg {
+            .fcv14-error { color:#ff8f8f; }
+            .button--filmix-comments-v14 svg {
                 width:22px;height:22px;margin-right:7px;fill:currentColor;
             }
         `;
@@ -169,21 +169,21 @@
 
     function renderComments(title, comments, totalCount) {
         let html = `
-            <div class="fcv13-container">
-                <div class="fcv13-header">
-                    <div class="fcv13-header-title">Комментарии</div>
-                    <div class="fcv13-header-count">${Number(totalCount || comments.length)}</div>
+            <div class="fcv14-container">
+                <div class="fcv14-header">
+                    <div class="fcv14-header-title">Комментарии</div>
+                    <div class="fcv14-header-count">${Number(totalCount || comments.length)}</div>
                 </div>
-                <div class="fcv13-subtitle">${escapeHtml(title)}</div>
+                <div class="fcv14-subtitle">${escapeHtml(title)}</div>
         `;
 
         if (!comments.length) {
-            html += '<div class="fcv13-empty">Комментариев пока нет</div>';
+            html += '<div class="fcv14-empty">Комментариев пока нет</div>';
         } else {
             comments.forEach(function (comment) {
                 html += `
-                    <div class="fcv13-comment selector" tabindex="0">
-                        <div class="fcv13-text">${escapeHtml(comment)}</div>
+                    <div class="fcv14-comment selector" tabindex="0">
+                        <div class="fcv14-text">${escapeHtml(comment)}</div>
                     </div>
                 `;
             });
@@ -237,13 +237,13 @@
         const title = getMovieTitle(movie);
 
         const loading = $(`
-            <div class="fcv13-container">
-                <div class="fcv13-header">
-                    <div class="fcv13-header-title">Комментарии</div>
-                    <div class="fcv13-header-count">…</div>
+            <div class="fcv14-container">
+                <div class="fcv14-header">
+                    <div class="fcv14-header-title">Комментарии</div>
+                    <div class="fcv14-header-count">…</div>
                 </div>
-                <div class="fcv13-subtitle">${escapeHtml(title)}</div>
-                <div class="fcv13-empty">Ищем фильм на HDRezka…</div>
+                <div class="fcv14-subtitle">${escapeHtml(title)}</div>
+                <div class="fcv14-empty">Ищем фильм на HDRezka…</div>
             </div>
         `);
 
@@ -272,27 +272,27 @@
                 $(this).removeClass('focus');
             });
         }).catch(function(error){
-            console.error('[Filmix Comments V13]', error);
+            console.error('[Filmix Comments V14]', error);
 
             const msg = (error && error.message)
                 ? String(error.message)
                 : 'Не удалось загрузить комментарии';
 
             loading.replaceWith($(`
-                <div class="fcv13-container">
-                    <div class="fcv13-header">
-                        <div class="fcv13-header-title">Комментарии</div>
-                        <div class="fcv13-header-count">!</div>
+                <div class="fcv14-container">
+                    <div class="fcv14-header">
+                        <div class="fcv14-header-title">Комментарии</div>
+                        <div class="fcv14-header-count">!</div>
                     </div>
-                    <div class="fcv13-subtitle">${escapeHtml(title)}</div>
-                    <div class="fcv13-error">${escapeHtml(msg)}</div>
+                    <div class="fcv14-subtitle">${escapeHtml(title)}</div>
+                    <div class="fcv14-error">${escapeHtml(msg)}</div>
                 </div>
             `));
         });
     }
 
     function addButton(fullData) {
-        $('.button--filmix-comments-v13').remove();
+        $('.button--filmix-comments-v14').remove();
 
         const button = $(`
             <div class="full-start__button selector ${BUTTON_CLASS}">
@@ -529,6 +529,7 @@
 
         return function request(url, postdata) {
             return new Promise(function (resolve, reject) {
+                console.log('[Filmix Comments V14] TRACE 4 request');
                 // Диагностика STEP 11.1: плагин работает напрямую, без прокси.
                 let isAndroid = false;
                 try {
@@ -543,32 +544,32 @@
                     'Cookie': 'PHPSESSID=' + randomId(26)
                 };
 
-                console.log('[Filmix Comments V13] SEARCH START');
-                console.log('[Filmix Comments V13] SEARCH URL: ' + url);
-                console.log('[Filmix Comments V13] SEARCH POST: ' + (typeof postdata === 'string' ? postdata : '(GET, no body)'));
-                console.log('[Filmix Comments V13] SEARCH HEADERS: ' + Object.keys(headers).join(', '));
-                console.log('[Filmix Comments V13] ANDROID: ' + isAndroid + ' | PROX empty: ' + (prox === ''));
+                console.log('[Filmix Comments V14] SEARCH START');
+                console.log('[Filmix Comments V14] SEARCH URL: ' + url);
+                console.log('[Filmix Comments V14] SEARCH POST: ' + (typeof postdata === 'string' ? postdata : '(GET, no body)'));
+                console.log('[Filmix Comments V14] SEARCH HEADERS: ' + Object.keys(headers).join(', '));
+                console.log('[Filmix Comments V14] ANDROID: ' + isAndroid + ' | PROX empty: ' + (prox === ''));
 
                 network.clear();
                 network.timeout(10000);
 
-                console.log('[Filmix Comments V13] ANDROID_NATIVE_START');
+                console.log('[Filmix Comments V14] ANDROID_NATIVE_START');
 
                 network['native'](
                     url,
                     function (str) {
                         str = str || '';
-                        console.log('[Filmix Comments V13] ANDROID_NATIVE_SUCCESS');
-                        console.log('[Filmix Comments V13] SEARCH SUCCESS: len=' + str.length + ' preview=' + str.slice(0, 120).replace(/\s+/g, ' '));
+                        console.log('[Filmix Comments V14] ANDROID_NATIVE_SUCCESS');
+                        console.log('[Filmix Comments V14] SEARCH SUCCESS: len=' + str.length + ' preview=' + str.slice(0, 120).replace(/\s+/g, ' '));
                         resolve(str);
                     },
                     function (a, c) {
-                        console.log('[Filmix Comments V13] ANDROID_NATIVE_ERROR: ' + String(a));
+                        console.log('[Filmix Comments V14] ANDROID_NATIVE_ERROR: ' + String(a));
                         // Логируем СЫРЫЕ аргументы ДО преобразования в общее сообщение.
-                        console.log('[Filmix Comments V13] SEARCH ERROR');
-                        console.log('[Filmix Comments V13] ERROR TYPE: ' + (a && a.constructor ? a.constructor.name : typeof a));
-                        console.log('[Filmix Comments V13] ERROR VALUE: ' + safeDescribe(a));
-                        console.log('[Filmix Comments V13] ERROR ARGS: ' + safeDescribe(c));
+                        console.log('[Filmix Comments V14] SEARCH ERROR');
+                        console.log('[Filmix Comments V14] ERROR TYPE: ' + (a && a.constructor ? a.constructor.name : typeof a));
+                        console.log('[Filmix Comments V14] ERROR VALUE: ' + safeDescribe(a));
+                        console.log('[Filmix Comments V14] ERROR ARGS: ' + safeDescribe(c));
                         let msg = '';
                         if (network.errorDecode) {
                             try { msg = network.errorDecode(a, c) || ''; }
@@ -636,6 +637,7 @@
 
     // Полный объект события Lampa (event.data), не только movie.
     function resolveRezka(fullData) {
+        console.log('[Filmix Comments V14] TRACE 3 resolveRezka');
         const movie = (fullData && fullData.movie) || {};
         const select_title = ((fullData.search || movie.title || '') + '').trim();
         const search_date =
@@ -688,13 +690,15 @@
        ============================================================ */
 
     async function loadComments(fullData) {
+        console.log('[Filmix Comments V14] TRACE 1 loadComments');
         const movie = (fullData && fullData.movie) || {};
         const title = getMovieTitle(movie);
 
-        console.log('[Filmix Comments V13] On-device resolve:', title);
+        console.log('[Filmix Comments V14] On-device resolve:', title);
 
         let resolved = null;
         try {
+            console.log('[Filmix Comments V14] TRACE 2 before resolveRezka');
             resolved = await resolveRezka(fullData);
         } catch (error) {
             throw new Error(
@@ -708,8 +712,8 @@
 
         const url = WORKER_URL + 'comments?news_id=' + encodeURIComponent(resolved.filmId);
 
-        console.log('[Filmix Comments V13] Resolved:', resolved);
-        console.log('[Filmix Comments V13] Worker URL:', url);
+        console.log('[Filmix Comments V14] Resolved:', resolved);
+        console.log('[Filmix Comments V14] Worker URL:', url);
 
         const response = await fetch(url, {
             method: 'GET',
@@ -731,7 +735,7 @@
         const comments = normalizeComments(data);
         comments._filmixTotal = Number(data.total || comments.length);
 
-        console.log('[Filmix Comments V13] Comments:', comments.length, 'total:', comments._filmixTotal);
+        console.log('[Filmix Comments V14] Comments:', comments.length, 'total:', comments._filmixTotal);
 
         return comments;
     }
@@ -760,7 +764,7 @@
 
     // Хук для локального тестирования resolver-логики.
     if (typeof window !== 'undefined') {
-        window['__fcv13__'] = {
+        window['fcv14'] = {
             resolveRezka: resolveRezka,
             SEARCH_HOST: SEARCH_HOST,
             WORKER_URL: WORKER_URL,
