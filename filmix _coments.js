@@ -3,15 +3,15 @@
 
     /*
      * ============================================================
-     * LAMPA — COMMENTS UI V6
+     * LAMPA — COMMENTS UI V8
      * ------------------------------------------------------------
      * Реальные комментарии Filmix через наш Cloudflare Worker.
      * ============================================================
      */
 
-    const PLUGIN_FLAG = "filmix_comments_ui_v7";
-    const BUTTON_CLASS = "button--filmix-comments-v7";
-    const STYLE_ID = "filmix-comments-ui-v7-style";
+    const PLUGIN_FLAG = "filmix_comments_ui_v8";
+    const BUTTON_CLASS = "button--filmix-comments-v8";
+    const STYLE_ID = "filmix-comments-ui-v8-style";
     const PROXY_URL = "https://rezka-comments-proxy.aukro1408.workers.dev";
 
     // ------------------------------------------------------------
@@ -188,7 +188,7 @@
                 text-align: left;
             }
 
-            .button--filmix-comments-v7 svg {
+            .button--filmix-comments-v8 svg {
                 width: 22px;
                 height: 22px;
                 margin-right: 7px;
@@ -258,51 +258,83 @@
         ));
     }
 
-    function loadComments(movie, done, fail) {
-        const params = [
-            'title=' + encodeURIComponent(getMovieTitle(movie)),
-            'original_title=' + encodeURIComponent(
-                movie && (movie.original_title || movie.original_name) || ''
-            ),
-            'year=' + encodeURIComponent(getMovieYear(movie)),
-            'serial=' + (isSerial(movie) ? '1' : '0')
-        ].join('&');
+    async function loadComments(movie, done, fail) {
+        const title = getMovieTitle(movie);
+        const originalTitle = movie && (movie.original_title || movie.original_name) || '';
+        const year = getMovieYear(movie);
+        const serial = isSerial(movie) ? '1' : '0';
 
-        const url = PROXY_URL + '/comments?' + params;
-        const network = new Lampa.Reguest();
-        network.timeout(20000);
+        const params = new URLSearchParams();
+        if (title) params.set('title', title);
+        if (originalTitle) params.set('original_title', originalTitle);
+        if (year) params.set('year', year);
+        params.set('serial', serial);
 
-        network.silent(url, function (response) {
-            try {
-                const data = typeof response === 'string'
-                    ? JSON.parse(response)
-                    : response;
+        const url = PROXY_URL + '/comments?' + params.toString();
+        const controller = typeof AbortController !== 'undefined'
+            ? new AbortController()
+            : null;
+        const timer = setTimeout(function () {
+            if (controller) controller.abort();
+        }, 20000);
 
-                if (!data || !data.success) {
-                    fail((data && data.message) || 'Не удалось получить комментарии');
-                    return;
-                }
+        try {
+            // Используем обычный fetch вместо Lampa.Reguest.
+            // Worker уже отдаёт CORS-заголовки, поэтому это надёжнее
+            // для Android/WebView и не зависит от внутреннего парсера Lampa.
+            const response = await fetch(url, {
+                method: 'GET',
+                mode: 'cors',
+                cache: 'no-store',
+                signal: controller ? controller.signal : undefined
+            });
 
-                done(Array.isArray(data.items) ? data.items : []);
-            } catch (error) {
-                fail('Некорректный ответ сервера');
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
             }
-        }, function () {
-            fail('Не удалось подключиться к серверу комментариев');
-        }, false, {
-            dataType: 'json'
-        });
 
-        return network;
+            const data = await response.json();
+
+            if (!data || !data.success) {
+                throw new Error(
+                    data && (data.message || data.error)
+                        ? (data.message || data.error)
+                        : 'Не удалось получить комментарии'
+                );
+            }
+
+            const items = Array.isArray(data.items) ? data.items : [];
+
+            // Worker уже отдаёт чистые тексты. На всякий случай
+            // отбрасываем пустые элементы прямо на стороне плагина.
+            const comments = items
+                .map(function (item) {
+                    return typeof item === 'string'
+                        ? { text: item }
+                        : item;
+                })
+                .filter(function (item) {
+                    return item && String(item.text || '').trim();
+                });
+
+            done(comments);
+        } catch (error) {
+            const message = error && error.name === 'AbortError'
+                ? 'Таймаут подключения к серверу комментариев'
+                : (error && error.message) || 'Не удалось подключиться к серверу комментариев';
+
+            fail(message);
+        } finally {
+            clearTimeout(timer);
+        }
     }
-
 
     function openComments(movie) {
         addStyles();
 
         Lampa.Loading.start();
 
-        const network = loadComments(movie, function (comments) {
+        loadComments(movie, function (comments) {
             Lampa.Loading.stop();
 
             const modalHtml = $(renderComments(movie, comments));
@@ -332,12 +364,10 @@
             Lampa.Loading.stop();
             Lampa.Noty.show(message);
         });
-
-        return network;
     }
 
     function addButton(movie) {
-        $(".button--filmix-comments-v7").remove();
+        $(".button--filmix-comments-v8").remove();
 
         const button = $(`
             <div class="
