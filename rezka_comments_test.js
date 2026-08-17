@@ -552,14 +552,18 @@
                 network.clear();
                 network.timeout(10000);
 
+                console.log('[Filmix Comments V13] ANDROID_NATIVE_START');
+
                 network['native'](
                     url,
                     function (str) {
                         str = str || '';
+                        console.log('[Filmix Comments V13] ANDROID_NATIVE_SUCCESS');
                         console.log('[Filmix Comments V13] SEARCH SUCCESS: len=' + str.length + ' preview=' + str.slice(0, 120).replace(/\s+/g, ' '));
                         resolve(str);
                     },
                     function (a, c) {
+                        console.log('[Filmix Comments V13] ANDROID_NATIVE_ERROR: ' + String(a));
                         // Логируем СЫРЫЕ аргументы ДО преобразования в общее сообщение.
                         console.log('[Filmix Comments V13] SEARCH ERROR');
                         console.log('[Filmix Comments V13] ERROR TYPE: ' + (a && a.constructor ? a.constructor.name : typeof a));
