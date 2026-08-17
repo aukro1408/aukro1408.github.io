@@ -1,5 +1,4 @@
-// RezkaComment FIXED v1
-// English TMDB translation is optional.
+// RezkaComment V2 — based directly on the supplied rezkacomment.js
 (function () {
   //BDVBuriлk.github.io
   //2025
@@ -10,176 +9,157 @@
   let savedHTML = null;
 
   function getSettings() {
-    let host = (Lampa.Storage.get('rezka_comment_fixed_host', 'https://hdrezka.ag') || 'https://hdrezka.ag').trim().replace(/\/+$/, '');
-    let cookie = (Lampa.Storage.get('rezka_comment_fixed_cookie', '') || '').trim();
-    let proxy = (Lampa.Storage.get('rezka_comment_fixed_proxy', 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/') || 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/').trim();
+    let host = (Lampa.Storage.get('rezka_comment_v2_host', 'https://hdrezka.ag') || 'https://hdrezka.ag').trim().replace(/\/+$/, '');
+    let cookie = (Lampa.Storage.get('rezka_comment_v2_cookie', '') || '').trim();
+    let proxy = (Lampa.Storage.get('rezka_comment_v2_proxy', 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/') || 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/').trim();
     if (proxy && !proxy.endsWith('/')) {
       proxy += '/';
     }
     return { host, cookie, proxy };
   }
 
-  // Поиск на HDRezka.
-  // FIX: не берём первый результат вслепую; проверяем название и год.
-  async function searchRezka(names, ye) {
+  // Функция для поиска на сайте hdrezka
+  async function searchRezka(name, ye, silent) {
     try {
       let { host, cookie, proxy } = getSettings();
-
-      if (!Array.isArray(names)) names = [names];
-      names = names.map((x) => normalizeTitle(String(x || ""))).filter(Boolean);
-      names = [...new Set(names)];
-
-      if (!names.length) {
-        Lampa.Noty.show("Название фильма не найдено");
-        Lampa.Loading.stop();
-        return;
+      let path = host + "/search/?do=search&subaction=search&q=" + encodeURIComponent(name) + (ye ? "+" + ye : "");
+      let searchUrl = proxy;
+      if (cookie) {
+        searchUrl += "param/Cookie=" + encodeURIComponent(cookie) + "/";
       }
+      searchUrl += path;
 
-      const queries = [];
-      names.forEach((name) => {
-        if (ye) queries.push(name + " " + ye);
-        queries.push(name);
+      console.log('[RezkaComment V2] SEARCH:', name + (ye ? ' ' + ye : ''));
+
+      let fc = await fetch(searchUrl, {
+        method: "GET",
+        headers: { "Content-Type": "text/html" }
+      }).then((response) => {
+        if (!response.ok) {
+          throw new Error('HTTP status ' + response.status);
+        }
+        return response.text();
       });
 
-      const uniqueQueries = [...new Set(queries)].slice(0, 8);
-      let best = null;
+      let dom = new DOMParser().parseFromString(fc, "text/html");
 
-      for (const query of uniqueQueries) {
-        const path = host + "/search/?do=search&subaction=search&q=" + encodeURIComponent(query);
-
-        let searchUrl = proxy;
-        if (cookie) searchUrl += "param/Cookie=" + encodeURIComponent(cookie) + "/";
-        searchUrl += path;
-
-        console.log("[RezkaComment Fixed] search:", query);
-
-        const fc = await fetch(searchUrl, {
-          method: "GET",
-          headers: { "Content-Type": "text/html" }
-        }).then((response) => {
-          if (!response.ok) throw new Error("HTTP status " + response.status);
-          return response.text();
-        });
-
+      const item = dom.querySelector(".b-content__inline_item");
+      if (!item) {
+        console.warn('[RezkaComment V2] NO CARD:', name, ye);
         if (fc.indexOf("Проверяем, что вы не бот") !== -1 || fc.indexOf("Anubis") !== -1) {
-          Lampa.Noty.show("Защита от ботов на Rezka. Проверьте Cookie в настройках плагина.");
+          Lampa.Noty.show('Защита от ботов на Rezka. Настройте Cookie в настройках плагина.');
           Lampa.Loading.stop();
-          return;
+          return false;
         }
-
-        const dom = new DOMParser().parseFromString(fc, "text/html");
-        const items = Array.from(dom.querySelectorAll(".b-content__inline_item"));
-        console.log("[RezkaComment Fixed] cards:", items.length, "query:", query);
-
-        for (const item of items) {
-          const link = item.querySelector(".b-content__inline_item-link");
-          const titleText = (link?.innerText || "").trim();
-          const href = link?.getAttribute("href") || "";
-          const id = item.dataset.id || "";
-          if (!id || !href) continue;
-
-          const cardTitle = normalizeTitle(titleText);
-          const queryTitle = normalizeTitle(query);
-          const text = item.innerText || "";
-          const yearMatch = text.match(/\b(19|20)\d{2}\b/);
-          const cardYear = yearMatch ? Number(yearMatch[0]) : 0;
-
-          let score = 0;
-          if (names.some((n) => cardTitle === n)) score += 100;
-          if (cardTitle === queryTitle) score += 80;
-
-          const tokens = queryTitle.split(/\s+/).filter((x) => x.length > 1);
-          if (tokens.length) {
-            const hits = tokens.filter((token) => cardTitle.includes(token)).length;
-            score += Math.round((hits / tokens.length) * 40);
-          }
-
-          if (ye && cardYear === Number(ye)) score += 50;
-          if (ye && cardYear && cardYear !== Number(ye)) score -= 60;
-
-          if (!best || score > best.score) {
-            best = { score, id, href, title: titleText, year: cardYear, query };
-          }
-        }
-
-        if (best && best.score >= 140 && (!ye || best.year === Number(ye))) break;
+        if (!silent) Lampa.Loading.stop();
+        return false;
       }
 
-      if (!best || best.score < 60) {
-        console.warn("[RezkaComment Fixed] no confident match:", names, ye, best);
-        Lampa.Noty.show("Фильм/сериал не найден на Rezka");
-        Lampa.Loading.stop();
-        return;
-      }
-
-      namemovie = best.title || names[0];
-      console.log("[RezkaComment Fixed] MATCH:", best.title, "id:", best.id, "year:", best.year, "score:", best.score);
-      await comment_rezka(best.id, best.href);
+      namemovie =
+        item.querySelector(".b-content__inline_item-link")?.innerText || "";
+      
+      let itemUrl = item.querySelector(".b-content__inline_item-link")?.getAttribute("href") || "";
+      console.log('[RezkaComment V2] FOUND ID:', item.dataset.id, 'title:', namemovie);
+      await comment_rezka(item.dataset.id, itemUrl);
+      return true;
     } catch (e) {
-      console.error("[RezkaComment Fixed] search error:", e);
-      Lampa.Noty.show("Ошибка поиска на Rezka: " + (e.message || e));
-      Lampa.Loading.stop();
+      console.error('[RezkaComment V2] searchRezka error:', e);
+      console.error('[RezkaComment V2] search error:', e);
+      if (!silent) {
+        Lampa.Noty.show('Ошибка поиска на Rezka: ' + e.message);
+        Lampa.Loading.stop();
+      }
+      return false;
     }
   }
 
-  // Собираем варианты названия.
-  // FIX: английский перевод TMDB НЕ является обязательным.
-  async function getSearchNames(movie, type) {
-    const result = [];
+  // Резолвер названия V2.
+  // Английское название TMDB больше НЕ является обязательным.
+  async function resolveTitle(movie, type) {
+    try {
+      const names = [];
 
-    function add(value) {
-      if (typeof value !== "string") return;
-      value = value.trim();
-      if (!value) return;
-      const n = normalizeTitle(value);
-      if (!n) return;
-      if (!result.some((x) => normalizeTitle(x) === n)) result.push(value);
-    }
-
-    add(movie?.original_title);
-    add(movie?.original_name);
-    add(movie?.title);
-
-    const alternatives = movie?.alternative_titles?.results;
-    if (Array.isArray(alternatives)) {
-      alternatives.forEach((item) => {
-        add(item?.title);
-        add(item?.name);
-      });
-    }
-
-    if (movie?.id && Lampa.Api?.sources?.tmdb?.get) {
-      try {
-        const tmdbType = type === "movie" ? "movie" : "tv";
-        const cacheKey = tmdbType + "_" + movie.id;
-        window.__tmdbTranslationsCache = window.__tmdbTranslationsCache || {};
-        let translations = window.__tmdbTranslationsCache[cacheKey];
-
-        if (!translations) {
-          const data = await new Promise((resolve, reject) =>
-            Lampa.Api.sources.tmdb.get(
-              `${tmdbType}/${movie.id}?append_to_response=translations`,
-              {},
-              resolve,
-              reject
-            )
-          );
-          translations = data?.translations?.translations || [];
-          window.__tmdbTranslationsCache[cacheKey] = translations;
+      function addName(value) {
+        if (typeof value !== 'string') return;
+        value = value.trim();
+        if (!value) return;
+        const normalized = normalizeTitle(value);
+        if (!normalized) return;
+        if (!names.some((x) => normalizeTitle(x) === normalized)) {
+          names.push(value);
         }
-
-        translations
-          .filter((t) => t.iso_3166_1 === "US" || t.iso_639_1 === "en")
-          .forEach((t) => {
-            add(t?.data?.title);
-            add(t?.data?.name);
-          });
-      } catch (e) {
-        console.warn("[RezkaComment Fixed] TMDB fallback failed:", e);
       }
-    }
 
-    return result;
+      // Сначала самые надёжные поля самого Lampa.
+      addName(movie?.original_title);
+      addName(movie?.original_name);
+      addName(movie?.title);
+
+      // Затем альтернативные названия, если они уже есть в объекте.
+      const alternatives = movie?.alternative_titles?.results;
+      if (Array.isArray(alternatives)) {
+        alternatives.forEach(function (item) {
+          addName(item?.title);
+          addName(item?.name);
+        });
+      }
+
+      // TMDB English translation — только дополнительная попытка.
+      if (movie?.id && Lampa.Api?.sources?.tmdb?.get) {
+        try {
+          const tmdbType = type === 'movie' ? 'movie' : 'tv';
+          const cacheKey = tmdbType + '_' + movie.id;
+          window.__rezkaV2TranslationsCache = window.__rezkaV2TranslationsCache || {};
+
+          let translations = window.__rezkaV2TranslationsCache[cacheKey];
+
+          if (!translations) {
+            const data = await new Promise(function (resolve, reject) {
+              Lampa.Api.sources.tmdb.get(
+                tmdbType + '/' + movie.id + '?append_to_response=translations',
+                {},
+                resolve,
+                reject
+              );
+            });
+
+            translations = data?.translations?.translations || [];
+            window.__rezkaV2TranslationsCache[cacheKey] = translations;
+          }
+
+          const en = translations.find(function (item) {
+            return item.iso_3166_1 === 'US' || item.iso_639_1 === 'en';
+          });
+
+          addName(en?.data?.title);
+          addName(en?.data?.name);
+        } catch (tmdbError) {
+          console.warn('[RezkaComment V2] TMDB translation unavailable:', tmdbError);
+        }
+      }
+
+      console.log('[RezkaComment V2] title candidates:', names);
+
+      if (!names.length) {
+        Lampa.Noty.show('Название фильма не найдено');
+        Lampa.Loading.stop();
+        return;
+      }
+
+      // Пробуем варианты по очереди. Внутри searchRezka используется
+      // оригинальная логика rezkacomment.js: первая карточка страницы.
+      for (let i = 0; i < names.length; i++) {
+        const found = await searchRezka(names[i], year, true);
+        if (found) return;
+      }
+
+      Lampa.Noty.show('Фильм/сериал не найден на Rezka');
+      Lampa.Loading.stop();
+    } catch (e) {
+      console.error('[RezkaComment V2] resolve title error:', e);
+      Lampa.Noty.show('Ошибка подготовки поиска Rezka');
+      Lampa.Loading.stop();
+    }
   }
 
   // Функция для очистки заголовка от лишних символов
@@ -268,7 +248,7 @@
       }
       commentsUrl += path;
 
-      console.log('[RezkaComment Fixed] fetching comments from:', commentsUrl);
+      console.log('[RezkaComment V2] COMMENTS:', id);
 
       let fc = await fetch(commentsUrl, {
         method: "GET",
@@ -299,7 +279,7 @@
 
       let rootList = dom.querySelector(".comments-tree-list");
       if (!rootList) {
-        console.warn('[RezkaComment Fixed] comments-tree-list not found in parsed HTML for', id);
+        console.warn('[RezkaComment V2] comments-tree-list not found in parsed HTML for', id);
         Lampa.Noty.show('Комментарии к фильму/сериалу отсутствуют');
         Lampa.Loading.stop();
         return;
@@ -308,7 +288,7 @@
       let newTree = buildTree(rootList);
       openModal(newTree);
     } catch (e) {
-      console.error('[RezkaComment Fixed] comment_rezka error:', e);
+      console.error('[RezkaComment V2] comment_rezka error:', e);
       Lampa.Noty.show('Ошибка получения комментариев: ' + e.message);
       Lampa.Loading.stop();
     }
@@ -321,9 +301,9 @@
       modal.find(".comment").append(treeContent);
 
       // Стили модалки (если ещё не добавлены)
-      if (!document.getElementById("rezka-comment-style-fixed-v1")) {
+      if (!document.getElementById("rezka-comment-style-v2")) {
         const styleEl = document.createElement("style");
-        styleEl.id = "rezka-comment-style-fixed-v1";
+        styleEl.id = "rezka-comment-style-v2";
         styleEl.textContent = `
     .comments-tree-list{list-style:none;margin:0;padding:0;}
 .comments-tree-item{list-style:none;margin:0;padding:0;}
@@ -377,23 +357,23 @@
 
   // Функция для начала работы плагина
   function startPlugin() {
-    window.comment_plugin_fixed_v1 = true;
+    window.rezka_comment_v2_plugin = true;
 
     try {
       // Регистрация настроек
       Lampa.SettingsApi.addComponent({
-        component: 'rezka_comment_fixed_v1',
-        name: 'Rezka Comments FIXED',
+        component: 'rezka_comment_v2',
+        name: 'Rezka Comments V2',
         icon: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
       });
 
       Lampa.SettingsApi.addParam({
-        component: 'rezka_comment_fixed_v1',
+        component: 'rezka_comment_v2',
         param: {
-          name: 'rezka_comment_fixed_host',
+          name: 'rezka_comment_v2_host',
           type: 'input',
           placeholder: 'https://hdrezka.ag',
-          values: Lampa.Storage.get('rezka_comment_fixed_host', 'https://hdrezka.ag'),
+          values: Lampa.Storage.get('rezka_comment_v2_host', 'https://hdrezka.ag'),
           default: 'https://hdrezka.ag'
         },
         field: {
@@ -401,17 +381,17 @@
           description: 'Адрес зеркала hdrezka (например, https://hdrezka.me)'
         },
         onChange: function(value) {
-          Lampa.Storage.set('rezka_comment_fixed_host', value);
+          Lampa.Storage.set('rezka_comment_v2_host', value);
         }
       });
 
       Lampa.SettingsApi.addParam({
-        component: 'rezka_comment_fixed_v1',
+        component: 'rezka_comment_v2',
         param: {
-          name: 'rezka_comment_fixed_cookie',
+          name: 'rezka_comment_v2_cookie',
           type: 'input',
           placeholder: 'вставьте cookie',
-          values: Lampa.Storage.get('rezka_comment_fixed_cookie', ''),
+          values: Lampa.Storage.get('rezka_comment_v2_cookie', ''),
           default: ''
         },
         field: {
@@ -419,17 +399,17 @@
           description: 'Cookie из вашего браузера для обхода защиты (Anubis / PHPSESSID)'
         },
         onChange: function(value) {
-          Lampa.Storage.set('rezka_comment_fixed_cookie', value);
+          Lampa.Storage.set('rezka_comment_v2_cookie', value);
         }
       });
 
       Lampa.SettingsApi.addParam({
-        component: 'rezka_comment_fixed_v1',
+        component: 'rezka_comment_v2',
         param: {
-          name: 'rezka_comment_fixed_proxy',
+          name: 'rezka_comment_v2_proxy',
           type: 'input',
           placeholder: 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/',
-          values: Lampa.Storage.get('rezka_comment_fixed_proxy', 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/'),
+          values: Lampa.Storage.get('rezka_comment_v2_proxy', 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/'),
           default: 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/'
         },
         field: {
@@ -437,23 +417,23 @@
           description: 'Ваш Cloudflare Worker прокси (обязательно с / на конце)'
         },
         onChange: function(value) {
-          Lampa.Storage.set('rezka_comment_fixed_proxy', value);
+          Lampa.Storage.set('rezka_comment_v2_proxy', value);
         }
       });
     } catch (e) {
-      console.error('[RezkaComment Fixed] Settings init error:', e);
+      console.error('[RezkaComment V2] Settings init error:', e);
     }
 
     Lampa.Listener.follow("full", function (e) {
       if (e.type == "complite") {
-        $(".button--comment-fixed-v1").remove();
+        $(".button--rezka-comment-v2").remove();
         $(".full-start-new__buttons").append(
-          `<div class="full-start__button selector button--comment-fixed-v1"><svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 356.484 356.484"><g><path d="M293.984 7.23H62.5C28.037 7.23 0 35.268 0 69.731v142.78c0 34.463 28.037 62.5 62.5 62.5l147.443.001 70.581 70.58a12.492 12.492 0 0 0 13.622 2.709 12.496 12.496 0 0 0 7.717-11.547v-62.237c30.759-3.885 54.621-30.211 54.621-62.006V69.731c0-34.463-28.037-62.501-62.5-62.501zm37.5 205.282c0 20.678-16.822 37.5-37.5 37.5h-4.621c-6.903 0-12.5 5.598-12.5 12.5v44.064l-52.903-52.903a12.493 12.493 0 0 0-8.839-3.661H62.5c-20.678 0-37.5-16.822-37.5-37.5V69.732c0-20.678 16.822-37.5 37.5-37.5h231.484c20.678 0 37.5 16.822 37.5 37.5v142.78z" fill="currentcolor"/></g></svg><span>${Lampa.Lang.translate(
+          `<div class="full-start__button selector button--rezka-comment-v2"><svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 356.484 356.484"><g><path d="M293.984 7.23H62.5C28.037 7.23 0 35.268 0 69.731v142.78c0 34.463 28.037 62.5 62.5 62.5l147.443.001 70.581 70.58a12.492 12.492 0 0 0 13.622 2.709 12.496 12.496 0 0 0 7.717-11.547v-62.237c30.759-3.885 54.621-30.211 54.621-62.006V69.731c0-34.463-28.037-62.501-62.5-62.501zm37.5 205.282c0 20.678-16.822 37.5-37.5 37.5h-4.621c-6.903 0-12.5 5.598-12.5 12.5v44.064l-52.903-52.903a12.493 12.493 0 0 0-8.839-3.661H62.5c-20.678 0-37.5-16.822-37.5-37.5V69.732c0-20.678 16.822-37.5 37.5-37.5h231.484c20.678 0 37.5 16.822 37.5 37.5v142.78z" fill="currentcolor"/></g></svg><span>${Lampa.Lang.translate(
             "title_comments",
           )}</span></div>`,
         );
 
-        $(".button--comment-fixed-v1").on("hover:enter", function (card) {
+        $(".button--rezka-comment-v2").on("hover:enter", function (card) {
           year = 0;
           if (e.data.movie.release_date) {
             year = e.data.movie.release_date.slice(0, 4);
@@ -462,33 +442,21 @@
           }
           Lampa.Loading.start();
 
-          getSearchNames(e.data.movie, e.object.method)
-            .then(function (names) {
-              const movie = e.data.movie || {};
-              let movieYear = 0;
+          const movie = e.data.movie || {};
+          year = 0;
 
-              if (movie.release_date) movieYear = movie.release_date.slice(0, 4);
-              else if (movie.first_air_date) movieYear = movie.first_air_date.slice(0, 4);
+          if (movie.release_date) {
+            year = movie.release_date.slice(0, 4);
+          } else if (movie.first_air_date) {
+            year = movie.first_air_date.slice(0, 4);
+          }
 
-              if (!names.length) {
-                Lampa.Noty.show("Название фильма не найдено");
-                Lampa.Loading.stop();
-                return;
-              }
-
-              console.log("[RezkaComment Fixed] names:", names, "year:", movieYear);
-              return searchRezka(names, movieYear);
-            })
-            .catch(function (err) {
-              console.error("[RezkaComment Fixed] resolver error:", err);
-              Lampa.Noty.show("Ошибка подготовки поиска Rezka");
-              Lampa.Loading.stop();
-            });
+          console.log('[RezkaComment V2] RESOLVE:', movie.title || movie.name || '', year);
+          resolveTitle(movie, e.object.method);
         });
       }
     });
   }
 
-  if (!window.comment_plugin_fixed_v1) startPlugin();
+  if (!window.rezka_comment_v2_plugin) startPlugin();
 })();
-                  
