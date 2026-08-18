@@ -333,9 +333,7 @@
       const originalTitle = movie.original_title || movie.original_name || "";
       const yearMovie = (movie.release_date || movie.first_air_date || "").slice(0, 4);
 
-      // Используем тот же poster_path, что и карточки/сетка Lampa.
-        // backdrop_path оставляем только запасным вариантом, если постера нет.
-        let poster = movie.poster_path || movie.cover || movie.image || movie.backdrop_path || "";
+      let poster = movie.backdrop_path || movie.poster_path || movie.cover || movie.image || "";
 
       if (poster && poster.indexOf("http") !== 0) {
         poster = "https://image.tmdb.org/t/p/w780" + poster;
