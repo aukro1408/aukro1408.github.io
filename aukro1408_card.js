@@ -293,6 +293,31 @@
       Lampa.Loading.stop();
     }
 
+    // Rezka inserts inline onclick="ShowOrHide('...')" into spoiler links.
+    // A local function inside the plugin IIFE is not visible to inline handlers,
+    // so explicitly expose the handler on window.
+    if (typeof window.ShowOrHide !== "function") {
+      window.ShowOrHide = function (id) {
+        if (!id) return;
+
+        let target = document.getElementById(id);
+
+        if (!target) {
+          const modalTarget = document.querySelector(".rezka-comments-page #" + id);
+          target = modalTarget || null;
+        }
+
+        if (!target) return;
+
+        target.style.display = "inline";
+
+        const previous = target.previousElementSibling;
+        if (previous && previous.classList.contains("title_spoiler")) {
+          previous.remove();
+        }
+      };
+    }
+
     function openModal(treeContent, movie) {
       Lampa.Loading.stop();
 
