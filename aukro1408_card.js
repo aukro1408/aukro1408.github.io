@@ -673,6 +673,169 @@
           }
 
 
+          /* === Новый компактный стиль комментариев === */
+          .rezka-comments-page .comments-tree-item{
+            list-style:none!important;
+            margin:0!important;
+            padding:0!important;
+          }
+
+          .rezka-comments-page .comments-tree-item::before,
+          .rezka-comments-page .comments-tree-item::after{
+            display:none!important;
+            content:none!important;
+          }
+
+          .rezka-comments-page .comment-wrap{
+            display:flex!important;
+            align-items:flex-start!important;
+            gap:12px!important;
+            width:100%!important;
+            margin:0 0 18px!important;
+            padding:0!important;
+          }
+
+          .rezka-comments-page .avatar-column{
+            flex:0 0 50px!important;
+            width:50px!important;
+            min-width:50px!important;
+            max-width:50px!important;
+            margin:0!important;
+            padding:0!important;
+          }
+
+          .rezka-comments-page .avatar-img{
+            display:block!important;
+            width:50px!important;
+            height:50px!important;
+            min-width:50px!important;
+            max-width:50px!important;
+            min-height:50px!important;
+            max-height:50px!important;
+            object-fit:cover!important;
+            object-position:center!important;
+            border-radius:11px!important;
+            margin:0!important;
+            background:#202223!important;
+            box-shadow:0 2px 8px rgba(0,0,0,.22)!important;
+          }
+
+          .rezka-comments-page .comment-card{
+            min-width:0!important;
+            flex:1 1 auto!important;
+            padding:0!important;
+            margin:0!important;
+            background:transparent!important;
+            border:0!important;
+            box-shadow:none!important;
+          }
+
+          .rezka-comments-page .comment-header{
+            display:flex!important;
+            align-items:baseline!important;
+            flex-wrap:wrap!important;
+            gap:0!important;
+            margin:0!important;
+            padding:0!important;
+            line-height:1.25!important;
+          }
+
+          .rezka-comments-page .comment-header .name{
+            font-size:15px!important;
+            line-height:1.25!important;
+            font-weight:700!important;
+            color:#fff!important;
+          }
+
+          .rezka-comments-page .comment-header .date{
+            margin-left:7px!important;
+            font-size:12px!important;
+            line-height:1.25!important;
+            font-weight:400!important;
+            color:rgba(255,255,255,.48)!important;
+          }
+
+          .rezka-comments-page .comment-text{
+            margin:5px 0 0!important;
+            padding:0!important;
+            background:transparent!important;
+            border:0!important;
+          }
+
+          .rezka-comments-page .comment-text .text{
+            margin:0!important;
+            padding:0!important;
+            font-size:15px!important;
+            line-height:1.52!important;
+            color:rgba(255,255,255,.88)!important;
+            word-break:break-word!important;
+          }
+
+          .rezka-comments-page .comment-text .text p{
+            margin:0 0 7px!important;
+          }
+
+          .rezka-comments-page .comment-text .text p:last-child{
+            margin-bottom:0!important;
+          }
+
+          .rezka-comments-page .comment-text .text ul,
+          .rezka-comments-page .comment-text .text ol{
+            margin:5px 0!important;
+            padding-left:18px!important;
+          }
+
+          .rezka-comments-page .comment-text .text li{
+            list-style:none!important;
+            margin:0 0 4px!important;
+            padding:0!important;
+          }
+
+          .rezka-comments-page .comment-text .text li::before,
+          .rezka-comments-page .comment-text .text li::marker{
+            content:none!important;
+            display:none!important;
+          }
+
+          @media (max-width:600px){
+            .rezka-comments-page .comment-wrap{
+              gap:11px!important;
+              margin-bottom:17px!important;
+            }
+
+            .rezka-comments-page .avatar-column{
+              flex-basis:48px!important;
+              width:48px!important;
+              min-width:48px!important;
+              max-width:48px!important;
+            }
+
+            .rezka-comments-page .avatar-img{
+              width:48px!important;
+              height:48px!important;
+              min-width:48px!important;
+              max-width:48px!important;
+              min-height:48px!important;
+              max-height:48px!important;
+              border-radius:10px!important;
+            }
+
+            .rezka-comments-page .comment-header .name{
+              font-size:15px!important;
+            }
+
+            .rezka-comments-page .comment-header .date{
+              font-size:11px!important;
+              margin-left:6px!important;
+            }
+
+            .rezka-comments-page .comment-text .text{
+              font-size:15px!important;
+              line-height:1.5!important;
+            }
+          }
+
+
           .rezka-modal-close{
             position:absolute!important;
             top:8px!important;
