@@ -403,11 +403,29 @@
         const styleEl = document.createElement("style");
         styleEl.id = "rezka-comment-style-v4";
         styleEl.textContent = `
+          /* Full-height Lampa modal for phones */
+          .modal--large.rezka-full-height-modal{
+            height:100vh!important;
+            max-height:100vh!important;
+            min-height:100vh!important;
+            margin-top:0!important;
+            margin-bottom:0!important;
+          }
+
+          .modal--large.rezka-full-height-modal .modal__content{
+            height:100%!important;
+            max-height:none!important;
+            min-height:0!important;
+            box-sizing:border-box!important;
+          }
+
           .rezka-comments-page{
             margin:-10px -10px 0;
             background:#151718;
             color:#fff;
             overflow:hidden;
+            min-height:100%;
+            box-sizing:border-box;
           }
 
           .rezka-film-header{
@@ -549,7 +567,7 @@
         title: ``,
         html: modal,
         size: "large",
-        style: "margin-top:10px;",
+        style: "margin-top:0!important;height:100vh!important;max-height:100vh!important;",
         mask: true,
         onBack: function () {
           Lampa.Modal.close();
@@ -557,6 +575,11 @@
           Lampa.Controller.toggle("content");
         },
       });
+
+      const rezkaFullModal = document.querySelector(".modal--large");
+      if (rezkaFullModal) {
+        rezkaFullModal.classList.add("rezka-full-height-modal");
+      }
 
       document
         .querySelector(".modal__head")
