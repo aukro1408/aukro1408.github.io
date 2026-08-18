@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v21_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v23_style';
     var current = null;
     var DELAY = 2000;
     var activityGuard = null;
@@ -12,9 +12,13 @@
         var s = document.createElement('style');
         s.id = STYLE_ID;
         s.textContent = `
+            /* Trailer is only a media/background layer. It must never sit
+               above Lampa's title, ratings or metadata. */
             .lta7-host {
                 position: relative !important;
                 overflow: hidden !important;
+                z-index: 0 !important;
+                isolation: isolate !important;
             }
 
             .lta7-video {
@@ -25,13 +29,38 @@
                 border: 0 !important;
                 background: #000 !important;
                 opacity: 0 !important;
-                z-index: 2 !important;
+                z-index: 0 !important;
                 pointer-events: auto !important;
                 transition: opacity .25s ease !important;
             }
 
             .lta7-video.visible {
                 opacity: 1 !important;
+            }
+
+            /* Lampa information always renders above the trailer. */
+            .full-start-new__title,
+            .full-start-new__tagline,
+            .full-start-new__details,
+            .full-start-new__head,
+            .full-start-new__buttons,
+            .full-start-new__rating,
+            .full-start-new__ratings,
+            .full-start-new__meta,
+            .full-start-new__info,
+            .full-start-new__content,
+            .full-start__title,
+            .full-start__tagline,
+            .full-start__details,
+            .full-start__head,
+            .full-start__buttons,
+            .full-start__rating,
+            .full-start__ratings,
+            .full-start__meta,
+            .full-start__info,
+            .full-start__content {
+                position: relative !important;
+                z-index: 5 !important;
             }
 
             /* Кнопка специально вынесена из карточки Lampa.
@@ -47,7 +76,7 @@
                 border-radius: 50% !important;
                 background: rgba(20,20,20,.86) !important;
                 color: #fff !important;
-                z-index: 20 !important;
+                z-index: 8 !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -162,9 +191,10 @@
     }
 
     function positionSound() {
-        if (!current || !current.host || !current.sound) return;
+        if (!current || !current.sound) return;
 
-        var rect = current.host.getBoundingClientRect();
+        var target = current.frame || current.pendingFrame || current.host;
+        var rect = target.getBoundingClientRect();
         var size = 46;
         var margin = 12;
 
@@ -189,6 +219,7 @@
         if (current.timer) clearTimeout(current.timer);
         if (current.readyTimer) clearTimeout(current.readyTimer);
         if (current.unlockTimer) clearTimeout(current.unlockTimer);
+        if (current.swapTimer) clearTimeout(current.swapTimer);
         if (current.messageHandler) {
             window.removeEventListener('message', current.messageHandler, true);
         }
@@ -234,6 +265,21 @@
         showSound();
     }
 
+    function getPlaybackPosition() {
+        if (!current) return 0;
+
+        var position = Number(current.currentTime) || 0;
+
+        // The bridge sends time updates periodically. Between updates, keep
+        // the missing fraction from the local clock so mute/unmute never
+        // jumps back to the last reported second (or to 0).
+        if (current.playing && current.startedAt) {
+            position += Math.max(0, (Date.now() - current.startedAt) / 1000);
+        }
+
+        return Math.max(0, position);
+    }
+
     function reloadForSound(wantSound) {
         if (!current || current.reloading || !current.frame) return;
 
@@ -242,7 +288,7 @@
 
         var oldFrame = current.frame;
         var oldBridgeId = current.bridgeId;
-        var position = current.currentTime || 0;
+        var position = getPlaybackPosition();
         var newBridgeId = 'lta7_' + Math.random().toString(36).slice(2);
 
         /*
@@ -264,7 +310,7 @@
         );
 
         newFrame.style.opacity = '0';
-        newFrame.style.zIndex = '2';
+        newFrame.style.zIndex = '0';
         newFrame.style.position = 'absolute';
         newFrame.style.pointerEvents = 'none';
         newFrame.style.visibility = 'hidden';
@@ -304,6 +350,14 @@
                 try {
                     current.pendingWindow.postMessage({
                         bridgeId: newBridgeId,
+                        type: 'seekTo',
+                        data: { time: position, allowSeekAhead: true }
+                    }, '*');
+                } catch(e) {}
+
+                try {
+                    current.pendingWindow.postMessage({
+                        bridgeId: newBridgeId,
                         type: 'play',
                         data: {}
                     }, '*');
@@ -320,7 +374,7 @@
                  */
                 newFrame.style.visibility = 'visible';
                 newFrame.style.display = 'block';
-                newFrame.style.zIndex = '2';
+                newFrame.style.zIndex = '0';
                 newFrame.classList.add('visible');
                 newFrame.style.opacity = '1';
 
@@ -329,6 +383,7 @@
                 current.bridgeId = newBridgeId;
                 current.soundOn = !!wantSound;
                 current.currentTime = position;
+                current.startedAt = Date.now();
                 current.pendingFrame = null;
                 current.pendingBridgeId = null;
                 current.pendingWindow = null;
@@ -349,9 +404,12 @@
                 oldFrame.style.transition = 'opacity .25s ease';
                 oldFrame.style.opacity = '0';
 
-                setTimeout(function() {
+                current.swapTimer = setTimeout(function() {
                     try { oldFrame.remove(); } catch(e) {}
-                    if (current) current.reloading = false;
+                    if (current) {
+                        current.swapTimer = null;
+                        current.reloading = false;
+                    }
                 }, 280);
 
                 return;
@@ -433,9 +491,11 @@
             sound: sound,
             soundOn: false,
             currentTime: 0,
+            startedAt: 0,
             timer: null,
             readyTimer: null,
             unlockTimer: null,
+            swapTimer: null,
             reloading: false,
             pendingFrame: null,
             pendingBridgeId: null,
@@ -513,6 +573,7 @@
                     send('play');
 
                     current.playing = true;
+                    current.startedAt = Date.now();
 
                     current.reloading = false;
                 }, wait);
@@ -523,6 +584,7 @@
             if (type === 'time') {
                 if (typeof d.currentTime === 'number') {
                     current.currentTime = d.currentTime;
+                    if (current.playing) current.startedAt = Date.now();
                 }
                 positionSound();
                 return;
@@ -533,12 +595,15 @@
                 if (d.state === 1) {
                     reveal();
                     current.playing = true;
+                    current.startedAt = Date.now();
                     current.reloading = false;
                 }
 
                 if (d.state === 2) {
+                    current.currentTime = getPlaybackPosition();
                     current.playing = false;
-                    }
+                    current.startedAt = 0;
+                }
 
                 // 0 = ended.
                 if (d.state === 0 && !current.reloading) {
@@ -609,7 +674,7 @@
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
         startActivityGuard();
-        console.log('[Trailer Autoplay] v21 started');
+        console.log('[Trailer Autoplay] v23 started');
     }
 
     if (window.Lampa && Lampa.Listener) {
