@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v16_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v18_style';
     var current = null;
     var DELAY = 2000;
 
@@ -14,10 +14,6 @@
             .lta7-host {
                 position: relative !important;
                 overflow: hidden !important;
-                /* Собственный stacking context, чтобы z-index детей
-                   считался только внутри постера и не зависел от
-                   произвольных слоёв Lampa снаружи. */
-                z-index: 0 !important;
             }
 
             .lta7-video {
@@ -28,18 +24,9 @@
                 border: 0 !important;
                 background: #000 !important;
                 opacity: 0 !important;
-                /*
-                 * ВАЖНО: z-index сюда намеренно НЕ добавляется.
-                 * Раньше здесь стояло "z-index: 2 !important;", и это
-                 * полностью убивало попытку JS выставить z-index новому
-                 * iframe при переключении звука (inline-стиль не может
-                 * перебить !important в стилях, независимо от значения).
-                 * Из-за этого новый (озвученный) плеер мог визуально
-                 * оказаться под другими слоями постера Lampa, а звук
-                 * при этом уже шёл из него — трейлер как будто "пропадал".
-                 * z-index теперь полностью управляется через JS (см. ниже).
-                 */
-                transition: opacity .5s ease !important;
+                z-index: 2 !important;
+                pointer-events: none !important;
+                transition: opacity .25s ease !important;
             }
 
             .lta7-video.visible {
@@ -86,12 +73,28 @@
                 fill: currentColor !important;
                 pointer-events: none !important;
             }
+
+            .lta7-tapzone {
+                position: absolute !important;
+                inset: 0 !important;
+                z-index: 10 !important;
+                background: transparent !important;
+                border: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                pointer-events: auto !important;
+                touch-action: manipulation !important;
+                -webkit-tap-highlight-color: transparent !important;
+            }
         `;
         document.head.appendChild(s);
     }
 
     function mutedIcon() {
-        return '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4zm11 1.1v3.8c.6-.5 1-1.1 1-1.9s-.4-1.4-1-1.9zM17 7.2v2.1c1.8.9 3 2.7 3 4.9s-1.2 4-3 4.9V21c3-1.1 5-3.9 5-6.8s-2-5.9-5-7z"/></svg>';
+        return '<svg viewBox="0 0 24 24">' +
+            '<path d="M4 9v6h4l5 4V5L8 9H4z"/>' +
+            '<path d="M16 9.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
+            '</svg>';
     }
 
     function soundIcon() {
@@ -190,9 +193,9 @@
     function cleanup() {
         if (!current) return;
 
-        if (current.revealTimer) clearTimeout(current.revealTimer);
+        if (current.timer) clearTimeout(current.timer);
+        if (current.readyTimer) clearTimeout(current.readyTimer);
         if (current.unlockTimer) clearTimeout(current.unlockTimer);
-
         if (current.messageHandler) {
             window.removeEventListener('message', current.messageHandler, true);
         }
@@ -214,6 +217,10 @@
             try { current.sound.remove(); } catch(e) {}
         }
 
+        if (current.tapzone) {
+            try { current.tapzone.remove(); } catch(e) {}
+        }
+
         if (current.host) {
             current.host.classList.remove('lta7-host');
         }
@@ -221,120 +228,167 @@
         current = null;
     }
 
-    /*
-     * Единая точка "повышения" ожидающего (pending) iframe до статуса
-     * активного плеера. Вызывается и по кастомному сообщению 'ready',
-     * и по 'stateChange' (state === 1), какое бы из них ни пришло первым.
-     * Как только повышение произошло — pending-таймаут (unlockTimer)
-     * гарантированно отменяется, поэтому он больше не может снести уже
-     * показанный и играющий плеер.
-     */
-    function promotePending() {
-        if (!current || !current.pendingFrame) return;
-
-        var newFrame = current.pendingFrame;
-        var oldFrame = current.frame;
-        var wantSound = current.pendingWantSound;
-        var position = current.pendingPosition;
-
-        if (current.unlockTimer) {
-            clearTimeout(current.unlockTimer);
-            current.unlockTimer = null;
-        }
-
-        function finish() {
-            newFrame.classList.add('visible');
-            // z-index управляется только через JS (см. комментарий в стилях).
-            newFrame.style.zIndex = '2';
-
-            current.frame = newFrame;
-            current.frameWindow = current.pendingFrameWindow || newFrame.contentWindow;
-            current.bridgeId = current.pendingBridgeId;
-            current.soundOn = wantSound;
-            current.currentTime = position;
-
-            current.pendingFrame = null;
-            current.pendingBridgeId = null;
-            current.pendingFrameWindow = null;
-            current.reloading = false;
-
-            send('play');
-
-            current.sound.innerHTML = wantSound ? soundIcon() : mutedIcon();
-            current.sound.setAttribute(
-                'aria-label',
-                wantSound ? 'Выключить звук' : 'Включить звук'
-            );
-            showSound();
-
-            if (oldFrame) {
-                try { oldFrame.remove(); } catch(e) {}
-            }
-        }
-
-        if (current.isFirstLoad) {
-            // Первичная загрузка: даём небольшую паузу перед тем как
-            // показать трейлер поверх постера.
-            current.isFirstLoad = false;
-            current.revealTimer = setTimeout(function() {
-                if (!current || current.pendingFrame !== newFrame) return;
-                finish();
-            }, DELAY);
-        } else {
-            // Переключение звука: показываем немедленно, без задержки.
-            finish();
-        }
+    function reveal() {
+        if (!current) return;
+        current.frame.classList.add('visible');
+        showSound();
     }
 
-    /*
-     * Запускает новый iframe-мост (для первичной загрузки трейлера или
-     * для смены звука) и держит его в состоянии "pending", пока он не
-     * подтвердит готовность/воспроизведение. Текущий активный плеер
-     * (если есть) остаётся видимым и звучащим ровно до момента
-     * успешного promotePending().
-     */
-    function loadFrame(wantSound, position) {
-        if (!current || current.reloading) return;
+    function reloadForSound(wantSound) {
+        if (!current || current.reloading || !current.frame) return;
 
         current.reloading = true;
-        current.pendingWantSound = !!wantSound;
-        current.pendingPosition = position || 0;
+        current.targetSoundOn = !!wantSound;
 
-        var bridgeId = 'lta7_' + Math.random().toString(36).slice(2);
+        var oldFrame = current.frame;
+        var oldBridgeId = current.bridgeId;
+        var position = current.currentTime || 0;
+        var newBridgeId = 'lta7_' + Math.random().toString(36).slice(2);
 
-        var frame = document.createElement('iframe');
-        frame.className = 'lta7-video';
-        frame.setAttribute('frameborder', '0');
-        frame.setAttribute('allowfullscreen', 'true');
-        frame.setAttribute(
+        /*
+         * IMPORTANT:
+         * Do NOT hide/remove the current player while the new one loads.
+         * This was the exact reason the trailer disappeared in v7.
+         *
+         * We create a second clean Lampa youtube.html bridge over the first
+         * one. Only after the second bridge reports "ready" do we replace
+         * the old frame.
+         */
+        var newFrame = document.createElement('iframe');
+        newFrame.className = 'lta7-video';
+        newFrame.setAttribute('frameborder', '0');
+        newFrame.setAttribute('allowfullscreen', 'true');
+        newFrame.setAttribute(
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
         );
-        // Пока плеер не готов, держим его визуально ниже активного и
-        // не даём ему перехватывать указатель.
-        frame.style.zIndex = '1';
-        frame.style.pointerEvents = 'none';
-        frame.src = bridgeUrl(current.videoId, bridgeId, !wantSound, current.pendingPosition);
 
-        current.host.appendChild(frame);
+        newFrame.style.opacity = '0';
+        newFrame.style.zIndex = '2';
+        newFrame.style.position = 'absolute';
+        newFrame.style.pointerEvents = 'none';
+        newFrame.style.visibility = 'hidden';
+        newFrame.src = bridgeUrl(
+            current.videoId,
+            newBridgeId,
+            !wantSound,
+            position
+        );
 
-        current.pendingFrame = frame;
-        current.pendingBridgeId = bridgeId;
-        current.pendingFrameWindow = null;
+        current.host.appendChild(newFrame);
+
+        current.pendingFrame = newFrame;
+        current.pendingBridgeId = newBridgeId;
+
+        function pendingMessage(event) {
+            if (!current || current.pendingFrame !== newFrame) return;
+            if (event.source !== newFrame.contentWindow) return;
+            if (!event.data || event.data.bridgeId !== newBridgeId) return;
+
+            var type = event.data.type;
+            var d = event.data.data || {};
+
+            if (type === 'bridgeReady') {
+                current.pendingWindow = newFrame.contentWindow;
+                return;
+            }
+
+            if (type === 'ready') {
+                /*
+                 * Ready is not enough to swap: the new player can still be
+                 * black/loading. Keep the old player visible and start the
+                 * replacement. The actual swap happens on state=1.
+                 */
+                current.pendingWindow = current.pendingWindow || newFrame.contentWindow;
+
+                try {
+                    current.pendingWindow.postMessage({
+                        bridgeId: newBridgeId,
+                        type: 'play',
+                        data: {}
+                    }, '*');
+                } catch(e) {}
+
+                return;
+            }
+
+            if (type === 'stateChange' && d.state === 1) {
+                /*
+                 * The replacement is genuinely playing.
+                 * Crossfade it over the old player instead of creating a
+                 * visible one-second hole.
+                 */
+                newFrame.style.visibility = 'visible';
+                newFrame.style.display = 'block';
+                newFrame.style.zIndex = '2';
+                newFrame.classList.add('visible');
+                newFrame.style.opacity = '1';
+
+                current.frame = newFrame;
+                current.frameWindow = current.pendingWindow || newFrame.contentWindow;
+                current.bridgeId = newBridgeId;
+                current.soundOn = !!wantSound;
+                current.currentTime = position;
+                current.pendingFrame = null;
+                current.pendingBridgeId = null;
+                current.pendingWindow = null;
+
+                current.sound.innerHTML = wantSound ? soundIcon() : mutedIcon();
+                current.sound.setAttribute(
+                    'aria-label',
+                    wantSound ? 'Выключить звук' : 'Включить звук'
+                );
+                current.playing = true;
+                if (current.tapzone) current.tapzone.setAttribute('aria-label', 'Пауза');
+
+                window.removeEventListener('message', pendingMessage, true);
+
+                /*
+                 * Let the two identical players overlap briefly. The new one
+                 * is already playing, so the user sees a seamless transition.
+                 */
+                oldFrame.style.transition = 'opacity .25s ease';
+                oldFrame.style.opacity = '0';
+
+                setTimeout(function() {
+                    try { oldFrame.remove(); } catch(e) {}
+                    if (current) current.reloading = false;
+                }, 280);
+
+                return;
+            }
+
+            if (type === 'error') {
+                /*
+                 * If unmuted autoplay is rejected, keep the old muted player
+                 * alive instead of returning to the poster.
+                 */
+                window.removeEventListener('message', pendingMessage, true);
+                try { newFrame.remove(); } catch(e) {}
+
+                current.pendingFrame = null;
+                current.pendingBridgeId = null;
+                current.pendingWindow = null;
+                current.reloading = false;
+                return;
+            }
+        }
+
+        window.addEventListener('message', pendingMessage, true);
 
         /*
-         * Страховочный таймаут: если новый плеер за 8 секунд так и не
-         * подтвердил готовность/воспроизведение — не трогаем его молча
-         * навсегда, но и не ломаем работающий текущий плеер.
+         * Safety timeout: never destroy the working old player because the
+         * replacement did not load.
          */
         current.unlockTimer = setTimeout(function() {
-            if (!current || current.pendingFrame !== frame) return;
+            if (!current || current.pendingFrame !== newFrame) return;
 
-            try { frame.remove(); } catch(e) {}
+            window.removeEventListener('message', pendingMessage, true);
+            try { newFrame.remove(); } catch(e) {}
 
             current.pendingFrame = null;
             current.pendingBridgeId = null;
-            current.pendingFrameWindow = null;
+            current.pendingWindow = null;
             current.reloading = false;
         }, 8000);
     }
@@ -349,41 +403,55 @@
         if (!poster.length) return;
 
         var host = poster[0];
+        var bridgeId = 'lta7_' + Math.random().toString(36).slice(2);
 
-        // Кнопка НЕ внутри poster/iframe.
-        // Она добавляется прямо в body и позиционируется поверх видео.
+        var frame = document.createElement('iframe');
+        frame.className = 'lta7-video';
+        frame.setAttribute('frameborder', '0');
+        frame.setAttribute('allowfullscreen', 'true');
+        frame.setAttribute(
+            'allow',
+            'autoplay; encrypted-media; picture-in-picture'
+        );
+        frame.src = bridgeUrl(trailer.key, bridgeId, true, 0);
+
         var sound = document.createElement('button');
         sound.type = 'button';
         sound.className = 'lta7-sound';
         sound.innerHTML = mutedIcon();
         sound.setAttribute('aria-label', 'Включить звук');
 
+        var tapzone = document.createElement('button');
+        tapzone.type = 'button';
+        tapzone.className = 'lta7-tapzone';
+        tapzone.setAttribute('aria-label', 'Пауза');
+        // Play/pause визуально показывает сам YouTube bridge после API-команды.
+        // Не создаём второй собственный overlay — иначе на экране два индикатора.
+
         host.classList.add('lta7-host');
+        host.appendChild(frame);
+        host.appendChild(tapzone);
         document.body.appendChild(sound);
 
         current = {
             host: host,
-            sound: sound,
-
-            frame: null,
+            frame: frame,
             frameWindow: null,
-            bridgeId: null,
-
-            pendingFrame: null,
-            pendingBridgeId: null,
-            pendingFrameWindow: null,
-            pendingWantSound: false,
-            pendingPosition: 0,
-
+            bridgeId: bridgeId,
             videoId: trailer.key,
+            sound: sound,
             soundOn: false,
             currentTime: 0,
-
+            timer: null,
+            readyTimer: null,
+            unlockTimer: null,
             reloading: false,
-            isFirstLoad: true,
-
-            revealTimer: null,
-            unlockTimer: null
+            pendingFrame: null,
+            pendingBridgeId: null,
+            pendingWindow: null,
+            targetSoundOn: false,
+            playing: false,
+            tapzone: tapzone,
         };
 
         current.positionHandler = positionSound;
@@ -395,6 +463,34 @@
          * listener стоит на CAPTURE-фазе и на самой кнопке.
          * Это не даёт Lampa selector/event system перехватить касание.
          */
+        current.togglePlayback = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+            if (!current || current.reloading || !current.frameWindow) return;
+
+            if (current.playing) {
+                send('pause');
+                current.playing = false;
+                tapzone.setAttribute('aria-label', 'Воспроизведение');
+            } else {
+                send('play');
+                current.playing = true;
+                tapzone.setAttribute('aria-label', 'Пауза');
+            }
+        };
+
+        tapzone.addEventListener('pointerup', current.togglePlayback, {
+            capture: true,
+            passive: false
+        });
+
+        tapzone.addEventListener('touchend', current.togglePlayback, {
+            capture: true,
+            passive: false
+        });
+
         current.toggleSound = function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -402,7 +498,21 @@
 
             if (!current || current.sound !== sound || current.reloading) return;
 
-            loadFrame(!current.soundOn, current.currentTime || 0);
+            var wantSound = !current.soundOn;
+
+            // When switching sound OFF, silence the currently visible player
+            // immediately. The replacement remains muted as well.
+            if (!wantSound && current.frameWindow) {
+                try {
+                    current.frameWindow.postMessage({
+                        bridgeId: current.bridgeId,
+                        type: 'setVolume',
+                        data: { volume: 0 }
+                    }, '*');
+                } catch(e) {}
+            }
+
+            reloadForSound(wantSound);
         };
 
         sound.addEventListener('pointerdown', current.toggleSound, {
@@ -415,92 +525,82 @@
             if (e.stopImmediatePropagation) e.stopImmediatePropagation();
         }, true);
 
-        /*
-         * Единый обработчик сообщений на всё время жизни трейлера.
-         * Раньше он был привязан к конкретной переменной iframe и после
-         * первого переключения звука переставал видеть сообщения от
-         * нового (актуального) плеера — из-за этого пропадали события
-         * time/stateChange/error, а страховочный таймер мог снести уже
-         * показанный плеер. Теперь сверка идёт по current.frame /
-         * current.pendingFrame, которые всегда актуальны.
-         */
         current.messageHandler = function(event) {
-            if (!current) return;
+            if (!current || event.source !== frame.contentWindow) return;
+            if (!event.data || event.data.bridgeId !== current.bridgeId) return;
 
-            var data = event.data;
-            if (!data || !data.bridgeId) return;
+            var type = event.data.type;
+            var d = event.data.data || {};
 
-            var type = data.type;
-            var d = data.data || {};
+            if (type === 'bridgeReady') {
+                current.frameWindow = frame.contentWindow;
+                return;
+            }
 
-            // Сообщения от ожидающего (pending) плеера.
-            if (current.pendingFrame &&
-                data.bridgeId === current.pendingBridgeId &&
-                event.source === current.pendingFrame.contentWindow) {
+            if (type === 'ready') {
+                if (current.readyTimer) clearTimeout(current.readyTimer);
 
-                if (type === 'bridgeReady') {
-                    current.pendingFrameWindow = event.source;
-                    return;
-                }
+                // Первичная загрузка: через 2 секунды.
+                // После переключения звука — сразу.
+                var wait = current.reloading ? 0 : DELAY;
 
-                if (type === 'ready' || (type === 'stateChange' && d.state === 1)) {
-                    promotePending();
-                    return;
-                }
+                current.timer = setTimeout(function() {
+                    if (!current || current.frame !== frame) return;
 
-                if (type === 'error') {
-                    if (current.unlockTimer) {
-                        clearTimeout(current.unlockTimer);
-                        current.unlockTimer = null;
-                    }
-                    try { current.pendingFrame.remove(); } catch(e) {}
-                    current.pendingFrame = null;
-                    current.pendingBridgeId = null;
-                    current.pendingFrameWindow = null;
+                    reveal();
+                    send('play');
+
+                    current.playing = true;
+                    tapzone.setAttribute('aria-label', 'Пауза');
+
                     current.reloading = false;
-                    return;
-                }
+                }, wait);
 
                 return;
             }
 
-            // Сообщения от текущего активного плеера.
-            if (current.frame &&
-                data.bridgeId === current.bridgeId &&
-                event.source === current.frame.contentWindow) {
-
-                if (type === 'bridgeReady') {
-                    current.frameWindow = event.source;
-                    return;
+            if (type === 'time') {
+                if (typeof d.currentTime === 'number') {
+                    current.currentTime = d.currentTime;
                 }
-
-                if (type === 'time') {
-                    if (typeof d.currentTime === 'number') {
-                        current.currentTime = d.currentTime;
-                    }
-                    positionSound();
-                    return;
-                }
-
-                if (type === 'stateChange' && d.state === 0 && !current.reloading) {
-                    // Трейлер закончился.
-                    cleanup();
-                    return;
-                }
-
-                if (type === 'error' && !current.reloading) {
-                    // При ошибке возвращаем обычный постер.
-                    cleanup();
-                    return;
-                }
-
+                positionSound();
                 return;
+            }
+
+            if (type === 'stateChange') {
+                // 1 = playing.
+                if (d.state === 1) {
+                    reveal();
+                    current.playing = true;
+                    tapzone.setAttribute('aria-label', 'Пауза');
+                    current.reloading = false;
+                }
+
+                if (d.state === 2) {
+                    current.playing = false;
+                    tapzone.setAttribute('aria-label', 'Воспроизведение');
+                    }
+
+                // 0 = ended.
+                if (d.state === 0 && !current.reloading) {
+                    cleanup();
+                }
+                return;
+            }
+
+            if (type === 'error') {
+                // При ошибке возвращаем обычный постер.
+                cleanup();
             }
         };
 
         window.addEventListener('message', current.messageHandler, true);
 
-        loadFrame(false, 0);
+        frame.onload = function() {
+            if (current && current.frame === frame) {
+                try { current.frameWindow = frame.contentWindow; } catch(e) {}
+            }
+        };
     }
 
     function onFull(e) {
@@ -519,7 +619,7 @@
         addStyle();
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
-        console.log('[Trailer Autoplay] v16 started');
+        console.log('[Trailer Autoplay] v18 started');
     }
 
     if (window.Lampa && Lampa.Listener) {
