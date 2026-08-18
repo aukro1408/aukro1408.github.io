@@ -4,6 +4,7 @@
     var STYLE_ID = 'lampa_trailer_autoplay_v19_style';
     var current = null;
     var DELAY = 2000;
+    var activityGuard = null;
 
     function addStyle() {
         if (document.getElementById(STYLE_ID)) return;
@@ -25,7 +26,7 @@
                 background: #000 !important;
                 opacity: 0 !important;
                 z-index: 2 !important;
-                pointer-events: none !important;
+                pointer-events: auto !important;
                 transition: opacity .25s ease !important;
             }
 
@@ -46,7 +47,7 @@
                 border-radius: 50% !important;
                 background: rgba(20,20,20,.86) !important;
                 color: #fff !important;
-                z-index: 2147483647 !important;
+                z-index: 30 !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -74,59 +75,6 @@
                 pointer-events: none !important;
             }
 
-            .lta7-tapzone {
-                position: absolute !important;
-                inset: 0 !important;
-                z-index: 10 !important;
-                background: transparent !important;
-                border: 0 !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                pointer-events: auto !important;
-                touch-action: manipulation !important;
-                -webkit-tap-highlight-color: transparent !important;
-            }
-
-            /* Our single, fixed-size play/pause indicator. It sits above the
-               bridge's own transient center indicator, so only one control
-               is ever visible to the user. */
-            .lta7-playpause {
-                position: absolute !important;
-                left: 50% !important;
-                top: 50% !important;
-                transform: translate(-50%, -50%) scale(.92) !important;
-                width: 58px !important;
-                height: 58px !important;
-                border: 0 !important;
-                border-radius: 50% !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                background: rgba(20,20,20,.72) !important;
-                color: #fff !important;
-                z-index: 20 !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                opacity: 0 !important;
-                pointer-events: none !important;
-                transition: opacity .18s ease, transform .18s ease !important;
-                touch-action: manipulation !important;
-                -webkit-tap-highlight-color: transparent !important;
-                box-shadow: 0 2px 12px rgba(0,0,0,.35) !important;
-            }
-
-            .lta7-playpause.visible {
-                opacity: 1 !important;
-                transform: translate(-50%, -50%) scale(1) !important;
-            }
-
-            .lta7-playpause svg {
-                width: 28px !important;
-                height: 28px !important;
-                fill: currentColor !important;
-                pointer-events: none !important;
-            }
-
             .lta7-sound .lta7-muted-x {
                 fill: #ff4b4b !important;
                 stroke: #fff !important;
@@ -144,14 +92,6 @@
 
     function soundIcon() {
         return '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4zm12 3c0-1.3-.7-2.5-1.8-3.1v2.3c.5.3.8.7.8 1.2s-.3.9-.8 1.2v2.3c1.1-.6 1.8-2.7 1.8-3.1zm0-6v2.1c1.8.9 3 2.7 3 4.9s-1.2 4-3 4.9V20c3-1.1 5-3.9 5-7s-2-5.9-5-7z"/></svg>';
-    }
-
-    function playIcon() {
-        return '<svg viewBox="0 0 24 24"><path d="M8 5.5v13L19 12 8 5.5z"/></svg>';
-    }
-
-    function pauseIcon() {
-        return '<svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>';
     }
 
     function getVideos(data) {
@@ -243,32 +183,12 @@
         current.sound.classList.remove('visible');
     }
 
-    function showPlayPause(duration) {
-        if (!current || !current.playpause) return;
-        if (current.playpauseTimer) clearTimeout(current.playpauseTimer);
-        current.playpause.innerHTML = current.playing ? pauseIcon() : playIcon();
-        current.playpause.setAttribute('aria-label', current.playing ? 'Пауза' : 'Воспроизведение');
-        current.playpause.classList.add('visible');
-        if (duration !== 0) {
-            current.playpauseTimer = setTimeout(function() {
-                if (current && current.playpause) current.playpause.classList.remove('visible');
-            }, duration || 1200);
-        }
-    }
-
-    function syncPlayPause() {
-        if (!current || !current.playpause) return;
-        current.playpause.innerHTML = current.playing ? pauseIcon() : playIcon();
-        current.playpause.setAttribute('aria-label', current.playing ? 'Пауза' : 'Воспроизведение');
-    }
-
     function cleanup() {
         if (!current) return;
 
         if (current.timer) clearTimeout(current.timer);
         if (current.readyTimer) clearTimeout(current.readyTimer);
         if (current.unlockTimer) clearTimeout(current.unlockTimer);
-        if (current.playpauseTimer) clearTimeout(current.playpauseTimer);
         if (current.messageHandler) {
             window.removeEventListener('message', current.messageHandler, true);
         }
@@ -276,6 +196,16 @@
         if (current.positionHandler) {
             window.removeEventListener('resize', current.positionHandler);
             window.removeEventListener('scroll', current.positionHandler, true);
+        }
+
+        if (current.frameWindow) {
+            try {
+                current.frameWindow.postMessage({
+                    bridgeId: current.bridgeId,
+                    type: 'pause',
+                    data: {}
+                }, '*');
+            } catch(e) {}
         }
 
         if (current.frame) {
@@ -290,12 +220,6 @@
             try { current.sound.remove(); } catch(e) {}
         }
 
-        if (current.tapzone) {
-            try { current.tapzone.remove(); } catch(e) {}
-        }
-        if (current.playpause) {
-            try { current.playpause.remove(); } catch(e) {}
-        }
 
         if (current.host) {
             current.host.classList.remove('lta7-host');
@@ -415,9 +339,6 @@
                     wantSound ? 'Выключить звук' : 'Включить звук'
                 );
                 current.playing = true;
-                if (current.tapzone) current.tapzone.setAttribute('aria-label', 'Пауза');
-                syncPlayPause();
-                showPlayPause(800);
 
                 window.removeEventListener('message', pendingMessage, true);
 
@@ -499,21 +420,8 @@
         sound.innerHTML = mutedIcon();
         sound.setAttribute('aria-label', 'Включить звук');
 
-        var tapzone = document.createElement('button');
-        tapzone.type = 'button';
-        tapzone.className = 'lta7-tapzone';
-        tapzone.setAttribute('aria-label', 'Пауза');
-
-        var playpause = document.createElement('button');
-        playpause.type = 'button';
-        playpause.className = 'lta7-playpause';
-        playpause.innerHTML = pauseIcon();
-        playpause.setAttribute('aria-label', 'Пауза');
-
         host.classList.add('lta7-host');
         host.appendChild(frame);
-        host.appendChild(tapzone);
-        host.appendChild(playpause);
         document.body.appendChild(sound);
 
         current = {
@@ -534,9 +442,6 @@
             pendingWindow: null,
             targetSoundOn: false,
             playing: false,
-            tapzone: tapzone,
-            playpause: playpause,
-            playpauseTimer: null,
         };
 
         current.positionHandler = positionSound;
@@ -548,47 +453,6 @@
          * listener стоит на CAPTURE-фазе и на самой кнопке.
          * Это не даёт Lampa selector/event system перехватить касание.
          */
-        current.togglePlayback = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-
-            if (!current || current.reloading || !current.frameWindow) return;
-
-            if (current.playing) {
-                send('pause');
-                // Optimistic UI: show pause tap result as a PLAY icon.
-                current.playing = false;
-                tapzone.setAttribute('aria-label', 'Воспроизведение');
-            } else {
-                send('play');
-                current.playing = true;
-                tapzone.setAttribute('aria-label', 'Пауза');
-            }
-            syncPlayPause();
-            showPlayPause(1200);
-        };
-
-        tapzone.addEventListener('pointerup', current.togglePlayback, {
-            capture: true,
-            passive: false
-        });
-
-        tapzone.addEventListener('touchend', current.togglePlayback, {
-            capture: true,
-            passive: false
-        });
-
-        playpause.addEventListener('pointerup', current.togglePlayback, {
-            capture: true,
-            passive: false
-        });
-
-        playpause.addEventListener('touchend', current.togglePlayback, {
-            capture: true,
-            passive: false
-        });
-
         current.toggleSound = function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -706,15 +570,45 @@
         };
     }
 
+    function startActivityGuard() {
+        if (activityGuard) return;
+
+        activityGuard = setInterval(function() {
+            if (!current) return;
+
+            try {
+                if (!Lampa || !Lampa.Activity || !Lampa.Activity.active) return;
+
+                var active = Lampa.Activity.active();
+                var component = active && active.component;
+
+                // The trailer belongs only to the full/card activity.
+                // If the user leaves the card, destroy the iframe immediately.
+                if (component && component !== 'full') {
+                    cleanup();
+                }
+            } catch(e) {}
+        }, 250);
+    }
+
     function onFull(e) {
         if (!e || e.type !== 'complite' || !e.body || !e.data) return;
         create(e.body, e.data);
     }
 
     function onActivity(e) {
-        if (e && e.type === 'destroy' && e.component === 'full') {
+        if (!e || e.type !== 'destroy') return;
+
+        if (e.component === 'full' || (current && e.object && e.object.component === 'full')) {
             cleanup();
+            return;
         }
+
+        // Some Lampa builds omit component on destroy.
+        try {
+            var active = Lampa.Activity.active();
+            if (!active || active.component !== 'full') cleanup();
+        } catch(err) {}
     }
 
     function start() {
@@ -722,7 +616,8 @@
         addStyle();
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
-        console.log('[Trailer Autoplay] v18 started');
+        startActivityGuard();
+        console.log('[Trailer Autoplay] v20 started');
     }
 
     if (window.Lampa && Lampa.Listener) {
