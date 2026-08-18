@@ -417,6 +417,15 @@
             max-height:none!important;
             min-height:0!important;
             box-sizing:border-box!important;
+            display:flex!important;
+            flex-direction:column!important;
+          }
+
+          .modal--large.rezka-full-height-modal .modal__content > *{
+            height:100%!important;
+            max-height:none!important;
+            min-height:0!important;
+            box-sizing:border-box!important;
           }
 
           .rezka-comments-page{
@@ -424,8 +433,11 @@
             background:#151718;
             color:#fff;
             overflow:hidden;
+            height:100%!important;
             min-height:100%;
             box-sizing:border-box;
+            display:flex!important;
+            flex-direction:column!important;
           }
 
           .rezka-film-header{
@@ -483,6 +495,12 @@
           .rezka-comments-content{
             margin:0;
             padding:4px 12px 18px;
+            flex:1 1 auto!important;
+            min-height:0!important;
+            height:auto!important;
+            max-height:none!important;
+            overflow-y:auto!important;
+            box-sizing:border-box!important;
           }
 
           .rezka-comments-page .comments-tree-list{
@@ -579,6 +597,23 @@
       const rezkaFullModal = document.querySelector(".modal--large");
       if (rezkaFullModal) {
         rezkaFullModal.classList.add("rezka-full-height-modal");
+
+        // Lampa may apply its own content height after opening the modal.
+        // Normalize the inner content on the next frame as well.
+        requestAnimationFrame(function () {
+          const content = rezkaFullModal.querySelector(".modal__content");
+          if (content) {
+            content.style.height = "100%";
+            content.style.maxHeight = "none";
+            content.style.minHeight = "0";
+          }
+
+          const page = rezkaFullModal.querySelector(".rezka-comments-page");
+          if (page) {
+            page.style.height = "100%";
+            page.style.minHeight = "100%";
+          }
+        });
       }
 
       document
