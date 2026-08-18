@@ -362,8 +362,7 @@
 
       const meta = [
         yearMovie,
-        genres.length ? genres.join(" • ") : "",
-        runtime ? runtime + " мин" : ""
+        genres.length ? genres.join(" • ") : ""
       ].filter(Boolean).join("  •  ");
 
       const formatMoney = value => {
@@ -395,6 +394,10 @@
         ? status
         : "";
 
+      const overview = typeof movie.overview === "string"
+        ? movie.overview.trim()
+        : "";
+
       let modal = $(
         `<div class="rezka-comments-page" style="--rezka-backdrop:${poster ? `url("${poster.replace(/"/g, "%22")}")` : "none"};">
           <div class="rezka-film-header">
@@ -405,6 +408,7 @@
               ${meta ? `<div class="rezka-film-meta">${meta}</div>` : ""}
               <div class="rezka-film-stats">${detailChips}</div>
               ${financeInfo || statusInfo ? `<div class="rezka-film-finance">${[financeInfo, statusInfo].filter(Boolean).join("  •  ")}</div>` : ""}
+              ${overview ? `<div class="rezka-film-overview">${overview}</div>` : ""}
             </div>
           </div>
 
@@ -510,7 +514,7 @@
 
           .rezka-film-header{
             position:relative;
-            height:210px;
+            height:250px;
             overflow:hidden;
             background:#202223;
           }
@@ -565,52 +569,65 @@
           .rezka-film-stats{
             display:flex;
             flex-wrap:wrap;
-            gap:7px;
-            margin-top:11px;
+            gap:8px;
+            margin-top:12px;
           }
 
           .rezka-info-chip{
             display:inline-flex;
             align-items:center;
-            gap:5px;
-            min-height:31px;
-            padding:6px 10px;
+            gap:6px;
+            min-height:38px;
+            padding:7px 12px;
             box-sizing:border-box;
-            border-radius:10px;
-            background:rgba(8,10,11,.58);
-            border:1px solid rgba(255,255,255,.16);
+            border-radius:11px;
+            background:rgba(8,10,11,.62);
+            border:1px solid rgba(255,255,255,.18);
             color:#fff;
-            font-size:14px;
+            font-size:15px;
             line-height:1;
             font-weight:650;
             backdrop-filter:blur(10px);
             -webkit-backdrop-filter:blur(10px);
-            box-shadow:0 3px 12px rgba(0,0,0,.22);
-            text-shadow:0 1px 4px rgba(0,0,0,.6);
+            box-shadow:0 4px 14px rgba(0,0,0,.25);
+            text-shadow:0 1px 4px rgba(0,0,0,.65);
           }
 
           .rezka-info-chip b{
-            font-size:16px;
+            font-size:18px;
             font-weight:800;
           }
 
           .rezka-info-chip small{
             margin-left:2px;
-            color:rgba(255,255,255,.68);
-            font-size:11px;
+            color:rgba(255,255,255,.70);
+            font-size:12px;
             font-weight:500;
           }
 
           .rezka-rating-chip{
-            background:rgba(0,0,0,.68);
+            background:rgba(0,0,0,.72);
           }
 
           .rezka-film-finance{
-            margin-top:8px;
-            font-size:13px;
-            line-height:1.25;
-            color:rgba(255,255,255,.72);
+            margin-top:9px;
+            font-size:14px;
+            line-height:1.3;
+            color:rgba(255,255,255,.78);
             text-shadow:0 1px 5px rgba(0,0,0,.75);
+          }
+
+          .rezka-film-overview{
+            margin-top:10px;
+            max-width:680px;
+            font-size:14px;
+            line-height:1.42;
+            color:rgba(255,255,255,.82);
+            display:-webkit-box;
+            -webkit-line-clamp:3;
+            -webkit-box-orient:vertical;
+            overflow:hidden;
+            text-shadow:0 1px 5px rgba(0,0,0,.8);
           }
 
                     .rezka-comments-content{
@@ -676,7 +693,7 @@
 
           @media (max-width:600px){
             .rezka-film-header{
-              height:190px;
+              height:230px;
             }
 
             .rezka-film-info{
