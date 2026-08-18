@@ -403,38 +403,16 @@
         const styleEl = document.createElement("style");
         styleEl.id = "rezka-comment-style-v4";
         styleEl.textContent = `
-          /* Full-height Lampa modal for phones */
-          .modal--large.rezka-full-height-modal{
-            height:100vh!important;
-            max-height:100vh!important;
-            min-height:100vh!important;
-            margin-top:0!important;
-            margin-bottom:0!important;
-          }
-
-          .modal--large.rezka-full-height-modal .modal__content{
-            height:100%!important;
-            max-height:none!important;
-            min-height:0!important;
-            box-sizing:border-box!important;
-          }
-
           .rezka-comments-page{
             margin:-10px -10px 0;
             background:#151718;
             color:#fff;
             overflow:hidden;
-            height:calc(100dvh - 60px)!important;
-            min-height:0!important;
-            box-sizing:border-box;
           }
 
           .rezka-film-header{
             position:relative;
-            height:210px!important;
-            min-height:210px!important;
-            max-height:210px!important;
-            flex:0 0 210px!important;
+            height:210px;
             overflow:hidden;
             background:#202223;
           }
@@ -487,11 +465,6 @@
           .rezka-comments-content{
             margin:0;
             padding:4px 12px 18px;
-            height:calc(100dvh - 270px)!important;
-            min-height:0!important;
-            max-height:none!important;
-            overflow-y:auto!important;
-            box-sizing:border-box!important;
           }
 
           .rezka-comments-page .comments-tree-list{
@@ -550,10 +523,7 @@
 
           @media (max-width:600px){
             .rezka-film-header{
-              height:190px!important;
-              min-height:190px!important;
-              max-height:190px!important;
-              flex:0 0 190px!important;
+              height:190px;
             }
 
             .rezka-film-info{
@@ -579,7 +549,7 @@
         title: ``,
         html: modal,
         size: "large",
-        style: "margin-top:0!important;height:100vh!important;max-height:100vh!important;",
+        style: "margin-top:10px;",
         mask: true,
         onBack: function () {
           Lampa.Modal.close();
@@ -587,28 +557,6 @@
           Lampa.Controller.toggle("content");
         },
       });
-
-      const rezkaFullModal = document.querySelector(".modal--large");
-      if (rezkaFullModal) {
-        rezkaFullModal.classList.add("rezka-full-height-modal");
-
-        // Lampa may apply its own content height after opening the modal.
-        // Normalize the inner content on the next frame as well.
-        requestAnimationFrame(function () {
-          const content = rezkaFullModal.querySelector(".modal__content");
-          if (content) {
-            content.style.height = "100%";
-            content.style.maxHeight = "none";
-            content.style.minHeight = "0";
-          }
-
-          const page = rezkaFullModal.querySelector(".rezka-comments-page");
-          if (page) {
-            page.style.height = "calc(100dvh - 60px)";
-            page.style.minHeight = "0";
-          }
-        });
-      }
 
       document
         .querySelector(".modal__head")
