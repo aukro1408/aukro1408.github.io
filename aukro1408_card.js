@@ -342,6 +342,10 @@
       const rating = movie.vote_average ? Number(movie.vote_average).toFixed(1) : "";
       const voteCount = movie.vote_count ? Number(movie.vote_count).toLocaleString("ru-RU") : "";
 
+      const nativeRatings = window.__rezkaCommentRatings || {};
+      const kpRating = nativeRatings.kp || "";
+      const imdbRating = nativeRatings.imdb || "";
+
       // TMDB uses runtime for movies and episode_run_time for TV.
       const runtime = movie.runtime
         ? Math.round(Number(movie.runtime))
@@ -379,10 +383,12 @@
       ].filter(Boolean).join("  ");
 
       const detailChips = [
-        ratingInfo ? `<span class="rezka-info-chip rezka-rating-chip"><b>★</b> ${rating || "—"}<small>${voteCount ? voteCount + " оценок" : "TMDB"}</small></span>` : "",
-        runtime ? `<span class="rezka-info-chip"><b>⏱</b> ${runtime} мин</span>` : "",
-        seasons ? `<span class="rezka-info-chip"><b>◉</b> ${seasons} ${seasons === 1 ? "сезон" : (seasons < 5 ? "сезона" : "сезонов")}${episodes ? " • " + episodes + " серий" : ""}</span>` : "",
-        `<span class="rezka-info-chip"><b>▣</b> ${mediaType}</span>`
+        rating ? `<span class="rezka-info-chip rezka-rating-chip"><b>★</b><strong>${rating}</strong><small>TMDB${voteCount ? " • " + voteCount + " оценок" : ""}</small></span>` : "",
+        kpRating ? `<span class="rezka-info-chip rezka-rating-chip rezka-rating-kp"><b>★</b><strong>${kpRating}</strong><small>КиноПоиск</small></span>` : "",
+        imdbRating ? `<span class="rezka-info-chip rezka-rating-chip rezka-rating-imdb"><b>★</b><strong>${imdbRating}</strong><small>IMDb</small></span>` : "",
+        runtime ? `<span class="rezka-info-chip"><b>⏱</b><strong>${runtime} мин</strong></span>` : "",
+        seasons ? `<span class="rezka-info-chip"><b>◉</b><strong>${seasons} ${seasons === 1 ? "сезон" : (seasons < 5 ? "сезона" : "сезонов")}</strong>${episodes ? "<small>" + episodes + " серий</small>" : ""}</span>` : "",
+        `<span class="rezka-info-chip"><b>▣</b><strong>${mediaType}</strong></span>`
       ].filter(Boolean).join("");
 
       const financeInfo = [
@@ -559,32 +565,62 @@
             color:rgba(255,255,255,.86);
             text-shadow:0 1px 6px rgba(0,0,0,.75);
           }
-
           .rezka-film-stats{
             display:flex;
             flex-wrap:wrap;
             gap:8px;
             margin-top:12px;
+            align-items:center;
           }
-
           .rezka-info-chip{
             display:inline-flex;
             align-items:center;
-            gap:6px;
-            min-height:38px;
+            gap:7px;
+            min-height:44px;
             padding:7px 12px;
             box-sizing:border-box;
-            border-radius:11px;
-            background:rgba(8,10,11,.62);
-            border:1px solid rgba(255,255,255,.18);
-            color:#fff;
-            font-size:15px;
+            border:1px solid rgba(255,255,255,.20);
+            border-radius:14px;
+            background:rgba(8,10,11,.42);
+            color:rgba(255,255,255,.96);
+            box-shadow:0 4px 16px rgba(0,0,0,.20);
+            backdrop-filter:blur(8px);
+            -webkit-backdrop-filter:blur(8px);
+          }
+
+          .rezka-info-chip b{
+            font-size:18px;
             line-height:1;
-            font-weight:650;
-            backdrop-filter:blur(10px);
-            -webkit-backdrop-filter:blur(10px);
-            box-shadow:0 4px 14px rgba(0,0,0,.25);
-            text-shadow:0 1px 4px rgba(0,0,0,.65);
+            font-weight:700;
+          }
+
+          .rezka-info-chip strong{
+            font-size:17px;
+            line-height:1.1;
+            font-weight:750;
+          }
+
+          .rezka-info-chip small{
+            font-size:11px;
+            line-height:1.1;
+            color:rgba(255,255,255,.58);
+            font-weight:500;
+          }
+
+          .rezka-rating-chip{
+            min-width:112px;
+          }
+
+          .rezka-rating-chip b{
+            color:#fff;
+          }
+
+          .rezka-rating-kp b{
+            color:#ffb000;
+          }
+
+          .rezka-rating-imdb b{
+            color:#f5c518;
           }
 
           .rezka-info-chip b{
@@ -797,7 +833,29 @@
             display:none!important;
           }
 
+
           @media (max-width:600px){
+            .rezka-film-stats{
+              gap:7px;
+              margin-top:10px;
+            }
+
+            .rezka-info-chip{
+              min-height:42px;
+              padding:6px 10px;
+              border-radius:13px;
+              background:rgba(8,10,11,.36);
+            }
+
+            .rezka-info-chip strong{
+              font-size:16px;
+            }
+
+            .rezka-info-chip small{
+              font-size:10px;
+            }
+
+
             .rezka-comments-page .comment-wrap{
               gap:11px!important;
               margin-bottom:17px!important;
@@ -1030,6 +1088,29 @@
 
           const movie = e.data.movie || {};
           window.__rezkaCommentCurrentMovie = movie;
+
+          // Берём уже загруженные Lampa рейтинги, если они есть.
+          // Никаких дополнительных API-ключей для этого не требуется.
+          try {
+            const render = e.object && e.object.activity && e.object.activity.render
+              ? e.object.activity.render()
+              : null;
+
+            const readNativeRating = function (selector) {
+              if (!render) return "";
+              const el = $(selector, render).find("> div").eq(0);
+              const value = el.length ? String(el.text()).trim() : "";
+              return value && value !== "0.0" ? value : "";
+            };
+
+            window.__rezkaCommentRatings = {
+              kp: readNativeRating(".rate--kp"),
+              imdb: readNativeRating(".rate--imdb")
+            };
+          } catch (ratingError) {
+            window.__rezkaCommentRatings = { kp: "", imdb: "" };
+          }
+
           year = 0;
 
           if (movie.release_date) {
