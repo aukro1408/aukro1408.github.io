@@ -51,27 +51,7 @@
                 opacity: 1;
                 pointer-events: auto;
             }
-            .lta3-sound svg { width: 23px; height: 23px; fill: currentColor; }
-            .lta3-play {
-                position: absolute !important;
-                left: 50% !important;
-                top: 50% !important;
-                transform: translate(-50%,-50%) !important;
-                width: 68px !important;
-                height: 68px !important;
-                border: 0 !important;
-                border-radius: 50% !important;
-                background: rgba(20,20,20,.82) !important;
-                color: #fff !important;
-                z-index: 31 !important;
-                display: none !important;
-                align-items: center !important;
-                justify-content: center !important;
-                padding: 0 !important;
-            }
-            .lta3-play.visible { display: flex !important; }
-            .lta3-play svg { width: 30px; height: 30px; fill: currentColor; margin-left: 3px; }
-        `;
+            .lta3-sound svg { width: 23px; height: 23px; fill: currentColor; }        `;
         document.head.appendChild(s);
     }
 
@@ -81,10 +61,6 @@
 
     function soundIcon() {
         return '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4zm12 3c0-1.3-.7-2.5-1.8-3.1v2.3c.5.3.8.7.8 1.2s-.3.9-.8 1.2v2.3c1.1-.6 1.8-1.8 1.8-3.1zm0-6v2.1c1.8.9 3 2.7 3 4.9s-1.2 4-3 4.9V20c3-1.1 5-3.9 5-7s-2-5.9-5-7z"/></svg>';
-    }
-
-    function playIcon() {
-        return '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
     }
 
     function videos(data) {
@@ -166,28 +142,12 @@
         current = null;
     }
 
-    function showPlay() {
-        if (!current) return;
-        current.playButton.classList.add('visible');
-    }
-
-    function hidePlay() {
-        if (!current) return;
-        current.playButton.classList.remove('visible');
-    }
-
     function reveal() {
         if (!current || current.revealed) return;
 
         current.revealed = true;
         current.frame.classList.add('visible');
         current.sound.classList.add('visible');
-    }
-
-    function startVideo() {
-        if (!current) return;
-        hidePlay();
-        send('play');
     }
 
     function create(body, data) {
@@ -214,26 +174,15 @@
         sound.className = 'lta3-sound';
         sound.innerHTML = mutedIcon();
         sound.setAttribute('aria-label', 'Включить звук');
-
-        var play = document.createElement('button');
-        play.type = 'button';
-        play.className = 'lta3-play';
-        play.innerHTML = playIcon();
-        play.setAttribute('aria-label', 'Запустить трейлер');
-
         host.classList.add('lta3-host');
         host.appendChild(frame);
         host.appendChild(sound);
-        host.appendChild(play);
-
         current = {
             host: host,
             frame: frame,
             frameWindow: null,
             bridgeId: bridgeId,
-            sound: sound,
-            playButton: play,
-            timer: null,
+            sound: sound,            timer: null,
             readyTimer: null,
             revealed: false,
             soundOn: false
@@ -269,13 +218,6 @@
                     reveal();
                     send('init', { volume: 0 });
                     send('play');
-
-                    // Если Android заблокировал autoplay,
-                    // через короткое время показываем явную кнопку Play.
-                    setTimeout(function(){
-                        if (!current || current.frame !== frame) return;
-                        showPlay();
-                    }, 1800);
                 }, DELAY);
             }
 
@@ -283,9 +225,7 @@
                 // 1 = playing. Только после реального PLAY показываем видео.
                 if (d.state === 1) {
                     if (current && current.frame === frame) {
-                        reveal();
-                        hidePlay();
-                    }
+                        reveal();                    }
                 }
 
                 // 0 = ended — возвращаем постер.
@@ -321,14 +261,6 @@
             }
         });
 
-        play.addEventListener('click', function(e){
-            e.preventDefault();
-            e.stopPropagation();
-
-            if (!current || current.frame !== frame) return;
-
-            startVideo();
-        });
 
         frame.onload = function(){
             if (current && current.frame === frame) {
@@ -351,7 +283,7 @@
         style();
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
-        console.log('[Trailer Autoplay] v3 started');
+        console.log('[Trailer Autoplay] v4 started');
     }
 
     if (window.Lampa && Lampa.Listener) start();
