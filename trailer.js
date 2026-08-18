@@ -25,6 +25,7 @@
                 background: #000 !important;
                 opacity: 0 !important;
                 z-index: 2 !important;
+                pointer-events: none !important;
                 transition: opacity .5s ease !important;
             }
 
@@ -33,7 +34,11 @@
             }
 
             .lta8-sound {
-                position: fixed !important;
+                position: absolute !important;
+                right: 12px !important;
+                bottom: 12px !important;
+                left: auto !important;
+                top: auto !important;
                 width: 46px !important;
                 height: 46px !important;
                 min-width: 46px !important;
@@ -43,7 +48,7 @@
                 border-radius: 50% !important;
                 background: rgba(20,20,20,.86) !important;
                 color: #fff !important;
-                z-index: 2147483647 !important;
+                z-index: 999999 !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -175,14 +180,8 @@
     }
 
     function positionSound() {
-        if (!current || !current.host || !current.sound) return;
-
-        var rect = current.host.getBoundingClientRect();
-        var size = 46;
-        var margin = 12;
-
-        current.sound.style.left = Math.round(rect.right - size - margin) + 'px';
-        current.sound.style.top = Math.round(rect.bottom - size - margin) + 'px';
+        // Button is positioned absolutely inside the poster host.
+        // No viewport calculations are needed.
     }
 
     function showSound() {
@@ -198,11 +197,6 @@
 
         if (current.messageHandler) {
             window.removeEventListener('message', current.messageHandler, true);
-        }
-
-        if (current.positionHandler) {
-            window.removeEventListener('resize', current.positionHandler);
-            window.removeEventListener('scroll', current.positionHandler, true);
         }
 
         if (current.frameWindow) {
@@ -257,7 +251,7 @@
 
         host.classList.add('lta8-host');
         host.appendChild(frame);
-        document.body.appendChild(sound);
+        host.appendChild(sound);
 
         current = {
             host: host,
@@ -275,10 +269,6 @@
          * Переключение звука больше НЕ пересоздаёт iframe.
          */
         frame.srcdoc = makeBridge(trailer.key);
-
-        current.positionHandler = positionSound;
-        window.addEventListener('resize', current.positionHandler);
-        window.addEventListener('scroll', current.positionHandler, true);
 
         /*
          * Кнопка находится вне Lampa selector system.
@@ -303,12 +293,10 @@
             }
         };
 
-        sound.addEventListener('pointerdown', current.toggleSound, true);
-        sound.addEventListener('touchstart', current.toggleSound, {
+        sound.addEventListener('pointerdown', current.toggleSound, {
             capture: true,
             passive: false
         });
-        sound.addEventListener('click', current.toggleSound, true);
 
         current.messageHandler = function(event) {
             if (!current || event.source !== frame.contentWindow) return;
@@ -378,7 +366,7 @@
         addStyle();
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
-        console.log('[Trailer Autoplay] v8 started');
+        console.log('[Trailer Autoplay] v9 started');
     }
 
     if (window.Lampa && Lampa.Listener) {
