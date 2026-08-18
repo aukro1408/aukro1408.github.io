@@ -184,15 +184,23 @@
         return base;
     }
 
+    function bridgeHtml(videoId, bridgeId, mute, start) {
+        var safeId = String(videoId).replace(/[^a-zA-Z0-9_-]/g, '');
+        var safeBridge = String(bridgeId).replace(/[^a-zA-Z0-9_-]/g, '');
+        var safeMute = mute ? 1 : 0;
+        var safeStart = Math.max(0, Math.floor(start || 0));
+
+        return '<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}#player{width:100%;height:100%}iframe{border:0;position:absolute;left:0;top:-300px;transform-origin:left top;transform:scale(.5)}</style></head><body><div id=\"player\"></div><script src=\"https://www.youtube.com/iframe_api\"><\/script><script>(function(){' +
+            'var bridgeId=\"' + safeBridge + '\",videoId=\"' + safeId + '\",mute=' + safeMute + ',start=' + safeStart + ',player=null,ready=false;' +
+            'function send(type,data){try{parent.postMessage({bridgeId:bridgeId,type:type,data:data||{}},\"*\")}catch(e){}}' +
+            'function tick(){if(!player||!ready)return;try{send(\"time\",{currentTime:player.getCurrentTime(),duration:player.getDuration(),playerState:player.getPlayerState(),playbackQuality:player.getPlaybackQuality?player.getPlaybackQuality():\"\"})}catch(e){}}' +
+            'function resize(){var w=innerWidth*2,h=(innerHeight+600)*2,p=document.getElementById(\"player\");if(p){p.style.width=w+\"px\";p.style.height=h+\"px\"}}' +
+            'window.onYouTubeIframeAPIReady=function(){player=new YT.Player(\"player\",{videoId:videoId,width:\"100%\",height:\"100%\",playerVars:{autoplay:1,controls:1,mute:mute,start:start,rel:0,modestbranding:1,playsinline:1,enablejsapi:1,origin:location.origin},events:{onReady:function(){ready=true;send(\"ready\");tick();setInterval(tick,100)},onStateChange:function(e){send(\"stateChange\",{state:e.data})},onPlaybackQualityChange:function(e){send(\"qualityChange\",{quality:e.data})},onError:function(e){send(\"error\",{error:e.data})}}});resize()};' +
+            'window.addEventListener(\"message\",function(e){if(!e.data||e.data.bridgeId!==bridgeId)return;var t=e.data.type,d=e.data.data||{};if(!player||!ready)return;try{if(t===\"init\"&&typeof d.volume===\"number\"){player.setVolume(d.volume)}else if(t===\"play\"){player.playVideo()}else if(t===\"pause\"){player.pauseVideo()}else if(t===\"seekTo\"){player.seekTo(d.time,true)}else if(t===\"setVolume\"){player.setVolume(d.volume)}else if(t===\"unMute\"){player.unMute();if(typeof d.volume===\"number\")player.setVolume(d.volume)}else if(t===\"mute\"){player.mute()}else if(t===\"resize\"){resize()}else if(t===\"destroy\"){try{player.destroy()}catch(x){}player=null;ready=false}}catch(x){}});send(\"bridgeReady\");})();<\/script></body></html>';
+    }
+
     function bridgeUrl(videoId, bridgeId, mute, start) {
-        return bridgeBase() + 'youtube.html' +
-            '?bridgeId=' + encodeURIComponent(bridgeId) +
-            '&videoId=' + encodeURIComponent(videoId) +
-            '&autoplay=1' +
-            '&controls=0' +
-            '&mute=' + (mute ? '1' : '0') +
-            '&cc_load_policy=0' +
-            '&start=' + Math.max(0, Math.floor(start || 0));
+        return 'data:text/html;charset=utf-8,' + encodeURIComponent(bridgeHtml(videoId, bridgeId, mute, start));
     }
 
     function send(type, data) {
@@ -310,7 +318,13 @@
             wantSound ? 'Выключить звук' : 'Включить звук'
         );
 
-        send('setVolume', { volume: wantSound ? 100 : 0 });
+        if (wantSound) {
+            // setVolume alone cannot unmute a YouTube player that was started
+            // with mute=1. Explicitly unmute the SAME player.
+            send('unMute', { volume: 100 });
+        } else {
+            send('mute');
+        }
     }
 
     function create(body, data) {
@@ -413,6 +427,9 @@
                     if (!current || current.frame !== frame) return;
 
                     reveal();
+                    // Keep autoplay muted. The bridge will explicitly unmute
+                    // after the user's tap on the sound button.
+                    send('init', { volume: 0 });
                     send('play');
 
                     current.playing = true;
