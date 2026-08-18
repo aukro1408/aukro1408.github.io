@@ -393,11 +393,6 @@
       const statusInfo = status && status !== "Ended" && status !== "Released"
         ? status
         : "";
-
-      const overview = typeof movie.overview === "string"
-        ? movie.overview.trim()
-        : "";
-
       let modal = $(
         `<div class="rezka-comments-page" style="--rezka-backdrop:${poster ? `url("${poster.replace(/"/g, "%22")}")` : "none"};">
           <div class="rezka-film-header">
@@ -408,7 +403,6 @@
               ${meta ? `<div class="rezka-film-meta">${meta}</div>` : ""}
               <div class="rezka-film-stats">${detailChips}</div>
               ${financeInfo || statusInfo ? `<div class="rezka-film-finance">${[financeInfo, statusInfo].filter(Boolean).join("  •  ")}</div>` : ""}
-              ${overview ? `<div class="rezka-film-overview">${overview}</div>` : ""}
             </div>
           </div>
 
@@ -617,19 +611,6 @@
             text-shadow:0 1px 5px rgba(0,0,0,.75);
           }
 
-          .rezka-film-overview{
-            margin-top:10px;
-            max-width:680px;
-            font-size:14px;
-            line-height:1.42;
-            color:rgba(255,255,255,.82);
-            display:-webkit-box;
-            -webkit-line-clamp:3;
-            -webkit-box-orient:vertical;
-            overflow:hidden;
-            text-shadow:0 1px 5px rgba(0,0,0,.8);
-          }
-
                     .rezka-comments-content{
             margin:0;
             padding:4px 12px 18px;
@@ -691,7 +672,57 @@
             cursor:pointer!important;
           }
 
+
+          .rezka-modal-close{
+            position:absolute!important;
+            top:8px!important;
+            right:8px!important;
+            z-index:9999!important;
+            width:38px!important;
+            height:38px!important;
+            min-width:38px!important;
+            min-height:38px!important;
+            padding:0!important;
+            margin:0!important;
+            display:flex!important;
+            align-items:center!important;
+            justify-content:center!important;
+            border:1px solid rgba(255,255,255,.22)!important;
+            border-radius:50%!important;
+            background:rgba(18,20,21,.72)!important;
+            color:#fff!important;
+            box-shadow:0 5px 18px rgba(0,0,0,.35)!important;
+            backdrop-filter:blur(12px)!important;
+            -webkit-backdrop-filter:blur(12px)!important;
+            cursor:pointer!important;
+            appearance:none!important;
+            -webkit-appearance:none!important;
+          }
+
+          .rezka-modal-close span{
+            display:block!important;
+            font-size:27px!important;
+            line-height:32px!important;
+            font-weight:300!important;
+            transform:translateY(-1px)!important;
+            opacity:.92!important;
+          }
+
+          .rezka-modal-close:active{
+            transform:scale(.92)!important;
+            background:rgba(255,255,255,.16)!important;
+          }
+
           @media (max-width:600px){
+            .rezka-modal-close{
+              top:7px!important;
+              right:7px!important;
+              width:36px!important;
+              height:36px!important;
+              min-width:36px!important;
+              min-height:36px!important;
+            }
+
             .rezka-film-header{
               height:230px;
             }
@@ -742,7 +773,7 @@
         .querySelector(".modal__head")
         ?.insertAdjacentHTML(
           "afterend",
-          `<button class="modal-close-btn selector" onclick="$('.modal--large').remove()">&times;</button>  ${namemovie}`,
+          `<button class="rezka-modal-close selector" aria-label="Закрыть" onclick="$('.modal--large').remove()"><span>×</span></button>  ${namemovie}`,
         );
     }
   }
