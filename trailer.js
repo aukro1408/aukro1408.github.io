@@ -266,40 +266,61 @@
 
         window.addEventListener('message', current.messageHandler);
 
-        sound.addEventListener('click', function(e){
-            e.preventDefault();
-            e.stopPropagation();
+        function toggleSound(e) {
+            if (e) {
+                try { e.preventDefault(); } catch(err) {}
+                try { e.stopPropagation(); } catch(err) {}
+                try { e.stopImmediatePropagation(); } catch(err) {}
+            }
 
-            if (!current || current.frame !== frame) return;
+            if (!current || current.frame !== frame || current.soundBusy) return;
 
+            current.soundBusy = true;
             current.soundOn = !current.soundOn;
 
             var pos = Math.max(0, Math.floor(current.currentTime || 0));
-            var muted = current.soundOn ? 0 : 1;
             var bridgeId2 = 'lta3_' + Math.random().toString(36).slice(2);
+            var wantedMute = current.soundOn ? 0 : 1;
 
             current.bridgeId = bridgeId2;
             current.soundToggleReload = true;
             current.revealed = false;
 
+            // The Lampa bridge exposes setVolume(), but its current youtube.html
+            // does not expose unMute(). Therefore a reload with mute=0 is needed
+            // when the user explicitly enables audio. The reload itself is initiated
+            // by this user gesture, so Android/WebView may allow audible autoplay.
             var base = '';
             try { base = Lampa.Manifest.github_lampa; } catch(err) {}
             if (!base) base = 'https://yumata.github.io/lampa/';
             if (base.charAt(base.length - 1) !== '/') base += '/';
 
+            frame.classList.remove('visible');
             frame.src = base + 'youtube.html' +
                 '?bridgeId=' + encodeURIComponent(bridgeId2) +
                 '&videoId=' + encodeURIComponent(current.videoId) +
                 '&autoplay=1' +
                 '&controls=0' +
-                '&mute=' + muted +
+                '&mute=' + wantedMute +
                 '&start=' + pos;
-
-            frame.classList.remove('visible');
 
             sound.innerHTML = current.soundOn ? soundIcon() : mutedIcon();
             sound.setAttribute('aria-label', current.soundOn ? 'Выключить звук' : 'Включить звук');
-        });
+
+            // Safety unlock in case the iframe takes longer to load.
+            setTimeout(function(){
+                if (current && current.frame === frame) current.soundBusy = false;
+            }, 1200);
+        }
+
+        // Use pointerup first: on Android/WebView this is more reliable than
+        // waiting for a synthetic click that Lampa may consume.
+        if (window.PointerEvent) {
+            sound.addEventListener('pointerup', toggleSound, true);
+        } else {
+            sound.addEventListener('touchend', toggleSound, true);
+            sound.addEventListener('click', toggleSound, true);
+        }
 
 
         frame.onload = function(){
