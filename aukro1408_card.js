@@ -383,7 +383,7 @@
       ].filter(Boolean).join("  ");
 
       const detailChips = [
-        rating ? `<span class="rezka-info-chip rezka-rating-chip"><b>★</b><strong>${rating}</strong><small>TMDB${voteCount ? " • " + voteCount + " оценок" : ""}</small></span>` : "",
+        rating ? `<span class="rezka-info-chip rezka-rating-chip"><b>★</b><strong>${rating}</strong><small>TMDB${voteCount ? " • " + voteCount : ""}</small></span>` : "",
         kpRating ? `<span class="rezka-info-chip rezka-rating-chip rezka-rating-kp"><b>★</b><strong>${kpRating}</strong><small>КиноПоиск</small></span>` : "",
         imdbRating ? `<span class="rezka-info-chip rezka-rating-chip rezka-rating-imdb"><b>★</b><strong>${imdbRating}</strong><small>IMDb</small></span>` : ""
       ].filter(Boolean).join("");
@@ -833,31 +833,51 @@
 
           @media (max-width:600px){
             .rezka-modal-caption{
-              left:24px!important;
+              left:18px!important;
               right:52px!important;
-              max-width:calc(100% - 76px)!important;
+              max-width:calc(100% - 70px)!important;
               font-size:14px!important;
             }
 
 
             .rezka-film-stats{
-              gap:7px;
-              margin-top:10px;
+              display:flex!important;
+              flex-wrap:nowrap!important;
+              gap:5px!important;
+              margin-top:10px!important;
+              width:100%!important;
+              overflow:visible!important;
             }
 
             .rezka-info-chip{
-              min-height:42px;
-              padding:6px 10px;
-              border-radius:13px;
-              background:rgba(8,10,11,.36);
+              min-width:0!important;
+              flex:1 1 0!important;
+              min-height:42px!important;
+              height:42px!important;
+              padding:5px 7px!important;
+              gap:5px!important;
+              border-radius:13px!important;
+              background:rgba(8,10,11,.36)!important;
+              overflow:hidden!important;
+              white-space:nowrap!important;
+            }
+
+            .rezka-info-chip b{
+              flex:0 0 auto!important;
+              font-size:17px!important;
             }
 
             .rezka-info-chip strong{
-              font-size:16px;
+              flex:0 0 auto!important;
+              font-size:15px!important;
             }
 
             .rezka-info-chip small{
-              font-size:10px;
+              min-width:0!important;
+              overflow:hidden!important;
+              text-overflow:ellipsis!important;
+              white-space:nowrap!important;
+              font-size:9px!important;
             }
 
 
@@ -903,11 +923,11 @@
           .rezka-modal-caption{
             position:absolute!important;
             top:50%!important;
-            left:26px!important;
-            right:54px!important;
+            left:18px!important;
+            right:58px!important;
             transform:translateY(-50%)!important;
             z-index:9998!important;
-            max-width:calc(100% - 82px)!important;
+            max-width:calc(100% - 76px)!important;
             overflow:hidden!important;
             white-space:nowrap!important;
             pointer-events:none!important;
@@ -1031,12 +1051,11 @@
         },
       });
 
-      document
-        .querySelector(".modal__head")
-        ?.insertAdjacentHTML(
-          "afterend",
-          `<div class="rezka-modal-caption">Комментарии Rezka</div><button class="rezka-modal-close selector" aria-label="Закрыть" onclick="$('.modal--large').remove()"><span>×</span></button>`,
-        );
+      const rezkaModalHead = document.querySelector(".modal__head");
+      if (rezkaModalHead) {
+        rezkaModalHead.style.position = "relative";
+        rezkaModalHead.innerHTML = `<div class="rezka-modal-caption">Комментарии Rezka</div><button class="rezka-modal-close selector" aria-label="Закрыть" onclick="$('.modal--large').remove()"><span>×</span></button>`;
+      }
     }
   }
 
