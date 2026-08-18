@@ -176,49 +176,31 @@
         return trailers(list)[0] || list[0];
     }
 
-    function bridgeBase() {
-        var base = '';
-        try { base = Lampa.Manifest.github_lampa; } catch(e) {}
-        if (!base) base = 'https://yumata.github.io/lampa/';
-        if (base.charAt(base.length - 1) !== '/') base += '/';
-        return base;
-    }
-
-    function bridgeHtml(videoId, bridgeId, mute, start) {
-        var safeId = String(videoId).replace(/[^a-zA-Z0-9_-]/g, '');
-        var safeBridge = String(bridgeId).replace(/[^a-zA-Z0-9_-]/g, '');
-        var safeMute = mute ? 1 : 0;
-        var safeStart = Math.max(0, Math.floor(start || 0));
-
-        return '<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}#player{width:100%;height:100%}iframe{border:0;position:absolute;left:0;top:-300px;transform-origin:left top;transform:scale(.5)}</style></head><body><div id=\"player\"></div><script src=\"https://www.youtube.com/iframe_api\"><\/script><script>(function(){' +
-            'var bridgeId=\"' + safeBridge + '\",videoId=\"' + safeId + '\",mute=' + safeMute + ',start=' + safeStart + ',player=null,ready=false;' +
-            'function send(type,data){try{parent.postMessage({bridgeId:bridgeId,type:type,data:data||{}},\"*\")}catch(e){}}' +
-            'function tick(){if(!player||!ready)return;try{send(\"time\",{currentTime:player.getCurrentTime(),duration:player.getDuration(),playerState:player.getPlayerState(),playbackQuality:player.getPlaybackQuality?player.getPlaybackQuality():\"\"})}catch(e){}}' +
-            'function resize(){var w=innerWidth*2,h=(innerHeight+600)*2,p=document.getElementById(\"player\");if(p){p.style.width=w+\"px\";p.style.height=h+\"px\"}}' +
-            'window.onYouTubeIframeAPIReady=function(){player=new YT.Player(\"player\",{videoId:videoId,width:\"100%\",height:\"100%\",playerVars:{autoplay:1,controls:1,mute:mute,start:start,rel:0,modestbranding:1,playsinline:1,enablejsapi:1,origin:location.origin,cc_load_policy:0},events:{onReady:function(){ready=true;send(\"ready\");tick();setInterval(tick,100)},onStateChange:function(e){send(\"stateChange\",{state:e.data})},onPlaybackQualityChange:function(e){send(\"qualityChange\",{quality:e.data})},onError:function(e){send(\"error\",{error:e.data})}}});resize()};' +
-            'window.addEventListener(\"message\",function(e){if(!e.data||e.data.bridgeId!==bridgeId)return;var t=e.data.type,d=e.data.data||{};if(!player||!ready)return;try{if(t===\"init\"&&typeof d.volume===\"number\"){player.setVolume(d.volume)}else if(t===\"play\"){player.playVideo()}else if(t===\"pause\"){player.pauseVideo()}else if(t===\"seekTo\"){player.seekTo(d.time,true)}else if(t===\"setVolume\"){player.setVolume(d.volume)}else if(t===\"unMute\"){player.unMute();if(typeof d.volume===\"number\")player.setVolume(d.volume)}else if(t===\"mute\"){player.mute()}else if(t===\"resize\"){resize()}else if(t===\"destroy\"){try{player.destroy()}catch(x){}player=null;ready=false}}catch(x){}});send(\"bridgeReady\");})();<\/script></body></html>';
-    }
-
-    function bridgeUrl(videoId, bridgeId, mute, start) {
-        try {
-            var html = bridgeHtml(videoId, bridgeId, mute, start);
-            var blob = new Blob([html], { type: 'text/html' });
-            return URL.createObjectURL(blob);
-        }
-        catch(e) {
-            return '';
-        }
+    function youtubeUrl(videoId) {
+        var id = String(videoId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+        var origin = '';
+        try { origin = window.location.origin; } catch(e) {}
+        var q = [
+            'autoplay=1', 'mute=1', 'controls=1', 'playsinline=1',
+            'rel=0', 'modestbranding=1', 'enablejsapi=1',
+            'cc_load_policy=0', 'iv_load_policy=3'
+        ];
+        if (origin && origin !== 'null') q.push('origin=' + encodeURIComponent(origin));
+        return 'https://www.youtube.com/embed/' + id + '?' + q.join('&');
     }
 
     function send(type, data) {
         if (!current || !current.frameWindow) return;
-        try {
-            current.frameWindow.postMessage({
-                bridgeId: current.bridgeId,
-                type: type,
-                data: data || {}
-            }, '*');
-        } catch(e) {}
+        var payload = null;
+        if (type === 'play') payload = {event:'command',func:'playVideo',args:[]};
+        else if (type === 'pause') payload = {event:'command',func:'pauseVideo',args:[]};
+        else if (type === 'mute') payload = {event:'command',func:'mute',args:[]};
+        else if (type === 'unMute') payload = {event:'command',func:'unMute',args:[]};
+        else if (type === 'setVolume') payload = {event:'command',func:'setVolume',args:[Number(data&&data.volume)||0]};
+        else if (type === 'seekTo') payload = {event:'command',func:'seekTo',args:[Number(data&&data.time)||0,true]};
+        if (!payload) return;
+        try { current.frameWindow.postMessage(JSON.stringify(payload), 'https://www.youtube.com'); }
+        catch(e) { try { current.frameWindow.postMessage(JSON.stringify(payload), '*'); } catch(x) {} }
     }
 
     function positionSound() {
@@ -259,23 +241,12 @@
             window.removeEventListener('scroll', current.positionHandler, true);
         }
 
-        if (current.frameWindow) {
-            try {
-                current.frameWindow.postMessage({
-                    bridgeId: current.bridgeId,
-                    type: 'pause',
-                    data: {}
-                }, '*');
-            } catch(e) {}
-        }
+        if (current.frameWindow) { try { send('pause'); } catch(e) {} }
 
         if (current.frame) {
             try { current.frame.remove(); } catch(e) {}
         }
 
-        if (current.bridgeObjectUrl) {
-            try { URL.revokeObjectURL(current.bridgeObjectUrl); } catch(e) {}
-        }
 
         if (current.sound) {
             try { current.sound.remove(); } catch(e) {}
@@ -358,12 +329,7 @@
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
         );
-        var bridgeObjectUrl = bridgeUrl(trailer.key, bridgeId, true, 0);
-        if (!bridgeObjectUrl) {
-            cleanup();
-            return;
-        }
-        frame.src = bridgeObjectUrl;
+        frame.src = youtubeUrl(trailer.key);
 
         var sound = document.createElement('button');
         sound.type = 'button';
@@ -374,14 +340,16 @@
         frame.addEventListener('load', function() {
             if (!current || current.frame !== frame) return;
             current.frameWindow = frame.contentWindow;
-            send('init', { volume: 0 });
             positionSound();
+            setTimeout(function(){
+                if (!current || current.frame !== frame) return;
+                send('mute');
+                send('setVolume',{volume:0});
+            },300);
         });
 
         frame.addEventListener('error', function() {
-            if (current && current.frame === frame) {
-                try { frame.remove(); } catch(e) {}
-            }
+            if (current && current.frame === frame) cleanup();
         });
 
         host.classList.add('lta7-host');
@@ -392,9 +360,7 @@
             host: host,
             frame: frame,
             frameWindow: null,
-            bridgeId: bridgeId,
             videoId: trailer.key,
-            bridgeObjectUrl: bridgeObjectUrl,
 
             sound: sound,
             soundOn: false,
@@ -438,82 +404,40 @@
 
         current.messageHandler = function(event) {
             if (!current || event.source !== frame.contentWindow) return;
-            if (!event.data || event.data.bridgeId !== current.bridgeId) return;
+            var raw = event.data;
+            var msg = null;
+            try { msg = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch(e) {}
+            if (!msg) return;
 
-            var type = event.data.type;
-            var d = event.data.data || {};
-
-            if (type === 'bridgeReady') {
-                current.frameWindow = frame.contentWindow;
-                return;
-            }
-
-            if (type === 'ready') {
+            if (msg.event === 'onReady') {
                 if (current.readyTimer) clearTimeout(current.readyTimer);
-
-                // Первичная загрузка: через 2 секунды.
-                var wait = DELAY;
-
-                current.timer = setTimeout(function() {
+                current.timer = setTimeout(function(){
                     if (!current || current.frame !== frame) return;
-
                     reveal();
-                    // Keep autoplay muted. The bridge will explicitly unmute
-                    // after the user's tap on the sound button.
-                    send('init', { volume: 0 });
+                    send('mute');
+                    send('setVolume',{volume:0});
                     send('play');
-
                     current.playing = true;
                     current.startedAt = Date.now();
-
-                }, wait);
-
+                }, DELAY);
                 return;
             }
 
-            if (type === 'time') {
-                if (typeof d.currentTime === 'number') {
-                    current.currentTime = d.currentTime;
-                    if (current.playing) current.startedAt = Date.now();
-                }
-                positionSound();
+            if (msg.event === 'onStateChange') {
+                var state = Number(msg.info);
+                if (state === 1) { reveal(); current.playing=true; current.startedAt=Date.now(); }
+                else if (state === 2) { current.currentTime=getPlaybackPosition(); current.playing=false; current.startedAt=0; }
+                else if (state === 0) { current.playing=false; current.startedAt=0; }
                 return;
             }
 
-            if (type === 'stateChange') {
-                // 1 = playing.
-                if (d.state === 1) {
-                    reveal();
-                    current.playing = true;
-                    current.startedAt = Date.now();
-                }
-
-                if (d.state === 2) {
-                    current.currentTime = getPlaybackPosition();
-                    current.playing = false;
-                    current.startedAt = 0;
-                }
-
-                // 0 = ended.
-                if (d.state === 0) {
-                    cleanup();
-                }
-                return;
-            }
-
-            if (type === 'error') {
-                // При ошибке возвращаем обычный постер.
-                cleanup();
+            if (msg.event === 'infoDelivery' && msg.info && typeof msg.info.currentTime === 'number') {
+                current.currentTime = msg.info.currentTime;
+                if (current.playing) current.startedAt = Date.now();
             }
         };
 
         window.addEventListener('message', current.messageHandler, true);
-
-        frame.onload = function() {
-            if (current && current.frame === frame) {
-                try { current.frameWindow = frame.contentWindow; } catch(e) {}
-            }
-        };
     }
 
     function startActivityGuard() {
