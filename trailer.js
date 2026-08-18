@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v23_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v24_style';
     var current = null;
     var DELAY = 2000;
     var activityGuard = null;
@@ -30,7 +30,7 @@
                 background: #000 !important;
                 opacity: 0 !important;
                 z-index: 0 !important;
-                pointer-events: auto !important;
+                pointer-events: none !important;
                 transition: opacity .25s ease !important;
             }
 
@@ -38,8 +38,20 @@
                 opacity: 1 !important;
             }
 
+            /* The trailer must stay strictly inside the poster's media layer.
+               Lampa's title/rating/meta are foreground content and must paint
+               above the iframe. The iframe itself never receives taps. */
+            .lta7-host > .lta7-video {
+                z-index: 0 !important;
+                pointer-events: none !important;
+            }
+
+            /* Known Lampa foreground blocks. */
             /* Lampa information always renders above the trailer. */
             .full-start-new__title,
+            .full-start-new__name,
+            .full-start-new__descr,
+            .full-start-new__subtitle,
             .full-start-new__tagline,
             .full-start-new__details,
             .full-start-new__head,
@@ -50,6 +62,9 @@
             .full-start-new__info,
             .full-start-new__content,
             .full-start__title,
+            .full-start__name,
+            .full-start__descr,
+            .full-start__subtitle,
             .full-start__tagline,
             .full-start__details,
             .full-start__head,
@@ -76,7 +91,7 @@
                 border-radius: 50% !important;
                 background: rgba(20,20,20,.86) !important;
                 color: #fff !important;
-                z-index: 8 !important;
+                z-index: 2147483647 !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -674,7 +689,7 @@
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
         startActivityGuard();
-        console.log('[Trailer Autoplay] v23 started');
+        console.log('[Trailer Autoplay] v24 started');
     }
 
     if (window.Lampa && Lampa.Listener) {
