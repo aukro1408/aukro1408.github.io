@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v8_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v10_style';
     var current = null;
     var DELAY = 2000;
 
@@ -11,12 +11,13 @@
         var s = document.createElement('style');
         s.id = STYLE_ID;
         s.textContent = `
-            .lta8-host {
+            .lta10-host {
                 position: relative !important;
                 overflow: hidden !important;
+                isolation: isolate !important;
             }
 
-            .lta8-video {
+            .lta10-video {
                 position: absolute !important;
                 inset: 0 !important;
                 width: 100% !important;
@@ -24,16 +25,16 @@
                 border: 0 !important;
                 background: #000 !important;
                 opacity: 0 !important;
-                z-index: 2 !important;
+                z-index: 5 !important;
                 pointer-events: none !important;
-                transition: opacity .5s ease !important;
+                transition: opacity .45s ease !important;
             }
 
-            .lta8-video.visible {
+            .lta10-video.visible {
                 opacity: 1 !important;
             }
 
-            .lta8-sound {
+            .lta10-sound {
                 position: absolute !important;
                 right: 12px !important;
                 bottom: 12px !important;
@@ -46,9 +47,9 @@
                 margin: 0 !important;
                 border: 0 !important;
                 border-radius: 50% !important;
-                background: rgba(20,20,20,.86) !important;
+                background: rgba(20,20,20,.82) !important;
                 color: #fff !important;
-                z-index: 999999 !important;
+                z-index: 50 !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -60,20 +61,25 @@
                 transition: opacity .25s ease, transform .15s ease !important;
             }
 
-            .lta8-sound.visible {
+            .lta10-sound.visible {
                 opacity: 1 !important;
                 pointer-events: auto !important;
             }
 
-            .lta8-sound:active {
+            .lta10-sound:active {
                 transform: scale(.92) !important;
             }
 
-            .lta8-sound svg {
+            .lta10-sound svg {
                 width: 24px !important;
                 height: 24px !important;
                 fill: currentColor !important;
                 pointer-events: none !important;
+            }
+
+            /* Never allow YouTube UI to become visible over the clean player. */
+            .lta10-video::-webkit-media-controls {
+                display: none !important;
             }
         `;
         document.head.appendChild(s);
@@ -90,7 +96,7 @@
     function getVideos(data) {
         if (!data || !data.videos) return [];
         var list = data.videos.results || data.videos;
-        return Array.isArray(list) ? list.filter(function(v) {
+        return Array.isArray(list) ? list.filter(function (v) {
             return v && v.key;
         }) : [];
     }
@@ -103,20 +109,20 @@
         try {
             lang = String(Lampa.Storage.field('language') || 'ru')
                 .toLowerCase().split('-')[0];
-        } catch(e) {}
+        } catch (e) {}
 
         function trailers(a) {
-            return a.filter(function(v) {
+            return a.filter(function (v) {
                 return String(v.type || '').toLowerCase() === 'trailer';
             });
         }
 
-        var local = trailers(list.filter(function(v) {
+        var local = trailers(list.filter(function (v) {
             return String(v.iso_639_1 || '').toLowerCase() === lang;
         }));
         if (local.length) return local[0];
 
-        var en = trailers(list.filter(function(v) {
+        var en = trailers(list.filter(function (v) {
             return String(v.iso_639_1 || '').toLowerCase() === 'en';
         }));
         if (en.length) return en[0];
@@ -124,70 +130,53 @@
         return trailers(list)[0] || list[0];
     }
 
-    /*
-     * Собственный маленький YouTube bridge.
-     *
-     * Главное отличие от штатного youtube.html:
-     * здесь есть настоящий player.unMute()/mute().
-     * Поэтому при нажатии на кнопку нам НЕ нужно пересоздавать iframe.
-     */
-    function makeBridge(videoId) {
-        var safeId = String(videoId).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-
-        return '<!doctype html>' +
-            '<html><head><meta name="viewport" content="width=device-width,initial-scale=1">' +
-            '<style>html,body,#p{margin:0;width:100%;height:100%;overflow:hidden;background:#000}iframe{border:0}</style>' +
-            '</head><body><div id="p"></div>' +
-            '<script src="https://www.youtube.com/iframe_api"><\/script>' +
-            '<script>' +
-            'var player=null,ready=false;' +
-            'function send(t,d){try{parent.postMessage({lta8:1,type:t,data:d||{}}, "*")}catch(e){}}' +
-            'window.onYouTubeIframeAPIReady=function(){' +
-                'player=new YT.Player("p",{' +
-                    'videoId:\'' + safeId + '\',' +
-                    'width:"100%",height:"100%",' +
-                    'playerVars:{autoplay:1,controls:0,mute:1,rel:0,modestbranding:1,playsinline:1,enablejsapi:1},' +
-                    'events:{' +
-                        'onReady:function(){ready=true;try{player.mute()}catch(e){}send("ready");},' +
-                        'onStateChange:function(e){send("state",{state:e.data});},' +
-                        'onError:function(e){send("error",{error:e.data});}' +
-                    '}' +
-                '})' +
-            '};' +
-            'window.addEventListener("message",function(e){' +
-                'if(!e.data||e.data.lta8cmd!==1||!player||!ready)return;' +
-                'try{' +
-                    'if(e.data.type==="play")player.playVideo();' +
-                    'else if(e.data.type==="sound"){' +
-                        'if(e.data.on){player.unMute();player.setVolume(100)}' +
-                        'else{player.mute();player.setVolume(0)}' +
-                    '}' +
-                    'else if(e.data.type==="destroy")player.destroy();' +
-                '}catch(x){}' +
-            '});' +
-            '<\/script></body></html>';
-    }
-
-    function send(type, data) {
-        if (!current || !current.frameWindow) return;
+    function getOrigin() {
         try {
-            current.frameWindow.postMessage({
-                lta8cmd: 1,
-                type: type,
-                data: data || {}
-            }, '*');
-        } catch(e) {}
+            if (location.origin && location.origin !== 'null') {
+                return location.origin;
+            }
+        } catch (e) {}
+
+        return 'https://lampa.li';
     }
 
-    function positionSound() {
-        // Button is positioned absolutely inside the poster host.
-        // No viewport calculations are needed.
+    function youtubeUrl(videoId) {
+        var origin = getOrigin();
+
+        return 'https://www.youtube.com/embed/' +
+            encodeURIComponent(videoId) +
+            '?autoplay=1' +
+            '&mute=1' +
+            '&controls=0' +
+            '&playsinline=1' +
+            '&rel=0' +
+            '&modestbranding=1' +
+            '&iv_load_policy=3' +
+            '&disablekb=1' +
+            '&enablejsapi=1' +
+            '&origin=' + encodeURIComponent(origin) +
+            '&widget_referrer=' + encodeURIComponent(location.href || origin);
     }
 
-    function showSound() {
-        if (!current) return;
-        positionSound();
-        current.sound.classList.add('visible');
+    function sendYouTube(command, args) {
+        if (!current || !current.frame || !current.frame.contentWindow) return;
+
+        try {
+            current.frame.contentWindow.postMessage(JSON.stringify({
+                event: 'command',
+                func: command,
+                args: args || []
+            }), 'https://www.youtube.com');
+        } catch (e) {}
+
+        // Some WebViews are less strict about targetOrigin.
+        try {
+            current.frame.contentWindow.postMessage(JSON.stringify({
+                event: 'command',
+                func: command,
+                args: args || []
+            }), '*');
+        } catch (e) {}
     }
 
     function cleanup() {
@@ -199,25 +188,24 @@
             window.removeEventListener('message', current.messageHandler, true);
         }
 
-        if (current.frameWindow) {
-            try {
-                current.frameWindow.postMessage({
-                    lta8cmd: 1,
-                    type: 'destroy'
-                }, '*');
-            } catch(e) {}
-        }
-
         if (current.frame) {
-            try { current.frame.remove(); } catch(e) {}
+            try {
+                current.frame.contentWindow.postMessage(JSON.stringify({
+                    event: 'command',
+                    func: 'stopVideo',
+                    args: []
+                }), '*');
+            } catch (e) {}
+
+            try { current.frame.remove(); } catch (e) {}
         }
 
         if (current.sound) {
-            try { current.sound.remove(); } catch(e) {}
+            try { current.sound.remove(); } catch (e) {}
         }
 
         if (current.host) {
-            current.host.classList.remove('lta8-host');
+            current.host.classList.remove('lta10-host');
         }
 
         current = null;
@@ -235,61 +223,61 @@
         var host = poster[0];
 
         var frame = document.createElement('iframe');
-        frame.className = 'lta8-video';
+        frame.className = 'lta10-video';
         frame.setAttribute('frameborder', '0');
         frame.setAttribute('allowfullscreen', 'true');
         frame.setAttribute(
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
         );
+        frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+        frame.src = youtubeUrl(trailer.key);
 
         var sound = document.createElement('button');
         sound.type = 'button';
-        sound.className = 'lta8-sound';
+        sound.className = 'lta10-sound';
         sound.innerHTML = mutedIcon();
         sound.setAttribute('aria-label', 'Включить звук');
 
-        host.classList.add('lta8-host');
+        host.classList.add('lta10-host');
         host.appendChild(frame);
         host.appendChild(sound);
 
         current = {
             host: host,
             frame: frame,
-            frameWindow: null,
             sound: sound,
             soundOn: false,
-            ready: false,
-            started: false,
-            timer: null
+            timer: null,
+            ready: false
         };
 
         /*
-         * srcdoc: плеер создаётся один раз.
-         * Переключение звука больше НЕ пересоздаёт iframe.
+         * We use YouTube's IFrame API postMessage directly.
+         * The iframe itself cannot receive pointer input, so our button
+         * is always the only touch target in the lower-right corner.
          */
-        frame.srcdoc = makeBridge(trailer.key);
-
-        /*
-         * Кнопка находится вне Lampa selector system.
-         */
-        current.toggleSound = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        current.toggleSound = function (e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            }
 
             if (!current || current.sound !== sound) return;
 
             current.soundOn = !current.soundOn;
 
             if (current.soundOn) {
+                sendYouTube('unMute');
+                sendYouTube('setVolume', [100]);
+
                 sound.innerHTML = soundIcon();
                 sound.setAttribute('aria-label', 'Выключить звук');
-                send('sound', { on: true });
             } else {
+                sendYouTube('mute');
                 sound.innerHTML = mutedIcon();
                 sound.setAttribute('aria-label', 'Включить звук');
-                send('sound', { on: false });
             }
         };
 
@@ -298,55 +286,68 @@
             passive: false
         });
 
-        current.messageHandler = function(event) {
+        sound.addEventListener('touchstart', current.toggleSound, {
+            capture: true,
+            passive: false
+        });
+
+        sound.addEventListener('click', current.toggleSound, true);
+
+        current.messageHandler = function (event) {
             if (!current || event.source !== frame.contentWindow) return;
 
-            var msg = event.data || {};
-            if (!msg.lta8) return;
+            var data = event.data;
 
-            if (msg.type === 'ready') {
+            if (typeof data === 'string') {
+                try { data = JSON.parse(data); } catch (e) {}
+            }
+
+            if (!data) return;
+
+            /*
+             * YouTube player state:
+             * -1 unstarted
+             *  0 ended
+             *  1 playing
+             *  2 paused
+             *  3 buffering
+             *  5 cued
+             */
+            if (data.event === 'onReady') {
                 current.ready = true;
-                current.frameWindow = frame.contentWindow;
-
-                current.timer = setTimeout(function() {
-                    if (!current || !current.ready) return;
-
-                    current.started = true;
-                    frame.classList.add('visible');
-                    showSound();
-                    send('play');
-                }, DELAY);
-
                 return;
             }
 
-            if (msg.type === 'state') {
-                if (msg.data && msg.data.state === 1) {
-                    current.started = true;
-                    frame.classList.add('visible');
-                    showSound();
-                }
+            if (data.event === 'onStateChange' && data.info === 1) {
+                if (!current) return;
 
+                frame.classList.add('visible');
+                sound.classList.add('visible');
+            }
+
+            if (data.event === 'onError') {
                 /*
-                 * Не удаляем видео при state=0:
-                 * YouTube может прислать промежуточные состояния.
+                 * Do not destroy the poster immediately on an API error.
+                 * Error handling is intentionally conservative.
                  */
-                return;
-            }
-
-            if (msg.type === 'error') {
-                cleanup();
+                console.log('[Trailer Autoplay] YouTube error:', data.info);
             }
         };
 
         window.addEventListener('message', current.messageHandler, true);
 
-        frame.onload = function() {
-            if (current && current.frame === frame) {
-                try {
-                    current.frameWindow = frame.contentWindow;
-                } catch(e) {}
-            }
+        frame.onload = function () {
+            if (!current || current.frame !== frame) return;
+
+            // Give the YouTube player a moment to initialize, then request play.
+            current.timer = setTimeout(function () {
+                if (!current || current.frame !== frame) return;
+
+                frame.classList.add('visible');
+                sound.classList.add('visible');
+
+                sendYouTube('playVideo');
+            }, DELAY);
         };
     }
 
@@ -363,10 +364,13 @@
 
     function start() {
         if (!window.Lampa || !Lampa.Listener) return;
+
         addStyle();
+
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
-        console.log('[Trailer Autoplay] v9 started');
+
+        console.log('[Trailer Autoplay] v10 started');
     }
 
     if (window.Lampa && Lampa.Listener) {
