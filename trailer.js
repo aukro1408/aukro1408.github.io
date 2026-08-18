@@ -25,7 +25,7 @@
                 background: #000 !important;
                 opacity: 0 !important;
                 z-index: 2 !important;
-                transition: opacity .5s ease !important;
+                transition: opacity .25s ease !important;
             }
 
             .lta7-video.visible {
@@ -244,9 +244,10 @@
         );
 
         newFrame.style.opacity = '0';
-        newFrame.style.zIndex = '999999';
+        newFrame.style.zIndex = '2';
         newFrame.style.position = 'absolute';
         newFrame.style.pointerEvents = 'none';
+        newFrame.style.visibility = 'hidden';
         newFrame.src = bridgeUrl(
             current.videoId,
             newBridgeId,
@@ -274,14 +275,34 @@
 
             if (type === 'ready') {
                 /*
-                 * New player is ready. Reveal it first, then remove the old
-                 * player. The user never sees the poster.
+                 * Ready is not enough to swap: the new player can still be
+                 * black/loading. Keep the old player visible and start the
+                 * replacement. The actual swap happens on state=1.
                  */
-                newFrame.classList.add('visible');
-                newFrame.style.opacity = '1';
-                newFrame.style.zIndex = '999999';
+                current.pendingWindow = current.pendingWindow || newFrame.contentWindow;
+
+                try {
+                    current.pendingWindow.postMessage({
+                        bridgeId: newBridgeId,
+                        type: 'play',
+                        data: {}
+                    }, '*');
+                } catch(e) {}
+
+                return;
+            }
+
+            if (type === 'stateChange' && d.state === 1) {
+                /*
+                 * The replacement is genuinely playing.
+                 * Crossfade it over the old player instead of creating a
+                 * visible one-second hole.
+                 */
                 newFrame.style.visibility = 'visible';
                 newFrame.style.display = 'block';
+                newFrame.style.zIndex = '2';
+                newFrame.classList.add('visible');
+                newFrame.style.opacity = '1';
 
                 current.frame = newFrame;
                 current.frameWindow = current.pendingWindow || newFrame.contentWindow;
@@ -291,9 +312,6 @@
                 current.pendingFrame = null;
                 current.pendingBridgeId = null;
                 current.pendingWindow = null;
-                current.reloading = false;
-
-                send('play');
 
                 current.sound.innerHTML = wantSound ? soundIcon() : mutedIcon();
                 current.sound.setAttribute(
@@ -304,17 +322,17 @@
                 window.removeEventListener('message', pendingMessage, true);
 
                 /*
-                 * Remove only the old iframe after the new one is visible.
+                 * Let the two identical players overlap briefly. The new one
+                 * is already playing, so the user sees a seamless transition.
                  */
-                try { oldFrame.remove(); } catch(e) {}
-                return;
-            }
+                oldFrame.style.transition = 'opacity .25s ease';
+                oldFrame.style.opacity = '0';
 
-            if (type === 'stateChange' && d.state === 1) {
-                newFrame.classList.add('visible');
-                newFrame.style.opacity = '1';
-                newFrame.style.zIndex = '999999';
-                newFrame.style.visibility = 'visible';
+                setTimeout(function() {
+                    try { oldFrame.remove(); } catch(e) {}
+                    if (current) current.reloading = false;
+                }, 280);
+
                 return;
             }
 
@@ -422,7 +440,21 @@
 
             if (!current || current.sound !== sound || current.reloading) return;
 
-            reloadForSound(!current.soundOn);
+            var wantSound = !current.soundOn;
+
+            // When switching sound OFF, silence the currently visible player
+            // immediately. The replacement remains muted as well.
+            if (!wantSound && current.frameWindow) {
+                try {
+                    current.frameWindow.postMessage({
+                        bridgeId: current.bridgeId,
+                        type: 'setVolume',
+                        data: { volume: 0 }
+                    }, '*');
+                } catch(e) {}
+            }
+
+            reloadForSound(wantSound);
         };
 
         sound.addEventListener('pointerdown', current.toggleSound, {
