@@ -244,7 +244,9 @@
         );
 
         newFrame.style.opacity = '0';
-        newFrame.style.zIndex = '3';
+        newFrame.style.zIndex = '999999';
+        newFrame.style.position = 'absolute';
+        newFrame.style.pointerEvents = 'none';
         newFrame.src = bridgeUrl(
             current.videoId,
             newBridgeId,
@@ -275,7 +277,11 @@
                  * New player is ready. Reveal it first, then remove the old
                  * player. The user never sees the poster.
                  */
+                newFrame.classList.add('visible');
                 newFrame.style.opacity = '1';
+                newFrame.style.zIndex = '999999';
+                newFrame.style.visibility = 'visible';
+                newFrame.style.display = 'block';
 
                 current.frame = newFrame;
                 current.frameWindow = current.pendingWindow || newFrame.contentWindow;
@@ -305,7 +311,10 @@
             }
 
             if (type === 'stateChange' && d.state === 1) {
+                newFrame.classList.add('visible');
                 newFrame.style.opacity = '1';
+                newFrame.style.zIndex = '999999';
+                newFrame.style.visibility = 'visible';
                 return;
             }
 
