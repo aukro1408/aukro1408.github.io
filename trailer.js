@@ -358,18 +358,31 @@
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
         );
-        current.bridgeObjectUrl = bridgeUrl(trailer.key, bridgeId, true, 0);
-        if (!current.bridgeObjectUrl) {
+        var bridgeObjectUrl = bridgeUrl(trailer.key, bridgeId, true, 0);
+        if (!bridgeObjectUrl) {
             cleanup();
             return;
         }
-        frame.src = current.bridgeObjectUrl;
+        frame.src = bridgeObjectUrl;
 
         var sound = document.createElement('button');
         sound.type = 'button';
         sound.className = 'lta7-sound';
         sound.innerHTML = mutedIcon();
         sound.setAttribute('aria-label', 'Включить звук');
+
+        frame.addEventListener('load', function() {
+            if (!current || current.frame !== frame) return;
+            current.frameWindow = frame.contentWindow;
+            send('init', { volume: 0 });
+            positionSound();
+        });
+
+        frame.addEventListener('error', function() {
+            if (current && current.frame === frame) {
+                try { frame.remove(); } catch(e) {}
+            }
+        });
 
         host.classList.add('lta7-host');
         host.appendChild(frame);
@@ -381,7 +394,7 @@
             frameWindow: null,
             bridgeId: bridgeId,
             videoId: trailer.key,
-            bridgeObjectUrl: '',
+            bridgeObjectUrl: bridgeObjectUrl,
 
             sound: sound,
             soundOn: false,
