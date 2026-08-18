@@ -831,6 +831,12 @@
           }
 
 
+          .rezka-comments,
+          .rezka-comment-list{
+            padding-right:10px!important;
+            box-sizing:border-box!important;
+          }
+
           @media (max-width:600px){
             .rezka-modal-caption{
               left:18px!important;
@@ -839,6 +845,10 @@
               font-size:14px!important;
             }
 
+
+            .rezka-comments{
+              padding-right:12px!important;
+            }
 
             .rezka-film-stats{
               display:flex!important;
@@ -920,6 +930,14 @@
 
 
 
+          .modal--large .modal__head{
+            position:relative!important;
+            min-height:48px!important;
+            height:48px!important;
+            display:block!important;
+            overflow:hidden!important;
+          }
+
           .rezka-modal-caption{
             position:absolute!important;
             top:50%!important;
@@ -955,7 +973,7 @@
             100%{background-position:-30% 0;}
           }
 
-          .rezka-modal-close{
+          .modal--large .rezka-modal-close{
             position:absolute!important;
             top:8px!important;
             right:8px!important;
@@ -981,7 +999,7 @@
             -webkit-appearance:none!important;
           }
 
-          .rezka-modal-close span{
+          .modal--large .rezka-modal-close span{
             display:block!important;
             font-size:27px!important;
             line-height:32px!important;
@@ -1054,7 +1072,7 @@
       const rezkaModalHead = document.querySelector(".modal__head");
       if (rezkaModalHead) {
         rezkaModalHead.style.position = "relative";
-        rezkaModalHead.innerHTML = `<div class="rezka-modal-caption">Комментарии Rezka</div><button class="rezka-modal-close selector" aria-label="Закрыть" onclick="$('.modal--large').remove()"><span>×</span></button>`;
+        rezkaModalHead.innerHTML = `<div class="rezka-modal-caption">Комментарии Rezka</div><button type="button" class="rezka-modal-close selector" aria-label="Закрыть" onclick="$('.modal--large').remove()"><span>×</span></button>`;
       }
     }
   }
