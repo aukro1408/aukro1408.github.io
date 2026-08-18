@@ -334,11 +334,37 @@
       }
 
       const rating = movie.vote_average ? Number(movie.vote_average).toFixed(1) : "";
+      const voteCount = movie.vote_count ? Number(movie.vote_count).toLocaleString("ru-RU") : "";
+      const runtime = movie.runtime ? Math.round(Number(movie.runtime)) : 0;
+      const budget = movie.budget ? Number(movie.budget) : 0;
+      const revenue = movie.revenue ? Number(movie.revenue) : 0;
+
+      const genres = Array.isArray(movie.genres)
+        ? movie.genres.map(g => g && g.name).filter(Boolean).slice(0, 3)
+        : [];
 
       const meta = [
         yearMovie,
-        originalTitle && originalTitle !== title ? originalTitle : "",
-        rating ? "★ " + rating : ""
+        genres.length ? genres.join(" • ") : "",
+        runtime ? runtime + " мин" : ""
+      ].filter(Boolean).join("  •  ");
+
+      const formatMoney = value => {
+        if (!value) return "";
+        if (value >= 1000000000) return (value / 1000000000).toFixed(1).replace(".0", "") + " млрд $";
+        if (value >= 1000000) return Math.round(value / 1000000) + " млн $";
+        if (value >= 1000) return Math.round(value / 1000) + " тыс. $";
+        return value.toLocaleString("ru-RU") + " $";
+      };
+
+      const ratingInfo = [
+        rating ? "★ " + rating : "",
+        voteCount ? voteCount + " оценок" : ""
+      ].filter(Boolean).join("  ");
+
+      const financeInfo = [
+        budget ? "Бюджет " + formatMoney(budget) : "",
+        revenue ? "Сборы " + formatMoney(revenue) : ""
       ].filter(Boolean).join("  •  ");
 
       let modal = $(
@@ -349,6 +375,8 @@
             <div class="rezka-film-info">
               <div class="rezka-film-title">${title}</div>
               ${meta ? `<div class="rezka-film-meta">${meta}</div>` : ""}
+              ${ratingInfo ? `<div class="rezka-film-rating">${ratingInfo}</div>` : ""}
+              ${financeInfo ? `<div class="rezka-film-finance">${financeInfo}</div>` : ""}
             </div>
           </div>
 
@@ -502,6 +530,29 @@
             line-height:1.3;
             color:rgba(255,255,255,.76);
             text-shadow:0 1px 5px rgba(0,0,0,.7);
+          }
+
+          .rezka-film-rating{
+            display:inline-block;
+            margin-top:9px;
+            padding:5px 9px;
+            border-radius:9px;
+            background:rgba(0,0,0,.38);
+            border:1px solid rgba(255,255,255,.12);
+            font-size:13px;
+            line-height:1.1;
+            color:#fff;
+            backdrop-filter:blur(8px);
+            -webkit-backdrop-filter:blur(8px);
+            text-shadow:0 1px 4px rgba(0,0,0,.6);
+          }
+
+          .rezka-film-finance{
+            margin-top:7px;
+            font-size:12px;
+            line-height:1.25;
+            color:rgba(255,255,255,.68);
+            text-shadow:0 1px 4px rgba(0,0,0,.65);
           }
 
                     .rezka-comments-content{
