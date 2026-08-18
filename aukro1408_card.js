@@ -393,9 +393,7 @@
         revenue ? "Сборы " + formatMoney(revenue) : ""
       ].filter(Boolean).join("  •  ");
 
-      const statusInfo = status && status !== "Ended" && status !== "Released"
-        ? status
-        : "";
+      const statusInfo = "";
       let modal = $(
         `<div class="rezka-comments-page" style="--rezka-backdrop:${poster ? `url("${poster.replace(/"/g, "%22")}")` : "none"};">
           <div class="rezka-film-header">
@@ -756,11 +754,12 @@
           .rezka-comments-page .comment-card{
             min-width:0!important;
             flex:1 1 auto!important;
-            padding:0!important;
+            padding:0 8px 0 0!important;
             margin:0!important;
             background:transparent!important;
             border:0!important;
             box-shadow:none!important;
+            box-sizing:border-box!important;
           }
 
           .rezka-comments-page .comment-header{
@@ -922,6 +921,10 @@
               margin-left:6px!important;
             }
 
+            .rezka-comments-page .comment-card{
+              padding-right:10px!important;
+            }
+
             .rezka-comments-page .comment-text .text{
               font-size:15px!important;
               line-height:1.5!important;
@@ -953,26 +956,22 @@
             line-height:1.2!important;
             font-weight:700!important;
             letter-spacing:.15px!important;
-            background:linear-gradient(
-              105deg,
-              rgba(255,255,255,.45) 0%,
-              rgba(255,255,255,.45) 34%,
-              #ffffff 44%,
-              #ffffff 49%,
-              rgba(255,255,255,.45) 57%,
-              rgba(255,255,255,.45) 100%)!important;
-            background-size:300% 100%!important;
+            background:linear-gradient(110deg,
+              rgba(255,255,255,.55) 0%,
+              rgba(255,255,255,.55) 38%,
+              #fff 47%,
+              #fff 53%,
+              rgba(255,255,255,.55) 62%,
+              rgba(255,255,255,.55) 100%)!important;
+            background-size:220% 100%!important;
             -webkit-background-clip:text!important;
             background-clip:text!important;
             -webkit-text-fill-color:transparent!important;
-            color:#fff!important;
-            animation:rezkaCaptionShine 2.8s linear infinite!important;
+            animation:rezkaCaptionShine 3.8s ease-in-out infinite!important;
           }
 
           @keyframes rezkaCaptionShine{
-            0%{background-position:140% 0;}
-            100%{background-position:-80% 0;}
-          }
+            0%,20%{background-position:130% 0;}
             55%,75%{background-position:-30% 0;}
             100%{background-position:-30% 0;}
           }
