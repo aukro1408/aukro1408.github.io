@@ -304,7 +304,6 @@
 
       let poster = movie.backdrop_path || movie.poster_path || movie.cover || movie.image || "";
 
-      // В разных версиях Lampa путь может приходить как относительный TMDB path.
       if (poster && poster.indexOf("http") !== 0) {
         poster = "https://image.tmdb.org/t/p/w780" + poster;
       }
@@ -336,9 +335,48 @@
 
       modal.find(".comment").append(treeContent);
 
-      if (!document.getElementById("rezka-comment-style-v3")) {
+      // Remove inline ShowOrHide() calls from Rezka HTML and handle spoilers locally.
+      // This avoids "ShowOrHide is not defined" inside Lampa.
+      modal.find('[onclick*="ShowOrHide"]').each(function () {
+        const onclick = this.getAttribute("onclick") || "";
+        const match = onclick.match(/ShowOrHide\s*\(\s*['"]([^'"]+)['"]\s*\)/i);
+        if (match) {
+          this.setAttribute("data-rezka-spoiler-target", match[1]);
+        }
+        this.removeAttribute("onclick");
+      });
+
+      modal.off("click.rezkaSpoiler").on("click.rezkaSpoiler", '[data-rezka-spoiler-target]', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const id = this.getAttribute("data-rezka-spoiler-target");
+        if (!id) return;
+
+        const target = document.getElementById(id);
+        if (!target) {
+          const localTarget = modal.find("#" + id)[0];
+          if (localTarget) {
+            localTarget.style.display = "inline";
+            const previous = localTarget.previousElementSibling;
+            if (previous && previous.classList.contains("title_spoiler")) {
+              previous.remove();
+            }
+          }
+          return;
+        }
+
+        target.style.display = "inline";
+
+        const previous = target.previousElementSibling;
+        if (previous && previous.classList.contains("title_spoiler")) {
+          previous.remove();
+        }
+      });
+
+      if (!document.getElementById("rezka-comment-style-v4")) {
         const styleEl = document.createElement("style");
-        styleEl.id = "rezka-comment-style-v3";
+        styleEl.id = "rezka-comment-style-v4";
         styleEl.textContent = `
           .rezka-comments-page{
             margin:-10px -10px 0;
@@ -355,12 +393,16 @@
           }
 
           .rezka-film-backdrop{
-            position:absolute;
-            inset:0;
-            width:100%;
-            height:100%;
-            object-fit:cover;
-            object-position:center;
+            position:absolute!important;
+            inset:0!important;
+            width:100%!important;
+            max-width:none!important;
+            height:100%!important;
+            max-height:none!important;
+            object-fit:cover!important;
+            object-position:center!important;
+            margin:0!important;
+            border:0!important;
           }
 
           .rezka-film-overlay{
@@ -369,6 +411,7 @@
             background:
               linear-gradient(to bottom, rgba(10,12,13,.05) 0%, rgba(10,12,13,.25) 38%, #151718 100%),
               linear-gradient(to right, rgba(0,0,0,.30), transparent 70%);
+            pointer-events:none;
           }
 
           .rezka-film-info{
@@ -400,8 +443,57 @@
           }
 
           .rezka-comments-page .comments-tree-list{
-            margin:0;
-            padding:0;
+            list-style:none!important;
+            margin:0!important;
+            padding:0!important;
+          }
+
+          /* Жёстко ограничиваем аватары, чтобы стили Lampa/Rezka
+             не растягивали img на весь комментарий. */
+          .rezka-comments-page .avatar-column{
+            flex:0 0 48px!important;
+            width:48px!important;
+            min-width:48px!important;
+            max-width:48px!important;
+            margin-right:10px!important;
+          }
+
+          .rezka-comments-page .avatar-img{
+            display:block!important;
+            width:48px!important;
+            height:48px!important;
+            min-width:48px!important;
+            max-width:48px!important;
+            min-height:48px!important;
+            max-height:48px!important;
+            object-fit:cover!important;
+            object-position:center!important;
+            border-radius:6px!important;
+            margin:0!important;
+          }
+
+          .rezka-comments-page .comment-wrap{
+            display:flex!important;
+            align-items:flex-start!important;
+            width:100%!important;
+            margin-bottom:5px!important;
+          }
+
+          .rezka-comments-page .comment-card{
+            min-width:0!important;
+            flex:1 1 auto!important;
+            box-sizing:border-box!important;
+          }
+
+          .rezka-comments-page .comment-text img.avatar-img{
+            width:48px!important;
+            height:48px!important;
+          }
+
+          /* Нативный spoiler Rezka теперь раскрывается нашим обработчиком. */
+          .rezka-comments-page .title_spoiler{
+            display:inline-flex!important;
+            cursor:pointer!important;
           }
 
           @media (max-width:600px){
@@ -417,6 +509,11 @@
 
             .rezka-film-title{
               font-size:23px;
+            }
+
+            .rezka-comments-content{
+              padding-left:8px;
+              padding-right:8px;
             }
           }
         `;
