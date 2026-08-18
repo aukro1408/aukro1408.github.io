@@ -19,7 +19,7 @@
   }
 
   // Функция для поиска на сайте hdrezka
-  async function searchRezka(name, ye, silent, movie) {
+  async function searchRezka(name, ye, silent) {
     try {
       let { host, cookie, proxy } = getSettings();
       let path = host + "/search/?do=search&subaction=search&q=" + encodeURIComponent(name) + (ye ? "+" + ye : "");
@@ -60,7 +60,7 @@
       
       let itemUrl = item.querySelector(".b-content__inline_item-link")?.getAttribute("href") || "";
       console.log('[RezkaComment V2] FOUND ID:', item.dataset.id, 'title:', namemovie);
-      await comment_rezka(item.dataset.id, itemUrl, movie);
+      await comment_rezka(item.dataset.id, itemUrl);
       return true;
     } catch (e) {
       console.error('[RezkaComment V2] searchRezka error:', e);
@@ -149,7 +149,7 @@
       // Пробуем варианты по очереди. Внутри searchRezka используется
       // оригинальная логика rezkacomment.js: первая карточка страницы.
       for (let i = 0; i < names.length; i++) {
-        const found = await searchRezka(names[i], year, true, movie);
+        const found = await searchRezka(names[i], year, true);
         if (found) return;
       }
 
@@ -233,7 +233,7 @@
   }
 
   // === Основная обработка комментариев Rezka с storage на сутки ===
-  async function comment_rezka(id, pageUrl, movie) {
+  async function comment_rezka(id, pageUrl) {
     try {
       let { host, cookie, proxy } = getSettings();
       let t = Date.now();
@@ -286,7 +286,7 @@
       }
 
       let newTree = buildTree(rootList);
-      openModal(newTree, movie);
+      openModal(newTree, window.__rezkaCommentCurrentMovie || {});
     } catch (e) {
       console.error('[RezkaComment V2] comment_rezka error:', e);
       Lampa.Noty.show('Ошибка получения комментариев: ' + e.message);
@@ -296,243 +296,131 @@
     function openModal(treeContent, movie) {
       Lampa.Loading.stop();
 
-      function getImage(path) {
-        if (!path) return "";
-        if (typeof path === "string" && /^https?:\/\//i.test(path)) return path;
+      movie = movie || {};
 
-        try {
-          if (Lampa.Api && typeof Lampa.Api.img === "function") {
-            return Lampa.Api.img(path);
-          }
-        } catch (e) {}
+      const title = movie.title || movie.name || namemovie || "Комментарии";
+      const originalTitle = movie.original_title || movie.original_name || "";
+      const yearMovie = (movie.release_date || movie.first_air_date || "").slice(0, 4);
 
-        if (typeof path === "string" && path.charAt(0) === "/") {
-          return "https://image.tmdb.org/t/p/w780" + path;
-        }
+      let poster = movie.backdrop_path || movie.poster_path || movie.cover || movie.image || "";
 
-        return path;
+      // В разных версиях Lampa путь может приходить как относительный TMDB path.
+      if (poster && poster.indexOf("http") !== 0) {
+        poster = "https://image.tmdb.org/t/p/w780" + poster;
       }
 
-      const title = movie?.title || movie?.name || namemovie || "Фильм";
-      const originalTitle = movie?.original_title || movie?.original_name || "";
-      const movieYear =
-        movie?.release_date?.slice(0, 4) ||
-        movie?.first_air_date?.slice(0, 4) ||
-        year ||
-        "";
+      const rating = movie.vote_average ? Number(movie.vote_average).toFixed(1) : "";
 
-      const genres = Array.isArray(movie?.genres)
-        ? movie.genres.map((g) => g?.name).filter(Boolean).slice(0, 3)
-        : [];
-
-      const rating = Number(movie?.vote_average || 0);
-      const ratingText = rating > 0 ? rating.toFixed(1) : "";
-
-      const backdrop = getImage(movie?.backdrop_path || movie?.poster_path);
-      const poster = getImage(movie?.poster_path || movie?.backdrop_path);
-
-      let meta = [];
-      if (movieYear) meta.push(movieYear);
-      if (genres.length) meta.push(genres.join(" • "));
-
-      let stats = "";
-      if (ratingText) {
-        stats = `
-          <div class="rc-film-stat">
-            <span class="rc-film-stat-value">★ ${ratingText}</span>
-            <span class="rc-film-stat-label">TMDB</span>
-          </div>
-        `;
-      }
+      const meta = [
+        yearMovie,
+        originalTitle && originalTitle !== title ? originalTitle : "",
+        rating ? "★ " + rating : ""
+      ].filter(Boolean).join("  •  ");
 
       let modal = $(
-        `<div class="rc-screen">
-          <div class="rc-film-card">
-            <div class="rc-film-backdrop"></div>
-            <div class="rc-film-gradient"></div>
-
-            <div class="rc-film-top">
-              <div class="rc-film-poster">
-                ${poster ? `<img src="${poster}" alt="">` : ""}
-              </div>
-
-              <div class="rc-film-info">
-                <div class="rc-film-title">${title}</div>
-                ${originalTitle && originalTitle !== title
-                  ? `<div class="rc-film-original">${originalTitle}</div>`
-                  : ""}
-                ${meta.length
-                  ? `<div class="rc-film-meta">${meta.join("  •  ")}</div>`
-                  : ""}
-                ${stats ? `<div class="rc-film-stats">${stats}</div>` : ""}
-              </div>
+        `<div class="rezka-comments-page">
+          <div class="rezka-film-header">
+            ${poster ? `<img class="rezka-film-backdrop" src="${poster}" alt="">` : ""}
+            <div class="rezka-film-overlay"></div>
+            <div class="rezka-film-info">
+              <div class="rezka-film-title">${title}</div>
+              ${meta ? `<div class="rezka-film-meta">${meta}</div>` : ""}
             </div>
           </div>
 
-          <div class="broadcast__text rc-comments-area" style="text-align:left;">
+          <div class="broadcast__text rezka-comments-content" style="text-align:left;">
             <div class="comment"></div>
           </div>
-        </div>`,
+        </div>`
       );
 
       modal.find(".comment").append(treeContent);
 
-      if (!document.getElementById("rezka-comment-style-v2")) {
+      if (!document.getElementById("rezka-comment-style-v3")) {
         const styleEl = document.createElement("style");
-        styleEl.id = "rezka-comment-style-v2";
+        styleEl.id = "rezka-comment-style-v3";
         styleEl.textContent = `
-          .rc-screen{
-            width:100%;
-            min-height:100%;
-            background:#08090a;
+          .rezka-comments-page{
+            margin:-10px -10px 0;
+            background:#151718;
             color:#fff;
             overflow:hidden;
           }
 
-          .rc-film-card{
+          .rezka-film-header{
             position:relative;
-            min-height:260px;
+            height:210px;
             overflow:hidden;
-            border-radius:18px;
-            margin:0 0 14px;
-            background:#111;
+            background:#202223;
           }
 
-          .rc-film-backdrop{
+          .rezka-film-backdrop{
             position:absolute;
             inset:0;
-            background-image:var(--rc-backdrop);
-            background-size:cover;
-            background-position:center 20%;
-            transform:scale(1.02);
-            filter:saturate(1.05);
-          }
-
-          .rc-film-gradient{
-            position:absolute;
-            inset:0;
-            background:
-              linear-gradient(180deg,rgba(5,6,8,.08) 0%,rgba(5,6,8,.22) 35%,rgba(5,6,8,.88) 78%,#08090a 100%),
-              linear-gradient(90deg,rgba(5,6,8,.76) 0%,rgba(5,6,8,.18) 70%,rgba(5,6,8,.38) 100%);
-          }
-
-          .rc-film-top{
-            position:relative;
-            z-index:2;
-            display:flex;
-            align-items:flex-end;
-            gap:14px;
-            min-height:260px;
-            padding:22px 18px 18px;
-            box-sizing:border-box;
-          }
-
-          .rc-film-poster{
-            flex:0 0 82px;
-            width:82px;
-            height:122px;
-            overflow:hidden;
-            border-radius:10px;
-            background:#17191b;
-            box-shadow:0 8px 24px rgba(0,0,0,.45);
-          }
-
-          .rc-film-poster img{
-            display:block;
             width:100%;
             height:100%;
             object-fit:cover;
+            object-position:center;
           }
 
-          .rc-film-info{
-            min-width:0;
-            padding-bottom:2px;
+          .rezka-film-overlay{
+            position:absolute;
+            inset:0;
+            background:
+              linear-gradient(to bottom, rgba(10,12,13,.05) 0%, rgba(10,12,13,.25) 38%, #151718 100%),
+              linear-gradient(to right, rgba(0,0,0,.30), transparent 70%);
+          }
+
+          .rezka-film-info{
+            position:absolute;
+            left:20px;
+            right:20px;
+            bottom:18px;
+            z-index:2;
+          }
+
+          .rezka-film-title{
+            font-size:25px;
+            line-height:1.15;
+            font-weight:700;
             text-shadow:0 2px 8px rgba(0,0,0,.65);
           }
 
-          .rc-film-title{
-            font-size:25px;
-            line-height:1.08;
-            font-weight:700;
-            letter-spacing:-.3px;
+          .rezka-film-meta{
+            margin-top:7px;
+            font-size:14px;
+            line-height:1.3;
+            color:rgba(255,255,255,.76);
+            text-shadow:0 1px 5px rgba(0,0,0,.7);
           }
 
-          .rc-film-original{
-            margin-top:5px;
-            color:rgba(255,255,255,.72);
-            font-size:13px;
+          .rezka-comments-content{
+            margin:0;
+            padding:4px 12px 18px;
           }
 
-          .rc-film-meta{
-            margin-top:8px;
-            color:rgba(255,255,255,.78);
-            font-size:13px;
-            line-height:1.35;
+          .rezka-comments-page .comments-tree-list{
+            margin:0;
+            padding:0;
           }
 
-          .rc-film-stats{
-            display:flex;
-            margin-top:11px;
-          }
+          @media (max-width:600px){
+            .rezka-film-header{
+              height:190px;
+            }
 
-          .rc-film-stat{
-            display:flex;
-            align-items:baseline;
-            gap:7px;
-            padding:7px 10px;
-            border-radius:9px;
-            background:rgba(0,0,0,.36);
-            border:1px solid rgba(255,255,255,.13);
-            backdrop-filter:blur(8px);
-          }
+            .rezka-film-info{
+              left:16px;
+              right:16px;
+              bottom:16px;
+            }
 
-          .rc-film-stat-value{
-            font-size:15px;
-            font-weight:700;
+            .rezka-film-title{
+              font-size:23px;
+            }
           }
-
-          .rc-film-stat-label{
-            color:rgba(255,255,255,.58);
-            font-size:11px;
-          }
-
-          .rc-comments-area{
-            padding-top:0!important;
-          }
-
-          .comments-tree-list{list-style:none;margin:0;padding:0;}
-          .comments-tree-item{list-style:none;margin:0;padding:0;}
-          .comment-wrap{display:flex;margin-bottom:5px;}
-          .avatar-column{margin-right:10px;}
-          .avatar-img{width:48px;height:48px;border-radius:4px;}
-          .comment-card{background:#1b1b1b;padding:5px 12px;border-radius:6px;border:1px solid #2a2a2a;width:100%;}
-          .comment-header{display:flex;justify-content:space-between;margin-bottom:6px;}
-          .comment-header .name{font-weight:600;color:#fff;}
-          .comment-header .date{opacity:.7;font-size:11px;}
-          .comment-text .text{color:#ddd;line-height:1.45;}
-          .rc-children{margin-left:30px;border-left:1px solid #333;padding-left:14px;}
-          .title_spoiler{display:inline-flex;align-items:center;background:#2a2a2a;border-radius:6px;padding:1px 4px;margin:0 2px;font-size:13px;color:#e0e0e0;cursor:pointer;box-shadow:0 0 2px rgba(0,0,0,.4);}
-          .title_spoiler a{color:#e0e0e0!important;text-decoration:none!important;}
-          .title_spoiler img{height:14px;width:auto;vertical-align:middle;margin:0 2px;}
-          .title_spoiler .attention{height:14px;width:14px;margin-left:4px;vertical-align:middle;}
-          .modal-close-btn{background:rgba(20,20,20,.72);border:1px solid rgba(255,255,255,.25);color:#ddd;border-radius:9px;font-size:18px;line-height:18px;cursor:pointer;transition:.15s;z-index:20;}
-          .modal-close-btn:hover{background:#3a3a3a;color:#fff;}
         `;
         document.head.appendChild(styleEl);
-      }
-
-      // Подставляем backdrop после создания DOM.
-      const backdropEl = modal.find(".rc-film-backdrop")[0];
-      if (backdropEl && backdrop) {
-        backdropEl.style.setProperty("--rc-backdrop", `url("${backdrop.replace(/"/g, '\\"')}")`);
-      }
-
-      if (!window.rezkaSpoilerInit) {
-        window.rezkaSpoilerInit = true;
-        const Script = document.createElement("script");
-        Script.textContent =
-          "function ShowOrHide(id){var t=$('#'+id);t.prev('.title_spoiler').remove();t.css('display','inline');}";
-        document.head.appendChild(Script);
       }
 
       Lampa.Modal.open({
@@ -645,6 +533,7 @@
           Lampa.Loading.start();
 
           const movie = e.data.movie || {};
+          window.__rezkaCommentCurrentMovie = movie;
           year = 0;
 
           if (movie.release_date) {
