@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v3_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v5_style';
     var current = null;
     var DELAY = 2000;
 
@@ -15,6 +15,17 @@
                 position: relative !important;
                 overflow: hidden !important;
             }
+            .full-start-new__left {
+                position: relative !important;
+                z-index: 1 !important;
+            }
+            .full-start-new__right {
+                position: relative !important;
+                z-index: 20 !important;
+            }
+            .lta3-host {
+                z-index: 1 !important;
+            }
             .lta3-video {
                 position: absolute !important;
                 inset: 0 !important;
@@ -23,7 +34,7 @@
                 border: 0 !important;
                 opacity: 0;
                 background: #000;
-                z-index: 20;
+                z-index: 1 !important;
                 transition: opacity .5s ease;
             }
             .lta3-video.visible { opacity: 1; }
@@ -39,7 +50,7 @@
                 border-radius: 50% !important;
                 background: rgba(20,20,20,.82) !important;
                 color: #fff !important;
-                z-index: 30 !important;
+                z-index: 5 !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -185,12 +196,14 @@
             sound: sound,            timer: null,
             readyTimer: null,
             revealed: false,
-            soundOn: false
+            soundOn: false,
+            currentTime: 0,
+            videoId: trailer.key
         };
 
         current.messageHandler = function(event) {
             if (!current || event.source !== frame.contentWindow) return;
-            if (!event.data || event.data.bridgeId !== bridgeId) return;
+            if (!event.data || event.data.bridgeId !== current.bridgeId) return;
 
             var type = event.data.type;
             var d = event.data.data || {};
@@ -211,14 +224,25 @@
 
                 if (current.readyTimer) clearTimeout(current.readyTimer);
 
-                // YouTube готов. Теперь после 2 секунд пытаемся запустить.
+                // Первичная загрузка ждёт 2 секунды. Переключение звука
+                // произошло по жесту пользователя — запускаем сразу.
+                var wait = current.soundOn || current.soundToggleReload ? 0 : DELAY;
+
                 current.timer = setTimeout(function(){
                     if (!current || current.frame !== frame) return;
 
                     reveal();
-                    send('init', { volume: 0 });
+                    if (current.soundOn) send('init', { volume: 100 });
+                    else send('init', { volume: 0 });
                     send('play');
-                }, DELAY);
+                    current.soundToggleReload = false;
+                }, wait);
+            }
+
+            if (type === 'time') {
+                if (current && current.frame === frame && typeof d.currentTime === 'number') {
+                    current.currentTime = d.currentTime;
+                }
             }
 
             if (type === 'stateChange') {
@@ -250,15 +274,31 @@
 
             current.soundOn = !current.soundOn;
 
-            if (current.soundOn) {
-                send('setVolume', { volume: 100 });
-                sound.innerHTML = soundIcon();
-                sound.setAttribute('aria-label', 'Выключить звук');
-            } else {
-                send('setVolume', { volume: 0 });
-                sound.innerHTML = mutedIcon();
-                sound.setAttribute('aria-label', 'Включить звук');
-            }
+            var pos = Math.max(0, Math.floor(current.currentTime || 0));
+            var muted = current.soundOn ? 0 : 1;
+            var bridgeId2 = 'lta3_' + Math.random().toString(36).slice(2);
+
+            current.bridgeId = bridgeId2;
+            current.soundToggleReload = true;
+            current.revealed = false;
+
+            var base = '';
+            try { base = Lampa.Manifest.github_lampa; } catch(err) {}
+            if (!base) base = 'https://yumata.github.io/lampa/';
+            if (base.charAt(base.length - 1) !== '/') base += '/';
+
+            frame.src = base + 'youtube.html' +
+                '?bridgeId=' + encodeURIComponent(bridgeId2) +
+                '&videoId=' + encodeURIComponent(current.videoId) +
+                '&autoplay=1' +
+                '&controls=0' +
+                '&mute=' + muted +
+                '&start=' + pos;
+
+            frame.classList.remove('visible');
+
+            sound.innerHTML = current.soundOn ? soundIcon() : mutedIcon();
+            sound.setAttribute('aria-label', current.soundOn ? 'Выключить звук' : 'Включить звук');
         });
 
 
@@ -283,7 +323,7 @@
         style();
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
-        console.log('[Trailer Autoplay] v4 started');
+        console.log('[Trailer Autoplay] v5 started');
     }
 
     if (window.Lampa && Lampa.Listener) start();
