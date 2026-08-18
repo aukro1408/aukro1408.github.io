@@ -385,10 +385,7 @@
       const detailChips = [
         rating ? `<span class="rezka-info-chip rezka-rating-chip"><b>★</b><strong>${rating}</strong><small>TMDB${voteCount ? " • " + voteCount + " оценок" : ""}</small></span>` : "",
         kpRating ? `<span class="rezka-info-chip rezka-rating-chip rezka-rating-kp"><b>★</b><strong>${kpRating}</strong><small>КиноПоиск</small></span>` : "",
-        imdbRating ? `<span class="rezka-info-chip rezka-rating-chip rezka-rating-imdb"><b>★</b><strong>${imdbRating}</strong><small>IMDb</small></span>` : "",
-        runtime ? `<span class="rezka-info-chip"><b>⏱</b><strong>${runtime} мин</strong></span>` : "",
-        seasons ? `<span class="rezka-info-chip"><b>◉</b><strong>${seasons} ${seasons === 1 ? "сезон" : (seasons < 5 ? "сезона" : "сезонов")}</strong>${episodes ? "<small>" + episodes + " серий</small>" : ""}</span>` : "",
-        `<span class="rezka-info-chip"><b>▣</b><strong>${mediaType}</strong></span>`
+        imdbRating ? `<span class="rezka-info-chip rezka-rating-chip rezka-rating-imdb"><b>★</b><strong>${imdbRating}</strong><small>IMDb</small></span>` : ""
       ].filter(Boolean).join("");
 
       const financeInfo = [
@@ -835,6 +832,14 @@
 
 
           @media (max-width:600px){
+            .rezka-modal-caption{
+              left:24px!important;
+              right:52px!important;
+              max-width:calc(100% - 76px)!important;
+              font-size:14px!important;
+            }
+
+
             .rezka-film-stats{
               gap:7px;
               margin-top:10px;
@@ -893,6 +898,42 @@
             }
           }
 
+
+
+          .rezka-modal-caption{
+            position:absolute!important;
+            top:50%!important;
+            left:26px!important;
+            right:54px!important;
+            transform:translateY(-50%)!important;
+            z-index:9998!important;
+            max-width:calc(100% - 82px)!important;
+            overflow:hidden!important;
+            white-space:nowrap!important;
+            pointer-events:none!important;
+            font-size:15px!important;
+            line-height:1.2!important;
+            font-weight:700!important;
+            letter-spacing:.15px!important;
+            background:linear-gradient(110deg,
+              rgba(255,255,255,.55) 0%,
+              rgba(255,255,255,.55) 38%,
+              #fff 47%,
+              #fff 53%,
+              rgba(255,255,255,.55) 62%,
+              rgba(255,255,255,.55) 100%)!important;
+            background-size:220% 100%!important;
+            -webkit-background-clip:text!important;
+            background-clip:text!important;
+            -webkit-text-fill-color:transparent!important;
+            animation:rezkaCaptionShine 3.8s ease-in-out infinite!important;
+          }
+
+          @keyframes rezkaCaptionShine{
+            0%,20%{background-position:130% 0;}
+            55%,75%{background-position:-30% 0;}
+            100%{background-position:-30% 0;}
+          }
 
           .rezka-modal-close{
             position:absolute!important;
@@ -994,7 +1035,7 @@
         .querySelector(".modal__head")
         ?.insertAdjacentHTML(
           "afterend",
-          `<button class="rezka-modal-close selector" aria-label="Закрыть" onclick="$('.modal--large').remove()"><span>×</span></button>  ${namemovie}`,
+          `<div class="rezka-modal-caption">Комментарии Rezka</div><button class="rezka-modal-close selector" aria-label="Закрыть" onclick="$('.modal--large').remove()"><span>×</span></button>`,
         );
     }
   }
