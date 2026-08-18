@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v12_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v7_style';
     var current = null;
     var DELAY = 2000;
 
@@ -11,12 +11,12 @@
         var s = document.createElement('style');
         s.id = STYLE_ID;
         s.textContent = `
-            .lta12-host {
+            .lta7-host {
                 position: relative !important;
                 overflow: hidden !important;
             }
 
-            .lta12-video {
+            .lta7-video {
                 position: absolute !important;
                 inset: 0 !important;
                 width: 100% !important;
@@ -25,15 +25,16 @@
                 background: #000 !important;
                 opacity: 0 !important;
                 z-index: 2 !important;
-                pointer-events: none !important;
                 transition: opacity .5s ease !important;
             }
 
-            .lta12-video.visible {
+            .lta7-video.visible {
                 opacity: 1 !important;
             }
 
-            .lta12-sound {
+            /* Кнопка специально вынесена из карточки Lampa.
+               Поэтому её не перехватывает selector/event system Lampa. */
+            .lta7-sound {
                 position: fixed !important;
                 width: 46px !important;
                 height: 46px !important;
@@ -45,30 +46,27 @@
                 background: rgba(20,20,20,.86) !important;
                 color: #fff !important;
                 z-index: 2147483647 !important;
-                cursor: pointer !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
                 opacity: 0 !important;
                 pointer-events: none !important;
                 touch-action: manipulation !important;
-                user-select: none !important;
-                -webkit-user-select: none !important;
                 -webkit-tap-highlight-color: transparent !important;
                 box-shadow: 0 2px 10px rgba(0,0,0,.35) !important;
                 transition: opacity .25s ease, transform .15s ease !important;
             }
 
-            .lta12-sound.visible {
+            .lta7-sound.visible {
                 opacity: 1 !important;
                 pointer-events: auto !important;
             }
 
-            .lta12-sound:active {
+            .lta7-sound:active {
                 transform: scale(.92) !important;
             }
 
-            .lta12-sound svg {
+            .lta7-sound svg {
                 width: 24px !important;
                 height: 24px !important;
                 fill: currentColor !important;
@@ -123,55 +121,29 @@
         return trailers(list)[0] || list[0];
     }
 
-    /*
-     * Собственный маленький YouTube bridge.
-     *
-     * Главное отличие от штатного youtube.html:
-     * здесь есть настоящий player.unMute()/mute().
-     * Поэтому при нажатии на кнопку нам НЕ нужно пересоздавать iframe.
-     */
-    function makeBridge(videoId) {
-        var safeId = String(videoId).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    function bridgeBase() {
+        var base = '';
+        try { base = Lampa.Manifest.github_lampa; } catch(e) {}
+        if (!base) base = 'https://yumata.github.io/lampa/';
+        if (base.charAt(base.length - 1) !== '/') base += '/';
+        return base;
+    }
 
-        return '<!doctype html>' +
-            '<html><head><meta name="viewport" content="width=device-width,initial-scale=1">' +
-            '<style>html,body,#p{margin:0;width:100%;height:100%;overflow:hidden;background:#000}iframe{border:0}</style>' +
-            '</head><body><div id="p"></div>' +
-            '<script src="https://www.youtube.com/iframe_api"><\/script>' +
-            '<script>' +
-            'var player=null,ready=false;' +
-            'function send(t,d){try{parent.postMessage({lta12:1,type:t,data:d||{}}, "*")}catch(e){}}' +
-            'window.onYouTubeIframeAPIReady=function(){' +
-                'player=new YT.Player("p",{' +
-                    'videoId:\'' + safeId + '\',' +
-                    'width:"100%",height:"100%",' +
-                    'playerVars:{autoplay:1,controls:0,mute:1,cc_load_policy:0,rel:0,modestbranding:1,playsinline:1,enablejsapi:1},' +
-                    'events:{' +
-                        'onReady:function(){ready=true;try{player.mute()}catch(e){}send("ready");},' +
-                        'onStateChange:function(e){send("state",{state:e.data});},' +
-                        'onError:function(e){send("error",{error:e.data});}' +
-                    '}' +
-                '})' +
-            '};' +
-            'window.addEventListener("message",function(e){' +
-                'if(!e.data||e.data.lta12cmd!==1||!player||!ready)return;' +
-                'try{' +
-                    'if(e.data.type==="play")player.playVideo();' +
-                    'else if(e.data.type==="sound"){' +
-                        'if(e.data.on){player.unMute();player.setVolume(100);player.playVideo()}' +
-                        'else{player.mute();player.setVolume(0)}' +
-                    '}' +
-                    'else if(e.data.type==="destroy")player.destroy();' +
-                '}catch(x){}' +
-            '});' +
-            '<\/script></body></html>';
+    function bridgeUrl(videoId, bridgeId, mute, start) {
+        return bridgeBase() + 'youtube.html' +
+            '?bridgeId=' + encodeURIComponent(bridgeId) +
+            '&videoId=' + encodeURIComponent(videoId) +
+            '&autoplay=1' +
+            '&controls=0' +
+            '&mute=' + (mute ? '1' : '0') +
+            '&start=' + Math.max(0, Math.floor(start || 0));
     }
 
     function send(type, data) {
         if (!current || !current.frameWindow) return;
         try {
             current.frameWindow.postMessage({
-                lta12cmd: 1,
+                bridgeId: current.bridgeId,
                 type: type,
                 data: data || {}
             }, '*');
@@ -195,10 +167,17 @@
         current.sound.classList.add('visible');
     }
 
+    function hideSound() {
+        if (!current || !current.sound) return;
+        current.sound.classList.remove('visible');
+    }
+
     function cleanup() {
         if (!current) return;
 
         if (current.timer) clearTimeout(current.timer);
+        if (current.readyTimer) clearTimeout(current.readyTimer);
+        if (current.unlockTimer) clearTimeout(current.unlockTimer);
 
         if (current.messageHandler) {
             window.removeEventListener('message', current.messageHandler, true);
@@ -207,15 +186,6 @@
         if (current.positionHandler) {
             window.removeEventListener('resize', current.positionHandler);
             window.removeEventListener('scroll', current.positionHandler, true);
-        }
-
-        if (current.frameWindow) {
-            try {
-                current.frameWindow.postMessage({
-                    lta12cmd: 1,
-                    type: 'destroy'
-                }, '*');
-            } catch(e) {}
         }
 
         if (current.frame) {
@@ -227,10 +197,48 @@
         }
 
         if (current.host) {
-            current.host.classList.remove('lta12-host');
+            current.host.classList.remove('lta7-host');
         }
 
         current = null;
+    }
+
+    function reveal() {
+        if (!current) return;
+        current.frame.classList.add('visible');
+        showSound();
+    }
+
+    function reloadForSound(wantSound) {
+        if (!current || current.reloading) return;
+
+        current.reloading = true;
+        current.soundOn = !!wantSound;
+
+        var position = current.currentTime || 0;
+        var newBridgeId = 'lta7_' + Math.random().toString(36).slice(2);
+
+        current.bridgeId = newBridgeId;
+        current.frame.classList.remove('visible');
+
+        current.frame.src = bridgeUrl(
+            current.videoId,
+            newBridgeId,
+            !wantSound,
+            position
+        );
+
+        current.sound.innerHTML = wantSound ? soundIcon() : mutedIcon();
+        current.sound.setAttribute(
+            'aria-label',
+            wantSound ? 'Выключить звук' : 'Включить звук'
+        );
+
+        // Не даём старому iframe/старым событиям сбить состояние.
+        if (current.unlockTimer) clearTimeout(current.unlockTimer);
+        current.unlockTimer = setTimeout(function() {
+            if (current) current.reloading = false;
+        }, 5000);
     }
 
     function create(body, data) {
@@ -243,23 +251,27 @@
         if (!poster.length) return;
 
         var host = poster[0];
+        var bridgeId = 'lta7_' + Math.random().toString(36).slice(2);
 
         var frame = document.createElement('iframe');
-        frame.className = 'lta12-video';
+        frame.className = 'lta7-video';
         frame.setAttribute('frameborder', '0');
         frame.setAttribute('allowfullscreen', 'true');
         frame.setAttribute(
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
         );
+        frame.src = bridgeUrl(trailer.key, bridgeId, true, 0);
 
+        // Кнопка НЕ внутри poster/iframe.
+        // Она добавляется прямо в body и позиционируется поверх видео.
         var sound = document.createElement('button');
         sound.type = 'button';
-        sound.className = 'lta12-sound';
+        sound.className = 'lta7-sound';
         sound.innerHTML = mutedIcon();
         sound.setAttribute('aria-label', 'Включить звук');
 
-        host.classList.add('lta12-host');
+        host.classList.add('lta7-host');
         host.appendChild(frame);
         document.body.appendChild(sound);
 
@@ -267,88 +279,103 @@
             host: host,
             frame: frame,
             frameWindow: null,
+            bridgeId: bridgeId,
+            videoId: trailer.key,
             sound: sound,
             soundOn: false,
-            ready: false,
-            started: false,
-            timer: null
+            currentTime: 0,
+            timer: null,
+            readyTimer: null,
+            unlockTimer: null,
+            reloading: false
         };
-
-        /*
-         * srcdoc: плеер создаётся один раз.
-         * Переключение звука больше НЕ пересоздаёт iframe.
-         */
-        frame.srcdoc = makeBridge(trailer.key);
 
         current.positionHandler = positionSound;
         window.addEventListener('resize', current.positionHandler);
         window.addEventListener('scroll', current.positionHandler, true);
 
         /*
-         * Кнопка находится вне Lampa selector system.
+         * ВАЖНО:
+         * listener стоит на CAPTURE-фазе и на самой кнопке.
+         * Это не даёт Lampa selector/event system перехватить касание.
          */
         current.toggleSound = function(e) {
             e.preventDefault();
             e.stopPropagation();
             if (e.stopImmediatePropagation) e.stopImmediatePropagation();
 
-            if (!current || current.sound !== sound) return;
+            if (!current || current.sound !== sound || current.reloading) return;
 
-            current.soundOn = !current.soundOn;
-
-            if (current.soundOn) {
-                sound.innerHTML = soundIcon();
-                sound.setAttribute('aria-label', 'Выключить звук');
-                send('sound', { on: true });
-            } else {
-                sound.innerHTML = mutedIcon();
-                sound.setAttribute('aria-label', 'Включить звук');
-                send('sound', { on: false });
-            }
+            reloadForSound(!current.soundOn);
         };
 
-        sound.addEventListener('pointerdown', current.toggleSound, {
+        sound.addEventListener('pointerdown', current.toggleSound, true);
+        sound.addEventListener('pointerup', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        }, true);
+        sound.addEventListener('touchstart', current.toggleSound, {
             capture: true,
             passive: false
         });
+        sound.addEventListener('click', current.toggleSound, true);
 
         current.messageHandler = function(event) {
             if (!current || event.source !== frame.contentWindow) return;
+            if (!event.data || event.data.bridgeId !== current.bridgeId) return;
 
-            var msg = event.data || {};
-            if (!msg.lta12) return;
+            var type = event.data.type;
+            var d = event.data.data || {};
 
-            if (msg.type === 'ready') {
-                current.ready = true;
+            if (type === 'bridgeReady') {
                 current.frameWindow = frame.contentWindow;
+                return;
+            }
+
+            if (type === 'ready') {
+                if (current.readyTimer) clearTimeout(current.readyTimer);
+
+                // Первичная загрузка: через 2 секунды.
+                // После переключения звука — сразу.
+                var wait = current.reloading ? 0 : DELAY;
 
                 current.timer = setTimeout(function() {
-                    if (!current || !current.ready) return;
+                    if (!current || current.frame !== frame) return;
 
-                    current.started = true;
-                    frame.classList.add('visible');
-                    showSound();
+                    reveal();
                     send('play');
-                }, DELAY);
+
+                    current.reloading = false;
+                }, wait);
 
                 return;
             }
 
-            if (msg.type === 'state') {
-                if (msg.data && msg.data.state === 1) {
-                    current.started = true;
-                    frame.classList.add('visible');
-                    showSound();
+            if (type === 'time') {
+                if (typeof d.currentTime === 'number') {
+                    current.currentTime = d.currentTime;
+                }
+                positionSound();
+                return;
+            }
+
+            if (type === 'stateChange') {
+                // 1 = playing.
+                if (d.state === 1) {
+                    reveal();
+                    current.reloading = false;
                 }
 
-                /*
-                 * Не удаляем видео при state=0:
-                 * YouTube может прислать промежуточные состояния.
-                 */
+                // 0 = ended.
+                if (d.state === 0 && !current.reloading) {
+                    cleanup();
+                }
                 return;
             }
 
-            if (msg.type === 'error') {
+            if (type === 'error') {
+                // При ошибке возвращаем обычный постер.
                 cleanup();
             }
         };
@@ -357,9 +384,7 @@
 
         frame.onload = function() {
             if (current && current.frame === frame) {
-                try {
-                    current.frameWindow = frame.contentWindow;
-                } catch(e) {}
+                try { current.frameWindow = frame.contentWindow; } catch(e) {}
             }
         };
     }
@@ -380,7 +405,7 @@
         addStyle();
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
-        console.log('[Trailer Autoplay] v12 started');
+        console.log('[Trailer Autoplay] v7 started');
     }
 
     if (window.Lampa && Lampa.Listener) {
