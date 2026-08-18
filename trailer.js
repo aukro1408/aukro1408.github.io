@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v18_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v19_style';
     var current = null;
     var DELAY = 2000;
 
@@ -86,6 +86,51 @@
                 touch-action: manipulation !important;
                 -webkit-tap-highlight-color: transparent !important;
             }
+
+            /* Our single, fixed-size play/pause indicator. It sits above the
+               bridge's own transient center indicator, so only one control
+               is ever visible to the user. */
+            .lta7-playpause {
+                position: absolute !important;
+                left: 50% !important;
+                top: 50% !important;
+                transform: translate(-50%, -50%) scale(.92) !important;
+                width: 58px !important;
+                height: 58px !important;
+                border: 0 !important;
+                border-radius: 50% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: rgba(20,20,20,.72) !important;
+                color: #fff !important;
+                z-index: 20 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+                transition: opacity .18s ease, transform .18s ease !important;
+                touch-action: manipulation !important;
+                -webkit-tap-highlight-color: transparent !important;
+                box-shadow: 0 2px 12px rgba(0,0,0,.35) !important;
+            }
+
+            .lta7-playpause.visible {
+                opacity: 1 !important;
+                transform: translate(-50%, -50%) scale(1) !important;
+            }
+
+            .lta7-playpause svg {
+                width: 28px !important;
+                height: 28px !important;
+                fill: currentColor !important;
+                pointer-events: none !important;
+            }
+
+            .lta7-sound .lta7-muted-x {
+                fill: #ff4b4b !important;
+                stroke: #fff !important;
+            }
         `;
         document.head.appendChild(s);
     }
@@ -93,12 +138,20 @@
     function mutedIcon() {
         return '<svg viewBox="0 0 24 24">' +
             '<path d="M4 9v6h4l5 4V5L8 9H4z"/>' +
-            '<path d="M16 9.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
+            '<path class="lta7-muted-x" d="M17 8.5l4.5 7m0-7l-4.5 7" fill="none" stroke-width="2.4" stroke-linecap="round"/>' +
             '</svg>';
     }
 
     function soundIcon() {
-        return '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4zm12 3c0-1.3-.7-2.5-1.8-3.1v2.3c.5.3.8.7.8 1.2s-.3.9-.8 1.2v2.3c1.1-.6 1.8-1.8 1.8-3.1zm0-6v2.1c1.8.9 3 2.7 3 4.9s-1.2 4-3 4.9V20c3-1.1 5-3.9 5-7s-2-5.9-5-7z"/></svg>';
+        return '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4zm12 3c0-1.3-.7-2.5-1.8-3.1v2.3c.5.3.8.7.8 1.2s-.3.9-.8 1.2v2.3c1.1-.6 1.8-2.7 1.8-3.1zm0-6v2.1c1.8.9 3 2.7 3 4.9s-1.2 4-3 4.9V20c3-1.1 5-3.9 5-7s-2-5.9-5-7z"/></svg>';
+    }
+
+    function playIcon() {
+        return '<svg viewBox="0 0 24 24"><path d="M8 5.5v13L19 12 8 5.5z"/></svg>';
+    }
+
+    function pauseIcon() {
+        return '<svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>';
     }
 
     function getVideos(data) {
@@ -190,12 +243,32 @@
         current.sound.classList.remove('visible');
     }
 
+    function showPlayPause(duration) {
+        if (!current || !current.playpause) return;
+        if (current.playpauseTimer) clearTimeout(current.playpauseTimer);
+        current.playpause.innerHTML = current.playing ? pauseIcon() : playIcon();
+        current.playpause.setAttribute('aria-label', current.playing ? 'Пауза' : 'Воспроизведение');
+        current.playpause.classList.add('visible');
+        if (duration !== 0) {
+            current.playpauseTimer = setTimeout(function() {
+                if (current && current.playpause) current.playpause.classList.remove('visible');
+            }, duration || 1200);
+        }
+    }
+
+    function syncPlayPause() {
+        if (!current || !current.playpause) return;
+        current.playpause.innerHTML = current.playing ? pauseIcon() : playIcon();
+        current.playpause.setAttribute('aria-label', current.playing ? 'Пауза' : 'Воспроизведение');
+    }
+
     function cleanup() {
         if (!current) return;
 
         if (current.timer) clearTimeout(current.timer);
         if (current.readyTimer) clearTimeout(current.readyTimer);
         if (current.unlockTimer) clearTimeout(current.unlockTimer);
+        if (current.playpauseTimer) clearTimeout(current.playpauseTimer);
         if (current.messageHandler) {
             window.removeEventListener('message', current.messageHandler, true);
         }
@@ -219,6 +292,9 @@
 
         if (current.tapzone) {
             try { current.tapzone.remove(); } catch(e) {}
+        }
+        if (current.playpause) {
+            try { current.playpause.remove(); } catch(e) {}
         }
 
         if (current.host) {
@@ -340,6 +416,8 @@
                 );
                 current.playing = true;
                 if (current.tapzone) current.tapzone.setAttribute('aria-label', 'Пауза');
+                syncPlayPause();
+                showPlayPause(800);
 
                 window.removeEventListener('message', pendingMessage, true);
 
@@ -425,12 +503,17 @@
         tapzone.type = 'button';
         tapzone.className = 'lta7-tapzone';
         tapzone.setAttribute('aria-label', 'Пауза');
-        // Play/pause визуально показывает сам YouTube bridge после API-команды.
-        // Не создаём второй собственный overlay — иначе на экране два индикатора.
+
+        var playpause = document.createElement('button');
+        playpause.type = 'button';
+        playpause.className = 'lta7-playpause';
+        playpause.innerHTML = pauseIcon();
+        playpause.setAttribute('aria-label', 'Пауза');
 
         host.classList.add('lta7-host');
         host.appendChild(frame);
         host.appendChild(tapzone);
+        host.appendChild(playpause);
         document.body.appendChild(sound);
 
         current = {
@@ -452,6 +535,8 @@
             targetSoundOn: false,
             playing: false,
             tapzone: tapzone,
+            playpause: playpause,
+            playpauseTimer: null,
         };
 
         current.positionHandler = positionSound;
@@ -472,6 +557,7 @@
 
             if (current.playing) {
                 send('pause');
+                // Optimistic UI: show pause tap result as a PLAY icon.
                 current.playing = false;
                 tapzone.setAttribute('aria-label', 'Воспроизведение');
             } else {
@@ -479,6 +565,8 @@
                 current.playing = true;
                 tapzone.setAttribute('aria-label', 'Пауза');
             }
+            syncPlayPause();
+            showPlayPause(1200);
         };
 
         tapzone.addEventListener('pointerup', current.togglePlayback, {
@@ -487,6 +575,16 @@
         });
 
         tapzone.addEventListener('touchend', current.togglePlayback, {
+            capture: true,
+            passive: false
+        });
+
+        playpause.addEventListener('pointerup', current.togglePlayback, {
+            capture: true,
+            passive: false
+        });
+
+        playpause.addEventListener('touchend', current.togglePlayback, {
             capture: true,
             passive: false
         });
@@ -552,6 +650,8 @@
 
                     current.playing = true;
                     tapzone.setAttribute('aria-label', 'Пауза');
+                    syncPlayPause();
+                    showPlayPause(1100);
 
                     current.reloading = false;
                 }, wait);
@@ -573,12 +673,15 @@
                     reveal();
                     current.playing = true;
                     tapzone.setAttribute('aria-label', 'Пауза');
+                    syncPlayPause();
                     current.reloading = false;
                 }
 
                 if (d.state === 2) {
                     current.playing = false;
                     tapzone.setAttribute('aria-label', 'Воспроизведение');
+                    syncPlayPause();
+                    showPlayPause(1200);
                     }
 
                 // 0 = ended.
