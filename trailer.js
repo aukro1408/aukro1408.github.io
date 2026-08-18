@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v19_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v21_style';
     var current = null;
     var DELAY = 2000;
     var activityGuard = null;
@@ -47,7 +47,7 @@
                 border-radius: 50% !important;
                 background: rgba(20,20,20,.86) !important;
                 color: #fff !important;
-                z-index: 30 !important;
+                z-index: 20 !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -513,9 +513,6 @@
                     send('play');
 
                     current.playing = true;
-                    tapzone.setAttribute('aria-label', 'Пауза');
-                    syncPlayPause();
-                    showPlayPause(1100);
 
                     current.reloading = false;
                 }, wait);
@@ -536,16 +533,11 @@
                 if (d.state === 1) {
                     reveal();
                     current.playing = true;
-                    tapzone.setAttribute('aria-label', 'Пауза');
-                    syncPlayPause();
                     current.reloading = false;
                 }
 
                 if (d.state === 2) {
                     current.playing = false;
-                    tapzone.setAttribute('aria-label', 'Воспроизведение');
-                    syncPlayPause();
-                    showPlayPause(1200);
                     }
 
                 // 0 = ended.
@@ -617,7 +609,7 @@
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
         startActivityGuard();
-        console.log('[Trailer Autoplay] v20 started');
+        console.log('[Trailer Autoplay] v21 started');
     }
 
     if (window.Lampa && Lampa.Listener) {
