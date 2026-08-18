@@ -125,6 +125,12 @@
 
             translations = data?.translations?.translations || [];
             window.__rezkaV2TranslationsCache[cacheKey] = translations;
+
+            // Keep TMDB details available for the visual movie card.
+            if (data && movie && typeof movie === 'object') {
+              Object.assign(movie, data);
+              window.__rezkaCommentCurrentMovie = movie;
+            }
           }
 
           const en = translations.find(function (item) {
@@ -335,9 +341,20 @@
 
       const rating = movie.vote_average ? Number(movie.vote_average).toFixed(1) : "";
       const voteCount = movie.vote_count ? Number(movie.vote_count).toLocaleString("ru-RU") : "";
-      const runtime = movie.runtime ? Math.round(Number(movie.runtime)) : 0;
+
+      // TMDB uses runtime for movies and episode_run_time for TV.
+      const runtime = movie.runtime
+        ? Math.round(Number(movie.runtime))
+        : (Array.isArray(movie.episode_run_time) && movie.episode_run_time[0]
+          ? Math.round(Number(movie.episode_run_time[0]))
+          : 0);
+
       const budget = movie.budget ? Number(movie.budget) : 0;
       const revenue = movie.revenue ? Number(movie.revenue) : 0;
+      const seasons = movie.number_of_seasons ? Number(movie.number_of_seasons) : 0;
+      const episodes = movie.number_of_episodes ? Number(movie.number_of_episodes) : 0;
+      const status = typeof movie.status === "string" ? movie.status : "";
+      const mediaType = (movie.first_air_date || movie.number_of_seasons) ? "Сериал" : "Фильм";
 
       const genres = Array.isArray(movie.genres)
         ? movie.genres.map(g => g && g.name).filter(Boolean).slice(0, 3)
@@ -362,10 +379,21 @@
         voteCount ? voteCount + " оценок" : ""
       ].filter(Boolean).join("  ");
 
+      const detailChips = [
+        ratingInfo ? `<span class="rezka-info-chip rezka-rating-chip"><b>★</b> ${rating || "—"}<small>${voteCount ? voteCount + " оценок" : "TMDB"}</small></span>` : "",
+        runtime ? `<span class="rezka-info-chip"><b>⏱</b> ${runtime} мин</span>` : "",
+        seasons ? `<span class="rezka-info-chip"><b>◉</b> ${seasons} ${seasons === 1 ? "сезон" : (seasons < 5 ? "сезона" : "сезонов")}${episodes ? " • " + episodes + " серий" : ""}</span>` : "",
+        `<span class="rezka-info-chip"><b>▣</b> ${mediaType}</span>`
+      ].filter(Boolean).join("");
+
       const financeInfo = [
         budget ? "Бюджет " + formatMoney(budget) : "",
         revenue ? "Сборы " + formatMoney(revenue) : ""
       ].filter(Boolean).join("  •  ");
+
+      const statusInfo = status && status !== "Ended" && status !== "Released"
+        ? status
+        : "";
 
       let modal = $(
         `<div class="rezka-comments-page" style="--rezka-backdrop:${poster ? `url("${poster.replace(/"/g, "%22")}")` : "none"};">
@@ -375,8 +403,8 @@
             <div class="rezka-film-info">
               <div class="rezka-film-title">${title}</div>
               ${meta ? `<div class="rezka-film-meta">${meta}</div>` : ""}
-              ${ratingInfo ? `<div class="rezka-film-rating">${ratingInfo}</div>` : ""}
-              ${financeInfo ? `<div class="rezka-film-finance">${financeInfo}</div>` : ""}
+              <div class="rezka-film-stats">${detailChips}</div>
+              ${financeInfo || statusInfo ? `<div class="rezka-film-finance">${[financeInfo, statusInfo].filter(Boolean).join("  •  ")}</div>` : ""}
             </div>
           </div>
 
@@ -518,41 +546,71 @@
           }
 
           .rezka-film-title{
-            font-size:25px;
-            line-height:1.15;
-            font-weight:700;
-            text-shadow:0 2px 8px rgba(0,0,0,.65);
+            font-size:29px;
+            line-height:1.12;
+            font-weight:800;
+            letter-spacing:-.2px;
+            text-shadow:0 2px 10px rgba(0,0,0,.75);
           }
 
           .rezka-film-meta{
-            margin-top:7px;
-            font-size:14px;
+            margin-top:8px;
+            font-size:16px;
             line-height:1.3;
-            color:rgba(255,255,255,.76);
-            text-shadow:0 1px 5px rgba(0,0,0,.7);
+            font-weight:500;
+            color:rgba(255,255,255,.86);
+            text-shadow:0 1px 6px rgba(0,0,0,.75);
           }
 
-          .rezka-film-rating{
-            display:inline-block;
-            margin-top:9px;
-            padding:5px 9px;
-            border-radius:9px;
-            background:rgba(0,0,0,.38);
-            border:1px solid rgba(255,255,255,.12);
-            font-size:13px;
-            line-height:1.1;
+          .rezka-film-stats{
+            display:flex;
+            flex-wrap:wrap;
+            gap:7px;
+            margin-top:11px;
+          }
+
+          .rezka-info-chip{
+            display:inline-flex;
+            align-items:center;
+            gap:5px;
+            min-height:31px;
+            padding:6px 10px;
+            box-sizing:border-box;
+            border-radius:10px;
+            background:rgba(8,10,11,.58);
+            border:1px solid rgba(255,255,255,.16);
             color:#fff;
-            backdrop-filter:blur(8px);
-            -webkit-backdrop-filter:blur(8px);
+            font-size:14px;
+            line-height:1;
+            font-weight:650;
+            backdrop-filter:blur(10px);
+            -webkit-backdrop-filter:blur(10px);
+            box-shadow:0 3px 12px rgba(0,0,0,.22);
             text-shadow:0 1px 4px rgba(0,0,0,.6);
           }
 
-          .rezka-film-finance{
-            margin-top:7px;
-            font-size:12px;
-            line-height:1.25;
+          .rezka-info-chip b{
+            font-size:16px;
+            font-weight:800;
+          }
+
+          .rezka-info-chip small{
+            margin-left:2px;
             color:rgba(255,255,255,.68);
-            text-shadow:0 1px 4px rgba(0,0,0,.65);
+            font-size:11px;
+            font-weight:500;
+          }
+
+          .rezka-rating-chip{
+            background:rgba(0,0,0,.68);
+          }
+
+          .rezka-film-finance{
+            margin-top:8px;
+            font-size:13px;
+            line-height:1.25;
+            color:rgba(255,255,255,.72);
+            text-shadow:0 1px 5px rgba(0,0,0,.75);
           }
 
                     .rezka-comments-content{
@@ -628,7 +686,17 @@
             }
 
             .rezka-film-title{
-              font-size:23px;
+              font-size:26px;
+            }
+
+            .rezka-film-meta{
+              font-size:15px;
+            }
+
+            .rezka-info-chip{
+              font-size:13px;
+              min-height:30px;
+              padding:6px 9px;
             }
 
             .rezka-comments-content{
