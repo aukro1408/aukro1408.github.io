@@ -30,7 +30,7 @@
                 background: #000 !important;
                 opacity: 0 !important;
                 z-index: 0 !important;
-                pointer-events: none !important;
+                pointer-events: auto !important;
                 transition: opacity .25s ease !important;
             }
 
@@ -390,6 +390,7 @@
                 newFrame.style.visibility = 'visible';
                 newFrame.style.display = 'block';
                 newFrame.style.zIndex = '0';
+                newFrame.style.pointerEvents = 'auto';
                 newFrame.classList.add('visible');
                 newFrame.style.opacity = '1';
 
