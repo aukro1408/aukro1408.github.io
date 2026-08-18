@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v7_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v14_style';
     var current = null;
     var DELAY = 2000;
 
@@ -136,6 +136,7 @@
             '&autoplay=1' +
             '&controls=0' +
             '&mute=' + (mute ? '1' : '0') +
+            '&cc_load_policy=0' +
             '&start=' + Math.max(0, Math.floor(start || 0));
     }
 
@@ -192,6 +193,10 @@
             try { current.frame.remove(); } catch(e) {}
         }
 
+        if (current.pendingFrame) {
+            try { current.pendingFrame.remove(); } catch(e) {}
+        }
+
         if (current.sound) {
             try { current.sound.remove(); } catch(e) {}
         }
@@ -210,35 +215,133 @@
     }
 
     function reloadForSound(wantSound) {
-        if (!current || current.reloading) return;
+        if (!current || current.reloading || !current.frame) return;
 
         current.reloading = true;
-        current.soundOn = !!wantSound;
+        current.targetSoundOn = !!wantSound;
 
+        var oldFrame = current.frame;
+        var oldBridgeId = current.bridgeId;
         var position = current.currentTime || 0;
         var newBridgeId = 'lta7_' + Math.random().toString(36).slice(2);
 
-        current.bridgeId = newBridgeId;
-        current.frame.classList.remove('visible');
+        /*
+         * IMPORTANT:
+         * Do NOT hide/remove the current player while the new one loads.
+         * This was the exact reason the trailer disappeared in v7.
+         *
+         * We create a second clean Lampa youtube.html bridge over the first
+         * one. Only after the second bridge reports "ready" do we replace
+         * the old frame.
+         */
+        var newFrame = document.createElement('iframe');
+        newFrame.className = 'lta7-video';
+        newFrame.setAttribute('frameborder', '0');
+        newFrame.setAttribute('allowfullscreen', 'true');
+        newFrame.setAttribute(
+            'allow',
+            'autoplay; encrypted-media; picture-in-picture'
+        );
 
-        current.frame.src = bridgeUrl(
+        newFrame.style.opacity = '0';
+        newFrame.style.zIndex = '3';
+        newFrame.src = bridgeUrl(
             current.videoId,
             newBridgeId,
             !wantSound,
             position
         );
 
-        current.sound.innerHTML = wantSound ? soundIcon() : mutedIcon();
-        current.sound.setAttribute(
-            'aria-label',
-            wantSound ? 'Выключить звук' : 'Включить звук'
-        );
+        current.host.appendChild(newFrame);
 
-        // Не даём старому iframe/старым событиям сбить состояние.
-        if (current.unlockTimer) clearTimeout(current.unlockTimer);
+        current.pendingFrame = newFrame;
+        current.pendingBridgeId = newBridgeId;
+
+        function pendingMessage(event) {
+            if (!current || current.pendingFrame !== newFrame) return;
+            if (event.source !== newFrame.contentWindow) return;
+            if (!event.data || event.data.bridgeId !== newBridgeId) return;
+
+            var type = event.data.type;
+            var d = event.data.data || {};
+
+            if (type === 'bridgeReady') {
+                current.pendingWindow = newFrame.contentWindow;
+                return;
+            }
+
+            if (type === 'ready') {
+                /*
+                 * New player is ready. Reveal it first, then remove the old
+                 * player. The user never sees the poster.
+                 */
+                newFrame.style.opacity = '1';
+
+                current.frame = newFrame;
+                current.frameWindow = current.pendingWindow || newFrame.contentWindow;
+                current.bridgeId = newBridgeId;
+                current.soundOn = !!wantSound;
+                current.currentTime = position;
+                current.pendingFrame = null;
+                current.pendingBridgeId = null;
+                current.pendingWindow = null;
+                current.reloading = false;
+
+                send('play');
+
+                current.sound.innerHTML = wantSound ? soundIcon() : mutedIcon();
+                current.sound.setAttribute(
+                    'aria-label',
+                    wantSound ? 'Выключить звук' : 'Включить звук'
+                );
+
+                window.removeEventListener('message', pendingMessage, true);
+
+                /*
+                 * Remove only the old iframe after the new one is visible.
+                 */
+                try { oldFrame.remove(); } catch(e) {}
+                return;
+            }
+
+            if (type === 'stateChange' && d.state === 1) {
+                newFrame.style.opacity = '1';
+                return;
+            }
+
+            if (type === 'error') {
+                /*
+                 * If unmuted autoplay is rejected, keep the old muted player
+                 * alive instead of returning to the poster.
+                 */
+                window.removeEventListener('message', pendingMessage, true);
+                try { newFrame.remove(); } catch(e) {}
+
+                current.pendingFrame = null;
+                current.pendingBridgeId = null;
+                current.pendingWindow = null;
+                current.reloading = false;
+                return;
+            }
+        }
+
+        window.addEventListener('message', pendingMessage, true);
+
+        /*
+         * Safety timeout: never destroy the working old player because the
+         * replacement did not load.
+         */
         current.unlockTimer = setTimeout(function() {
-            if (current) current.reloading = false;
-        }, 5000);
+            if (!current || current.pendingFrame !== newFrame) return;
+
+            window.removeEventListener('message', pendingMessage, true);
+            try { newFrame.remove(); } catch(e) {}
+
+            current.pendingFrame = null;
+            current.pendingBridgeId = null;
+            current.pendingWindow = null;
+            current.reloading = false;
+        }, 8000);
     }
 
     function create(body, data) {
@@ -287,7 +390,11 @@
             timer: null,
             readyTimer: null,
             unlockTimer: null,
-            reloading: false
+            reloading: false,
+            pendingFrame: null,
+            pendingBridgeId: null,
+            pendingWindow: null,
+            targetSoundOn: false
         };
 
         current.positionHandler = positionSound;
@@ -309,17 +416,15 @@
             reloadForSound(!current.soundOn);
         };
 
-        sound.addEventListener('pointerdown', current.toggleSound, true);
+        sound.addEventListener('pointerdown', current.toggleSound, {
+            capture: true,
+            passive: false
+        });
         sound.addEventListener('pointerup', function(e) {
             e.preventDefault();
             e.stopPropagation();
             if (e.stopImmediatePropagation) e.stopImmediatePropagation();
         }, true);
-        sound.addEventListener('touchstart', current.toggleSound, {
-            capture: true,
-            passive: false
-        });
-        sound.addEventListener('click', current.toggleSound, true);
 
         current.messageHandler = function(event) {
             if (!current || event.source !== frame.contentWindow) return;
@@ -405,7 +510,7 @@
         addStyle();
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
-        console.log('[Trailer Autoplay] v7 started');
+        console.log('[Trailer Autoplay] v14 started');
     }
 
     if (window.Lampa && Lampa.Listener) {
