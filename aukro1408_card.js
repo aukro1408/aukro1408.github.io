@@ -417,8 +417,6 @@
             max-height:none!important;
             min-height:0!important;
             box-sizing:border-box!important;
-            display:flex!important;
-            flex-direction:column!important;
           }
 
           .rezka-comments-page{
@@ -426,11 +424,9 @@
             background:#151718;
             color:#fff;
             overflow:hidden;
-            height:100%!important;
-            min-height:100%;
+            height:calc(100dvh - 60px)!important;
+            min-height:0!important;
             box-sizing:border-box;
-            display:flex!important;
-            flex-direction:column!important;
           }
 
           .rezka-film-header{
@@ -491,9 +487,8 @@
           .rezka-comments-content{
             margin:0;
             padding:4px 12px 18px;
-            flex:1 1 0!important;
+            height:calc(100dvh - 270px)!important;
             min-height:0!important;
-            height:auto!important;
             max-height:none!important;
             overflow-y:auto!important;
             box-sizing:border-box!important;
@@ -609,7 +604,7 @@
 
           const page = rezkaFullModal.querySelector(".rezka-comments-page");
           if (page) {
-            page.style.height = "100%";
+            page.style.height = "calc(100dvh - 60px)";
             page.style.minHeight = "0";
           }
         });
