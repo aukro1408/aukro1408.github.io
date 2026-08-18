@@ -421,13 +421,6 @@
             flex-direction:column!important;
           }
 
-          .modal--large.rezka-full-height-modal .modal__content > *{
-            height:100%!important;
-            max-height:none!important;
-            min-height:0!important;
-            box-sizing:border-box!important;
-          }
-
           .rezka-comments-page{
             margin:-10px -10px 0;
             background:#151718;
@@ -442,7 +435,10 @@
 
           .rezka-film-header{
             position:relative;
-            height:210px;
+            height:210px!important;
+            min-height:210px!important;
+            max-height:210px!important;
+            flex:0 0 210px!important;
             overflow:hidden;
             background:#202223;
           }
@@ -495,7 +491,7 @@
           .rezka-comments-content{
             margin:0;
             padding:4px 12px 18px;
-            flex:1 1 auto!important;
+            flex:1 1 0!important;
             min-height:0!important;
             height:auto!important;
             max-height:none!important;
@@ -559,7 +555,10 @@
 
           @media (max-width:600px){
             .rezka-film-header{
-              height:190px;
+              height:190px!important;
+              min-height:190px!important;
+              max-height:190px!important;
+              flex:0 0 190px!important;
             }
 
             .rezka-film-info{
@@ -611,7 +610,7 @@
           const page = rezkaFullModal.querySelector(".rezka-comments-page");
           if (page) {
             page.style.height = "100%";
-            page.style.minHeight = "100%";
+            page.style.minHeight = "0";
           }
         });
       }
