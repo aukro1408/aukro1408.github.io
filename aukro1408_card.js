@@ -342,7 +342,7 @@
       ].filter(Boolean).join("  •  ");
 
       let modal = $(
-        `<div class="rezka-comments-page">
+        `<div class="rezka-comments-page" style="--rezka-backdrop:${poster ? `url("${poster.replace(/"/g, "%22")}")` : "none"};">
           <div class="rezka-film-header">
             ${poster ? `<img class="rezka-film-backdrop" src="${poster}" alt="">` : ""}
             <div class="rezka-film-overlay"></div>
@@ -403,12 +403,54 @@
         const styleEl = document.createElement("style");
         styleEl.id = "rezka-comment-style-v4";
         styleEl.textContent = `
+
           .rezka-comments-page{
+            position:relative;
             margin:-10px -10px 0;
             background:#151718;
             color:#fff;
             overflow:hidden;
+            box-sizing:border-box;
           }
+
+          .rezka-comments-page::before{
+            content:"";
+            position:absolute;
+            inset:0;
+            z-index:0;
+            pointer-events:none;
+            background-image:
+              linear-gradient(
+                to bottom,
+                rgba(21,23,24,0) 0%,
+                rgba(21,23,24,.28) 28%,
+                rgba(21,23,24,.82) 58%,
+                #151718 82%
+              ),
+              var(--rezka-backdrop);
+            background-size:cover;
+            background-position:center top;
+            filter:blur(22px) saturate(1.25);
+            transform:scale(1.08);
+            opacity:.55;
+          }
+
+          .rezka-comments-page::after{
+            content:"";
+            position:absolute;
+            inset:0;
+            z-index:0;
+            pointer-events:none;
+            background:
+              radial-gradient(ellipse at 50% 8%, rgba(255,255,255,.06), transparent 52%),
+              linear-gradient(to bottom, rgba(0,0,0,.08), rgba(0,0,0,.24));
+          }
+
+          .rezka-comments-page > *{
+            position:relative;
+            z-index:1;
+          }
+
 
           .rezka-film-header{
             position:relative;
@@ -462,9 +504,11 @@
             text-shadow:0 1px 5px rgba(0,0,0,.7);
           }
 
-          .rezka-comments-content{
+                    .rezka-comments-content{
             margin:0;
             padding:4px 12px 18px;
+            box-sizing:border-box;
+            background:transparent!important;
           }
 
           .rezka-comments-page .comments-tree-list{
