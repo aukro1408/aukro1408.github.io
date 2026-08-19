@@ -875,6 +875,7 @@
                 param: {
                     name: AI_OPENROUTER_KEY_PARAM,
                     type: 'input',
+                    values: '',
                     'default': ''
                 },
                 field: {
