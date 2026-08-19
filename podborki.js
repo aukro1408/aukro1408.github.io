@@ -1,378 +1,310 @@
-// ==UserScript==
-// @name         Lampa Подборки
-// @namespace    lampa.thematic.collections
-// @version      0.4
-// @match        *://*/lampa/*
-// ==/UserScript==
-
 (function () {
     'use strict';
-    if (window.lampa_thematic_collections) return;
-    window.lampa_thematic_collections = true;
 
-    var COMPONENT = 'thematic_collections';
-    var IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
-    var HERO_BASE = 'https://image.tmdb.org/t/p/w1280';
+    var COMPONENT = 'lampa_collections_standard';
+    var MENU_ID = 'lampa_collections_standard_menu';
+    var started = false;
 
+    /*
+     * Минимальный тест.
+     *
+     * Здесь намеренно НЕ используется собственный размер карточки.
+     * Карточка строится с классами штатной Lampa .card/.card__view/.card__img,
+     * поэтому её размеры берёт стандартный CSS Lampa.
+     *
+     * После проверки картинки можно заменить на TMDB-источники.
+     */
     var COLLECTIONS = [
         {
-            id: 'zombie', title: 'Зомби', icon: '🧟',
+            title: 'Зомби',
+            icon: '🧟',
             description: 'Зомби, эпидемии и выживание',
-            url: 'discover/movie?with_genres=27&with_keywords=12377&sort_by=popularity.desc&vote_average.gte=6.0&vote_count.gte=100&include_adult=false&language=ru-RU'
+            image: 'https://images.fandango.com/ImageRenderer/0/0/redesign/static/img/default_poster--dark-mode.png/0/images/masterrepository/Fandango/136726/WWZ523.jpg',
+            url: 'discover/movie?with_genres=27&with_keywords=12377&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
         },
         {
-            id: 'space', title: 'Космос', icon: '🚀',
+            title: 'Космос',
+            icon: '🚀',
             description: 'Космос, другие планеты и экспедиции',
-            url: 'discover/movie?with_genres=878&with_keywords=9882&sort_by=popularity.desc&vote_average.gte=6.0&vote_count.gte=100&include_adult=false&language=ru-RU'
+            image: 'https://www.movieposters.com/cdn/shop/products/interstellar4_bed75630-9176-4725-b1cc-3bd45788905a_1024x1024.jpg?v=1762971876',
+            url: 'discover/movie?with_genres=878&with_keywords=9882&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
         }
     ];
 
-    var loaded = {};
-
-    function esc(v) {
-        return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    function esc(text) {
+        return String(text || '').replace(/[&<>"']/g, function (c) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[c];
+        });
     }
 
-    function imageUrl(size, path) {
-        if (!path) return '';
+    function addStyle() {
+        if (document.getElementById('lampa-collections-standard-style')) return;
 
-        try {
-            if (Lampa.TMDB && typeof Lampa.TMDB.image === 'function') {
-                return Lampa.TMDB.image('t/p/' + size + path);
-            }
-        } catch(e) {}
-
-        try {
-            return Lampa.Utils.protocol() +
-                'image.tmdb.org/t/p/' + size + path;
-        } catch(e) {}
-
-        return 'https://image.tmdb.org/t/p/' + size + path;
-    }
-
-    function addStyles() {
-        if (document.getElementById(COMPONENT + '_style')) return;
-        var s = document.createElement('style');
-        s.id = COMPONENT + '_style';
-        s.textContent = `
-            .tc-page{width:100%;min-height:100%;box-sizing:border-box;padding:3em 4em 4em;color:#fff}
-            .tc-title{font-size:3em;font-weight:700;line-height:1.05;margin-bottom:.25em}
-            .tc-subtitle{font-size:1.1em;opacity:.5;margin-bottom:2em}
-            .tc-section{margin-bottom:2.4em}
-            .tc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.8em}
-            .tc-section-title{font-size:1.45em;font-weight:600}
-            .tc-desc{font-size:.85em;opacity:.42;margin-left:.7em}
-            .tc-all{padding:.5em .85em;border-radius:.7em;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.045);opacity:.8}
-            .tc-all.focus{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);opacity:1}
-            .tc-row{display:flex;gap:.75em;overflow-x:auto;overflow-y:hidden;padding:.25em .2em .8em;scrollbar-width:none}
-            .tc-row::-webkit-scrollbar{display:none}
-            .tc-card{flex:0 0 9.2em;width:9.2em;min-width:9.2em;position:relative;border-radius:.65em;overflow:hidden;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.055);transform:scale(1);transition:transform .18s ease,border-color .18s ease}
-            .tc-card.focus{transform:scale(1.05);border-color:rgba(255,255,255,.65);z-index:3}
-            .tc-poster{width:100%;aspect-ratio:2/3;display:block;object-fit:cover;background:#151515}
-            .tc-info{padding:.55em .6em .65em}
-            .tc-name{font-size:.82em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-            .tc-meta{display:flex;gap:.35em;margin-top:.35em;font-size:.68em;opacity:.52}
-            .tc-rating{opacity:.9}
-            .tc-loading,.tc-empty{padding:3em 1em;opacity:.35}
-            @media(max-width:900px){.tc-page{padding:2em 1.4em 3em}.tc-title{font-size:2.1em}.tc-card{flex-basis:8em;width:8em;min-width:8em}}
-        
-            /* Category hero image: loaded from TMDB backdrop_path. */
-            .tc-hero {
-                position: relative;
-                height: 14em;
-                margin-bottom: 1em;
-                border-radius: 1.1em;
-                overflow: hidden;
-                background: #111;
-                box-shadow: 0 .5em 1.6em rgba(0,0,0,.28);
+        var style = document.createElement('style');
+        style.id = 'lampa-collections-standard-style';
+        style.textContent = `
+            /*
+             * НЕ задаём width/height/aspect-ratio для карточки.
+             * Lampa сама задаёт стандартные размеры .card.
+             */
+            .lcs-page {
+                padding: 1.2em 1.4em 5em;
             }
 
-            .tc-hero-img {
-                position: absolute;
-                inset: 0;
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                opacity: 0;
-                transform: scale(1.02);
-                transition: opacity .6s ease, transform 1s ease;
-            }
-
-            .tc-hero-img.loaded {
-                opacity: 1;
-                transform: scale(1);
-            }
-
-            .tc-hero:after {
-                content: '';
-                position: absolute;
-                inset: 0;
-                background:
-                    linear-gradient(90deg, rgba(0,0,0,.78) 0%,
-                    rgba(0,0,0,.32) 55%, rgba(0,0,0,.05) 100%),
-                    linear-gradient(0deg, rgba(0,0,0,.72) 0%,
-                    transparent 58%);
-                pointer-events: none;
-            }
-
-            .tc-hero-content {
-                position: absolute;
-                left: 1.3em;
-                right: 1.3em;
-                bottom: 1.1em;
-                z-index: 2;
-            }
-
-            .tc-hero-title {
+            .lcs-title {
                 font-size: 2em;
-                line-height: 1.05;
                 font-weight: 700;
-                text-shadow: 0 .15em .5em rgba(0,0,0,.65);
+                margin: 0 0 .2em;
             }
 
-            .tc-hero-desc {
-                margin-top: .35em;
-                max-width: 32em;
-                font-size: .95em;
-                opacity: .84;
-                text-shadow: 0 .1em .35em rgba(0,0,0,.8);
+            .lcs-subtitle {
+                opacity: .65;
+                margin-bottom: 1.4em;
             }
 
-            .tc-hero-icon {
-                margin-bottom: .25em;
-                font-size: 1.65em;
-                filter: drop-shadow(0 .15em .3em rgba(0,0,0,.55));
+            .lcs-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 1em;
+                align-items: flex-start;
+            }
+
+            /*
+             * Только небольшая подпись категории.
+             * Размер самой карточки НЕ трогаем.
+             */
+            .lcs-card .card__title {
+                white-space: normal;
+                text-align: center;
+            }
+
+            .lcs-card .lcs-category {
+                font-size: 1em;
+                font-weight: 600;
+            }
+
+            .lcs-card .lcs-desc {
+                font-size: .78em;
+                opacity: .6;
+                margin-top: .18em;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .lcs-card.selector:focus,
+            .lcs-card.focus {
+                z-index: 3;
             }
 
             @media (max-width: 700px) {
-                .tc-hero {
-                    height: 11.5em;
-                }
-                .tc-hero-title {
-                    font-size: 1.55em;
+                .lcs-row {
+                    gap: .75em;
                 }
             }
-`;
-        document.head.appendChild(s);
+        `;
+        document.head.appendChild(style);
     }
 
-    function openCategory(c){
-        Lampa.Activity.push({component:'category_full',source:'tmdb',title:c.title,url:c.url,page:1});
-    }
+    function createCard(item) {
+        /*
+         * Берём именно штатный шаблон карточки Lampa, если он доступен.
+         * Это тот же .card, который используется обычными фильмами.
+         */
+        var card;
 
-    function openMovie(movie){
-        if (!movie || !movie.id) return;
-        Lampa.Activity.push({component:'full',source:'tmdb',id:movie.id,movie:movie,title:movie.title || movie.original_title || ''});
-    }
+        try {
+            if (Lampa.Template && typeof Lampa.Template.js === 'function') {
+                card = Lampa.Template.js('card');
+            }
+        } catch (e) {}
 
-    function renderMovies(section,movies){
-        var row=section.find('.tc-row');
-        row.empty();
+        if (!card || !card.length) {
+            card = $(
+                '<div class="card selector layer--visible layer--render lcs-card">' +
+                    '<div class="card__view">' +
+                        '<img class="card__img" src="./img/img_load.svg">' +
+                    '</div>' +
+                    '<div class="card__title"></div>' +
+                '</div>'
+            );
+        }
 
-        // Use the first TMDB result's backdrop as the category hero image.
-        var firstBackdrop = movies.find(function(movie){
-            return movie && movie.backdrop_path;
-        }) || movies.find(function(movie){
-            return movie && movie.poster_path;
+        card.addClass('lcs-card card--loaded selector');
+
+        var img = card.find('.card__img');
+        var title = card.find('.card__title');
+
+        img.attr('src', item.image);
+        title.html(
+            '<div class="lcs-category">' +
+                esc(item.icon) + ' ' + esc(item.title) +
+            '</div>' +
+            '<div class="lcs-desc">' +
+                esc(item.description) +
+            '</div>'
+        );
+
+        card.card_data = {
+            title: item.title,
+            original_title: item.title,
+            poster: item.image,
+            source: 'tmdb',
+            category: true
+        };
+
+        card.on('hover:enter', function () {
+            Lampa.Activity.push({
+                component: 'category_full',
+                source: 'tmdb',
+                title: item.title,
+                url: item.url,
+                page: 1
+            });
         });
 
-        var hero = section.find('.tc-hero-img');
-        if (hero.length && firstBackdrop) {
-            var heroPath = firstBackdrop.backdrop_path || firstBackdrop.poster_path;
-            var heroSize = firstBackdrop.backdrop_path ? 'w1280' : 'w780';
+        return card;
+    }
 
-            hero.attr('src', imageUrl(heroSize, heroPath));
-            hero.on('load', function(){ $(this).addClass('loaded'); });
-            hero.on('error', function(){
-                $(this).removeClass('loaded');
+    function CollectionsComponent(object) {
+        var self = this;
+        var scroll = new Lampa.Scroll({
+            mask: true,
+            over: true
+        });
+
+        var html = $('<div class="lcs-page"></div>');
+        var last = false;
+
+        html.append(
+            '<div class="lcs-title">Подборки</div>' +
+            '<div class="lcs-subtitle">Тематические фильмы</div>'
+        );
+
+        var row = $('<div class="lcs-row"></div>');
+        html.append(row);
+
+        COLLECTIONS.forEach(function (item) {
+            var card = createCard(item);
+
+            card.on('hover:focus', function () {
+                last = card;
             });
-            if (hero[0].complete) hero.addClass('loaded');
-        }
 
-        if(!movies.length){
-            row.html('<div class="tc-empty">В этой подборке ничего не найдено</div>');
-            return;
-        }
-
-        movies.slice(0,10).forEach(function(movie){
-            if(!movie || !movie.poster_path) return;
-            var title=movie.title || movie.original_title || 'Без названия';
-            var year=String(movie.release_date || '').slice(0,4);
-            var card=$('<div class="tc-card selector" tabindex="0">' +
-                '<img class="tc-poster" src="' + esc(imageUrl('w342', movie.poster_path)) + '" loading="lazy">' +
-                '<div class="tc-info"><div class="tc-name">' + esc(title) + '</div>' +
-                '<div class="tc-meta"><span>' + esc(year) + '</span><span class="tc-rating">★ ' + Number(movie.vote_average||0).toFixed(1) + '</span></div></div></div>');
-            card.on('hover:enter',function(){openMovie(movie)});
-            card.on('click',function(){openMovie(movie)});
-            card.on('hover:focus',function(){$(this).addClass('focus')});
-            card.on('hover:leave',function(){$(this).removeClass('focus')});
             row.append(card);
         });
+
+        scroll.append(html);
+
+        this.create = function () {
+            return this.render();
+        };
+
+        this.render = function () {
+            return scroll.render();
+        };
+
+        this.start = function () {
+            Lampa.Controller.add('lcs_content', {
+                toggle: function () {
+                    Lampa.Controller.collectionSet(scroll.render());
+                    Lampa.Controller.collectionFocus(last || false, scroll.render());
+                },
+                left: function () {
+                    if (Navigator.canmove('left')) Navigator.move('left');
+                    else Lampa.Controller.toggle('menu');
+                },
+                right: function () {
+                    Navigator.move('right');
+                },
+                up: function () {
+                    if (Navigator.canmove('up')) Navigator.move('up');
+                },
+                down: function () {
+                    if (Navigator.canmove('down')) Navigator.move('down');
+                },
+                back: function () {
+                    Lampa.Activity.backward();
+                }
+            });
+
+            Lampa.Controller.toggle('lcs_content');
+        };
+
+        this.pause = function () {};
+        this.stop = function () {};
+
+        this.destroy = function () {
+            try {
+                Lampa.Controller.clear();
+            } catch (e) {}
+
+            try {
+                scroll.destroy();
+            } catch (e) {}
+        };
     }
 
-    function load(c,section){
-        if(loaded[c.id]){
-            renderMovies(section,loaded[c.id]);
-            return;
-        }
+    function addMenu() {
+        if ($('#' + MENU_ID).length) return;
 
-        var done = false;
+        var button = $(
+            '<li id="' + MENU_ID + '" class="menu__item selector">' +
+                '<div class="menu__ico">' +
+                    '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">' +
+                        '<rect x="3" y="3" width="7" height="7" rx="1"></rect>' +
+                        '<rect x="14" y="3" width="7" height="7" rx="1"></rect>' +
+                        '<rect x="3" y="14" width="7" height="7" rx="1"></rect>' +
+                        '<rect x="14" y="14" width="7" height="7" rx="1"></rect>' +
+                    '</svg>' +
+                '</div>' +
+                '<div class="menu__text">Подборки</div>' +
+            '</li>'
+        );
 
-        function success(data){
-            if(done) return;
-            done = true;
-
-            var results = data && Array.isArray(data.results) ? data.results : [];
-
-            loaded[c.id] = results;
-            renderMovies(section, results);
-        }
-
-        function fail(){
-            if(done) return;
-            done = true;
-
-            section.find('.tc-row').html(
-                '<div class="tc-empty">Не удалось загрузить подборку</div>'
-            );
-        }
-
-        /*
-         * Используем ТОТ ЖЕ путь, что и твой рабочий top_kino.js:
-         *
-         * Lampa.Activity -> category_full -> source tmdb -> Api.list()
-         *
-         * Мы не строим собственный TMDB-запрос и не обращаемся напрямую
-         * к image.tmdb.org. Lampa сама добавляет ключ, язык, прокси,
-         * source и обработку ответа.
-         */
-        try {
-            if (Lampa.Api && typeof Lampa.Api.list === 'function') {
-                Lampa.Api.list({
-                    url: c.url,
-                    source: 'tmdb',
-                    page: 1
-                }, function(data){
-                    success(data);
-                }, function(){
-                    fail();
-                });
-
-                return;
-            }
-        } catch(e) {
-            console.log('[Подборки] Lampa.Api.list error', e);
-        }
-
-        /*
-         * Запасной вариант только для старых сборок Lampa.
-         */
-        try {
-            if (Lampa.Api &&
-                Lampa.Api.sources &&
-                Lampa.Api.sources.tmdb &&
-                typeof Lampa.Api.sources.tmdb.list === 'function') {
-
-                Lampa.Api.sources.tmdb.list({
-                    url: c.url,
-                    source: 'tmdb',
-                    page: 1
-                }, function(data){
-                    success(data);
-                }, function(){
-                    fail();
-                });
-
-                return;
-            }
-        } catch(e) {
-            console.log('[Подборки] legacy TMDB list error', e);
-        }
-
-        fail();
-    }
-
-    function build(){
-        addStyles();
-
-        var page=$('<div class="tc-page">' +
-            '<div class="tc-title">Подборки</div>' +
-            '<div class="tc-subtitle">Тематические фильмы на основе TMDB</div>' +
-            '</div>');
-
-        COLLECTIONS.forEach(function(c){
-            var section=$(
-                '<section class="tc-section">' +
-                    '<div class="tc-hero">' +
-                        '<img class="tc-hero-img" loading="lazy">' +
-                        '<div class="tc-hero-content">' +
-                            '<div class="tc-hero-icon">' + esc(c.icon) + '</div>' +
-                            '<div class="tc-hero-title">' + esc(c.title) + '</div>' +
-                            '<div class="tc-hero-desc">' + esc(c.description) + '</div>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="tc-head">' +
-                        '<div><span class="tc-section-title">' + esc(c.icon) + ' ' + esc(c.title) + '</span></div>' +
-                        '<div class="tc-all selector" tabindex="0">Все →</div>' +
-                    '</div>' +
-                    '<div class="tc-row"><div class="tc-loading">Загрузка...</div></div>' +
-                '</section>'
-            );
-
-            section.find('.tc-all').on('hover:enter',function(){openCategory(c)});
-            section.find('.tc-all').on('click',function(){openCategory(c)});
-            section.find('.tc-all').on('hover:focus',function(){$(this).addClass('focus')});
-            section.find('.tc-all').on('hover:leave',function(){$(this).removeClass('focus')});
-
-            page.append(section);
-            load(c,section);
+        button.on('hover:enter', function () {
+            Lampa.Activity.push({
+                url: '',
+                title: 'Подборки',
+                component: COMPONENT,
+                page: 1
+            });
         });
 
-        return page;
+        $('.menu .menu__list').eq(0).append(button);
     }
 
-    function Component(object){
-        var html=null,dead=false;
-        this.create=function(){
-            html=build();
-            setTimeout(function(){if(dead||!html)return;try{Lampa.Controller.collectionSet(html);Lampa.Controller.toggle('content')}catch(e){}},100);
-            return html;
-        };
-        this.start=function(){
-            if(Lampa.Activity.active && Lampa.Activity.active().activity!==this.activity)return;
-            Lampa.Controller.add('content',{
-                toggle:function(){if(html)Lampa.Controller.collectionSet(html)},
-                left:function(){if(typeof Navigator!=='undefined'&&Navigator.canmove('left'))Navigator.move('left');else Lampa.Controller.toggle('menu')},
-                right:function(){if(typeof Navigator!=='undefined'&&Navigator.canmove('right'))Navigator.move('right')},
-                up:function(){if(typeof Navigator!=='undefined'&&Navigator.canmove('up'))Navigator.move('up')},
-                down:function(){if(typeof Navigator!=='undefined'&&Navigator.canmove('down'))Navigator.move('down')},
-                back:function(){Lampa.Activity.backward()}
+    function start() {
+        if (started || !window.Lampa) return;
+        if (!Lampa.Component || !Lampa.Activity) return;
+
+        started = true;
+
+        addStyle();
+
+        try {
+            Lampa.Component.add(COMPONENT, CollectionsComponent);
+        } catch (e) {
+            console.log('[Подборки] Component add error', e);
+        }
+
+        if (window.appready) {
+            addMenu();
+        } else {
+            Lampa.Listener.follow('app', function (e) {
+                if (e.type === 'ready') addMenu();
             });
-            Lampa.Controller.toggle('content');
-        };
-        this.pause=function(){};
-        this.stop=function(){};
-        this.destroy=function(){dead=true;if(html)html.remove();html=null;};
-        this.render=function(){return $('<div></div>').append(this.create())};
+        }
+
+        console.log('[Lampa Подборки] standard cards test started');
     }
 
-    function addMenu(){
-        var menu=$('.menu .menu__list').eq(0);
-        if(!menu.length){setTimeout(addMenu,500);return;}
-        if($('.thematic-collections-menu').length)return;
-        var item=$('<li class="menu__item selector thematic-collections-menu"><div class="menu__ico">★</div><div class="menu__text">Подборки</div></li>');
-        function open(e){if(e)e.stopPropagation();var a={id:COMPONENT,component:COMPONENT,title:'Подборки'};try{if(Lampa.Activity.active().component===COMPONENT)Lampa.Activity.replace(a);else Lampa.Activity.push(a)}catch(err){console.error('[Подборки] open',err)}}
-        item.on('hover:enter',open);item.on('click',open);menu.prepend(item);
-    }
-
-    function start(){
-        if(!window.Lampa){setTimeout(start,1000);return;}
-        if(!Lampa.Component || typeof Lampa.Component.add!=='function'){console.error('[Подборки] Component API недоступен');return;}
-        Lampa.Component.add(COMPONENT,Component);
-        addStyles();addMenu();
-        Lampa.Listener.follow('activity',function(){setTimeout(addMenu,500)});
-        console.log('✔ Lampa Подборки 0.4 loaded — native TMDB Api.list');
-    }
-    start();
+    if (window.Lampa) start();
+    else setTimeout(start, 1500);
 })();
-9
