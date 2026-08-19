@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v26_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v27_style';
     var current = null;
     var DELAY = 2000;
     var activityGuard = null;
@@ -176,23 +176,66 @@
         return trailers(list)[0] || list[0];
     }
 
-    function bridgeBase() {
-        var base = '';
-        try { base = Lampa.Manifest.github_lampa; } catch(e) {}
-        if (!base) base = 'https://yumata.github.io/lampa/';
-        if (base.charAt(base.length - 1) !== '/') base += '/';
-        return base;
-    }
+    function bridgeHtml(videoId, bridgeId, mute, start) {
+        var safeVideoId = String(videoId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+        var safeBridgeId = String(bridgeId || '').replace(/[^a-zA-Z0-9_-]/g, '');
 
-    function bridgeUrl(videoId, bridgeId, mute, start) {
-        return bridgeBase() + 'youtube.html' +
-            '?bridgeId=' + encodeURIComponent(bridgeId) +
-            '&videoId=' + encodeURIComponent(videoId) +
-            '&autoplay=1' +
-            '&controls=0' +
-            '&mute=' + (mute ? '1' : '0') +
-            '&cc_load_policy=0' +
-            '&start=' + Math.max(0, Math.floor(start || 0));
+        return '<!doctype html><html><head>' +
+            '<meta charset="utf-8">' +
+            '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+            '<style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000}#player{width:100%;height:100%}</style>' +
+            '</head><body><div id="player"></div>' +
+            '<script src="https://www.youtube.com/iframe_api"><\/script>' +
+            '<script>' +
+            '(function(){' +
+            'var bridgeId="' + safeBridgeId + '";' +
+            'var videoId="' + safeVideoId + '";' +
+            'var autoplay=1, controls=1, mute=' + (mute ? 1 : 0) + ', start=' + Math.max(0, Math.floor(start || 0)) + ';' +
+            'var player=null,ready=false,timer=null;' +
+
+            'function send(type,data){try{parent.postMessage({bridgeId:bridgeId,type:type,data:data||{}}, "*")}catch(e){}}' +
+
+            'function tick(){if(!player||!ready)return;try{send("time",{currentTime:player.getCurrentTime(),duration:player.getDuration(),playerState:player.getPlayerState(),playbackQuality:player.getPlaybackQuality?player.getPlaybackQuality():""})}catch(e){}}' +
+
+            'window.onYouTubeIframeAPIReady=function(){' +
+                'player=new YT.Player("player",{' +
+                    'videoId:videoId,width:"100%",height:"100%",' +
+                    'playerVars:{autoplay:autoplay,controls:controls,mute:mute,start:start,rel:0,modestbranding:1,playsinline:1,enablejsapi:1,origin:location.origin,cc_load_policy:0},' +
+                    'events:{' +
+                        'onReady:function(){ready=true;send("ready");tick();timer=setInterval(tick,100)},' +
+                        'onStateChange:function(e){send("stateChange",{state:e.data})},' +
+                        'onPlaybackQualityChange:function(e){send("qualityChange",{quality:e.data})},' +
+                        'onError:function(e){send("error",{error:e.data})}' +
+                    '}' +
+                '});' +
+            '};' +
+
+            'window.addEventListener("message",function(event){' +
+                'var d=event.data||{};' +
+                'if(d.bridgeId!==bridgeId)return;' +
+                'var data=d.data||{};' +
+                'if(!player||!ready)return;' +
+                'try{' +
+                    'if(d.type==="init"){if(typeof data.volume==="number")player.setVolume(data.volume)}' +
+                    'else if(d.type==="play"){player.playVideo()}' +
+                    'else if(d.type==="pause"){player.pauseVideo()}' +
+                    'else if(d.type==="mute"){player.mute()}' +
+                    'else if(d.type==="unMute"){player.unMute()}' +
+                    'else if(d.type==="setVolume"){player.setVolume(Number(data.volume)||0)}' +
+                    'else if(d.type==="seekTo"){player.seekTo(Number(data.time)||0,true)}' +
+                    'else if(d.type==="setPlaybackRate"&&player.setPlaybackRate){player.setPlaybackRate(Number(data.rate)||1)}' +
+                    'else if(d.type==="destroy"){' +
+                        'if(timer)clearInterval(timer);timer=null;' +
+                        'try{player.destroy()}catch(e){};player=null;ready=false;' +
+                    '}' +
+                    'tick()' +
+                '}catch(e){}' +
+            '});' +
+
+            'send("bridgeReady");' +
+            '})();' +
+            '<\/script></body></html>';
+
     }
 
     function send(type, data) {
@@ -310,7 +353,13 @@
             wantSound ? 'Выключить звук' : 'Включить звук'
         );
 
-        send('setVolume', { volume: wantSound ? 100 : 0 });
+        if (wantSound) {
+            send('unMute');
+            send('setVolume', { volume: 100 });
+        } else {
+            send('mute');
+            send('setVolume', { volume: 0 });
+        }
     }
 
     function create(body, data) {
@@ -329,11 +378,12 @@
         frame.className = 'lta7-video';
         frame.setAttribute('frameborder', '0');
         frame.setAttribute('allowfullscreen', 'true');
+        frame.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
         frame.setAttribute(
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
         );
-        frame.src = bridgeUrl(trailer.key, bridgeId, true, 0);
+        frame.srcdoc = bridgeHtml(trailer.key, bridgeId, true, 0);
 
         var sound = document.createElement('button');
         sound.type = 'button';
@@ -515,7 +565,7 @@
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
         startActivityGuard();
-        console.log('[Trailer Autoplay] v26 started');
+        console.log('[Trailer Autoplay] v27 started');
     }
 
     if (window.Lampa && Lampa.Listener) {
