@@ -1,10 +1,55 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v28_sound_inside_trailer_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v29_sound_settings_style';
     var current = null;
     var DELAY = 2000;
     var activityGuard = null;
+
+    var SOUND_SETTING = 'lta7_trailer_sound';
+    var SOUND_DEFAULT = 'sound';
+
+    function getSoundMode() {
+        try {
+            return String(Lampa.Storage.get(SOUND_SETTING, SOUND_DEFAULT) || SOUND_DEFAULT) === 'mute'
+                ? 'mute'
+                : 'sound';
+        } catch(e) {
+            return SOUND_DEFAULT;
+        }
+    }
+
+    function addSettings() {
+        try {
+            if (!Lampa.SettingsApi || !Lampa.SettingsApi.addComponent) return;
+
+            Lampa.SettingsApi.addComponent({
+                component: 'lta7_trailer',
+                name: 'Трейлеры',
+                icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M10 9l5 3-5 3V9z" fill="currentColor"/></svg>'
+            });
+
+            Lampa.SettingsApi.addParam({
+                component: 'lta7_trailer',
+                param: {
+                    name: SOUND_SETTING,
+                    type: 'select',
+                    values: {
+                        sound: 'Всегда со звуком',
+                        mute: 'Всегда без звука'
+                    },
+                    'default': SOUND_DEFAULT
+                },
+                field: {
+                    name: 'Звук при запуске трейлера',
+                    description: 'Выберите, как трейлер должен запускаться автоматически.'
+                }
+            });
+        } catch(e) {
+            console.log('[Trailer Autoplay] settings error', e);
+        }
+    }
+
 
     function addStyle() {
         if (document.getElementById(STYLE_ID)) return;
@@ -78,70 +123,9 @@
                 position: relative !important;
                 z-index: 5 !important;
             }
-
-            /* Кнопка принадлежит только контейнеру трейлера.
-               Она не является глобальным элементом Lampa и исчезает
-               вместе с трейлером при cleanup(). */
-            .lta7-sound {
-                position: absolute !important;
-                right: 12px !important;
-                bottom: 12px !important;
-                width: 46px !important;
-                height: 46px !important;
-                min-width: 46px !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                border: 0 !important;
-                border-radius: 50% !important;
-                background: rgba(20,20,20,.86) !important;
-                color: #fff !important;
-                z-index: 2147483647 !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                opacity: 0 !important;
-                pointer-events: none !important;
-                touch-action: manipulation !important;
-                -webkit-tap-highlight-color: transparent !important;
-                box-shadow: 0 2px 10px rgba(0,0,0,.35) !important;
-                transition: opacity .25s ease, transform .15s ease !important;
-            }
-
-            .lta7-sound.visible {
-                opacity: 1 !important;
-                pointer-events: auto !important;
-            }
-
-            .lta7-sound:active {
-                transform: scale(.92) !important;
-            }
-
-            .lta7-sound svg {
-                width: 24px !important;
-                height: 24px !important;
-                fill: currentColor !important;
-                pointer-events: none !important;
-            }
-
-            .lta7-sound .lta7-muted-x {
-                fill: #ff4b4b !important;
-                stroke: #fff !important;
-            }
         `;
         document.head.appendChild(s);
     }
-
-    function mutedIcon() {
-        return '<svg viewBox="0 0 24 24">' +
-            '<path d="M4 9v6h4l5 4V5L8 9H4z"/>' +
-            '<path class="lta7-muted-x" d="M17 8.5l4.5 7m0-7l-4.5 7" fill="none" stroke-width="2.4" stroke-linecap="round"/>' +
-            '</svg>';
-    }
-
-    function soundIcon() {
-        return '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4zm12 3c0-1.3-.7-2.5-1.8-3.1v2.3c.5.3.8.7.8 1.2s-.3.9-.8 1.2v2.3c1.1-.6 1.8-2.7 1.8-3.1zm0-6v2.1c1.8.9 3 2.7 3 4.9s-1.2 4-3 4.9V20c3-1.1 5-3.9 5-7s-2-5.9-5-7z"/></svg>';
-    }
-
     function getVideos(data) {
         if (!data || !data.videos) return [];
         var list = data.videos.results || data.videos;
@@ -204,26 +188,6 @@
             }, '*');
         } catch(e) {}
     }
-
-    function positionSound() {
-        // Sound button is positioned inside the trailer host with CSS.
-        // Do not calculate viewport coordinates and do not use position: fixed.
-        if (!current || !current.sound) return;
-        current.sound.style.left = '';
-        current.sound.style.top = '';
-    }
-
-    function showSound() {
-        if (!current) return;
-        positionSound();
-        current.sound.classList.add('visible');
-    }
-
-    function hideSound() {
-        if (!current || !current.sound) return;
-        current.sound.classList.remove('visible');
-    }
-
     function cleanup() {
         if (!current) return;
 
@@ -232,11 +196,6 @@
         if (current.unlockTimer) clearTimeout(current.unlockTimer);
         if (current.messageHandler) {
             window.removeEventListener('message', current.messageHandler, true);
-        }
-
-        if (current.positionHandler) {
-            window.removeEventListener('resize', current.positionHandler);
-            window.removeEventListener('scroll', current.positionHandler, true);
         }
 
         if (current.frameWindow) {
@@ -253,10 +212,6 @@
             try { current.frame.remove(); } catch(e) {}
         }
 
-        if (current.sound) {
-            try { current.sound.remove(); } catch(e) {}
-        }
-
 
         if (current.host) {
             current.host.classList.remove('lta7-host');
@@ -268,7 +223,6 @@
     function reveal() {
         if (!current) return;
         current.frame.classList.add('visible');
-        showSound();
     }
 
     function getPlaybackPosition() {
@@ -277,43 +231,14 @@
         var position = Number(current.currentTime) || 0;
 
         // The bridge sends time updates periodically. Between updates, keep
-        // the missing fraction from the local clock so mute/unmute never
-        // jumps back to the last reported second (or to 0).
+        // the missing fraction from the local clock so playback position
+        // stays stable between bridge updates.
         if (current.playing && current.startedAt) {
             position += Math.max(0, (Date.now() - current.startedAt) / 1000);
         }
 
         return Math.max(0, position);
     }
-
-    function reloadForSound(wantSound) {
-        if (!current || !current.frameWindow) return;
-
-        /*
-         * IMPORTANT: never create/reload another iframe when sound changes.
-         * The previous versions did exactly that and caused the trailer to
-         * restart, overlap itself and briefly disappear.
-         *
-         * We keep ONE YouTube bridge for the entire lifetime of the card and
-         * only change its volume. This also preserves the exact playback
-         * position and the native Play/Pause state.
-         */
-        current.soundOn = !!wantSound;
-        current.sound.innerHTML = wantSound ? soundIcon() : mutedIcon();
-        current.sound.setAttribute(
-            'aria-label',
-            wantSound ? 'Выключить звук' : 'Включить звук'
-        );
-
-        if (wantSound) {
-            send('unMute');
-            send('setVolume', { volume: 100 });
-        } else {
-            send('mute');
-            send('setVolume', { volume: 0 });
-        }
-    }
-
     function create(body, data) {
         cleanup();
 
@@ -334,17 +259,9 @@
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
         );
-        frame.src = bridgeUrl(trailer.key, bridgeId, true, 0);
-
-        var sound = document.createElement('button');
-        sound.type = 'button';
-        sound.className = 'lta7-sound';
-        sound.innerHTML = mutedIcon();
-        sound.setAttribute('aria-label', 'Включить звук');
-
+        frame.src = bridgeUrl(trailer.key, bridgeId, getSoundMode() === 'mute', 0);
         host.classList.add('lta7-host');
         host.appendChild(frame);
-        host.appendChild(sound);
 
         current = {
             host: host,
@@ -352,8 +269,6 @@
             frameWindow: null,
             bridgeId: bridgeId,
             videoId: trailer.key,
-            sound: sound,
-            soundOn: false,
             currentTime: 0,
             startedAt: 0,
             timer: null,
@@ -361,32 +276,6 @@
             unlockTimer: null,
             playing: false,
         };
-
-        /*
-         * ВАЖНО:
-         * listener стоит на CAPTURE-фазе и на самой кнопке.
-         * Это не даёт Lampa selector/event system перехватить касание.
-         */
-        current.toggleSound = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-
-            if (!current || current.sound !== sound) return;
-
-            var wantSound = !current.soundOn;
-            reloadForSound(wantSound);
-        };
-
-        sound.addEventListener('pointerdown', current.toggleSound, {
-            capture: true,
-            passive: false
-        });
-        sound.addEventListener('pointerup', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-        }, true);
 
         current.messageHandler = function(event) {
             if (!current || event.source !== frame.contentWindow) return;
@@ -425,7 +314,6 @@
                     current.currentTime = d.currentTime;
                     if (current.playing) current.startedAt = Date.now();
                 }
-                positionSound();
                 return;
             }
 
@@ -509,10 +397,11 @@
     function start() {
         if (!window.Lampa || !Lampa.Listener) return;
         addStyle();
+        addSettings();
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
         startActivityGuard();
-        console.log('[Trailer Autoplay] v27 GitHub started');
+        console.log('[Trailer Autoplay] v29 GitHub started — sound is controlled from settings');
     }
 
     if (window.Lampa && Lampa.Listener) {
