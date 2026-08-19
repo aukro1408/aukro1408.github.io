@@ -873,14 +873,30 @@
             Lampa.SettingsApi.addParam({
                 component: 'lcs_ai',
                 param: {
-                    name: AI_OPENROUTER_KEY_PARAM,
-                    type: 'input',
-                    values: '',
-                    'default': ''
+                    name: 'lcs_ai_openrouter_key_edit',
+                    type: 'button'
                 },
                 field: {
                     name: 'OpenRouter API-ключ',
-                    description: 'Вставьте свой ключ OpenRouter. Бесплатные модели можно использовать без оплаты, если они доступны у провайдера.'
+                    description: 'Нажмите, чтобы ввести или изменить ключ'
+                },
+                onChange: function() {
+                    var current = '';
+                    try { current = Lampa.Storage.get(AI_OPENROUTER_KEY_PARAM, '') || ''; } catch(e) {}
+                    if (!Lampa.Input || !Lampa.Input.edit) {
+                        try { Lampa.Noty.show('Ввод ключа недоступен в этой версии Lampa'); } catch(e) {}
+                        return;
+                    }
+                    Lampa.Input.edit({
+                        title: 'OpenRouter API-ключ',
+                        value: current,
+                        free: true,
+                        nosave: true
+                    }, function(value) {
+                        value = (value || '').trim();
+                        try { Lampa.Storage.set(AI_OPENROUTER_KEY_PARAM, value); } catch(e) {}
+                        try { Lampa.Noty.show(value ? 'OpenRouter API-ключ сохранён' : 'OpenRouter API-ключ очищен'); } catch(e) {}
+                    });
                 }
             });
 
