@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v29_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v30_style';
     var current = null;
     var DELAY = 2000;
     var activityGuard = null;
@@ -36,6 +36,19 @@
 
             .lta7-video.visible {
                 opacity: 1 !important;
+            }
+
+            /* Hide YouTube's touch/action overlay at the bottom of the embed.
+               The trailer itself remains visible; this shield is only visual. */
+            .lta7-youtube-shield {
+                position: absolute !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                height: 92px !important;
+                z-index: 2 !important;
+                background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.96) 42%, #000 78%) !important;
+                pointer-events: none !important;
             }
 
             /* The iframe is the ONLY media player. It must receive taps so
@@ -191,10 +204,13 @@
             if (!/^https?:\/\//i.test(origin)) origin = '';
         } catch(e) {}
 
-        return 'https://www.youtube.com/embed/' +
+        return 'https://www.youtube-nocookie.com/embed/' +
             encodeURIComponent(videoId) +
             '?autoplay=1' +
             '&controls=0' +
+            '&disablekb=1' +
+            '&fs=0' +
+            '&autohide=1' +
             '&mute=' + (mute ? '1' : '0') +
             '&playsinline=1' +
             '&enablejsapi=1' +
@@ -202,6 +218,7 @@
             '&modestbranding=1' +
             '&iv_load_policy=3' +
             '&cc_load_policy=0' +
+            '&hl=ru' +
             '&start=' + Math.max(0, Math.floor(start || 0)) +
             (origin ? '&origin=' + encodeURIComponent(origin) : '');
     }
@@ -280,6 +297,10 @@
 
         if (current.frame) {
             try { current.frame.remove(); } catch(e) {}
+        }
+
+        if (current.shield) {
+            try { current.shield.remove(); } catch(e) {}
         }
 
         if (current.sound) {
@@ -375,6 +396,11 @@
 
         host.classList.add('lta7-host');
         host.appendChild(frame);
+
+        var shield = document.createElement('div');
+        shield.className = 'lta7-youtube-shield';
+        host.appendChild(shield);
+
         document.body.appendChild(sound);
 
         current = {
@@ -384,6 +410,7 @@
             bridgeId: bridgeId,
             videoId: trailer.key,
             sound: sound,
+            shield: shield,
             soundOn: false,
             currentTime: 0,
             startedAt: 0,
