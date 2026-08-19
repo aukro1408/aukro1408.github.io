@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v29_sound_settings_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v30_sound_settings_style';
     var current = null;
     var DELAY = 2000;
     var activityGuard = null;
@@ -21,7 +21,9 @@
 
     function addSettings() {
         try {
+            if (window.lta7TrailerSettingsReady) return;
             if (!Lampa.SettingsApi || !Lampa.SettingsApi.addComponent) return;
+            window.lta7TrailerSettingsReady = true;
 
             Lampa.SettingsApi.addComponent({
                 component: 'lta7_trailer',
@@ -259,7 +261,7 @@
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
         );
-        frame.src = bridgeUrl(trailer.key, bridgeId, getSoundMode() === 'mute', 0);
+        frame.src = bridgeUrl(trailer.key, bridgeId, true, 0);
         host.classList.add('lta7-host');
         host.appendChild(frame);
 
@@ -303,6 +305,17 @@
 
                     current.playing = true;
                     current.startedAt = Date.now();
+
+                    // Start muted so autoplay is allowed by the browser.
+                    // If the user selected sound, immediately unmute the
+                    // already-playing YouTube player without recreating iframe.
+                    if (getSoundMode() === 'sound') {
+                        setTimeout(function() {
+                            if (!current || current.frame !== frame) return;
+                            send('unMute');
+                            send('setVolume', { volume: 100 });
+                        }, 80);
+                    }
 
                 }, wait);
 
@@ -401,7 +414,7 @@
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
         startActivityGuard();
-        console.log('[Trailer Autoplay] v29 GitHub started — sound is controlled from settings');
+        console.log('[Trailer Autoplay] v30 GitHub started — sound is controlled from settings');
     }
 
     if (window.Lampa && Lampa.Listener) {
