@@ -177,23 +177,39 @@
         return trailers(list)[0] || list[0];
     }
 
-    function bridgeBase() {
-        var base = '';
-        try { base = Lampa.Manifest.github_lampa; } catch(e) {}
-        if (!base) base = 'https://yumata.github.io/lampa/';
-        if (base.charAt(base.length - 1) !== '/') base += '/';
-        return base;
-    }
+    function createBridgeUrl(videoId, bridgeId, start) {
+        /*
+         * Self-contained bridge. We do not use Lampa's youtube.html here,
+         * because that bridge exposes setVolume() but does not clear the
+         * YouTube muted state. Our bridge has explicit mute/unMute commands.
+         */
+        function esc(v) {
+            return String(v || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        }
 
-    function bridgeUrl(videoId, bridgeId, mute, start) {
-        return bridgeBase() + 'youtube.html' +
-            '?bridgeId=' + encodeURIComponent(bridgeId) +
-            '&videoId=' + encodeURIComponent(videoId) +
-            '&autoplay=1' +
-            '&controls=0' +
-            '&mute=' + (mute ? '1' : '0') +
-            '&cc_load_policy=0' +
-            '&start=' + Math.max(0, Math.floor(start || 0));
+        var html = "<!doctype html><html><head><meta charset='utf-8'><style>" +
+            "html,body,#player{margin:0;width:100%;height:100%;overflow:hidden;background:#000}" +
+            "iframe{border:0}</style></head><body><div id='player'></div>" +
+            "<script src='https://www.youtube.com/iframe_api'></scr" + "ipt><script>" +
+            "var bridgeId='" + esc(bridgeId) + "',videoId='" + esc(videoId) + "',start=" +
+            Math.max(0, Math.floor(start || 0)) + ";" +
+            "var player=null,ready=false,timer=null;" +
+            "function send(type,data){try{parent.postMessage({bridgeId:bridgeId,type:type,data:data||{}},'*')}catch(e){}}" +
+            "function tick(){if(!player||!ready)return;try{send('time',{currentTime:player.getCurrentTime(),duration:player.getDuration(),playerState:player.getPlayerState()})}catch(e){}}" +
+            "window.onYouTubeIframeAPIReady=function(){player=new YT.Player('player',{width:'100%',height:'100%',videoId:videoId,playerVars:{autoplay:1,controls:0,rel:0,modestbranding:1,playsinline:1,enablejsapi:1,start:start},events:{onReady:function(){ready=true;player.mute();send('ready');send('stateChange',{state:player.getPlayerState()});timer=setInterval(tick,100)},onStateChange:function(e){send('stateChange',{state:e.data})},onError:function(e){send('error',{error:e.data})}}})};" +
+            "window.addEventListener('message',function(e){if(!e.data||e.data.bridgeId!==bridgeId)return;var t=e.data.type,d=e.data.data||{};if(!player||!ready)return;try{" +
+            "if(t==='play')player.playVideo();" +
+            "else if(t==='pause')player.pauseVideo();" +
+            "else if(t==='mute'){player.mute();}" +
+            "else if(t==='unmute'){player.unMute();player.setVolume(100);}" +
+            "else if(t==='setVolume'){player.setVolume(Number(d.volume)||0);if(Number(d.volume)>0)player.unMute();else player.mute();}" +
+            "else if(t==='seekTo')player.seekTo(Number(d.time)||0,true);" +
+            "}catch(e){}});send('bridgeReady');" +
+            "</scr" + "ipt></body></html>";
+
+        var blob = new Blob([html], {type:'text/html'});
+        var url = URL.createObjectURL(blob);
+        return { url: url, blob: blob };
     }
 
     function send(type, data) {
@@ -259,6 +275,10 @@
             try { current.frame.remove(); } catch(e) {}
         }
 
+        if (current.bridgeUrl) {
+            try { URL.revokeObjectURL(current.bridgeUrl); } catch(e) {}
+        }
+
         if (current.sound) {
             try { current.sound.remove(); } catch(e) {}
         }
@@ -311,7 +331,7 @@
             wantSound ? 'Выключить звук' : 'Включить звук'
         );
 
-        send('setVolume', { volume: wantSound ? 100 : 0 });
+        send(wantSound ? 'unmute' : 'mute');
     }
 
     function create(body, data) {
@@ -334,7 +354,8 @@
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
         );
-        frame.src = bridgeUrl(trailer.key, bridgeId, true, 0);
+        var bridge = createBridgeUrl(trailer.key, bridgeId, 0);
+        frame.src = bridge.url;
 
         var sound = document.createElement('button');
         sound.type = 'button';
@@ -350,6 +371,7 @@
             host: host,
             frame: frame,
             frameWindow: null,
+            bridgeUrl: bridge.url,
             bridgeId: bridgeId,
             videoId: trailer.key,
             sound: sound,
