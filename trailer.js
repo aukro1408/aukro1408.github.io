@@ -286,9 +286,11 @@
 
                 current.timer = setTimeout(function() {
                     if (!current || current.frame !== frame) return;
-                    reveal();
+                    // Видео пока НЕ показываем: сначала запускаем плеер и
+                    // ждём подтверждения реального состояния "playing".
+                    // Так исключается мелькание нативной иконки play/pause
+                    // YouTube, которая на миг видна между "cued" и "playing".
                     send('play');
-                    current.playing = true;
                 }, DELAY);
 
                 return;
@@ -297,8 +299,10 @@
             if (type === 'stateChange') {
                 var d = event.data.data || {};
                 if (d.state === 1) {
-                    reveal();
                     current.playing = true;
+                    // Показываем ролик только теперь, когда он уже точно
+                    // играет — иконка play/pause к этому моменту скрыта.
+                    reveal();
                 }
                 if (d.state === 0) {
                     cleanup();
