@@ -38,9 +38,9 @@
                 opacity: 1 !important;
             }
 
-            /* The trailer is playback-only. The iframe never receives
-               user taps, so YouTube's own controls/overlays cannot appear.
-               The only visible control is our custom sound button. */
+            /* Playback-only video layer. No taps are sent to the iframe, so
+               YouTube's native Play/Pause overlay can never appear.
+               The only interactive control is our separate sound button. */
             .lta7-host > .lta7-video {
                 z-index: 0 !important;
                 pointer-events: none !important;
@@ -185,42 +185,15 @@
         return base;
     }
 
-    function bridgeHtml(videoId, bridgeId, mute, start) {
-        function esc(v) {
-            return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        }
-
-        return '<!doctype html><html><head><meta charset="utf-8">' +
-            '<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">' +
-            '<style>' +
-            'html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;pointer-events:none}' +
-            '#player{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;pointer-events:none}' +
-            '#player iframe{border:0;pointer-events:none!important}' +
-            '</style></head><body>' +
-            '<div id="player"></div>' +
-            '<script src="https://www.youtube.com/iframe_api"></script>' +
-            '<script>' +
-            'var bridgeId="' + esc(bridgeId) + '",videoId="' + esc(videoId) + '",' +
-            'autoplay=1,controls=0,mute=' + (mute ? 1 : 0) + ',start=' + Math.max(0, Math.floor(start || 0)) + ';' +
-            'var player=null,ready=false,timer=null;' +
-            'function send(t,d){try{parent.postMessage({bridgeId:bridgeId,type:t,data:d||{}},"*")}catch(e){}}' +
-            'function tick(){if(!player||!ready)return;try{send("time",{currentTime:player.getCurrentTime(),duration:player.getDuration(),playerState:player.getPlayerState()})}catch(e){}}' +
-            'function resize(){var el=document.getElementById("player");if(!el||!player)return;try{player.setSize(el.clientWidth*2,el.clientHeight*2)}catch(e){}}' +
-            'window.onYouTubeIframeAPIReady=function(){' +
-                'player=new YT.Player("player",{' +
-                    'videoId:videoId,width:"100%",height:"100%",' +
-                    'playerVars:{autoplay:autoplay,controls:0,disablekb:1,fs:0,iv_load_policy:3,cc_load_policy:0,rel:0,modestbranding:1,playsinline:1,enablejsapi:1,origin:location.origin,start:start,mute:mute},' +
-                    'events:{onReady:function(){ready=true;try{player.mute()}catch(e){};send("ready");tick();timer=setInterval(tick,250);resize()},onStateChange:function(e){send("stateChange",{state:e.data})},onError:function(e){send("error",{error:e.data})}}' +
-                '});' +
-            '};' +
-            'window.addEventListener("resize",resize);' +
-            'window.addEventListener("message",function(e){if(!e.data||e.data.bridgeId!==bridgeId)return;var t=e.data.type,d=e.data.data||{};if(!player||!ready)return;try{' +
-                'if(t==="play")player.playVideo();' +
-                'else if(t==="setVolume") {player.setVolume(Number(d.volume)||0);if(Number(d.volume)>0)player.unMute();else player.mute();}' +
-                'else if(t==="destroy"){if(timer)clearInterval(timer);player.destroy();player=null;ready=false;}' +
-            '}catch(x){}});' +
-            'send("bridgeReady");' +
-            '<\/script></body></html>';
+    function bridgeUrl(videoId, bridgeId, mute, start) {
+        return bridgeBase() + 'youtube.html' +
+            '?bridgeId=' + encodeURIComponent(bridgeId) +
+            '&videoId=' + encodeURIComponent(videoId) +
+            '&autoplay=1' +
+            '&controls=0' +
+            '&mute=' + (mute ? '1' : '0') +
+            '&cc_load_policy=0' +
+            '&start=' + Math.max(0, Math.floor(start || 0));
     }
 
     function send(type, data) {
@@ -272,6 +245,16 @@
             window.removeEventListener('scroll', current.positionHandler, true);
         }
 
+        if (current.frameWindow) {
+            try {
+                current.frameWindow.postMessage({
+                    bridgeId: current.bridgeId,
+                    type: 'pause',
+                    data: {}
+                }, '*');
+            } catch(e) {}
+        }
+
         if (current.frame) {
             try { current.frame.remove(); } catch(e) {}
         }
@@ -294,9 +277,33 @@
         showSound();
     }
 
-    function setSound(wantSound) {
+    function getPlaybackPosition() {
+        if (!current) return 0;
+
+        var position = Number(current.currentTime) || 0;
+
+        // The bridge sends time updates periodically. Between updates, keep
+        // the missing fraction from the local clock so mute/unmute never
+        // jumps back to the last reported second (or to 0).
+        if (current.playing && current.startedAt) {
+            position += Math.max(0, (Date.now() - current.startedAt) / 1000);
+        }
+
+        return Math.max(0, position);
+    }
+
+    function reloadForSound(wantSound) {
         if (!current || !current.frameWindow) return;
 
+        /*
+         * IMPORTANT: never create/reload another iframe when sound changes.
+         * The previous versions did exactly that and caused the trailer to
+         * restart, overlap itself and briefly disappear.
+         *
+         * We keep ONE YouTube bridge for the entire lifetime of the card and
+         * only change its volume. This also preserves the exact playback
+         * position and the native Play/Pause state.
+         */
         current.soundOn = !!wantSound;
         current.sound.innerHTML = wantSound ? soundIcon() : mutedIcon();
         current.sound.setAttribute(
@@ -304,7 +311,6 @@
             wantSound ? 'Выключить звук' : 'Включить звук'
         );
 
-        /* Never reload or recreate the iframe. Only change its volume. */
         send('setVolume', { volume: wantSound ? 100 : 0 });
     }
 
@@ -328,7 +334,7 @@
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
         );
-        frame.srcdoc = bridgeHtml(trailer.key, bridgeId, true, 0);
+        frame.src = bridgeUrl(trailer.key, bridgeId, true, 0);
 
         var sound = document.createElement('button');
         sound.type = 'button';
@@ -348,8 +354,12 @@
             videoId: trailer.key,
             sound: sound,
             soundOn: false,
+            currentTime: 0,
+            startedAt: 0,
             timer: null,
             readyTimer: null,
+            unlockTimer: null,
+            playing: false,
         };
 
         current.positionHandler = positionSound;
@@ -369,7 +379,7 @@
             if (!current || current.sound !== sound) return;
 
             var wantSound = !current.soundOn;
-            setSound(wantSound);
+            reloadForSound(wantSound);
         };
 
         sound.addEventListener('pointerdown', current.toggleSound, {
@@ -397,27 +407,50 @@
             if (type === 'ready') {
                 if (current.readyTimer) clearTimeout(current.readyTimer);
 
-                /* Start once. No Play/Pause UI and no player reloads. */
+                // Первичная загрузка: через 2 секунды.
+                var wait = DELAY;
+
                 current.timer = setTimeout(function() {
                     if (!current || current.frame !== frame) return;
 
                     reveal();
                     send('play');
-                }, DELAY);
+
+                    current.playing = true;
+                    current.startedAt = Date.now();
+
+                }, wait);
 
                 return;
             }
 
             if (type === 'time') {
+                if (typeof d.currentTime === 'number') {
+                    current.currentTime = d.currentTime;
+                    if (current.playing) current.startedAt = Date.now();
+                }
                 positionSound();
                 return;
             }
 
             if (type === 'stateChange') {
-                /* The trailer is intentionally playback-only. We do not
-                   expose or control Play/Pause. */
-                if (d.state === 1) reveal();
-                if (d.state === 0) cleanup();
+                // 1 = playing.
+                if (d.state === 1) {
+                    reveal();
+                    current.playing = true;
+                    current.startedAt = Date.now();
+                }
+
+                if (d.state === 2) {
+                    current.currentTime = getPlaybackPosition();
+                    current.playing = false;
+                    current.startedAt = 0;
+                }
+
+                // 0 = ended.
+                if (d.state === 0) {
+                    cleanup();
+                }
                 return;
             }
 
