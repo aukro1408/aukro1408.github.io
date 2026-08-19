@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    /* Lampa Collections v0.7 — author: aukro1408 */
+    /* Lampa Collections v0.8 — author: aukro1408 */
     var COMPONENT = 'lampa_collections_standard';
     var MENU_ID = 'lampa_collections_standard_menu';
     var started = false;
@@ -18,18 +18,74 @@
      */
     var COLLECTIONS = [
         {
-            title: 'Зомби',
-            icon: '<svg viewBox="0 0 24 24"><path d="M4 10.5c0-4.1 3.2-7 8-7s8 2.9 8 7v5.2c0 1.8-1.2 3.3-3 3.3H7c-1.8 0-3-1.5-3-3.3z"/><path d="M8 11h.01M16 11h.01M9 15.5c1.7 1.1 4.3 1.1 6 0M7 7.5l-1.5-2M17 7.5l1.5-2"/></svg>',
-            description: 'Зомби, эпидемии и выживание',
-            image: 'https://images.fandango.com/ImageRenderer/0/0/redesign/static/img/default_poster--dark-mode.png/0/images/masterrepository/Fandango/136726/WWZ523.jpg',
-            url: 'discover/movie?with_genres=27&with_keywords=12377&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+            title: 'Реальность сломалась',
+            icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M8 8l3 3-2 4M16 8l-3 3 2 4M9 16h6"/></svg>',
+            description: 'Когда мир выглядит нормальным, но что-то явно не так',
+            image: 'https://image.tmdb.org/t/p/w500/7p5MzMb4h0Y2WUn73r4MHKNeh3X.jpg',
+            url: 'discover/movie?with_genres=878|53&with_keywords=2340&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
         },
         {
-            title: 'Космос',
-            icon: '<svg viewBox="0 0 24 24"><path d="M14.8 4.1c2.5-1.1 4.3-1 5.1-.2.8.8.9 2.6-.2 5.1-1.3 3-4 6.1-7.1 7.7l-3.2-3.2c1.6-3.1 4.7-5.8 7.7-7.1z"/><path d="M9.4 14.6 6 18M7.3 16.7l-2.1.4.4-2.1M14.6 9.4l-1.2 1.2M17.5 6.5h.01"/><path d="M8.3 18.2c-.8 1.3-1.9 1.9-3.3 1.9 0-1.4.6-2.5 1.9-3.3"/></svg>',
-            description: 'Космос, другие планеты и экспедиции',
-            image: 'https://www.movieposters.com/cdn/shop/products/interstellar4_bed75630-9176-4725-b1cc-3bd45788905a_1024x1024.jpg?v=1762971876',
-            url: 'discover/movie?with_genres=878&with_keywords=9882&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+            title: 'Другая версия тебя',
+            icon: '<svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="4"/><circle cx="15" cy="15" r="4"/><path d="M12 5v14M5 12h14"/></svg>',
+            description: 'Двойники, подмена и чужая жизнь',
+            image: 'https://image.tmdb.org/t/p/w500/rQifCStdJ7uJt1JMY3TDx1J5yWI.jpg',
+            url: 'discover/movie?with_keywords=161891&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'Время пошло не так',
+            icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2M5 5l2 2M19 5l-2 2"/></svg>',
+            description: 'Петли, повторения и сломанная хронология',
+            image: 'https://image.tmdb.org/t/p/w500/26OxTMSHoUW50XK3zkjOqodcvTc.jpg',
+            url: 'discover/movie?with_keywords=563&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'Ничего не сходится',
+            icon: '<svg viewBox="0 0 24 24"><path d="M5 6h6v5H5zM13 13h6v5h-6zM13 5h6v5h-6zM5 14h6v5H5z"/><path d="m11 8 2 3M11 16l2-3"/></svg>',
+            description: 'Чем дальше, тем меньше понятно, что происходит',
+            image: 'https://image.tmdb.org/t/p/w500/rQifCStdJ7uJt1JMY3TDx1J5yWI.jpg',
+            url: 'discover/movie?with_genres=53,9648&with_keywords=2340&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'Что-то не так',
+            icon: '<svg viewBox="0 0 24 24"><path d="M12 3 21 20H3z"/><path d="M12 8v6M12 17h.01"/></svg>',
+            description: 'Тревожное чувство, что реальность скрывает что-то ужасное',
+            image: 'https://image.tmdb.org/t/p/w500/ooTB3486ybRLrIr46vdjEhoYcsy.jpg',
+            url: 'discover/movie?with_genres=27,53&with_keywords=256183&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'За тобой наблюдают',
+            icon: '<svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.5"/><path d="M18 5l2-2M6 5 4 3"/></svg>',
+            description: 'Камеры, слежка и ощущение чужого взгляда',
+            image: 'https://image.tmdb.org/t/p/w500/gAw5nJGNDI2hyw2ghBLoD6rSk3Y.jpg',
+            url: 'discover/movie?with_keywords=18420&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'За дверью что-то есть',
+            icon: '<svg viewBox="0 0 24 24"><path d="M6 21V4h11v17M6 21h13M14 13h.01"/><path d="M17 8c2 0 3 1 3 3s-1 3-3 3"/></svg>',
+            description: 'Порталы, тайные пространства и места, куда не стоило входить',
+            image: 'https://image.tmdb.org/t/p/w500/ebzumprgCpfFUZOTJNZ407FA9IH.jpg',
+            url: 'discover/movie?with_genres=27&with_keywords=7939&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'Неизвестный сигнал',
+            icon: '<svg viewBox="0 0 24 24"><path d="M4 12h3M17 12h3M7 9a4 4 0 0 1 0 6M17 9a4 4 0 0 0 0 6M9.5 6.5a8 8 0 0 1 0 11M14.5 6.5a8 8 0 0 0 0 11"/><circle cx="12" cy="12" r="1.5"/></svg>',
+            description: 'Странные контакты, неизвестные сущности и внеземной след',
+            image: 'https://image.tmdb.org/t/p/w500/gAw5nJGNDI2hyw2ghBLoD6rSk3Y.jpg',
+            url: 'discover/movie?with_genres=878,53&with_keywords=12553&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'Найденная запись',
+            icon: '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M8 5l1-2h6l1 2M8 17h.01M16 17h.01"/></svg>',
+            description: 'Камеры, кассеты и последние записи исчезнувших людей',
+            image: 'https://image.tmdb.org/t/p/w500/uSx9GZIdrYv8MQtDq6eaT0kYfTY.jpg',
+            url: 'discover/movie?with_genres=27&with_keywords=163053&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'За пределами мира',
+            icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2 2.2 3 4.9 3 8s-1 5.8-3 8M12 4c-2 2.2-3 4.9-3 8s1 5.8 3 8"/></svg>',
+            description: 'Другие измерения, порталы и невозможные пространства',
+            image: 'https://image.tmdb.org/t/p/w500/26OxTMSHoUW50XK3zkjOqodcvTc.jpg',
+            url: 'discover/movie?with_genres=878,27&with_keywords=7939&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
         }
     ];
 
