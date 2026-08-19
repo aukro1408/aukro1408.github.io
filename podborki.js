@@ -1,6 +1,7 @@
 (function () {
     'use strict';
 
+    /* Lampa Collections — author: aukro1408 */
     var COMPONENT = 'lampa_collections_standard';
     var MENU_ID = 'lampa_collections_standard_menu';
     var started = false;
@@ -17,14 +18,14 @@
     var COLLECTIONS = [
         {
             title: 'Зомби',
-            icon: '🧟',
+            icon: '<svg viewBox="0 0 24 24"><path d="M4 10.5c0-4.1 3.2-7 8-7s8 2.9 8 7v5.2c0 1.8-1.2 3.3-3 3.3H7c-1.8 0-3-1.5-3-3.3z"/><path d="M8 11h.01M16 11h.01M9 15.5c1.7 1.1 4.3 1.1 6 0M7 7.5l-1.5-2M17 7.5l1.5-2"/></svg>
             description: 'Зомби, эпидемии и выживание',
             image: 'https://images.fandango.com/ImageRenderer/0/0/redesign/static/img/default_poster--dark-mode.png/0/images/masterrepository/Fandango/136726/WWZ523.jpg',
             url: 'discover/movie?with_genres=27&with_keywords=12377&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
         },
         {
             title: 'Космос',
-            icon: '🚀',
+            icon: '<svg viewBox="0 0 24 24"><path d="M14.8 4.1c2.5-1.1 4.3-1 5.1-.2.8.8.9 2.6-.2 5.1-1.3 3-4 6.1-7.1 7.7l-3.2-3.2c1.6-3.1 4.7-5.8 7.7-7.1z"/><path d="M9.4 14.6 6 18M7.3 16.7l-2.1.4.4-2.1M14.6 9.4l-1.2 1.2M17.5 6.5h.01"/><path d="M8.3 18.2c-.8 1.3-1.9 1.9-3.3 1.9 0-1.4.6-2.5 1.9-3.3"/></svg>
             description: 'Космос, другие планеты и экспедиции',
             image: 'https://www.movieposters.com/cdn/shop/products/interstellar4_bed75630-9176-4725-b1cc-3bd45788905a_1024x1024.jpg?v=1762971876',
             url: 'discover/movie?with_genres=878&with_keywords=9882&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
@@ -79,12 +80,52 @@
              * Только небольшая подпись категории.
              * Размер самой карточки НЕ трогаем.
              */
+            .lcs-card .card__view {
+                border-radius: .7em !important;
+                overflow: hidden !important;
+            }
+
+            .lcs-card .card__img {
+                border-radius: .7em !important;
+            }
+
             .lcs-card .card__title {
                 display: block !important;
                 white-space: normal !important;
                 text-align: center !important;
                 line-height: 1.2;
-                margin-top: .35em;
+                margin-top: .4em;
+            }
+
+            .lcs-category {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: .38em;
+            }
+
+            .lcs-icon {
+                width: 1.15em;
+                height: 1.15em;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                color: #fff;
+                flex: 0 0 auto;
+            }
+
+            .lcs-icon svg {
+                width: 100%;
+                height: 100%;
+                fill: none;
+                stroke: currentColor;
+                stroke-width: 1.7;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+
+            .lcs-name {
+                display: inline-block;
             }
 
             .lcs-card .lcs-category {
@@ -152,7 +193,8 @@
          */
         title.html(
             '<div class="lcs-category">' +
-                esc(item.icon) + ' ' + esc(item.title) +
+                '<span class="lcs-icon">' + item.icon + '</span>' +
+                '<span class="lcs-name">' + esc(item.title) + '</span>' +
             '</div>' +
             '<div class="lcs-desc">' +
                 esc(item.description) +
