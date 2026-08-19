@@ -230,6 +230,13 @@
 
             .lcs-card .card__view {
                 width: 100% !important;
+                border-radius: .8em !important;
+                overflow: hidden !important;
+            }
+
+            .lcs-card .card__img {
+                border-radius: .8em !important;
+                overflow: hidden !important;
             }
 
             /*
@@ -466,7 +473,15 @@
             var total = data && Number(data.total_results);
             if (!isFinite(total)) total = 0;
             countCache[item.url] = total;
-            pill.text(total ? (total + ' фильмов') : '0 фильмов');
+
+            // Если подборка пустая — полностью убираем её из DOM.
+            // Поэтому не остаётся пустого места в сетке 3×N.
+            if (total <= 0) {
+                card.remove();
+                return;
+            }
+
+            pill.text(total + ' фильмов');
             setCardImage(card, data, item.image);
         }
 
@@ -743,14 +758,21 @@
         req.silent(tmdbUrl(category, 1), function (data) {
             var total = data && Number(data.total_results);
             if (!isFinite(total)) total = 0;
-            pill.text(total ? (total + ' фильмов') : '0 фильмов');
+
+            // Пустые категории не показываем вообще.
+            if (total <= 0) {
+                card.remove();
+                return;
+            }
+
+            pill.text(total + ' фильмов');
 
             if (!setCardImage(card, data, null)) {
                 // Нет изображения — не показываем broken-image.
                 card.find('.card__img').attr('src', './img/img_load.svg');
             }
         }, function () {
-            pill.remove();
+            card.remove();
         });
 
         card.on('hover:enter', function () {
@@ -1109,3 +1131,4 @@ function createCard(item) {
     if (window.Lampa) start();
     else setTimeout(start, 1500);
 })();
+ 
