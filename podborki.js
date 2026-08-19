@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    /* Lampa Collections v1.1 — author: aukro1408 */
+    /* Lampa Collections v1.2 — author: aukro1408 */
     var COMPONENT = 'lampa_collections_standard';
     var MENU_ID = 'lampa_collections_standard_menu';
     var started = false;
@@ -417,17 +417,57 @@
         document.head.appendChild(style);
     }
 
-    function loadCount(item, pill) {
-        if (countCache[item.url] !== undefined) {
-            pill.text(countCache[item.url] + ' фильмов');
-            return;
+    function setCardImage(card, data, fallback) {
+        var results = data && Array.isArray(data.results) ? data.results : [];
+        var first = null;
+
+        // Не берём results[0] вслепую: первый объект TMDB иногда не имеет poster_path.
+        for (var i = 0; i < results.length; i++) {
+            if (results[i] && results[i].poster_path) {
+                first = results[i];
+                break;
+            }
         }
 
-        function applyCount(data) {
+        if (first && first.poster_path) {
+            card.find('.card__img').attr(
+                'src',
+                'https://image.tmdb.org/t/p/w500' + first.poster_path
+            );
+            return true;
+        }
+
+        // Если постеров в выдаче нет, пробуем backdrop.
+        for (var j = 0; j < results.length; j++) {
+            if (results[j] && results[j].backdrop_path) {
+                card.find('.card__img').attr(
+                    'src',
+                    'https://image.tmdb.org/t/p/w780' + results[j].backdrop_path
+                );
+                return true;
+            }
+        }
+
+        // Последний fallback — старый постер, если он задан и не пустой.
+        if (fallback) {
+            card.find('.card__img').attr('src', fallback);
+            return true;
+        }
+
+        return false;
+    }
+
+    function loadCollectionData(item, card, pill) {
+        if (countCache[item.url] !== undefined) {
+            pill.text(countCache[item.url] + ' фильмов');
+        }
+
+        function applyData(data) {
             var total = data && Number(data.total_results);
             if (!isFinite(total)) total = 0;
             countCache[item.url] = total;
             pill.text(total ? (total + ' фильмов') : '0 фильмов');
+            setCardImage(card, data, item.image);
         }
 
         try {
@@ -436,16 +476,22 @@
                     url: item.url,
                     source: 'tmdb',
                     page: 1
-                }, applyCount, function () {
-                    pill.remove();
+                }, applyData, function () {
+                    // Не показываем битую картинку. Если старого fallback нет,
+                    // оставляем штатный loader Lampa вместо broken-image icon.
+                    if (!item.image) {
+                        card.find('.card__img').attr('src', './img/img_load.svg');
+                    }
                 });
                 return;
             }
         } catch (e) {
-            console.log('[Подборки] count error', e);
+            console.log('[Подборки] data error', e);
         }
 
-        pill.remove();
+        if (item.image) {
+            card.find('.card__img').attr('src', item.image);
+        }
     }
 
     
@@ -624,12 +670,7 @@
 
         req.silent(url, function (data) {
             if (!data) return;
-            var first = data.results && data.results[0];
-            if (first && first.poster_path) {
-                card.find('.card__img').attr('src', 'https://image.tmdb.org/t/p/w500' + first.poster_path);
-            } else if (first && first.backdrop_path) {
-                card.find('.card__img').attr('src', 'https://image.tmdb.org/t/p/w780' + first.backdrop_path);
-            }
+            setCardImage(card, data, null);
         }, function () {});
 
         pill.text(service.categories.length + ' подборок');
@@ -704,13 +745,9 @@
             if (!isFinite(total)) total = 0;
             pill.text(total ? (total + ' фильмов') : '0 фильмов');
 
-            var first = data && data.results && data.results[0];
-            if (first && first.poster_path) {
-                card.find('.card__img').attr('src', 'https://image.tmdb.org/t/p/w500' + first.poster_path);
-            } else if (first && first.backdrop_path) {
-                card.find('.card__img').attr('src', 'https://image.tmdb.org/t/p/w780' + first.backdrop_path);
-            } else {
-                pill.remove();
+            if (!setCardImage(card, data, null)) {
+                // Нет изображения — не показываем broken-image.
+                card.find('.card__img').attr('src', './img/img_load.svg');
             }
         }, function () {
             pill.remove();
@@ -815,7 +852,9 @@ function createCard(item) {
         var img = card.find('.card__img');
         var title = card.find('.card__title');
 
-        img.attr('src', item.image);
+        // Сначала показываем нейтральный loader, затем заменяем его
+        // реальным poster_path из TMDB. Это устраняет битые статические URL.
+        img.attr('src', './img/img_load.svg');
         /*
          * Название подборки показываем под постером.
          * Это именно штатный .card__title, поэтому визуально
@@ -845,7 +884,7 @@ function createCard(item) {
             category: true
         };
 
-        loadCount(item, countPill);
+        loadCollectionData(item, card, countPill);
 
         card.on('hover:enter', function () {
             Lampa.Activity.push({
@@ -1064,7 +1103,7 @@ function createCard(item) {
             });
         }
 
-        console.log('[Lampa Подборки] standard cards test started');
+        console.log('[Lampa Подборки] TMDB image fallback started');
     }
 
     if (window.Lampa) start();
