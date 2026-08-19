@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    /* Lampa Collections v0.9 — author: aukro1408 */
+    /* Lampa Collections v1.1 — author: aukro1408 */
     var COMPONENT = 'lampa_collections_standard';
     var MENU_ID = 'lampa_collections_standard_menu';
     var started = false;
@@ -87,6 +87,77 @@
             image: 'https://image.tmdb.org/t/p/w500/26OxTMSHoUW50XK3zkjOqodcvTc.jpg',
             url: 'discover/movie?with_genres=878,27&with_keywords=7939&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
         }
+    ,
+        {
+            title: 'Боевики',
+            icon: '<svg viewBox="0 0 24 24"><path d="M5 4h9l5 5-6 6-5-5z"/><path d="m13 11 6 6M4 20l6-6"/></svg>',
+            description: 'Адреналин, перестрелки и герои на пределе',
+            image: 'https://image.tmdb.org/t/p/w500/8tZYtuWezp8JbcsvHYO0O46tFbo.jpg',
+            url: 'discover/movie?with_genres=28&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'Приключения',
+            icon: '<svg viewBox="0 0 24 24"><path d="m12 3 4 8-4 10-4-10z"/><path d="m8 11 4 2 4-2"/></svg>',
+            description: 'Путешествия, открытия и опасные экспедиции',
+            image: 'https://image.tmdb.org/t/p/w500/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg',
+            url: 'discover/movie?with_genres=12&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'Комедии',
+            icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M8 10h.01M16 10h.01M8 14c1 2 3 3 4 3s3-1 4-3"/></svg>',
+            description: 'Смешные истории, абсурд и хорошее настроение',
+            image: 'https://image.tmdb.org/t/p/w500/uluhlXubGu1Vx9fN7R6wz2Qh3xT.jpg',
+            url: 'discover/movie?with_genres=35&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'Драмы',
+            icon: '<svg viewBox="0 0 24 24"><path d="M4 18c4-6 7-9 16-12"/><path d="M5 7h.01M19 17h.01"/></svg>',
+            description: 'Сильные истории, отношения и человеческие судьбы',
+            image: 'https://image.tmdb.org/t/p/w500/9cqNxx0GxF0bflZmeSMuL5tnGzr.jpg',
+            url: 'discover/movie?with_genres=18&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'Ужасы',
+            icon: '<svg viewBox="0 0 24 24"><path d="M12 3 4 8v6c0 4 3 6 8 7 5-1 8-3 8-7V8z"/><path d="M8 11h.01M16 11h.01M9 16c2-2 4-2 6 0"/></svg>',
+            description: 'Монстры, проклятия и то, что лучше не встречать ночью',
+            image: 'https://image.tmdb.org/t/p/w500/wVYREutTvI2tmxr6ujrY7M2m9kQ.jpg',
+            url: 'discover/movie?with_genres=27&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'Фантастика',
+            icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M3 12c2-5 5-7 9-7s7 2 9 7c-2 5-5 7-9 7s-7-2-9-7zM12 2v3M12 19v3"/></svg>',
+            description: 'Будущее, технологии и невозможные миры',
+            image: 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
+            url: 'discover/movie?with_genres=878&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'Фэнтези',
+            icon: '<svg viewBox="0 0 24 24"><path d="m12 3 2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z"/></svg>',
+            description: 'Магия, легенды, сказочные миры и чудеса',
+            image: 'https://image.tmdb.org/t/p/w500/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg',
+            url: 'discover/movie?with_genres=14&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'Детективы',
+            icon: '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5M8 10h5M10.5 7.5v6"/></svg>',
+            description: 'Загадки, расследования и поиск правды',
+            image: 'https://image.tmdb.org/t/p/w500/pThyQovXQrw2m0s9x82twj48Jq4.jpg',
+            url: 'discover/movie?with_genres=9648&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'Криминал',
+            icon: '<svg viewBox="0 0 24 24"><path d="M7 4h10v16H7z"/><path d="M10 4V2h4v2M10 9h4M10 13h4M10 17h2"/></svg>',
+            description: 'Преступления, банды, аферы и опасные игры',
+            image: 'https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg',
+            url: 'discover/movie?with_genres=80&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        },
+        {
+            title: 'Триллеры',
+            icon: '<svg viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 5 3 7 8 9 5-2 8-4 8-9V7z"/><path d="M12 8v4l3 2"/></svg>',
+            description: 'Напряжение, опасность и неожиданные повороты',
+            image: 'https://image.tmdb.org/t/p/w500/191nKfPz1gjGbiL7Oq5v6p7h8kL.jpg',
+            url: 'discover/movie?with_genres=53&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
+        }
     ];
 
     function esc(text) {
@@ -124,6 +195,21 @@
             .lcs-subtitle {
                 opacity: .65;
                 margin-bottom: 1.4em;
+            }
+
+            .lcs-section-title {
+                font-size: 1.65em;
+                font-weight: 700;
+                margin: 2.2em 0 .15em;
+            }
+
+            .lcs-section-subtitle {
+                opacity: .6;
+                margin-bottom: 1.1em;
+            }
+
+            .lcs-studio-card .lcs-icon {
+                color: #fff;
             }
 
             .lcs-row {
@@ -362,7 +448,342 @@
         pill.remove();
     }
 
-    function createCard(item) {
+    
+    /*
+     * СТРИМИНГИ / СТУДИИ
+     * Основа взята из studios.js, переданного пользователем:
+     * Netflix, Apple TV+, HBO/Max, Prime Video, Disney+, Hulu,
+     * Paramount+, Syfy и познавательные студии.
+     *
+     * Картинки НЕ храним вручную: для карточки сервиса и каждой
+     * категории берём poster_path первого результата TMDB.
+     */
+    var STUDIO_SERVICES = [
+        {
+            id: 'netflix',
+            title: 'Netflix',
+            icon: '<svg viewBox="0 0 24 24"><path d="M7 2v20M17 2v20M7 2l10 20"/></svg>',
+            categories: [
+                { title:'Новые фильмы', url:'discover/movie', params:{with_watch_providers:'8',watch_region:'UA',sort_by:'primary_release_date.desc',vote_count_gte:'5'} },
+                { title:'Новые сериалы', url:'discover/tv', params:{with_networks:'213',sort_by:'first_air_date.desc',vote_count_gte:'5'} },
+                { title:'В тренде на Netflix', url:'discover/tv', params:{with_networks:'213',sort_by:'popularity.desc'} },
+                { title:'Экшн и блокбастеры', url:'discover/movie', params:{with_companies:'213',with_genres:'28,12',sort_by:'popularity.desc'} },
+                { title:'Фантастические миры', url:'discover/tv', params:{with_networks:'213',with_genres:'10765',sort_by:'vote_average.desc',vote_count_gte:'200'} },
+                { title:'Реалити-шоу: хиты', url:'discover/tv', params:{with_networks:'213',with_genres:'10764',sort_by:'popularity.desc'} },
+                { title:'Криминальные драмы', url:'discover/tv', params:{with_networks:'213',with_genres:'80',sort_by:'popularity.desc'} },
+                { title:'K-Dramas', url:'discover/tv', params:{with_networks:'213',with_original_language:'ko',sort_by:'popularity.desc'} },
+                { title:'Аниме коллекция', url:'discover/tv', params:{with_networks:'213',with_genres:'16',with_keywords:'210024',sort_by:'popularity.desc'} },
+                { title:'Документальное кино', url:'discover/movie', params:{with_companies:'213',with_genres:'99',sort_by:'release_date.desc'} },
+                { title:'Выбор критиков', url:'discover/movie', params:{with_companies:'213',vote_average_gte:'7.5',vote_count_gte:'300',sort_by:'vote_average.desc'} }
+            ]
+        },
+        {
+            id:'apple', title:'Apple TV+',
+            icon:'<svg viewBox="0 0 24 24"><path d="M16 12.5c0 3 2.5 4 2.5 4s-1.5 4-4 4c-1.2 0-1.7-.8-2.8-.8-1.1 0-1.9.8-3 .8-2.3 0-5.2-3.6-5.2-8 0-3.9 2.5-6.1 5-6.1 1.3 0 2.6.9 3.4.9.8 0 2.3-1 3.9-.9.7 0 2.8.3 4.1 2.2-3.4 1.9-2.8 6.1.1 7.9M14.2 4.5c.7-.8 1.2-2 1.1-3.2-1.1.1-2.4.7-3.1 1.5-.7.8-1.2 2-1.1 3.1 1.2.1 2.4-.6 3.1-1.4z"/></svg>',
+            categories:[
+                {title:'Новые фильмы',url:'discover/movie',params:{with_watch_providers:'350',watch_region:'UA',sort_by:'primary_release_date.desc',vote_count_gte:'5'}},
+                {title:'Новые сериалы',url:'discover/tv',params:{with_watch_providers:'350',watch_region:'UA',sort_by:'first_air_date.desc',vote_count_gte:'5'}},
+                {title:'Хиты Apple TV+',url:'discover/tv',params:{with_watch_providers:'350',watch_region:'UA',sort_by:'popularity.desc'}},
+                {title:'Apple Original Films',url:'discover/movie',params:{with_watch_providers:'350',watch_region:'UA',sort_by:'release_date.desc',vote_count_gte:'10'}},
+                {title:'Фантастика Apple',url:'discover/tv',params:{with_watch_providers:'350',watch_region:'UA',with_genres:'10765',sort_by:'vote_average.desc',vote_count_gte:'200'}},
+                {title:'Комедии и Feel-good',url:'discover/tv',params:{with_watch_providers:'350',watch_region:'UA',with_genres:'35',sort_by:'popularity.desc'}},
+                {title:'Триллеры и детективы',url:'discover/tv',params:{with_watch_providers:'350',watch_region:'UA',with_genres:'9648,80',sort_by:'popularity.desc'}}
+            ]
+        },
+        {
+            id:'hbo', title:'HBO / Max',
+            icon:'<svg viewBox="0 0 24 24"><path d="M2 7v10M2 12h5M7 7v10M10 7v10M10 7c5-2 5 8 0 6M17 7h5M19.5 7v10"/></svg>',
+            categories:[
+                {title:'Новые фильмы WB/HBO',url:'discover/movie',params:{with_companies:'174|49',sort_by:'primary_release_date.desc',vote_count_gte:'10'}},
+                {title:'Новые сериалы HBO/Max',url:'discover/tv',params:{with_networks:'49|3186',sort_by:'first_air_date.desc',vote_count_gte:'5'}},
+                {title:'HBO: главные хиты',url:'discover/tv',params:{with_networks:'49',sort_by:'popularity.desc'}},
+                {title:'Max Originals',url:'discover/tv',params:{with_networks:'3186',sort_by:'popularity.desc'}},
+                {title:'Блокбастеры Warner Bros.',url:'discover/movie',params:{with_companies:'174',sort_by:'revenue.desc',vote_count_gte:'1000'}},
+                {title:'Золотая коллекция HBO',url:'discover/tv',params:{with_networks:'49',sort_by:'vote_average.desc',vote_count_gte:'500',vote_average_gte:'8.0'}},
+                {title:'Эпические миры',url:'discover/tv',params:{with_networks:'49|3186',with_genres:'10765',sort_by:'popularity.desc'}},
+                {title:'Премиальные драмы',url:'discover/tv',params:{with_networks:'49',with_genres:'18',without_genres:'10765',sort_by:'popularity.desc'}},
+                {title:'Взрослая анимация',url:'discover/tv',params:{with_networks:'3186|80',with_genres:'16',sort_by:'popularity.desc'}},
+                {title:'Вселенная DC',url:'discover/movie',params:{with_companies:'174',with_keywords:'9715',sort_by:'release_date.desc'}}
+            ]
+        },
+        {
+            id:'amazon', title:'Prime Video',
+            icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="11" r="8"/><path d="M5 18c4 3 10 3 14 0M15 8l-3 3 3 3"/></svg>',
+            categories:[
+                {title:'В тренде на Prime Video',url:'discover/tv',params:{with_networks:'1024',sort_by:'popularity.desc'}},
+                {title:'Новые фильмы',url:'discover/movie',params:{with_watch_providers:'119',watch_region:'UA',sort_by:'primary_release_date.desc',vote_count_gte:'5'}},
+                {title:'Новые сериалы',url:'discover/tv',params:{with_networks:'1024',sort_by:'first_air_date.desc',vote_count_gte:'5'}},
+                {title:'Жёсткий экшен и антигерои',url:'discover/tv',params:{with_networks:'1024',with_genres:'10765,10759',sort_by:'popularity.desc'}},
+                {title:'Блокбастеры MGM и Amazon',url:'discover/movie',params:{with_companies:'1024|21',sort_by:'revenue.desc'}},
+                {title:'Комедии',url:'discover/tv',params:{with_networks:'1024',with_genres:'35',sort_by:'vote_average.desc'}},
+                {title:'Высокий рейтинг',url:'discover/tv',params:{with_networks:'1024',vote_average_gte:'8.0',vote_count_gte:'500',sort_by:'vote_average.desc'}}
+            ]
+        },
+        {
+            id:'disney', title:'Disney+',
+            icon:'<svg viewBox="0 0 24 24"><path d="M3 8c4-2 10-2 18 1M4 13c5-3 13-1 16 5M12 4v16"/></svg>',
+            categories:[
+                {title:'Новые фильмы',url:'discover/movie',params:{with_watch_providers:'337',watch_region:'UA',sort_by:'primary_release_date.desc',vote_count_gte:'5'}},
+                {title:'Новые сериалы',url:'discover/tv',params:{with_watch_providers:'337',watch_region:'UA',sort_by:'first_air_date.desc',vote_count_gte:'5'}},
+                {title:'Marvel: киновселенная',url:'discover/movie',params:{with_companies:'420',sort_by:'release_date.desc',vote_count_gte:'200'}},
+                {title:'Marvel: сериалы',url:'discover/tv',params:{with_companies:'420',with_networks:'2739',sort_by:'first_air_date.desc'}},
+                {title:'Звёздные войны',url:'discover/movie',params:{with_companies:'1',sort_by:'release_date.asc'}},
+                {title:'Мандалорец и другие',url:'discover/tv',params:{with_companies:'1',with_keywords:'1930',sort_by:'popularity.desc'}},
+                {title:'Классика Disney',url:'discover/movie',params:{with_companies:'6125',sort_by:'popularity.desc'}},
+                {title:'Pixar',url:'discover/movie',params:{with_companies:'3',sort_by:'popularity.desc'}},
+                {title:'FX: взрослые хиты',url:'discover/tv',params:{with_networks:'88',sort_by:'popularity.desc'}},
+                {title:'Симпсоны и FOX',url:'discover/tv',params:{with_networks:'19',with_genres:'16',sort_by:'popularity.desc'}}
+            ]
+        },
+        {
+            id:'hulu', title:'Hulu',
+            icon:'<svg viewBox="0 0 24 24"><path d="M4 5v14M8 5v14M8 12h8M16 5v14M20 5v14"/></svg>',
+            categories:[
+                {title:'Hulu Originals: в тренде',url:'discover/tv',params:{with_networks:'453',sort_by:'popularity.desc'}},
+                {title:'Драмы и триллеры Hulu',url:'discover/tv',params:{with_networks:'453',with_genres:'18,9648',sort_by:'vote_average.desc'}},
+                {title:'Комедии и взрослая анимация',url:'discover/tv',params:{with_networks:'453',with_genres:'35,16',sort_by:'popularity.desc'}},
+                {title:'Мини-сериалы',url:'discover/tv',params:{with_networks:'453',with_keywords:'158718',sort_by:'first_air_date.desc'}}
+            ]
+        },
+        {
+            id:'paramount', title:'Paramount+',
+            icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M7 17 12 7l5 10M9 14h6"/></svg>',
+            categories:[
+                {title:'Блокбастеры Paramount Pictures',url:'discover/movie',params:{with_companies:'4',sort_by:'revenue.desc'}},
+                {title:'Paramount+ Originals',url:'discover/tv',params:{with_networks:'4330',sort_by:'popularity.desc'}},
+                {title:'Вселенная Йеллоустоун',url:'discover/tv',params:{with_networks:'318|4330',with_genres:'37,18',sort_by:'popularity.desc'}},
+                {title:'Star Trek',url:'discover/tv',params:{with_networks:'4330',with_keywords:'159223',sort_by:'first_air_date.desc'}},
+                {title:'Nickelodeon',url:'discover/tv',params:{with_networks:'13',sort_by:'popularity.desc'}}
+            ]
+        },
+        {
+            id:'syfy', title:'Syfy',
+            icon:'<svg viewBox="0 0 24 24"><path d="M12 2 4.5 20.3 5.2 21 12 18l6.8 3 .7-.7z"/></svg>',
+            categories:[
+                {title:'Хиты Syfy',url:'discover/tv',params:{with_networks:'77',sort_by:'popularity.desc'}},
+                {title:'Космос и научная фантастика',url:'discover/tv',params:{with_networks:'77',with_genres:'10765',with_keywords:'3801',sort_by:'vote_average.desc'}},
+                {title:'Мистика, ужасы и фэнтези',url:'discover/tv',params:{with_networks:'77',with_genres:'9648,10765',without_keywords:'3801',sort_by:'popularity.desc'}}
+            ]
+        },
+        {
+            id:'educational', title:'Discovery / BBC / NatGeo',
+            icon:'<svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 12h8M8 15h5"/></svg>',
+            categories:[
+                {title:'Новые выпуски',url:'discover/tv',params:{with_networks:'64|91|43|2696|4|65',sort_by:'first_air_date.desc',vote_count_gte:'0'}},
+                {title:'Discovery Channel',url:'discover/tv',params:{with_networks:'64',sort_by:'popularity.desc'}},
+                {title:'National Geographic',url:'discover/tv',params:{with_networks:'43',sort_by:'popularity.desc'}},
+                {title:'Animal Planet',url:'discover/tv',params:{with_networks:'91',sort_by:'popularity.desc'}},
+                {title:'BBC Earth',url:'discover/tv',params:{with_networks:'4',with_genres:'99',sort_by:'vote_average.desc',vote_count_gte:'50'}},
+                {title:'Кулинарные шоу',url:'discover/tv',params:{with_genres:'10764',with_keywords:'222083',without_keywords:'10636,5481',sort_by:'popularity.desc'}},
+                {title:'Голос, танцы и таланты',url:'discover/tv',params:{with_genres:'10764',with_keywords:'4542|4568|2643',without_keywords:'5481,9714',sort_by:'popularity.desc'}},
+                {title:'Шоу про выживание',url:'discover/tv',params:{with_genres:'10764',with_keywords:'5481|10348',sort_by:'popularity.desc'}},
+                {title:'Наука, техника и эксперименты',url:'discover/tv',params:{with_genres:'99',with_keywords:'12554|4924',sort_by:'popularity.desc'}},
+                {title:'Путешествия и туризм',url:'discover/tv',params:{with_genres:'99,10764',with_keywords:'9714',sort_by:'vote_average.desc',vote_count_gte:'20'}},
+                {title:'True Crime',url:'discover/tv',params:{with_genres:'99',with_keywords:'10714|9840',sort_by:'popularity.desc'}}
+            ]
+        }
+    ];
+
+    function studioUrl(category) {
+        var parts = [];
+        var params = category.params || {};
+        for (var key in params) {
+            var val = params[key];
+            if (val === '{current_date}') {
+                var d = new Date();
+                val = [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
+            }
+            parts.push(encodeURIComponent(key) + '=' + encodeURIComponent(val));
+        }
+        return category.url + '?' + parts.join('&');
+    }
+
+    function tmdbUrl(category, page) {
+        var params = [];
+        params.push('api_key=' + encodeURIComponent(Lampa.TMDB.key()));
+        params.push('language=' + encodeURIComponent(Lampa.Storage.get('language', 'ru')));
+        params.push('page=' + (page || 1));
+        var cp = category.params || {};
+        for (var key in cp) {
+            var val = cp[key];
+            if (val === '{current_date}') {
+                var d = new Date();
+                val = [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
+            }
+            params.push(encodeURIComponent(key) + '=' + encodeURIComponent(val));
+        }
+        return Lampa.TMDB.api(category.url + '?' + params.join('&'));
+    }
+
+    function loadStudioPreview(service, card, pill) {
+        var cat = service.categories[0];
+        if (!cat) return;
+
+        var url = tmdbUrl(cat, 1);
+        var req = new Lampa.Reguest();
+
+        req.silent(url, function (data) {
+            if (!data) return;
+            var first = data.results && data.results[0];
+            if (first && first.poster_path) {
+                card.find('.card__img').attr('src', 'https://image.tmdb.org/t/p/w500' + first.poster_path);
+            } else if (first && first.backdrop_path) {
+                card.find('.card__img').attr('src', 'https://image.tmdb.org/t/p/w780' + first.backdrop_path);
+            }
+        }, function () {});
+
+        pill.text(service.categories.length + ' подборок');
+    }
+
+    function createStudioCard(service) {
+        var card;
+        try {
+            if (Lampa.Template && typeof Lampa.Template.js === 'function') card = Lampa.Template.js('card');
+        } catch (e) {}
+
+        if (!card || !card.length) {
+            card = $('<div class="card selector layer--visible layer--render lcs-card"><div class="card__view"><img class="card__img"></div><div class="card__title"></div></div>');
+        }
+
+        card.addClass('lcs-card card--loaded selector lcs-studio-card');
+
+        var pill = $('<span class="lcs-count">...</span>');
+        card.find('.card__view').append(pill);
+
+        var img = card.find('.card__img');
+        img.attr('src', './img/img_load.svg');
+
+        card.find('.card__title').html(
+            '<div class="lcs-category"><span class="lcs-icon">' +
+            service.icon + '</span><span class="lcs-name">' +
+            esc(service.title) + '</span></div>' +
+            '<div class="lcs-desc">Подборки и хиты сервиса</div>'
+        );
+
+        loadStudioPreview(service, card, pill);
+
+        card.on('hover:enter', function () {
+            Lampa.Activity.push({
+                url: '',
+                title: service.title,
+                component: 'lampa_studio_view',
+                service_id: service.id,
+                page: 1
+            });
+        });
+
+        return card;
+    }
+
+    function createStudioCategoryCard(service, category) {
+        var card;
+        try {
+            if (Lampa.Template && typeof Lampa.Template.js === 'function') card = Lampa.Template.js('card');
+        } catch (e) {}
+
+        if (!card || !card.length) {
+            card = $('<div class="card selector layer--visible layer--render lcs-card"><div class="card__view"><img class="card__img"></div><div class="card__title"></div></div>');
+        }
+
+        card.addClass('lcs-card card--loaded selector lcs-studio-category');
+
+        var pill = $('<span class="lcs-count">...</span>');
+        card.find('.card__view').append(pill);
+
+        card.find('.card__img').attr('src', './img/img_load.svg');
+        card.find('.card__title').html(
+            '<div class="lcs-category"><span class="lcs-icon">' +
+            service.icon + '</span><span class="lcs-name">' +
+            esc(category.title) + '</span></div>' +
+            '<div class="lcs-desc">' + esc(service.title) + '</div>'
+        );
+
+        var req = new Lampa.Reguest();
+        req.silent(tmdbUrl(category, 1), function (data) {
+            var total = data && Number(data.total_results);
+            if (!isFinite(total)) total = 0;
+            pill.text(total ? (total + ' фильмов') : '0 фильмов');
+
+            var first = data && data.results && data.results[0];
+            if (first && first.poster_path) {
+                card.find('.card__img').attr('src', 'https://image.tmdb.org/t/p/w500' + first.poster_path);
+            } else if (first && first.backdrop_path) {
+                card.find('.card__img').attr('src', 'https://image.tmdb.org/t/p/w780' + first.backdrop_path);
+            } else {
+                pill.remove();
+            }
+        }, function () {
+            pill.remove();
+        });
+
+        card.on('hover:enter', function () {
+            Lampa.Activity.push({
+                component: 'category_full',
+                source: 'tmdb',
+                title: category.title,
+                url: studioUrl(category),
+                page: 1
+            });
+        });
+
+        return card;
+    }
+
+    function StudioComponent(object) {
+        var service = STUDIO_SERVICES.find(function (s) {
+            return s.id === object.service_id;
+        });
+        var scroll = new Lampa.Scroll({mask:true, over:true});
+        var html = $('<div class="lcs-page"></div>');
+        var content = $('<div class="lcs-content"></div>');
+        var last = false;
+
+        if (!service) {
+            content.append('<div class="lcs-title">Сервис не найден</div>');
+        } else {
+            content.append('<div class="lcs-title">' + esc(service.title) + '</div>');
+            content.append('<div class="lcs-subtitle">Подборки и тематические коллекции</div>');
+            var row = $('<div class="lcs-row"></div>');
+
+            service.categories.forEach(function (cat) {
+                var card = createStudioCategoryCard(service, cat);
+                card.on('hover:focus', function () { last = card; });
+                row.append(card);
+            });
+
+            content.append(row);
+        }
+
+        scroll.render().addClass('layer--wheight').data('mheight', html);
+        scroll.append(content);
+        html.append(scroll.render());
+
+        this.create = function(){ return html; };
+        this.render = function(){ return html; };
+        this.start = function(){
+            Lampa.Controller.add('content',{
+                toggle:function(){
+                    Lampa.Controller.collectionSet(scroll.render());
+                    Lampa.Controller.collectionFocus(last || false, scroll.render());
+                },
+                left:function(){ if(Navigator.canmove('left')) Navigator.move('left'); else Lampa.Controller.toggle('menu'); },
+                right:function(){ if(Navigator.canmove('right')) Navigator.move('right'); },
+                up:function(){ if(Navigator.canmove('up')) Navigator.move('up'); else Lampa.Controller.toggle('head'); },
+                down:function(){ if(Navigator.canmove('down')) Navigator.move('down'); },
+                back:function(){ Lampa.Activity.backward(); }
+            });
+            if(!this.inActivity || this.inActivity()) Lampa.Controller.toggle('content');
+        };
+        this.pause=function(){};
+        this.stop=function(){};
+        this.destroy=function(){
+            try{Lampa.Controller.clear();}catch(e){}
+            try{scroll.destroy();}catch(e){}
+            try{html.remove();}catch(e){}
+        };
+    }
+
+function createCard(item) {
         /*
          * Берём именно штатный шаблон карточки Lampa, если он доступен.
          * Это тот же .card, который используется обычными фильмами.
@@ -476,6 +897,19 @@
         });
 
         content.append(row);
+
+        var studioTitle = $('<div class="lcs-section-title">Стриминги и студии</div>');
+        var studioSubtitle = $('<div class="lcs-section-subtitle">Netflix, Apple TV+, HBO, Disney+ и другие</div>');
+        content.append(studioTitle);
+        content.append(studioSubtitle);
+
+        var studioRow = $('<div class="lcs-row"></div>');
+        STUDIO_SERVICES.forEach(function (service) {
+            var studioCard = createStudioCard(service);
+            studioCard.on('hover:focus', function () { last = studioCard; });
+            studioRow.append(studioCard);
+        });
+        content.append(studioRow);
 
         /*
          * Именно эта часть отвечает за нормальную высоту области
@@ -617,6 +1051,7 @@
 
         try {
             Lampa.Component.add(COMPONENT, CollectionsComponent);
+            Lampa.Component.add('lampa_studio_view', StudioComponent);
         } catch (e) {
             console.log('[Подборки] Component add error', e);
         }
