@@ -201,6 +201,7 @@
 
         if (current.timer) clearTimeout(current.timer);
         if (current.readyTimer) clearTimeout(current.readyTimer);
+        if (current.revealTimer) clearTimeout(current.revealTimer);
         if (current.messageHandler) {
             window.removeEventListener('message', current.messageHandler, true);
         }
@@ -267,6 +268,7 @@
             videoId: trailer.key,
             timer: null,
             readyTimer: null,
+            revealTimer: null,
             playing: false,
         };
 
@@ -300,9 +302,15 @@
                 var d = event.data.data || {};
                 if (d.state === 1) {
                     current.playing = true;
-                    // Показываем ролик только теперь, когда он уже точно
-                    // играет — иконка play/pause к этому моменту скрыта.
-                    reveal();
+                    if (!current.revealTimer) {
+                        // Даём нативной иконке play/pause YouTube время
+                        // полностью погаснуть, пока кадр ещё невидим
+                        // (opacity: 0), и только потом показываем видео.
+                        current.revealTimer = setTimeout(function () {
+                            if (!current || current.frame !== frame) return;
+                            reveal();
+                        }, 1200);
+                    }
                 }
                 if (d.state === 0) {
                     cleanup();
