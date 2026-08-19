@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    /* Lampa Collections — author: aukro1408 */
+    /* Lampa Collections v0.4 — author: aukro1408 */
     var COMPONENT = 'lampa_collections_standard';
     var MENU_ID = 'lampa_collections_standard_menu';
     var started = false;
@@ -18,7 +18,7 @@
     var COLLECTIONS = [
         {
             title: 'Зомби',
-            icon: '<svg viewBox="0 0 24 24"><path d="M4 10.5c0-4.1 3.2-7 8-7s8 2.9 8 7v5.2c0 1.8-1.2 3.3-3 3.3H7c-1.8 0-3-1.5-3-3.3z"/><path d="M8 11h.01M16 11h.01M9 15.5c1.7 1.1 4.3 1.1 6 0M7 7.5l-1.5-2M17 7.5l1.5-2"/></svg>
+            icon: '<svg viewBox="0 0 24 24"><path d="M4 10.5c0-4.1 3.2-7 8-7s8 2.9 8 7v5.2c0 1.8-1.2 3.3-3 3.3H7c-1.8 0-3-1.5-3-3.3z"/><path d="M8 11h.01M16 11h.01M9 15.5c1.7 1.1 4.3 1.1 6 0M7 7.5l-1.5-2M17 7.5l1.5-2"/></svg>',
             description: 'Зомби, эпидемии и выживание',
             image: 'https://images.fandango.com/ImageRenderer/0/0/redesign/static/img/default_poster--dark-mode.png/0/images/masterrepository/Fandango/136726/WWZ523.jpg',
             url: 'discover/movie?with_genres=27&with_keywords=12377&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
@@ -80,15 +80,6 @@
              * Только небольшая подпись категории.
              * Размер самой карточки НЕ трогаем.
              */
-            .lcs-card .card__view {
-                border-radius: .7em !important;
-                overflow: hidden !important;
-            }
-
-            .lcs-card .card__img {
-                border-radius: .7em !important;
-            }
-
             .lcs-card .card__title {
                 display: block !important;
                 white-space: normal !important;
@@ -140,11 +131,6 @@
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-            }
-
-            .lcs-card.selector:focus,
-            .lcs-card.focus {
-                z-index: 3;
             }
 
             @media (max-width: 700px) {
