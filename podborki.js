@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lampa Подборки
 // @namespace    lampa.thematic.collections
-// @version      0.2
+// @version      0.3
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -31,6 +31,16 @@
 
     function esc(v) {
         return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+
+    function imageUrl(size, path) {
+        if (!path) return '';
+        try {
+            if (Lampa.TMDB && typeof Lampa.TMDB.image === 'function') {
+                return Lampa.TMDB.image('t/p/' + size + path);
+            }
+        } catch(e) {}
+        return 'https://image.tmdb.org/t/p/' + size + path;
     }
 
     function addStyles() {
@@ -155,12 +165,20 @@
         // Use the first TMDB result's backdrop as the category hero image.
         var firstBackdrop = movies.find(function(movie){
             return movie && movie.backdrop_path;
+        }) || movies.find(function(movie){
+            return movie && movie.poster_path;
         });
 
         var hero = section.find('.tc-hero-img');
-        if (hero.length && firstBackdrop && firstBackdrop.backdrop_path) {
-            hero.attr('src', HERO_BASE + firstBackdrop.backdrop_path);
+        if (hero.length && firstBackdrop) {
+            var heroPath = firstBackdrop.backdrop_path || firstBackdrop.poster_path;
+            var heroSize = firstBackdrop.backdrop_path ? 'w1280' : 'w780';
+
+            hero.attr('src', imageUrl(heroSize, heroPath));
             hero.on('load', function(){ $(this).addClass('loaded'); });
+            hero.on('error', function(){
+                $(this).removeClass('loaded');
+            });
             if (hero[0].complete) hero.addClass('loaded');
         }
 
@@ -174,7 +192,7 @@
             var title=movie.title || movie.original_title || 'Без названия';
             var year=String(movie.release_date || '').slice(0,4);
             var card=$('<div class="tc-card selector" tabindex="0">' +
-                '<img class="tc-poster" src="' + esc(IMAGE_BASE+movie.poster_path) + '" loading="lazy">' +
+                '<img class="tc-poster" src="' + esc(imageUrl('w342', movie.poster_path)) + '" loading="lazy">' +
                 '<div class="tc-info"><div class="tc-name">' + esc(title) + '</div>' +
                 '<div class="tc-meta"><span>' + esc(year) + '</span><span class="tc-rating">★ ' + Number(movie.vote_average||0).toFixed(1) + '</span></div></div></div>');
             card.on('hover:enter',function(){openMovie(movie)});
@@ -186,14 +204,77 @@
     }
 
     function load(c,section){
-        if(loaded[c.id]){renderMovies(section,loaded[c.id]);return;}
-        if(!Lampa.Api || !Lampa.Api.sources || !Lampa.Api.sources.tmdb || typeof Lampa.Api.sources.tmdb.get!=='function'){
-            section.find('.tc-row').html('<div class="tc-empty">TMDB API Lampa недоступен</div>');return;
-        }
-        Lampa.Api.sources.tmdb.get(c.url,{},function(data){
-            loaded[c.id]=(data&&data.results)||[];
+        if(loaded[c.id]){
             renderMovies(section,loaded[c.id]);
-        },function(){section.find('.tc-row').html('<div class="tc-empty">Не удалось загрузить подборку</div>');});
+            return;
+        }
+
+        var done = false;
+
+        function success(data){
+            if(done) return;
+            done = true;
+
+            var results = data && Array.isArray(data.results) ? data.results : [];
+            loaded[c.id] = results;
+            renderMovies(section, results);
+        }
+
+        function fail(){
+            if(done) return;
+            done = true;
+            section.find('.tc-row').html(
+                '<div class="tc-empty">Не удалось загрузить подборку</div>'
+            );
+        }
+
+        /*
+         * Primary method: use Lampa.TMDB.api(), because it knows the current
+         * TMDB mirror/proxy and API credentials used by this Lampa build.
+         */
+        try {
+            if (Lampa.TMDB &&
+                typeof Lampa.TMDB.api === 'function' &&
+                Lampa.Reguest) {
+
+                var request = new Lampa.Reguest();
+                var url = Lampa.TMDB.api(c.url);
+
+                request.silent(url, function(data){
+                    success(data);
+                }, function(){
+                    fail();
+                });
+
+                return;
+            }
+        } catch(e) {
+            console.log('[Подборки] TMDB request error', e);
+        }
+
+        /*
+         * Compatibility fallback for builds that expose the older source API.
+         */
+        try {
+            if (Lampa.Api &&
+                Lampa.Api.sources &&
+                Lampa.Api.sources.tmdb &&
+                typeof Lampa.Api.sources.tmdb.get === 'function') {
+
+                Lampa.Api.sources.tmdb.get(
+                    c.url,
+                    {},
+                    function(data){ success(data); },
+                    function(){ fail(); }
+                );
+
+                return;
+            }
+        } catch(e) {
+            console.log('[Подборки] source API error', e);
+        }
+
+        fail();
     }
 
     function build(){
@@ -275,7 +356,7 @@
         Lampa.Component.add(COMPONENT,Component);
         addStyles();addMenu();
         Lampa.Listener.follow('activity',function(){setTimeout(addMenu,500)});
-        console.log('✔ Lampa Подборки 0.2 loaded — category heroes');
+        console.log('✔ Lampa Подборки 0.3 loaded — TMDB compatible');
     }
     start();
 })();
