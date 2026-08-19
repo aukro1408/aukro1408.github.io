@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    /* Lampa Collections v0.8 — author: aukro1408 */
+    /* Lampa Collections v0.9 — author: aukro1408 */
     var COMPONENT = 'lampa_collections_standard';
     var MENU_ID = 'lampa_collections_standard_menu';
     var started = false;
@@ -127,10 +127,23 @@
             }
 
             .lcs-row {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 1em;
-                align-items: flex-start;
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 1.15em .8em;
+                align-items: start;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .lcs-card {
+                width: 100% !important;
+                min-width: 0 !important;
+                margin: 0 !important;
+                box-sizing: border-box !important;
+            }
+
+            .lcs-card .card__view {
+                width: 100% !important;
             }
 
             /*
@@ -311,7 +324,7 @@
 
             @media (max-width: 700px) {
                 .lcs-row {
-                    gap: .75em;
+                    gap: 1em .65em;
                 }
             }
         `;
@@ -428,6 +441,13 @@
 
     function CollectionsComponent(object) {
         var self = this;
+
+        /*
+         * СКРОЛЛИНГ:
+         * Используем ту же схему, что и в штатных Lampa-компонентах:
+         * scroll.render() -> layer--wheight -> append в activity HTML.
+         * Это важно для корректного вертикального скролла и Navigator.
+         */
         var scroll = new Lampa.Scroll({
             mask: true,
             over: true
@@ -436,13 +456,14 @@
         var html = $('<div class="lcs-page"></div>');
         var last = false;
 
-        html.append(
+        var content = $('<div class="lcs-content"></div>');
+
+        content.append(
             '<div class="lcs-title">Подборки</div>' +
             '<div class="lcs-subtitle">Тематические фильмы</div>'
         );
 
         var row = $('<div class="lcs-row"></div>');
-        html.append(row);
 
         COLLECTIONS.forEach(function (item) {
             var card = createCard(item);
@@ -454,44 +475,92 @@
             row.append(card);
         });
 
-        scroll.append(html);
+        content.append(row);
+
+        /*
+         * Именно эта часть отвечает за нормальную высоту области
+         * прокрутки в Lampa.
+         */
+        scroll.render()
+            .addClass('layer--wheight')
+            .data('mheight', html);
+
+        scroll.append(content);
+        html.append(scroll.render());
 
         this.create = function () {
-            return this.render();
+            return html;
         };
 
         this.render = function () {
-            return scroll.render();
+            return html;
         };
 
         this.start = function () {
-            Lampa.Controller.add('lcs_content', {
+            /*
+             * Защита от старого бага Lampa:
+             * компонент должен запускаться только для своей Activity.
+             */
+            try {
+                if (
+                    Lampa.Activity.active() &&
+                    Lampa.Activity.active().activity &&
+                    this.activity &&
+                    Lampa.Activity.active().activity !== this.activity
+                ) {
+                    return;
+                }
+            } catch (e) {}
+
+            Lampa.Controller.add('content', {
                 toggle: function () {
                     Lampa.Controller.collectionSet(scroll.render());
-                    Lampa.Controller.collectionFocus(last || false, scroll.render());
+                    Lampa.Controller.collectionFocus(
+                        last || false,
+                        scroll.render()
+                    );
                 },
+
                 left: function () {
-                    if (Navigator.canmove('left')) Navigator.move('left');
-                    else Lampa.Controller.toggle('menu');
+                    if (Navigator.canmove('left')) {
+                        Navigator.move('left');
+                    } else {
+                        Lampa.Controller.toggle('menu');
+                    }
                 },
+
                 right: function () {
-                    Navigator.move('right');
+                    if (Navigator.canmove('right')) {
+                        Navigator.move('right');
+                    }
                 },
+
                 up: function () {
-                    if (Navigator.canmove('up')) Navigator.move('up');
+                    if (Navigator.canmove('up')) {
+                        Navigator.move('up');
+                    } else {
+                        Lampa.Controller.toggle('head');
+                    }
                 },
+
                 down: function () {
-                    if (Navigator.canmove('down')) Navigator.move('down');
+                    if (Navigator.canmove('down')) {
+                        Navigator.move('down');
+                    }
                 },
+
                 back: function () {
                     Lampa.Activity.backward();
                 }
             });
 
-            Lampa.Controller.toggle('lcs_content');
+            if (!this.inActivity || this.inActivity()) {
+                Lampa.Controller.toggle('content');
+            }
         };
 
         this.pause = function () {};
+
         this.stop = function () {};
 
         this.destroy = function () {
@@ -501,6 +570,10 @@
 
             try {
                 scroll.destroy();
+            } catch (e) {}
+
+            try {
+                html.remove();
             } catch (e) {}
         };
     }
