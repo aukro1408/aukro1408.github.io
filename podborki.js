@@ -25,7 +25,7 @@
         },
         {
             title: 'Космос',
-            icon: '<svg viewBox="0 0 24 24"><path d="M14.8 4.1c2.5-1.1 4.3-1 5.1-.2.8.8.9 2.6-.2 5.1-1.3 3-4 6.1-7.1 7.7l-3.2-3.2c1.6-3.1 4.7-5.8 7.7-7.1z"/><path d="M9.4 14.6 6 18M7.3 16.7l-2.1.4.4-2.1M14.6 9.4l-1.2 1.2M17.5 6.5h.01"/><path d="M8.3 18.2c-.8 1.3-1.9 1.9-3.3 1.9 0-1.4.6-2.5 1.9-3.3"/></svg>
+            icon: '<svg viewBox="0 0 24 24"><path d="M14.8 4.1c2.5-1.1 4.3-1 5.1-.2.8.8.9 2.6-.2 5.1-1.3 3-4 6.1-7.1 7.7l-3.2-3.2c1.6-3.1 4.7-5.8 7.7-7.1z"/><path d="M9.4 14.6 6 18M7.3 16.7l-2.1.4.4-2.1M14.6 9.4l-1.2 1.2M17.5 6.5h.01"/><path d="M8.3 18.2c-.8 1.3-1.9 1.9-3.3 1.9 0-1.4.6-2.5 1.9-3.3"/></svg>',
             description: 'Космос, другие планеты и экспедиции',
             image: 'https://www.movieposters.com/cdn/shop/products/interstellar4_bed75630-9176-4725-b1cc-3bd45788905a_1024x1024.jpg?v=1762971876',
             url: 'discover/movie?with_genres=878&with_keywords=9882&sort_by=popularity.desc&vote_average.gte=6&vote_count.gte=100&include_adult=false'
