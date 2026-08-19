@@ -1,11 +1,14 @@
 (function () {
     'use strict';
 
-    /* Lampa Collections v1.2 — author: aukro1408 */
+    /* Lampa Collections v1.4 — author: aukro1408 */
     var COMPONENT = 'lampa_collections_standard';
     var MENU_ID = 'lampa_collections_standard_menu';
     var started = false;
     var countCache = {};
+    var AI_PROVIDER_PARAM = 'lcs_ai_provider';
+    var AI_OPENROUTER_KEY_PARAM = 'lcs_ai_openrouter_key';
+    var AI_MODEL_PARAM = 'lcs_ai_model';
 
     /*
      * Минимальный тест.
@@ -255,6 +258,7 @@
              * Aurora Glass — крупная живая пилюля количества.
              * Не меняем размеры самой карточки Lampa.
              */
+            .lcs-ai-card {position:relative;width:100%!important;min-width:0!important;box-sizing:border-box;min-height:100%;padding:1em .65em;border-radius:1em;overflow:hidden;background:linear-gradient(135deg,rgba(68,93,255,.92),rgba(128,61,255,.88) 45%,rgba(231,66,178,.86));border:1px solid rgba(255,255,255,.3);box-shadow:0 .5em 1.4em rgba(93,66,255,.28),inset 0 1px 0 rgba(255,255,255,.24);color:#fff;text-align:center}.lcs-ai-card-glow{position:absolute;width:140%;height:80%;left:-20%;top:-35%;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.34),rgba(255,255,255,0) 68%);filter:blur(12px)}.lcs-ai-card-icon{position:relative;width:3em;height:3em;margin:.15em auto .6em;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3)}.lcs-ai-card-icon svg{width:1.7em;height:1.7em;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}.lcs-ai-card-title,.lcs-ai-card-desc{position:relative}.lcs-ai-card-title{font-size:.9em;font-weight:700}.lcs-ai-card-desc{margin-top:.4em;font-size:.62em;line-height:1.25;opacity:.9}.lcs-ai-page{padding:1.5em 4vw 3em;box-sizing:border-box}.lcs-ai-content{max-width:900px;margin:0 auto}.lcs-ai-hero-title{font-size:2em;font-weight:700;margin-bottom:.3em}.lcs-ai-hero-desc{font-size:1em;opacity:.75;margin-bottom:1em}.lcs-ai-input{padding:1em 1.1em;border-radius:.85em;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);margin-bottom:.8em}.lcs-ai-suggestions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65em}.lcs-ai-suggestion{padding:.9em 1em;border-radius:.8em;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}.lcs-ai-result{margin-top:1em;display:flex;flex-direction:column;gap:.55em}.lcs-ai-result-item{padding:.8em 1em;border-radius:.75em;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1)}@media(max-width:700px){.lcs-ai-suggestions{grid-template-columns:1fr}}
             .lcs-count {
                 position: absolute;
                 top: .7em;
@@ -842,6 +846,105 @@
         };
     }
 
+
+    function aiSettings() {
+        var key = '';
+        var model = 'openrouter/free';
+        try { key = Lampa.Storage.field(AI_OPENROUTER_KEY_PARAM) || ''; } catch(e) {}
+        try { model = Lampa.Storage.field(AI_MODEL_PARAM) || model; } catch(e) {}
+        return { key:key, model:model };
+    }
+
+    function addAISettings() {
+        if (!Lampa.SettingsApi) return;
+        try {
+            Lampa.SettingsApi.addComponent({
+                component: 'lcs_ai',
+                name: 'Киноассистент',
+                icon: '<svg viewBox="0 0 24 24"><path d="M12 3a8 8 0 0 0-8 8v2a3 3 0 0 0 3 3h2v-6H6a6 6 0 0 1 12 0h-3v6h2a3 3 0 0 0 3-3v-2a8 8 0 0 0-8-8z"/><path d="M9 20h6M10 17h4"/></svg>'
+            });
+            Lampa.SettingsApi.addParam({
+                component:'lcs_ai',
+                param:{name:AI_OPENROUTER_KEY_PARAM,type:'input',default:''},
+                field:{name:'OpenRouter API-ключ',description:'Ваш ключ OpenRouter. Для пробной версии используются бесплатные модели.'},
+                onChange:function(v){ try{Lampa.Storage.set(AI_OPENROUTER_KEY_PARAM,v||'');}catch(e){} }
+            });
+            Lampa.SettingsApi.addParam({
+                component:'lcs_ai',
+                param:{name:AI_MODEL_PARAM,type:'select',values:{'openrouter/free':'Автоматически — бесплатная модель'},default:'openrouter/free'},
+                field:{name:'Модель',description:'OpenRouter выберет доступную бесплатную модель.'},
+                onChange:function(v){ try{Lampa.Storage.set(AI_MODEL_PARAM,v||'openrouter/free');}catch(e){} }
+            });
+        } catch(e) { console.log('[Подборки] AI settings error',e); }
+    }
+
+    function AssistantComponent(object) {
+        var html=$('<div class="lcs-ai-page"></div>');
+        var scroll=new Lampa.Scroll({mask:true,over:true});
+        var content=$('<div class="lcs-ai-content"></div>');
+        var result=$('<div class="lcs-ai-result"></div>');
+        var input=$('<div class="lcs-ai-input selector">Например: хочу очень странный и страшный фильм</div>');
+        var suggestions=$('<div class="lcs-ai-suggestions"></div>');
+        var busy=false;
+
+        content.append('<div class="lcs-ai-hero-title">Киноассистент</div>');
+        content.append('<div class="lcs-ai-hero-desc">Расскажи своими словами, что хочется посмотреть — попробуем подобрать.</div>');
+        content.append(input);
+        ['Что-нибудь очень страшное','Странное кино, где ничего не понятно','Психологический триллер','Необычная фантастика','Удиви меня'].forEach(function(text){
+            var b=$('<div class="lcs-ai-suggestion selector"></div>').text(text);
+            b.on('hover:enter',function(){ input.text(text); ask(text); });
+            suggestions.append(b);
+        });
+        content.append(suggestions).append(result);
+        scroll.render().addClass('layer--wheight').data('mheight',html);
+        scroll.append(content); html.append(scroll.render());
+
+        function ask(prompt){
+            if(busy) return;
+            var st=aiSettings();
+            if(!st.key){ try{Lampa.Noty.show('Добавьте OpenRouter API-ключ в настройках плагина');}catch(e){} return; }
+            busy=true; result.text('Ищу подходящие фильмы…');
+            fetch('https://openrouter.ai/api/v1/chat/completions',{
+                method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+st.key},
+                body:JSON.stringify({model:st.model,messages:[
+                    {role:'system',content:'Ты киноассистент. Ответь по-русски. Подбери 5 фильмов под запрос пользователя. Верни только JSON-массив объектов вида {"title":"...","year":2020,"reason":"короткая причина"}. Не выдумывай фильмы.'},
+                    {role:'user',content:prompt}
+                ],temperature:.7})
+            }).then(function(r){return r.json();}).then(function(data){
+                if(data.error) throw new Error(data.error.message||'OpenRouter error');
+                var text=data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content||'';
+                text=text.replace(/^```json\s*/,'').replace(/\s*```$/,'').trim();
+                var arr=JSON.parse(text);
+                result.empty();
+                arr.forEach(function(x){
+                    result.append($('<div class="lcs-ai-result-item"></div>').append($('<b></b>').text((x.title||'')+(x.year?' ('+x.year+')':''))).append($('<div></div>').text(x.reason||'')));
+                });
+            }).catch(function(err){
+                result.text('Не удалось получить ответ: '+err.message);
+            }).finally(function(){busy=false;});
+        }
+        input.on('hover:enter',function(){
+            var current=input.text();
+            if(current && current.indexOf('Например:')!==0) ask(current);
+            else { try{Lampa.Noty.show('Выбери пример запроса или введи текст через клавиатуру Lampa');}catch(e){} }
+        });
+        this.create=function(){return html;}; this.render=function(){return html;};
+        this.start=function(){
+            Lampa.Controller.add('content',{toggle:function(){Lampa.Controller.collectionSet(scroll.render());Lampa.Controller.collectionFocus(false,scroll.render());},left:function(){if(Navigator.canmove('left'))Navigator.move('left');else Lampa.Controller.toggle('menu');},right:function(){if(Navigator.canmove('right'))Navigator.move('right');},up:function(){if(Navigator.canmove('up'))Navigator.move('up');else Lampa.Controller.toggle('head');},down:function(){if(Navigator.canmove('down'))Navigator.move('down');},back:function(){Lampa.Activity.backward();}}); Lampa.Controller.toggle('content');
+        };
+        this.pause=function(){}; this.stop=function(){}; this.destroy=function(){try{Lampa.Controller.clear();}catch(e){} try{scroll.destroy();}catch(e){} try{html.remove();}catch(e){}};
+    }
+
+    function addAssistantActivity(){
+        try{Lampa.Component.add('lcs_ai',AssistantComponent);}catch(e){console.log('[Подборки] AI component error',e);}
+    }
+    function openAssistant(){Lampa.Activity.push({title:'Киноассистент',component:'lcs_ai'});}
+    function createAssistantCard(){
+        var card=$('<div class="lcs-ai-card selector"></div>');
+        card.html('<div class="lcs-ai-card-glow"></div><div class="lcs-ai-card-icon"><svg viewBox="0 0 24 24"><path d="M12 3a7 7 0 0 0-7 7v3a3 3 0 0 0 3 3h2v-6H7a5 5 0 0 1 10 0h-3v6h2a3 3 0 0 0 3-3v-3a7 7 0 0 0-7-7z"/><path d="M9 20h6M10 17h4"/></svg></div><div class="lcs-ai-card-title">Киноассистент</div><div class="lcs-ai-card-desc">Подберу фильм под твоё настроение</div>');
+        card.on('hover:enter',openAssistant); return card;
+    }
+
 function createCard(item) {
         /*
          * Берём именно штатный шаблон карточки Lampa, если он доступен.
@@ -946,6 +1049,8 @@ function createCard(item) {
         );
 
         var row = $('<div class="lcs-row"></div>');
+
+        row.append(createAssistantCard());
 
         COLLECTIONS.forEach(function (item) {
             var card = createCard(item);
@@ -1109,6 +1214,8 @@ function createCard(item) {
         started = true;
 
         addStyle();
+        addAISettings();
+        addAssistantActivity();
 
         try {
             Lampa.Component.add(COMPONENT, CollectionsComponent);
@@ -1131,4 +1238,3 @@ function createCard(item) {
     if (window.Lampa) start();
     else setTimeout(start, 1500);
 })();
- 
