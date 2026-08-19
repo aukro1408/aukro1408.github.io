@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    /* Lampa Collections v0.6 — author: aukro1408 */
+    /* Lampa Collections v0.7 — author: aukro1408 */
     var COMPONENT = 'lampa_collections_standard';
     var MENU_ID = 'lampa_collections_standard_menu';
     var started = false;
@@ -89,29 +89,123 @@
                 margin-top: .4em;
             }
 
+            /*
+             * Aurora Glass — крупная живая пилюля количества.
+             * Не меняем размеры самой карточки Lampa.
+             */
             .lcs-count {
                 position: absolute;
-                top: .55em;
-                right: .55em;
-                z-index: 4;
+                top: .7em;
+                right: .7em;
+                z-index: 8;
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                min-width: 2.5em;
-                height: 1.55em;
-                padding: 0 .55em;
+                min-width: 5.6em;
+                height: 2.35em;
+                padding: 0 .95em;
                 box-sizing: border-box;
                 border-radius: 999px;
-                background: rgba(255,255,255,.16);
-                border: 1px solid rgba(255,255,255,.22);
+
                 color: #fff;
-                font-size: .72em;
-                font-weight: 600;
+                font-size: .82em;
+                font-weight: 700;
+                letter-spacing: .01em;
                 line-height: 1;
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
-                box-shadow: 0 .15em .6em rgba(0,0,0,.22);
+                white-space: nowrap;
+
+                background:
+                    linear-gradient(
+                        115deg,
+                        rgba(63, 111, 255, .78) 0%,
+                        rgba(116, 62, 255, .76) 36%,
+                        rgba(218, 63, 174, .78) 72%,
+                        rgba(255, 116, 192, .72) 100%
+                    );
+
+                border: 1px solid rgba(255,255,255,.42);
+
+                box-shadow:
+                    0 0 0 1px rgba(255,255,255,.08) inset,
+                    0 .35em 1.1em rgba(117, 64, 255, .28),
+                    0 .2em .8em rgba(0,0,0,.30);
+
+                backdrop-filter: blur(14px) saturate(150%);
+                -webkit-backdrop-filter: blur(14px) saturate(150%);
+
+                overflow: hidden;
                 pointer-events: none;
+
+                animation: lcsAuroraPulse 5s ease-in-out infinite;
+            }
+
+            .lcs-count::before {
+                content: '';
+                position: absolute;
+                inset: -45% -20%;
+                background:
+                    radial-gradient(
+                        circle at 18% 50%,
+                        rgba(120, 205, 255, .58) 0%,
+                        rgba(120, 205, 255, 0) 42%
+                    ),
+                    radial-gradient(
+                        circle at 82% 50%,
+                        rgba(255, 150, 225, .55) 0%,
+                        rgba(255, 150, 225, 0) 44%
+                    );
+                filter: blur(7px);
+                opacity: .85;
+                transform: translateX(-8%);
+                animation: lcsAuroraFlow 6s ease-in-out infinite alternate;
+            }
+
+            .lcs-count::after {
+                content: '';
+                position: absolute;
+                left: 12%;
+                right: 12%;
+                top: 8%;
+                height: 32%;
+                border-radius: 999px;
+                background: linear-gradient(
+                    180deg,
+                    rgba(255,255,255,.42),
+                    rgba(255,255,255,0)
+                );
+                opacity: .72;
+            }
+
+            .lcs-count {
+                text-shadow:
+                    0 1px 2px rgba(0,0,0,.35),
+                    0 0 10px rgba(255,255,255,.18);
+            }
+
+            @keyframes lcsAuroraPulse {
+                0%, 100% {
+                    filter: saturate(100%) brightness(100%);
+                    box-shadow:
+                        0 0 0 1px rgba(255,255,255,.08) inset,
+                        0 .35em 1.1em rgba(117, 64, 255, .28),
+                        0 .2em .8em rgba(0,0,0,.30);
+                }
+                50% {
+                    filter: saturate(125%) brightness(108%);
+                    box-shadow:
+                        0 0 0 1px rgba(255,255,255,.12) inset,
+                        0 .35em 1.35em rgba(213, 66, 188, .34),
+                        0 .2em .8em rgba(0,0,0,.30);
+                }
+            }
+
+            @keyframes lcsAuroraFlow {
+                0% {
+                    transform: translateX(-8%) scale(1);
+                }
+                100% {
+                    transform: translateX(8%) scale(1.08);
+                }
             }
 
             .lcs-category {
@@ -170,7 +264,7 @@
 
     function loadCount(item, pill) {
         if (countCache[item.url] !== undefined) {
-            pill.text(String(countCache[item.url]));
+            pill.text(countCache[item.url] + ' фильмов');
             return;
         }
 
@@ -178,7 +272,7 @@
             var total = data && Number(data.total_results);
             if (!isFinite(total)) total = 0;
             countCache[item.url] = total;
-            pill.text(total ? String(total) : '0');
+            pill.text(total ? (total + ' фильмов') : '0 фильмов');
         }
 
         try {
