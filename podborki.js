@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lampa Подборки
 // @namespace    lampa.thematic.collections
-// @version      0.3
+// @version      0.4
 // @match        *://*/lampa/*
 // ==/UserScript==
 
@@ -35,11 +35,18 @@
 
     function imageUrl(size, path) {
         if (!path) return '';
+
         try {
             if (Lampa.TMDB && typeof Lampa.TMDB.image === 'function') {
                 return Lampa.TMDB.image('t/p/' + size + path);
             }
         } catch(e) {}
+
+        try {
+            return Lampa.Utils.protocol() +
+                'image.tmdb.org/t/p/' + size + path;
+        } catch(e) {}
+
         return 'https://image.tmdb.org/t/p/' + size + path;
     }
 
@@ -216,6 +223,7 @@
             done = true;
 
             var results = data && Array.isArray(data.results) ? data.results : [];
+
             loaded[c.id] = results;
             renderMovies(section, results);
         }
@@ -223,24 +231,28 @@
         function fail(){
             if(done) return;
             done = true;
+
             section.find('.tc-row').html(
                 '<div class="tc-empty">Не удалось загрузить подборку</div>'
             );
         }
 
         /*
-         * Primary method: use Lampa.TMDB.api(), because it knows the current
-         * TMDB mirror/proxy and API credentials used by this Lampa build.
+         * Используем ТОТ ЖЕ путь, что и твой рабочий top_kino.js:
+         *
+         * Lampa.Activity -> category_full -> source tmdb -> Api.list()
+         *
+         * Мы не строим собственный TMDB-запрос и не обращаемся напрямую
+         * к image.tmdb.org. Lampa сама добавляет ключ, язык, прокси,
+         * source и обработку ответа.
          */
         try {
-            if (Lampa.TMDB &&
-                typeof Lampa.TMDB.api === 'function' &&
-                Lampa.Reguest) {
-
-                var request = new Lampa.Reguest();
-                var url = Lampa.TMDB.api(c.url);
-
-                request.silent(url, function(data){
+            if (Lampa.Api && typeof Lampa.Api.list === 'function') {
+                Lampa.Api.list({
+                    url: c.url,
+                    source: 'tmdb',
+                    page: 1
+                }, function(data){
                     success(data);
                 }, function(){
                     fail();
@@ -249,29 +261,32 @@
                 return;
             }
         } catch(e) {
-            console.log('[Подборки] TMDB request error', e);
+            console.log('[Подборки] Lampa.Api.list error', e);
         }
 
         /*
-         * Compatibility fallback for builds that expose the older source API.
+         * Запасной вариант только для старых сборок Lampa.
          */
         try {
             if (Lampa.Api &&
                 Lampa.Api.sources &&
                 Lampa.Api.sources.tmdb &&
-                typeof Lampa.Api.sources.tmdb.get === 'function') {
+                typeof Lampa.Api.sources.tmdb.list === 'function') {
 
-                Lampa.Api.sources.tmdb.get(
-                    c.url,
-                    {},
-                    function(data){ success(data); },
-                    function(){ fail(); }
-                );
+                Lampa.Api.sources.tmdb.list({
+                    url: c.url,
+                    source: 'tmdb',
+                    page: 1
+                }, function(data){
+                    success(data);
+                }, function(){
+                    fail();
+                });
 
                 return;
             }
         } catch(e) {
-            console.log('[Подборки] source API error', e);
+            console.log('[Подборки] legacy TMDB list error', e);
         }
 
         fail();
@@ -356,7 +371,8 @@
         Lampa.Component.add(COMPONENT,Component);
         addStyles();addMenu();
         Lampa.Listener.follow('activity',function(){setTimeout(addMenu,500)});
-        console.log('✔ Lampa Подборки 0.3 loaded — TMDB compatible');
+        console.log('✔ Lampa Подборки 0.4 loaded — native TMDB Api.list');
     }
     start();
 })();
+9
