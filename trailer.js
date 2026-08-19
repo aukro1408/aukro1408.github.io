@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v32_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v26_style';
     var current = null;
     var DELAY = 2000;
     var activityGuard = null;
@@ -12,7 +12,14 @@
         var s = document.createElement('style');
         s.id = STYLE_ID;
         s.textContent = `
-            /* Never change Lampa's native card/container stacking context. */
+            /* Trailer is only a media/background layer. It must never sit
+               above Lampa's title, ratings or metadata. */
+            .lta7-host {
+                position: relative !important;
+                overflow: hidden !important;
+                z-index: 0 !important;
+                isolation: isolate !important;
+            }
 
             .lta7-video {
                 position: absolute !important;
@@ -23,7 +30,7 @@
                 background: #000 !important;
                 opacity: 0 !important;
                 z-index: 0 !important;
-                pointer-events: auto !important;
+                pointer-events: none !important;
                 transition: opacity .25s ease !important;
             }
 
@@ -31,45 +38,47 @@
                 opacity: 1 !important;
             }
 
-            /* Hide YouTube's touch/action overlay at the bottom of the embed.
-               The trailer itself remains visible; this shield is only visual. */
-            .lta7-youtube-shield {
-                position: absolute !important;
-                left: 0 !important;
-                right: 0 !important;
-                bottom: 0 !important;
-                height: 92px !important;
-                z-index: 1 !important;
-                background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.96) 42%, #000 78%) !important;
-                pointer-events: none !important;
-            }
-
-            /* YouTube still renders its own title/channel overlay at the top
-               of an iframe even with controls=0. It is cross-origin, so it
-               cannot be hidden from inside the iframe. The top of this Lampa
-               poster is a black letterbox, therefore cover only that letterbox
-               with an opaque layer. The actual video area remains untouched. */
-            .lta7-youtube-top-shield {
-                position: absolute !important;
-                left: 0 !important;
-                right: 0 !important;
-                top: 0 !important;
-                height: 104px !important;
-                z-index: 2 !important;
-                background: #000 !important;
-                pointer-events: none !important;
-            }
-
-            /* The iframe is the only media player. It is inserted as the first
-               child of Lampa's existing poster layer. We do not change the
-               poster itself, its classes, its z-index, isolation or theme. */
-            .lta7-video {
+            /* The trailer is playback-only. The iframe never receives
+               user taps, so YouTube's own controls/overlays cannot appear.
+               The only visible control is our custom sound button. */
+            .lta7-host > .lta7-video {
                 z-index: 0 !important;
-                pointer-events: auto !important;
+                pointer-events: none !important;
+                user-select: none !important;
+                -webkit-user-select: none !important;
             }
 
-            /* Do NOT add z-index/position rules to Lampa foreground elements.
-               Their native stacking is part of the theme and must stay untouched. */
+            /* Known Lampa foreground blocks. */
+            /* Lampa information always renders above the trailer. */
+            .full-start-new__title,
+            .full-start-new__name,
+            .full-start-new__descr,
+            .full-start-new__subtitle,
+            .full-start-new__tagline,
+            .full-start-new__details,
+            .full-start-new__head,
+            .full-start-new__buttons,
+            .full-start-new__rating,
+            .full-start-new__ratings,
+            .full-start-new__meta,
+            .full-start-new__info,
+            .full-start-new__content,
+            .full-start__title,
+            .full-start__name,
+            .full-start__descr,
+            .full-start__subtitle,
+            .full-start__tagline,
+            .full-start__details,
+            .full-start__head,
+            .full-start__buttons,
+            .full-start__rating,
+            .full-start__ratings,
+            .full-start__meta,
+            .full-start__info,
+            .full-start__content {
+                position: relative !important;
+                z-index: 5 !important;
+            }
 
             /* Кнопка специально вынесена из карточки Lampa.
                Поэтому её не перехватывает selector/event system Lampa. */
@@ -176,59 +185,52 @@
         return base;
     }
 
-    function youtubeUrl(videoId, mute, start) {
-        var origin = '';
-        try {
-            origin = location.origin || '';
-            if (!/^https?:\/\//i.test(origin)) origin = '';
-        } catch(e) {}
+    function bridgeHtml(videoId, bridgeId, mute, start) {
+        function esc(v) {
+            return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
 
-        return 'https://www.youtube-nocookie.com/embed/' +
-            encodeURIComponent(videoId) +
-            '?autoplay=1' +
-            '&controls=0' +
-            '&disablekb=1' +
-            '&fs=0' +
-            '&autohide=1' +
-            '&mute=' + (mute ? '1' : '0') +
-            '&playsinline=1' +
-            '&enablejsapi=1' +
-            '&rel=0' +
-            '&modestbranding=1' +
-            '&iv_load_policy=3' +
-            '&cc_load_policy=0' +
-            '&hl=ru' +
-            '&start=' + Math.max(0, Math.floor(start || 0)) +
-            (origin ? '&origin=' + encodeURIComponent(origin) : '');
+        return '<!doctype html><html><head><meta charset="utf-8">' +
+            '<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">' +
+            '<style>' +
+            'html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;pointer-events:none}' +
+            '#player{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;pointer-events:none}' +
+            '#player iframe{border:0;pointer-events:none!important}' +
+            '</style></head><body>' +
+            '<div id="player"></div>' +
+            '<script src="https://www.youtube.com/iframe_api"></script>' +
+            '<script>' +
+            'var bridgeId="' + esc(bridgeId) + '",videoId="' + esc(videoId) + '",' +
+            'autoplay=1,controls=0,mute=' + (mute ? 1 : 0) + ',start=' + Math.max(0, Math.floor(start || 0)) + ';' +
+            'var player=null,ready=false,timer=null;' +
+            'function send(t,d){try{parent.postMessage({bridgeId:bridgeId,type:t,data:d||{}},"*")}catch(e){}}' +
+            'function tick(){if(!player||!ready)return;try{send("time",{currentTime:player.getCurrentTime(),duration:player.getDuration(),playerState:player.getPlayerState()})}catch(e){}}' +
+            'function resize(){var el=document.getElementById("player");if(!el||!player)return;try{player.setSize(el.clientWidth*2,el.clientHeight*2)}catch(e){}}' +
+            'window.onYouTubeIframeAPIReady=function(){' +
+                'player=new YT.Player("player",{' +
+                    'videoId:videoId,width:"100%",height:"100%",' +
+                    'playerVars:{autoplay:autoplay,controls:0,disablekb:1,fs:0,iv_load_policy:3,cc_load_policy:0,rel:0,modestbranding:1,playsinline:1,enablejsapi:1,origin:location.origin,start:start,mute:mute},' +
+                    'events:{onReady:function(){ready=true;try{player.mute()}catch(e){};send("ready");tick();timer=setInterval(tick,250);resize()},onStateChange:function(e){send("stateChange",{state:e.data})},onError:function(e){send("error",{error:e.data})}}' +
+                '});' +
+            '};' +
+            'window.addEventListener("resize",resize);' +
+            'window.addEventListener("message",function(e){if(!e.data||e.data.bridgeId!==bridgeId)return;var t=e.data.type,d=e.data.data||{};if(!player||!ready)return;try{' +
+                'if(t==="play")player.playVideo();' +
+                'else if(t==="setVolume") {player.setVolume(Number(d.volume)||0);if(Number(d.volume)>0)player.unMute();else player.mute();}' +
+                'else if(t==="destroy"){if(timer)clearInterval(timer);player.destroy();player=null;ready=false;}' +
+            '}catch(x){}});' +
+            'send("bridgeReady");' +
+            '<\/script></body></html>';
     }
 
     function send(type, data) {
         if (!current || !current.frameWindow) return;
-
-        var command = null;
-        if (type === 'play') command = 'playVideo';
-        else if (type === 'pause') command = 'pauseVideo';
-        else if (type === 'mute') command = 'mute';
-        else if (type === 'unMute') command = 'unMute';
-        else if (type === 'setVolume') {
-            command = 'setVolume';
-        }
-        else if (type === 'seekTo') {
-            command = 'seekTo';
-        }
-
-        if (!command) return;
-
-        var args = [];
-        if (type === 'setVolume') args = [Number(data && data.volume) || 0];
-        if (type === 'seekTo') args = [Number(data && data.time) || 0, true];
-
         try {
-            current.frameWindow.postMessage(JSON.stringify({
-                event: 'command',
-                func: command,
-                args: args
-            }), '*');
+            current.frameWindow.postMessage({
+                bridgeId: current.bridgeId,
+                type: type,
+                data: data || {}
+            }, '*');
         } catch(e) {}
     }
 
@@ -270,20 +272,8 @@
             window.removeEventListener('scroll', current.positionHandler, true);
         }
 
-        if (current.frameWindow) {
-            try { send('pause'); } catch(e) {}
-        }
-
         if (current.frame) {
             try { current.frame.remove(); } catch(e) {}
-        }
-
-        if (current.shield) {
-            try { current.shield.remove(); } catch(e) {}
-        }
-
-        if (current.topShield) {
-            try { current.topShield.remove(); } catch(e) {}
         }
 
         if (current.sound) {
@@ -291,6 +281,9 @@
         }
 
 
+        if (current.host) {
+            current.host.classList.remove('lta7-host');
+        }
 
         current = null;
     }
@@ -301,33 +294,9 @@
         showSound();
     }
 
-    function getPlaybackPosition() {
-        if (!current) return 0;
-
-        var position = Number(current.currentTime) || 0;
-
-        // The bridge sends time updates periodically. Between updates, keep
-        // the missing fraction from the local clock so mute/unmute never
-        // jumps back to the last reported second (or to 0).
-        if (current.playing && current.startedAt) {
-            position += Math.max(0, (Date.now() - current.startedAt) / 1000);
-        }
-
-        return Math.max(0, position);
-    }
-
-    function reloadForSound(wantSound) {
+    function setSound(wantSound) {
         if (!current || !current.frameWindow) return;
 
-        /*
-         * IMPORTANT: never create/reload another iframe when sound changes.
-         * The previous versions did exactly that and caused the trailer to
-         * restart, overlap itself and briefly disappear.
-         *
-         * We keep ONE YouTube bridge for the entire lifetime of the card and
-         * only change its volume. This also preserves the exact playback
-         * position and the native Play/Pause state.
-         */
         current.soundOn = !!wantSound;
         current.sound.innerHTML = wantSound ? soundIcon() : mutedIcon();
         current.sound.setAttribute(
@@ -335,13 +304,8 @@
             wantSound ? 'Выключить звук' : 'Включить звук'
         );
 
-        if (wantSound) {
-            send('unMute');
-            send('setVolume', { volume: 100 });
-        } else {
-            send('mute');
-            send('setVolume', { volume: 0 });
-        }
+        /* Never reload or recreate the iframe. Only change its volume. */
+        send('setVolume', { volume: wantSound ? 100 : 0 });
     }
 
     function create(body, data) {
@@ -360,13 +324,11 @@
         frame.className = 'lta7-video';
         frame.setAttribute('frameborder', '0');
         frame.setAttribute('allowfullscreen', 'true');
-        frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-        frame.referrerPolicy = 'strict-origin-when-cross-origin';
         frame.setAttribute(
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
         );
-        frame.src = youtubeUrl(trailer.key, true, 0);
+        frame.srcdoc = bridgeHtml(trailer.key, bridgeId, true, 0);
 
         var sound = document.createElement('button');
         sound.type = 'button';
@@ -374,20 +336,8 @@
         sound.innerHTML = mutedIcon();
         sound.setAttribute('aria-label', 'Включить звук');
 
-        var firstChild = host.firstChild;
-        if (firstChild) host.insertBefore(frame, firstChild);
-        else host.appendChild(frame);
-
-        var topShield = document.createElement('div');
-        topShield.className = 'lta7-youtube-top-shield';
-        if (host.firstChild) host.insertBefore(topShield, host.firstChild.nextSibling);
-        else host.appendChild(topShield);
-
-        var shield = document.createElement('div');
-        shield.className = 'lta7-youtube-shield';
-        if (host.firstChild) host.insertBefore(shield, host.firstChild.nextSibling);
-        else host.appendChild(shield);
-
+        host.classList.add('lta7-host');
+        host.appendChild(frame);
         document.body.appendChild(sound);
 
         current = {
@@ -397,15 +347,9 @@
             bridgeId: bridgeId,
             videoId: trailer.key,
             sound: sound,
-            shield: shield,
-            topShield: topShield,
             soundOn: false,
-            currentTime: 0,
-            startedAt: 0,
             timer: null,
             readyTimer: null,
-            unlockTimer: null,
-            playing: false,
         };
 
         current.positionHandler = positionSound;
@@ -425,7 +369,7 @@
             if (!current || current.sound !== sound) return;
 
             var wantSound = !current.soundOn;
-            reloadForSound(wantSound);
+            setSound(wantSound);
         };
 
         sound.addEventListener('pointerdown', current.toggleSound, {
@@ -439,29 +383,57 @@
         }, true);
 
         current.messageHandler = function(event) {
-            return;
+            if (!current || event.source !== frame.contentWindow) return;
+            if (!event.data || event.data.bridgeId !== current.bridgeId) return;
+
+            var type = event.data.type;
+            var d = event.data.data || {};
+
+            if (type === 'bridgeReady') {
+                current.frameWindow = frame.contentWindow;
+                return;
+            }
+
+            if (type === 'ready') {
+                if (current.readyTimer) clearTimeout(current.readyTimer);
+
+                /* Start once. No Play/Pause UI and no player reloads. */
+                current.timer = setTimeout(function() {
+                    if (!current || current.frame !== frame) return;
+
+                    reveal();
+                    send('play');
+                }, DELAY);
+
+                return;
+            }
+
+            if (type === 'time') {
+                positionSound();
+                return;
+            }
+
+            if (type === 'stateChange') {
+                /* The trailer is intentionally playback-only. We do not
+                   expose or control Play/Pause. */
+                if (d.state === 1) reveal();
+                if (d.state === 0) cleanup();
+                return;
+            }
+
+            if (type === 'error') {
+                // При ошибке возвращаем обычный постер.
+                cleanup();
+            }
         };
 
         window.addEventListener('message', current.messageHandler, true);
 
         frame.onload = function() {
-            if (!current || current.frame !== frame) return;
-
-            current.frameWindow = frame.contentWindow;
-
-            if (current.timer) clearTimeout(current.timer);
-
-            current.timer = setTimeout(function() {
-                if (!current || current.frame !== frame) return;
-
-                reveal();
-                send('play');
-
-                current.playing = true;
-                current.startedAt = Date.now();
-            }, DELAY);
+            if (current && current.frame === frame) {
+                try { current.frameWindow = frame.contentWindow; } catch(e) {}
+            }
         };
-
     }
 
     function startActivityGuard() {
@@ -511,7 +483,7 @@
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
         startActivityGuard();
-        console.log('[Trailer Autoplay] v32 native Lampa layer');
+        console.log('[Trailer Autoplay] v26 started');
     }
 
     if (window.Lampa && Lampa.Listener) {
