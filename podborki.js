@@ -1,10 +1,11 @@
 (function () {
     'use strict';
 
-    /* Lampa Collections v0.4 — author: aukro1408 */
+    /* Lampa Collections v0.6 — author: aukro1408 */
     var COMPONENT = 'lampa_collections_standard';
     var MENU_ID = 'lampa_collections_standard_menu';
     var started = false;
+    var countCache = {};
 
     /*
      * Минимальный тест.
@@ -88,6 +89,31 @@
                 margin-top: .4em;
             }
 
+            .lcs-count {
+                position: absolute;
+                top: .55em;
+                right: .55em;
+                z-index: 4;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 2.5em;
+                height: 1.55em;
+                padding: 0 .55em;
+                box-sizing: border-box;
+                border-radius: 999px;
+                background: rgba(255,255,255,.16);
+                border: 1px solid rgba(255,255,255,.22);
+                color: #fff;
+                font-size: .72em;
+                font-weight: 600;
+                line-height: 1;
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                box-shadow: 0 .15em .6em rgba(0,0,0,.22);
+                pointer-events: none;
+            }
+
             .lcs-category {
                 display: flex;
                 align-items: center;
@@ -142,6 +168,37 @@
         document.head.appendChild(style);
     }
 
+    function loadCount(item, pill) {
+        if (countCache[item.url] !== undefined) {
+            pill.text(String(countCache[item.url]));
+            return;
+        }
+
+        function applyCount(data) {
+            var total = data && Number(data.total_results);
+            if (!isFinite(total)) total = 0;
+            countCache[item.url] = total;
+            pill.text(total ? String(total) : '0');
+        }
+
+        try {
+            if (Lampa.Api && typeof Lampa.Api.list === 'function') {
+                Lampa.Api.list({
+                    url: item.url,
+                    source: 'tmdb',
+                    page: 1
+                }, applyCount, function () {
+                    pill.remove();
+                });
+                return;
+            }
+        } catch (e) {
+            console.log('[Подборки] count error', e);
+        }
+
+        pill.remove();
+    }
+
     function createCard(item) {
         /*
          * Берём именно штатный шаблон карточки Lampa, если он доступен.
@@ -167,6 +224,9 @@
         }
 
         card.addClass('lcs-card card--loaded selector');
+
+        var countPill = $('<span class="lcs-count">...</span>');
+        card.find('.card__view').append(countPill);
 
         var img = card.find('.card__img');
         var title = card.find('.card__title');
@@ -200,6 +260,8 @@
             source: 'tmdb',
             category: true
         };
+
+        loadCount(item, countPill);
 
         card.on('hover:enter', function () {
             Lampa.Activity.push({
