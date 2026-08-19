@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v30_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v32_style';
     var current = null;
     var DELAY = 2000;
     var activityGuard = null;
@@ -12,14 +12,7 @@
         var s = document.createElement('style');
         s.id = STYLE_ID;
         s.textContent = `
-            /* Trailer is only a media/background layer. It must never sit
-               above Lampa's title, ratings or metadata. */
-            .lta7-host {
-                position: relative !important;
-                overflow: hidden !important;
-                z-index: 0 !important;
-                isolation: isolate !important;
-            }
+            /* Never change Lampa's native card/container stacking context. */
 
             .lta7-video {
                 position: absolute !important;
@@ -46,51 +39,37 @@
                 right: 0 !important;
                 bottom: 0 !important;
                 height: 92px !important;
-                z-index: 2 !important;
+                z-index: 1 !important;
                 background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.96) 42%, #000 78%) !important;
                 pointer-events: none !important;
             }
 
-            /* The iframe is the ONLY media player. It must receive taps so
-               YouTube's native center Play/Pause control works. Lampa's
-               foreground blocks remain above it and intercept only their own
-               areas. */
-            .lta7-host > .lta7-video {
+            /* YouTube still renders its own title/channel overlay at the top
+               of an iframe even with controls=0. It is cross-origin, so it
+               cannot be hidden from inside the iframe. The top of this Lampa
+               poster is a black letterbox, therefore cover only that letterbox
+               with an opaque layer. The actual video area remains untouched. */
+            .lta7-youtube-top-shield {
+                position: absolute !important;
+                left: 0 !important;
+                right: 0 !important;
+                top: 0 !important;
+                height: 104px !important;
+                z-index: 2 !important;
+                background: #000 !important;
+                pointer-events: none !important;
+            }
+
+            /* The iframe is the only media player. It is inserted as the first
+               child of Lampa's existing poster layer. We do not change the
+               poster itself, its classes, its z-index, isolation or theme. */
+            .lta7-video {
                 z-index: 0 !important;
                 pointer-events: auto !important;
             }
 
-            /* Known Lampa foreground blocks. */
-            /* Lampa information always renders above the trailer. */
-            .full-start-new__title,
-            .full-start-new__name,
-            .full-start-new__descr,
-            .full-start-new__subtitle,
-            .full-start-new__tagline,
-            .full-start-new__details,
-            .full-start-new__head,
-            .full-start-new__buttons,
-            .full-start-new__rating,
-            .full-start-new__ratings,
-            .full-start-new__meta,
-            .full-start-new__info,
-            .full-start-new__content,
-            .full-start__title,
-            .full-start__name,
-            .full-start__descr,
-            .full-start__subtitle,
-            .full-start__tagline,
-            .full-start__details,
-            .full-start__head,
-            .full-start__buttons,
-            .full-start__rating,
-            .full-start__ratings,
-            .full-start__meta,
-            .full-start__info,
-            .full-start__content {
-                position: relative !important;
-                z-index: 5 !important;
-            }
+            /* Do NOT add z-index/position rules to Lampa foreground elements.
+               Their native stacking is part of the theme and must stay untouched. */
 
             /* Кнопка специально вынесена из карточки Lampa.
                Поэтому её не перехватывает selector/event system Lampa. */
@@ -303,14 +282,15 @@
             try { current.shield.remove(); } catch(e) {}
         }
 
+        if (current.topShield) {
+            try { current.topShield.remove(); } catch(e) {}
+        }
+
         if (current.sound) {
             try { current.sound.remove(); } catch(e) {}
         }
 
 
-        if (current.host) {
-            current.host.classList.remove('lta7-host');
-        }
 
         current = null;
     }
@@ -394,12 +374,19 @@
         sound.innerHTML = mutedIcon();
         sound.setAttribute('aria-label', 'Включить звук');
 
-        host.classList.add('lta7-host');
-        host.appendChild(frame);
+        var firstChild = host.firstChild;
+        if (firstChild) host.insertBefore(frame, firstChild);
+        else host.appendChild(frame);
+
+        var topShield = document.createElement('div');
+        topShield.className = 'lta7-youtube-top-shield';
+        if (host.firstChild) host.insertBefore(topShield, host.firstChild.nextSibling);
+        else host.appendChild(topShield);
 
         var shield = document.createElement('div');
         shield.className = 'lta7-youtube-shield';
-        host.appendChild(shield);
+        if (host.firstChild) host.insertBefore(shield, host.firstChild.nextSibling);
+        else host.appendChild(shield);
 
         document.body.appendChild(sound);
 
@@ -411,6 +398,7 @@
             videoId: trailer.key,
             sound: sound,
             shield: shield,
+            topShield: topShield,
             soundOn: false,
             currentTime: 0,
             startedAt: 0,
@@ -523,7 +511,7 @@
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
         startActivityGuard();
-        console.log('[Trailer Autoplay] v29 started');
+        console.log('[Trailer Autoplay] v32 native Lampa layer');
     }
 
     if (window.Lampa && Lampa.Listener) {
