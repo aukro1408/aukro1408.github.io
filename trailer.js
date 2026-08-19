@@ -1,7 +1,8 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v27_no_sound_button_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v27_style';
+    var SETTINGS_PARAM = 'trailer_autoplay_sound';
     var current = null;
     var DELAY = 2000;
     var activityGuard = null;
@@ -39,8 +40,7 @@
             }
 
             /* Playback-only video layer. No taps are sent to the iframe, so
-               YouTube's native Play/Pause overlay can never appear.
-               The only interactive control is our separate sound button. */
+               YouTube's native Play/Pause overlay can never appear. */
             .lta7-host > .lta7-video {
                 z-index: 0 !important;
                 pointer-events: none !important;
@@ -82,6 +82,53 @@
         `;
         document.head.appendChild(s);
     }
+
+    /* ---------- Настройки Lampa: Трейлер → Без звука / Со звуком ---------- */
+
+    function soundMode() {
+        try {
+            return Lampa.Storage.field(SETTINGS_PARAM) || 'mute';
+        } catch (e) {
+            return 'mute';
+        }
+    }
+
+    function addSettings() {
+        if (!window.Lampa || !Lampa.SettingsApi) return;
+
+        try {
+            Lampa.SettingsApi.addComponent({
+                component: 'trailer_autoplay',
+                name: 'Трейлер',
+                icon: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>'
+            });
+
+            Lampa.SettingsApi.addParam({
+                component: 'trailer_autoplay',
+                param: {
+                    name: SETTINGS_PARAM,
+                    type: 'select',
+                    values: {
+                        mute: 'Без звука',
+                        sound: 'Со звуком'
+                    },
+                    default: 'mute'
+                },
+                field: {
+                    name: 'Звук трейлера',
+                    description: 'Как запускать автовоспроизведение трейлера на странице фильма/сериала'
+                },
+                onChange: function (value) {
+                    try { Lampa.Storage.set(SETTINGS_PARAM, value); } catch (e) {}
+                }
+            });
+        } catch (e) {
+            console.log('[Trailer Autoplay] settings error', e);
+        }
+    }
+
+    /* ---------- Видео ---------- */
+
     function getVideos(data) {
         if (!data || !data.videos) return [];
         var list = data.videos.results || data.videos;
@@ -148,12 +195,12 @@
             }, '*');
         } catch(e) {}
     }
+
     function cleanup() {
         if (!current) return;
 
         if (current.timer) clearTimeout(current.timer);
         if (current.readyTimer) clearTimeout(current.readyTimer);
-        if (current.unlockTimer) clearTimeout(current.unlockTimer);
         if (current.messageHandler) {
             window.removeEventListener('message', current.messageHandler, true);
         }
@@ -172,7 +219,6 @@
             try { current.frame.remove(); } catch(e) {}
         }
 
-
         if (current.host) {
             current.host.classList.remove('lta7-host');
         }
@@ -185,20 +231,6 @@
         current.frame.classList.add('visible');
     }
 
-    function getPlaybackPosition() {
-        if (!current) return 0;
-
-        var position = Number(current.currentTime) || 0;
-
-        // The bridge sends time updates periodically. Between updates, keep
-        // the missing fraction from the local clock so mute/unmute never
-        // jumps back to the last reported second (or to 0).
-        if (current.playing && current.startedAt) {
-            position += Math.max(0, (Date.now() - current.startedAt) / 1000);
-        }
-
-        return Math.max(0, position);
-    }
     function create(body, data) {
         cleanup();
 
@@ -210,6 +242,7 @@
 
         var host = poster[0];
         var bridgeId = 'lta7_' + Math.random().toString(36).slice(2);
+        var wantSound = soundMode() === 'sound';
 
         var frame = document.createElement('iframe');
         frame.className = 'lta7-video';
@@ -219,7 +252,10 @@
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
         );
-        frame.src = bridgeUrl(trailer.key, bridgeId, true, 0);
+        // Звук задаётся сразу через URL при загрузке ролика, без
+        // последующих попыток переключить его через postMessage.
+        frame.src = bridgeUrl(trailer.key, bridgeId, !wantSound, 0);
+
         host.classList.add('lta7-host');
         host.appendChild(frame);
 
@@ -229,11 +265,8 @@
             frameWindow: null,
             bridgeId: bridgeId,
             videoId: trailer.key,
-            currentTime: 0,
-            startedAt: 0,
             timer: null,
             readyTimer: null,
-            unlockTimer: null,
             playing: false,
         };
 
@@ -242,7 +275,6 @@
             if (!event.data || event.data.bridgeId !== current.bridgeId) return;
 
             var type = event.data.type;
-            var d = event.data.data || {};
 
             if (type === 'bridgeReady') {
                 current.frameWindow = frame.contentWindow;
@@ -252,46 +284,22 @@
             if (type === 'ready') {
                 if (current.readyTimer) clearTimeout(current.readyTimer);
 
-                // Первичная загрузка: через 2 секунды.
-                var wait = DELAY;
-
                 current.timer = setTimeout(function() {
                     if (!current || current.frame !== frame) return;
-
                     reveal();
                     send('play');
-
                     current.playing = true;
-                    current.startedAt = Date.now();
+                }, DELAY);
 
-                }, wait);
-
-                return;
-            }
-
-            if (type === 'time') {
-                if (typeof d.currentTime === 'number') {
-                    current.currentTime = d.currentTime;
-                    if (current.playing) current.startedAt = Date.now();
-                }
                 return;
             }
 
             if (type === 'stateChange') {
-                // 1 = playing.
+                var d = event.data.data || {};
                 if (d.state === 1) {
                     reveal();
                     current.playing = true;
-                    current.startedAt = Date.now();
                 }
-
-                if (d.state === 2) {
-                    current.currentTime = getPlaybackPosition();
-                    current.playing = false;
-                    current.startedAt = 0;
-                }
-
-                // 0 = ended.
                 if (d.state === 0) {
                     cleanup();
                 }
@@ -299,7 +307,6 @@
             }
 
             if (type === 'error') {
-                // При ошибке возвращаем обычный постер.
                 cleanup();
             }
         };
@@ -325,8 +332,6 @@
                 var active = Lampa.Activity.active();
                 var component = active && active.component;
 
-                // The trailer belongs only to the full/card activity.
-                // If the user leaves the card, destroy the iframe immediately.
                 if (component && component !== 'full') {
                     cleanup();
                 }
@@ -347,7 +352,6 @@
             return;
         }
 
-        // Some Lampa builds omit component on destroy.
         try {
             var active = Lampa.Activity.active();
             if (!active || active.component !== 'full') cleanup();
@@ -357,10 +361,11 @@
     function start() {
         if (!window.Lampa || !Lampa.Listener) return;
         addStyle();
+        addSettings();
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
         startActivityGuard();
-        console.log('[Trailer Autoplay] v27 started — sound button removed');
+        console.log('[Trailer Autoplay] v27 started');
     }
 
     if (window.Lampa && Lampa.Listener) {
