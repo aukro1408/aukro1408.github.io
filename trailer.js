@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v28_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v29_style';
     var current = null;
     var DELAY = 2000;
     var activityGuard = null;
@@ -186,7 +186,10 @@
 
     function youtubeUrl(videoId, mute, start) {
         var origin = '';
-        try { origin = location.origin; } catch(e) {}
+        try {
+            origin = location.origin || '';
+            if (!/^https?:\/\//i.test(origin)) origin = '';
+        } catch(e) {}
 
         return 'https://www.youtube.com/embed/' +
             encodeURIComponent(videoId) +
@@ -356,6 +359,8 @@
         frame.className = 'lta7-video';
         frame.setAttribute('frameborder', '0');
         frame.setAttribute('allowfullscreen', 'true');
+        frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+        frame.referrerPolicy = 'strict-origin-when-cross-origin';
         frame.setAttribute(
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
@@ -491,7 +496,7 @@
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
         startActivityGuard();
-        console.log('[Trailer Autoplay] v28 started');
+        console.log('[Trailer Autoplay] v29 started');
     }
 
     if (window.Lampa && Lampa.Listener) {
