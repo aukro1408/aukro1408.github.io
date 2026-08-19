@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v26_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v28_sound_inside_trailer_style';
     var current = null;
     var DELAY = 2000;
     var activityGuard = null;
@@ -30,7 +30,7 @@
                 background: #000 !important;
                 opacity: 0 !important;
                 z-index: 0 !important;
-                pointer-events: none !important;
+                pointer-events: auto !important;
                 transition: opacity .25s ease !important;
             }
 
@@ -38,14 +38,13 @@
                 opacity: 1 !important;
             }
 
-            /* Playback-only video layer. No taps are sent to the iframe, so
-               YouTube's native Play/Pause overlay can never appear.
-               The only interactive control is our separate sound button. */
+            /* The iframe is the ONLY media player. It must receive taps so
+               YouTube's native center Play/Pause control works. Lampa's
+               foreground blocks remain above it and intercept only their own
+               areas. */
             .lta7-host > .lta7-video {
                 z-index: 0 !important;
-                pointer-events: none !important;
-                user-select: none !important;
-                -webkit-user-select: none !important;
+                pointer-events: auto !important;
             }
 
             /* Known Lampa foreground blocks. */
@@ -80,10 +79,13 @@
                 z-index: 5 !important;
             }
 
-            /* Кнопка специально вынесена из карточки Lampa.
-               Поэтому её не перехватывает selector/event system Lampa. */
+            /* Кнопка принадлежит только контейнеру трейлера.
+               Она не является глобальным элементом Lampa и исчезает
+               вместе с трейлером при cleanup(). */
             .lta7-sound {
-                position: fixed !important;
+                position: absolute !important;
+                right: 12px !important;
+                bottom: 12px !important;
                 width: 46px !important;
                 height: 46px !important;
                 min-width: 46px !important;
@@ -178,11 +180,7 @@
     }
 
     function bridgeBase() {
-        var base = '';
-        try { base = Lampa.Manifest.github_lampa; } catch(e) {}
-        if (!base) base = 'https://yumata.github.io/lampa/';
-        if (base.charAt(base.length - 1) !== '/') base += '/';
-        return base;
+        return 'https://raw.githubusercontent.com/auy/aukro1408/main/';
     }
 
     function bridgeUrl(videoId, bridgeId, mute, start) {
@@ -208,15 +206,11 @@
     }
 
     function positionSound() {
+        // Sound button is positioned inside the trailer host with CSS.
+        // Do not calculate viewport coordinates and do not use position: fixed.
         if (!current || !current.sound) return;
-
-        var target = current.frame || current.pendingFrame || current.host;
-        var rect = target.getBoundingClientRect();
-        var size = 46;
-        var margin = 12;
-
-        current.sound.style.left = Math.round(rect.right - size - margin) + 'px';
-        current.sound.style.top = Math.round(rect.bottom - size - margin) + 'px';
+        current.sound.style.left = '';
+        current.sound.style.top = '';
     }
 
     function showSound() {
@@ -311,18 +305,13 @@
             wantSound ? 'Выключить звук' : 'Включить звук'
         );
 
-        /*
-         * ВАЖНО: одного 'setVolume' часто недостаточно.
-         * У YouTube IFrame Player API громкость (volume) и флаг
-         * muted — это два разных состояния. setVolume(100) НЕ снимает
-         * mute, если плеер был замьючен через mute()/параметр mute=1.
-         * Поэтому дублируем команду в нескольких вариантах, которые
-         * мог реализовать бридж (youtube.html):
-         */
-        send('setVolume', { volume: wantSound ? 100 : 0 });
-        send(wantSound ? 'unMute' : 'mute', {});
-        send('setMuted', { muted: !wantSound });
-        send('volume', { value: wantSound ? 100 : 0 });
+        if (wantSound) {
+            send('unMute');
+            send('setVolume', { volume: 100 });
+        } else {
+            send('mute');
+            send('setVolume', { volume: 0 });
+        }
     }
 
     function create(body, data) {
@@ -355,7 +344,7 @@
 
         host.classList.add('lta7-host');
         host.appendChild(frame);
-        document.body.appendChild(sound);
+        host.appendChild(sound);
 
         current = {
             host: host,
@@ -372,10 +361,6 @@
             unlockTimer: null,
             playing: false,
         };
-
-        current.positionHandler = positionSound;
-        window.addEventListener('resize', current.positionHandler);
-        window.addEventListener('scroll', current.positionHandler, true);
 
         /*
          * ВАЖНО:
@@ -426,7 +411,6 @@
 
                     reveal();
                     send('play');
-                    if (current.soundOn) reloadForSound(true);
 
                     current.playing = true;
                     current.startedAt = Date.now();
@@ -528,7 +512,7 @@
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
         startActivityGuard();
-        console.log('[Trailer Autoplay] v26 started');
+        console.log('[Trailer Autoplay] v27 GitHub started');
     }
 
     if (window.Lampa && Lampa.Listener) {
