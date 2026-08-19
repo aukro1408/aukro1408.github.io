@@ -38,14 +38,13 @@
                 opacity: 1 !important;
             }
 
-            /* Playback-only video layer. No taps are sent to the iframe, so
-               YouTube's native Play/Pause overlay can never appear.
-               The only interactive control is our separate sound button. */
+            /* The iframe is the ONLY media player. It must receive taps so
+               YouTube's native center Play/Pause control works. Lampa's
+               foreground blocks remain above it and intercept only their own
+               areas. */
             .lta7-host > .lta7-video {
                 z-index: 0 !important;
                 pointer-events: none !important;
-                user-select: none !important;
-                -webkit-user-select: none !important;
             }
 
             /* Known Lampa foreground blocks. */
@@ -177,39 +176,24 @@
         return trailers(list)[0] || list[0];
     }
 
-    function createBridgeUrl(videoId, bridgeId, start) {
-        /*
-         * Self-contained bridge. We do not use Lampa's youtube.html here,
-         * because that bridge exposes setVolume() but does not clear the
-         * YouTube muted state. Our bridge has explicit mute/unMute commands.
-         */
-        function esc(v) {
-            return String(v || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-        }
+    function bridgeBase() {
+        var base = '';
+        // Our own bridge. Upload youtube.html beside this JS on Codeberg.
+        // This keeps the visual player under our control while the YouTube IFrame
+        // API is used only as the video source.
+        base = 'https://codeberg.org/auy/aukro1408/raw/branch/main/';
+        return base;
+    }
 
-        var html = "<!doctype html><html><head><meta charset='utf-8'><style>" +
-            "html,body,#player{margin:0;width:100%;height:100%;overflow:hidden;background:#000}" +
-            "iframe{border:0}</style></head><body><div id='player'></div>" +
-            "<script src='https://www.youtube.com/iframe_api'></scr" + "ipt><script>" +
-            "var bridgeId='" + esc(bridgeId) + "',videoId='" + esc(videoId) + "',start=" +
-            Math.max(0, Math.floor(start || 0)) + ";" +
-            "var player=null,ready=false,timer=null;" +
-            "function send(type,data){try{parent.postMessage({bridgeId:bridgeId,type:type,data:data||{}},'*')}catch(e){}}" +
-            "function tick(){if(!player||!ready)return;try{send('time',{currentTime:player.getCurrentTime(),duration:player.getDuration(),playerState:player.getPlayerState()})}catch(e){}}" +
-            "window.onYouTubeIframeAPIReady=function(){player=new YT.Player('player',{width:'100%',height:'100%',videoId:videoId,playerVars:{autoplay:1,controls:0,rel:0,modestbranding:1,playsinline:1,enablejsapi:1,start:start},events:{onReady:function(){ready=true;player.mute();send('ready');send('stateChange',{state:player.getPlayerState()});timer=setInterval(tick,100)},onStateChange:function(e){send('stateChange',{state:e.data})},onError:function(e){send('error',{error:e.data})}}})};" +
-            "window.addEventListener('message',function(e){if(!e.data||e.data.bridgeId!==bridgeId)return;var t=e.data.type,d=e.data.data||{};if(!player||!ready)return;try{" +
-            "if(t==='play')player.playVideo();" +
-            "else if(t==='pause')player.pauseVideo();" +
-            "else if(t==='mute'){player.mute();}" +
-            "else if(t==='unmute'){player.unMute();player.setVolume(100);}" +
-            "else if(t==='setVolume'){player.setVolume(Number(d.volume)||0);if(Number(d.volume)>0)player.unMute();else player.mute();}" +
-            "else if(t==='seekTo')player.seekTo(Number(d.time)||0,true);" +
-            "}catch(e){}});send('bridgeReady');" +
-            "</scr" + "ipt></body></html>";
-
-        var blob = new Blob([html], {type:'text/html'});
-        var url = URL.createObjectURL(blob);
-        return { url: url, blob: blob };
+    function bridgeUrl(videoId, bridgeId, mute, start) {
+        return bridgeBase() + 'youtube.html' +
+            '?bridgeId=' + encodeURIComponent(bridgeId) +
+            '&videoId=' + encodeURIComponent(videoId) +
+            '&autoplay=1' +
+            '&controls=0' +
+            '&mute=' + (mute ? '1' : '0') +
+            '&cc_load_policy=0' +
+            '&start=' + Math.max(0, Math.floor(start || 0));
     }
 
     function send(type, data) {
@@ -275,10 +259,6 @@
             try { current.frame.remove(); } catch(e) {}
         }
 
-        if (current.bridgeUrl) {
-            try { URL.revokeObjectURL(current.bridgeUrl); } catch(e) {}
-        }
-
         if (current.sound) {
             try { current.sound.remove(); } catch(e) {}
         }
@@ -331,7 +311,14 @@
             wantSound ? 'Выключить звук' : 'Включить звук'
         );
 
-        send(wantSound ? 'unmute' : 'mute');
+        // Never reload the iframe. Change the mute state of the same player.
+        if (wantSound) {
+            send('unMute');
+            send('setVolume', { volume: 100 });
+        } else {
+            send('mute');
+            send('setVolume', { volume: 0 });
+        }
     }
 
     function create(body, data) {
@@ -354,8 +341,7 @@
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
         );
-        var bridge = createBridgeUrl(trailer.key, bridgeId, 0);
-        frame.src = bridge.url;
+        frame.src = bridgeUrl(trailer.key, bridgeId, true, 0);
 
         var sound = document.createElement('button');
         sound.type = 'button';
@@ -371,7 +357,6 @@
             host: host,
             frame: frame,
             frameWindow: null,
-            bridgeUrl: bridge.url,
             bridgeId: bridgeId,
             videoId: trailer.key,
             sound: sound,
