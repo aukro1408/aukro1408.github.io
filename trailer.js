@@ -38,13 +38,14 @@
                 opacity: 1 !important;
             }
 
-            /* The iframe is the ONLY media player. It must receive taps so
-               YouTube's native center Play/Pause control works. Lampa's
-               foreground blocks remain above it and intercept only their own
-               areas. */
+            /* Playback-only video layer. No taps are sent to the iframe, so
+               YouTube's native Play/Pause overlay can never appear.
+               The only interactive control is our separate sound button. */
             .lta7-host > .lta7-video {
                 z-index: 0 !important;
                 pointer-events: none !important;
+                user-select: none !important;
+                -webkit-user-select: none !important;
             }
 
             /* Known Lampa foreground blocks. */
@@ -178,10 +179,9 @@
 
     function bridgeBase() {
         var base = '';
-        // Our own bridge. Upload youtube.html beside this JS on Codeberg.
-        // This keeps the visual player under our control while the YouTube IFrame
-        // API is used only as the video source.
-        base = 'https://codeberg.org/auy/aukro1408/raw/branch/main/';
+        try { base = Lampa.Manifest.github_lampa; } catch(e) {}
+        if (!base) base = 'https://yumata.github.io/lampa/';
+        if (base.charAt(base.length - 1) !== '/') base += '/';
         return base;
     }
 
@@ -311,14 +311,18 @@
             wantSound ? 'Выключить звук' : 'Включить звук'
         );
 
-        // Never reload the iframe. Change the mute state of the same player.
-        if (wantSound) {
-            send('unMute');
-            send('setVolume', { volume: 100 });
-        } else {
-            send('mute');
-            send('setVolume', { volume: 0 });
-        }
+        /*
+         * ВАЖНО: одного 'setVolume' часто недостаточно.
+         * У YouTube IFrame Player API громкость (volume) и флаг
+         * muted — это два разных состояния. setVolume(100) НЕ снимает
+         * mute, если плеер был замьючен через mute()/параметр mute=1.
+         * Поэтому дублируем команду в нескольких вариантах, которые
+         * мог реализовать бридж (youtube.html):
+         */
+        send('setVolume', { volume: wantSound ? 100 : 0 });
+        send(wantSound ? 'unMute' : 'mute', {});
+        send('setMuted', { muted: !wantSound });
+        send('volume', { value: wantSound ? 100 : 0 });
     }
 
     function create(body, data) {
@@ -422,6 +426,7 @@
 
                     reveal();
                     send('play');
+                    if (current.soundOn) reloadForSound(true);
 
                     current.playing = true;
                     current.startedAt = Date.now();
