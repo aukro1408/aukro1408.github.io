@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title></title>
+<style>
+html,body,#player{
+    width:100%;
+    height:100%;
+    margin:0;
+    padding:0;
+    overflow:hidden;
+    background:#000;
+}
+body{
+    position:relative;
+}
+#player{
+    position:absolute;
+    inset:0;
+}
+</style>
+</head>
+<body>
+<div id="player"></div>
+
+<script>
+(function () {
+    'use strict';
+
+    var params = new URLSearchParams(location.search);
+    var bridgeId = params.get('bridgeId') || '';
+    var videoId = params.get('videoId') || '';
+    var autoplay = params.get('autoplay') === '1';
+    var controls = params.get('controls') === '1' ? 1 : 0;
+    var mute = params.get('mute') !== '0';
+    var start = Math.max(0, parseInt(params.get('start') || '0', 10) || 0);
+    var player = null;
+    var ready = false;
+    var timer = null;
+
+    function post(type, data) {
+        try {
+            window.parent.postMessage({
+                bridgeId: bridgeId,
+                type: type,
+                data: data || {}
+            }, '*');
+        } catch (e) {}
+    }
+
+    function sendTime() {
+        if (!player || !ready) return;
+        try {
+            post('time', {
+                currentTime: Number(player.getCurrentTime()) || 0,
+                duration: Number(player.getDuration()) || 0,
+                playerState: player.getPlayerState()
+            });
+        } catch (e) {}
+    }
+
+    window.onYouTubeIframeAPIReady = function () {
+        if (!videoId || !window.YT || !YT.Player) {
+            post('error', { code: 'NO_YOUTUBE_API' });
+            return;
+        }
+
+        player = new YT.Player('player', {
+            width: '100%',
+            height: '100%',
+            videoId: videoId,
+            playerVars: {
+                autoplay: autoplay ? 1 : 0,
+                controls: controls,
+                disablekb: 1,
+                fs: 0,
+                iv_load_policy: 3,
+                modestbranding: 1,
+                playsinline: 1,
+                rel: 0,
+                start: start,
+                enablejsapi: 1,
+                cc_load_policy: 0
+            },
+            events: {
+                onReady: function () {
+                    ready = true;
+
+                    if (mute) {
+                        try { player.mute(); } catch (e) {}
+                        try { player.setVolume(0); } catch (e) {}
+                    }
+
+                    post('ready');
+
+                    if (timer) clearInterval(timer);
+                    timer = setInterval(sendTime, 250);
+                    sendTime();
+                },
+                onStateChange: function (event) {
+                    post('stateChange', { state: event.data });
+                    sendTime();
+                },
+                onError: function (event) {
+                    post('error', { code: event.data });
+                }
+            }
+        });
+    };
+
+    window.addEventListener('message', function (event) {
+        var msg = event.data || {};
+
+        if (!msg || msg.bridgeId !== bridgeId) return;
+        if (!player || !ready) return;
+
+        var type = msg.type;
+        var data = msg.data || {};
+
+        try {
+            if (type === 'play') {
+                player.playVideo();
+            } else if (type === 'pause') {
+                player.pauseVideo();
+            } else if (type === 'mute') {
+                player.mute();
+            } else if (type === 'unMute') {
+                player.unMute();
+            } else if (type === 'setVolume') {
+                player.setVolume(Math.max(0, Math.min(100, Number(data.volume) || 0)));
+            } else if (type === 'seekTo') {
+                player.seekTo(Number(data.time) || 0, true);
+            }
+            sendTime();
+        } catch (e) {}
+    });
+
+    var api = document.createElement('script');
+    api.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(api);
+
+    post('bridgeReady');
+})();
+</script>
+</body>
+</html>
