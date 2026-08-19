@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v27_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v28_cinematic_style';
     var SETTINGS_PARAM = 'trailer_autoplay_sound';
     var current = null;
     var DELAY = 2000;
@@ -13,15 +13,20 @@
         var s = document.createElement('style');
         s.id = STYLE_ID;
         s.textContent = `
-            /* Trailer is only a media/background layer. It must never sit
-               above Lampa's title, ratings or metadata. */
+            /* Trailer is a media layer above the poster, but below Lampa UI. */
             .lta7-host {
                 position: relative !important;
                 overflow: hidden !important;
                 z-index: 0 !important;
                 isolation: isolate !important;
+                background: #000 !important;
             }
 
+            /*
+             * Cinematic transition:
+             * the poster remains visible underneath while the trailer fades
+             * in, slightly zoomed and blurred, then settles into a sharp frame.
+             */
             .lta7-video {
                 position: absolute !important;
                 inset: 0 !important;
@@ -32,24 +37,38 @@
                 opacity: 0 !important;
                 z-index: 0 !important;
                 pointer-events: none !important;
-                transition: opacity .25s ease !important;
+                transform: scale(1.035) !important;
+                filter: blur(6px) !important;
+                transform-origin: center center !important;
+                transition:
+                    opacity .85s cubic-bezier(.22,.61,.36,1),
+                    transform 1.05s cubic-bezier(.22,.61,.36,1),
+                    filter .85s ease !important;
+                will-change: opacity, transform, filter !important;
             }
 
             .lta7-video.visible {
                 opacity: 1 !important;
+                transform: scale(1) !important;
+                filter: blur(0) !important;
             }
 
-            /* Playback-only video layer. No taps are sent to the iframe, so
-               YouTube's native Play/Pause overlay can never appear. */
+            /* Playback-only video layer. */
             .lta7-host > .lta7-video {
                 z-index: 0 !important;
+                pointer-events: none !important;
+                user-select: none !important;
+                -webkit-user-select: none !important;
+                -webkit-touch-callout: none !important;
+            }
+
+            .lta7-host iframe {
                 pointer-events: none !important;
                 user-select: none !important;
                 -webkit-user-select: none !important;
             }
 
             /* Known Lampa foreground blocks. */
-            /* Lampa information always renders above the trailer. */
             .full-start-new__title,
             .full-start-new__name,
             .full-start-new__descr,
@@ -201,7 +220,6 @@
 
         if (current.timer) clearTimeout(current.timer);
         if (current.readyTimer) clearTimeout(current.readyTimer);
-        if (current.revealTimer) clearTimeout(current.revealTimer);
         if (current.messageHandler) {
             window.removeEventListener('message', current.messageHandler, true);
         }
@@ -229,7 +247,16 @@
 
     function reveal() {
         if (!current) return;
-        current.frame.classList.add('visible');
+
+        /*
+         * The trailer is revealed immediately after YouTube reports
+         * "playing". The transition itself happens in CSS, so the beginning
+         * of the trailer is not deliberately hidden.
+         */
+        requestAnimationFrame(function () {
+            if (!current) return;
+            current.frame.classList.add('visible');
+        });
     }
 
     function create(body, data) {
@@ -253,8 +280,11 @@
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
         );
-        // Звук задаётся сразу через URL при загрузке ролика, без
-        // последующих попыток переключить его через postMessage.
+
+        /*
+         * Sound mode is selected before the YouTube player starts.
+         * No sound button and no postMessage sound toggle are used.
+         */
         frame.src = bridgeUrl(trailer.key, bridgeId, !wantSound, 0);
 
         host.classList.add('lta7-host');
@@ -268,8 +298,7 @@
             videoId: trailer.key,
             timer: null,
             readyTimer: null,
-            revealTimer: null,
-            playing: false,
+            playing: false
         };
 
         current.messageHandler = function(event) {
@@ -288,10 +317,11 @@
 
                 current.timer = setTimeout(function() {
                     if (!current || current.frame !== frame) return;
-                    // Видео пока НЕ показываем: сначала запускаем плеер и
-                    // ждём подтверждения реального состояния "playing".
-                    // Так исключается мелькание нативной иконки play/pause
-                    // YouTube, которая на миг видна между "cued" и "playing".
+
+                    /*
+                     * Start the trailer first. The poster remains visible
+                     * underneath until YouTube confirms real playback.
+                     */
                     send('play');
                 }, DELAY);
 
@@ -300,21 +330,16 @@
 
             if (type === 'stateChange') {
                 var d = event.data.data || {};
+
                 if (d.state === 1) {
                     current.playing = true;
-                    if (!current.revealTimer) {
-                        // Даём нативной иконке play/pause YouTube время
-                        // полностью погаснуть, пока кадр ещё невидим
-                        // (opacity: 0), и только потом показываем видео.
-                        current.revealTimer = setTimeout(function () {
-                            if (!current || current.frame !== frame) return;
-                            reveal();
-                        }, 1200);
-                    }
+                    reveal();
                 }
+
                 if (d.state === 0) {
                     cleanup();
                 }
+
                 return;
             }
 
@@ -377,7 +402,7 @@
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
         startActivityGuard();
-        console.log('[Trailer Autoplay] v27 started');
+        console.log('[Trailer Autoplay] v28 cinematic transition started');
     }
 
     if (window.Lampa && Lampa.Listener) {
