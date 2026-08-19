@@ -80,8 +80,11 @@
              * Размер самой карточки НЕ трогаем.
              */
             .lcs-card .card__title {
-                white-space: normal;
-                text-align: center;
+                display: block !important;
+                white-space: normal !important;
+                text-align: center !important;
+                line-height: 1.2;
+                margin-top: .35em;
             }
 
             .lcs-card .lcs-category {
@@ -142,6 +145,11 @@
         var title = card.find('.card__title');
 
         img.attr('src', item.image);
+        /*
+         * Название подборки показываем под постером.
+         * Это именно штатный .card__title, поэтому визуально
+         * подпись остаётся частью стандартной карточки Lampa.
+         */
         title.html(
             '<div class="lcs-category">' +
                 esc(item.icon) + ' ' + esc(item.title) +
@@ -150,6 +158,12 @@
                 esc(item.description) +
             '</div>'
         );
+        title.css({
+            'display': 'block',
+            'white-space': 'normal',
+            'text-align': 'center',
+            'line-height': '1.2'
+        });
 
         card.card_data = {
             title: item.title,
