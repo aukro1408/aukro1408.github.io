@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var STYLE_ID = 'lampa_trailer_autoplay_v28_cinematic_style';
+    var STYLE_ID = 'lampa_trailer_autoplay_v29_dark_fade_style';
     var SETTINGS_PARAM = 'trailer_autoplay_sound';
     var current = null;
     var DELAY = 2000;
@@ -37,20 +37,23 @@
                 opacity: 0 !important;
                 z-index: 0 !important;
                 pointer-events: none !important;
-                transform: scale(1.035) !important;
-                filter: blur(6px) !important;
+
+                /* Trailer emerges from darkness instead of zoom/blur. */
+                filter: brightness(.12) !important;
+                transform: scale(1) !important;
                 transform-origin: center center !important;
+
                 transition:
-                    opacity .85s cubic-bezier(.22,.61,.36,1),
-                    transform 1.05s cubic-bezier(.22,.61,.36,1),
-                    filter .85s ease !important;
-                will-change: opacity, transform, filter !important;
+                    opacity .35s ease,
+                    filter 2s cubic-bezier(.22,.61,.36,1) !important;
+
+                will-change: opacity, filter !important;
             }
 
             .lta7-video.visible {
                 opacity: 1 !important;
+                filter: brightness(1) !important;
                 transform: scale(1) !important;
-                filter: blur(0) !important;
             }
 
             /* Playback-only video layer. */
@@ -250,8 +253,8 @@
 
         /*
          * The trailer is revealed immediately after YouTube reports
-         * "playing". The transition itself happens in CSS, so the beginning
-         * of the trailer is not deliberately hidden.
+         * "playing". The image starts almost black and gradually reaches
+         * normal brightness over about two seconds.
          */
         requestAnimationFrame(function () {
             if (!current) return;
@@ -402,7 +405,7 @@
         Lampa.Listener.follow('full', onFull);
         Lampa.Listener.follow('activity', onActivity);
         startActivityGuard();
-        console.log('[Trailer Autoplay] v28 cinematic transition started');
+        console.log('[Trailer Autoplay] v29 dark fade transition started');
     }
 
     if (window.Lampa && Lampa.Listener) {
