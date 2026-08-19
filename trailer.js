@@ -176,31 +176,34 @@
         return trailers(list)[0] || list[0];
     }
 
-    function youtubeUrl(videoId) {
-        var id = String(videoId || '').replace(/[^a-zA-Z0-9_-]/g, '');
-        var origin = '';
-        try { origin = window.location.origin; } catch(e) {}
-        var q = [
-            'autoplay=1', 'mute=1', 'controls=1', 'playsinline=1',
-            'rel=0', 'modestbranding=1', 'enablejsapi=1',
-            'cc_load_policy=0', 'iv_load_policy=3'
-        ];
-        if (origin && origin !== 'null') q.push('origin=' + encodeURIComponent(origin));
-        return 'https://www.youtube.com/embed/' + id + '?' + q.join('&');
+    function bridgeBase() {
+        var base = '';
+        try { base = Lampa.Manifest.github_lampa; } catch(e) {}
+        if (!base) base = 'https://yumata.github.io/lampa/';
+        if (base.charAt(base.length - 1) !== '/') base += '/';
+        return base;
+    }
+
+    function bridgeUrl(videoId, bridgeId, mute, start) {
+        return bridgeBase() + 'youtube.html' +
+            '?bridgeId=' + encodeURIComponent(bridgeId) +
+            '&videoId=' + encodeURIComponent(videoId) +
+            '&autoplay=1' +
+            '&controls=0' +
+            '&mute=' + (mute ? '1' : '0') +
+            '&cc_load_policy=0' +
+            '&start=' + Math.max(0, Math.floor(start || 0));
     }
 
     function send(type, data) {
         if (!current || !current.frameWindow) return;
-        var payload = null;
-        if (type === 'play') payload = {event:'command',func:'playVideo',args:[]};
-        else if (type === 'pause') payload = {event:'command',func:'pauseVideo',args:[]};
-        else if (type === 'mute') payload = {event:'command',func:'mute',args:[]};
-        else if (type === 'unMute') payload = {event:'command',func:'unMute',args:[]};
-        else if (type === 'setVolume') payload = {event:'command',func:'setVolume',args:[Number(data&&data.volume)||0]};
-        else if (type === 'seekTo') payload = {event:'command',func:'seekTo',args:[Number(data&&data.time)||0,true]};
-        if (!payload) return;
-        try { current.frameWindow.postMessage(JSON.stringify(payload), 'https://www.youtube.com'); }
-        catch(e) { try { current.frameWindow.postMessage(JSON.stringify(payload), '*'); } catch(x) {} }
+        try {
+            current.frameWindow.postMessage({
+                bridgeId: current.bridgeId,
+                type: type,
+                data: data || {}
+            }, '*');
+        } catch(e) {}
     }
 
     function positionSound() {
@@ -241,12 +244,19 @@
             window.removeEventListener('scroll', current.positionHandler, true);
         }
 
-        if (current.frameWindow) { try { send('pause'); } catch(e) {} }
+        if (current.frameWindow) {
+            try {
+                current.frameWindow.postMessage({
+                    bridgeId: current.bridgeId,
+                    type: 'pause',
+                    data: {}
+                }, '*');
+            } catch(e) {}
+        }
 
         if (current.frame) {
             try { current.frame.remove(); } catch(e) {}
         }
-
 
         if (current.sound) {
             try { current.sound.remove(); } catch(e) {}
@@ -300,13 +310,7 @@
             wantSound ? 'Выключить звук' : 'Включить звук'
         );
 
-        if (wantSound) {
-            // setVolume alone cannot unmute a YouTube player that was started
-            // with mute=1. Explicitly unmute the SAME player.
-            send('unMute', { volume: 100 });
-        } else {
-            send('mute');
-        }
+        send('setVolume', { volume: wantSound ? 100 : 0 });
     }
 
     function create(body, data) {
@@ -329,28 +333,13 @@
             'allow',
             'autoplay; encrypted-media; picture-in-picture'
         );
-        frame.src = youtubeUrl(trailer.key);
+        frame.src = bridgeUrl(trailer.key, bridgeId, true, 0);
 
         var sound = document.createElement('button');
         sound.type = 'button';
         sound.className = 'lta7-sound';
         sound.innerHTML = mutedIcon();
         sound.setAttribute('aria-label', 'Включить звук');
-
-        frame.addEventListener('load', function() {
-            if (!current || current.frame !== frame) return;
-            current.frameWindow = frame.contentWindow;
-            positionSound();
-            setTimeout(function(){
-                if (!current || current.frame !== frame) return;
-                send('mute');
-                send('setVolume',{volume:0});
-            },300);
-        });
-
-        frame.addEventListener('error', function() {
-            if (current && current.frame === frame) cleanup();
-        });
 
         host.classList.add('lta7-host');
         host.appendChild(frame);
@@ -360,8 +349,8 @@
             host: host,
             frame: frame,
             frameWindow: null,
+            bridgeId: bridgeId,
             videoId: trailer.key,
-
             sound: sound,
             soundOn: false,
             currentTime: 0,
@@ -404,40 +393,79 @@
 
         current.messageHandler = function(event) {
             if (!current || event.source !== frame.contentWindow) return;
-            var raw = event.data;
-            var msg = null;
-            try { msg = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch(e) {}
-            if (!msg) return;
+            if (!event.data || event.data.bridgeId !== current.bridgeId) return;
 
-            if (msg.event === 'onReady') {
+            var type = event.data.type;
+            var d = event.data.data || {};
+
+            if (type === 'bridgeReady') {
+                current.frameWindow = frame.contentWindow;
+                return;
+            }
+
+            if (type === 'ready') {
                 if (current.readyTimer) clearTimeout(current.readyTimer);
-                current.timer = setTimeout(function(){
+
+                // Первичная загрузка: через 2 секунды.
+                var wait = DELAY;
+
+                current.timer = setTimeout(function() {
                     if (!current || current.frame !== frame) return;
+
                     reveal();
-                    send('mute');
-                    send('setVolume',{volume:0});
                     send('play');
+
                     current.playing = true;
                     current.startedAt = Date.now();
-                }, DELAY);
+
+                }, wait);
+
                 return;
             }
 
-            if (msg.event === 'onStateChange') {
-                var state = Number(msg.info);
-                if (state === 1) { reveal(); current.playing=true; current.startedAt=Date.now(); }
-                else if (state === 2) { current.currentTime=getPlaybackPosition(); current.playing=false; current.startedAt=0; }
-                else if (state === 0) { current.playing=false; current.startedAt=0; }
+            if (type === 'time') {
+                if (typeof d.currentTime === 'number') {
+                    current.currentTime = d.currentTime;
+                    if (current.playing) current.startedAt = Date.now();
+                }
+                positionSound();
                 return;
             }
 
-            if (msg.event === 'infoDelivery' && msg.info && typeof msg.info.currentTime === 'number') {
-                current.currentTime = msg.info.currentTime;
-                if (current.playing) current.startedAt = Date.now();
+            if (type === 'stateChange') {
+                // 1 = playing.
+                if (d.state === 1) {
+                    reveal();
+                    current.playing = true;
+                    current.startedAt = Date.now();
+                }
+
+                if (d.state === 2) {
+                    current.currentTime = getPlaybackPosition();
+                    current.playing = false;
+                    current.startedAt = 0;
+                }
+
+                // 0 = ended.
+                if (d.state === 0) {
+                    cleanup();
+                }
+                return;
+            }
+
+            if (type === 'error') {
+                // При ошибке возвращаем обычный постер.
+                cleanup();
             }
         };
 
         window.addEventListener('message', current.messageHandler, true);
+
+        frame.onload = function() {
+            if (current && current.frame === frame) {
+                try { current.frameWindow = frame.contentWindow; } catch(e) {}
+            }
+        };
     }
 
     function startActivityGuard() {
