@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    /* Lampa Collections v1.4 — author: aukro1408 */
+    /* Lampa Collections v1.5 AI settings fix — author: aukro1408 */
     var COMPONENT = 'lampa_collections_standard';
     var MENU_ID = 'lampa_collections_standard_menu';
     var started = false;
@@ -856,26 +856,51 @@
     }
 
     function addAISettings() {
-        if (!Lampa.SettingsApi) return;
         try {
+            if (!Lampa.SettingsApi || !Lampa.SettingsApi.addComponent) return;
+
+            /*
+             * Используем тот же формат SettingsApi, который применяется
+             * в рабочем плагине трейлеров: без onChange внутри addParam.
+             * Lampa сама сохраняет значение параметра по data-name.
+             */
             Lampa.SettingsApi.addComponent({
                 component: 'lcs_ai',
                 name: 'Киноассистент',
-                icon: '<svg viewBox="0 0 24 24"><path d="M12 3a8 8 0 0 0-8 8v2a3 3 0 0 0 3 3h2v-6H6a6 6 0 0 1 12 0h-3v6h2a3 3 0 0 0 3-3v-2a8 8 0 0 0-8-8z"/><path d="M9 20h6M10 17h4"/></svg>'
+                icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.8"/><path d="M9 10h.01M15 10h.01M9 14c1.7 1.5 4.3 1.5 6 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 4V2.5M8.5 5.5 7.5 4M15.5 5.5 16.5 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
             });
+
             Lampa.SettingsApi.addParam({
-                component:'lcs_ai',
-                param:{name:AI_OPENROUTER_KEY_PARAM,type:'input',default:''},
-                field:{name:'OpenRouter API-ключ',description:'Ваш ключ OpenRouter. Для пробной версии используются бесплатные модели.'},
-                onChange:function(v){ try{Lampa.Storage.set(AI_OPENROUTER_KEY_PARAM,v||'');}catch(e){} }
+                component: 'lcs_ai',
+                param: {
+                    name: AI_OPENROUTER_KEY_PARAM,
+                    type: 'input',
+                    'default': ''
+                },
+                field: {
+                    name: 'OpenRouter API-ключ',
+                    description: 'Вставьте свой ключ OpenRouter. Бесплатные модели можно использовать без оплаты, если они доступны у провайдера.'
+                }
             });
+
             Lampa.SettingsApi.addParam({
-                component:'lcs_ai',
-                param:{name:AI_MODEL_PARAM,type:'select',values:{'openrouter/free':'Автоматически — бесплатная модель'},default:'openrouter/free'},
-                field:{name:'Модель',description:'OpenRouter выберет доступную бесплатную модель.'},
-                onChange:function(v){ try{Lampa.Storage.set(AI_MODEL_PARAM,v||'openrouter/free');}catch(e){} }
+                component: 'lcs_ai',
+                param: {
+                    name: AI_MODEL_PARAM,
+                    type: 'select',
+                    values: {
+                        'openrouter/free': 'Автоматически — бесплатная модель'
+                    },
+                    'default': 'openrouter/free'
+                },
+                field: {
+                    name: 'Модель',
+                    description: 'Оставьте автоматический выбор для бесплатного режима.'
+                }
             });
-        } catch(e) { console.log('[Подборки] AI settings error',e); }
+        } catch(e) {
+            console.log('[Подборки] AI settings error', e);
+        }
     }
 
     function AssistantComponent(object) {
