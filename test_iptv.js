@@ -217,12 +217,42 @@
         var req;
         try { req = new Lampa.Reguest(); } catch (e) { error(e); return; }
         try { req.timeout(25000); } catch (e) {}
-        var method = window.god_enabled && typeof req.native === 'function' ? 'native' : 'silent';
-        if (typeof req[method] !== 'function') method = typeof req.silent === 'function' ? 'silent' : 'native';
-        if (typeof req[method] !== 'function') { error(new Error('Lampa.Reguest не поддерживается')); return; }
+
+        // На Android/Tizen используем native: он обходит браузерный CORS и
+        // является тем же способом, который использует референсный IPTV.
+        var isNativePlatform = false;
         try {
-            req[method](url, success, error, false, { dataType: 'text' });
-        } catch (e) { error(e); }
+            isNativePlatform = !!(Lampa.Platform && (
+                Lampa.Platform.is('android') ||
+                Lampa.Platform.is('tizen') ||
+                Lampa.Platform.is('webos')
+            ));
+        } catch (e) {}
+
+        var method = (isNativePlatform || window.god_enabled) && typeof req.native === 'function'
+            ? 'native'
+            : (typeof req.silent === 'function' ? 'silent' : 'native');
+
+        if (typeof req[method] !== 'function') {
+            error(new Error('Lampa.Reguest не поддерживает загрузку M3U'));
+            return;
+        }
+
+        var done = false;
+        function ok(data) {
+            if (done) return;
+            done = true;
+            success(data);
+        }
+        function fail(e) {
+            if (done) return;
+            done = true;
+            error(e || new Error('Сетевая ошибка'));
+        }
+
+        try {
+            req[method](url, ok, fail, false, { dataType: 'text' });
+        } catch (e) { fail(e); }
     }
 
     function loadM3U(url) {
@@ -495,7 +525,17 @@
                     else loadEPG(epgUrl).then(function (epg) { view.epg = epg; view.draw(); }).catch(function (e) { console.warn('[IPTV v3] EPG', e); });
                 }
                 currentView = view;
-            }).catch(showError);
+            }).catch(function (e) {
+                var message = e && e.message ? e.message : String(e || 'Неизвестная ошибка');
+                console.error('[IPTV v3] M3U', e);
+                html.innerHTML = '<div class="iptv3"><div class="iptv3__empty"><div><div style="font-size:1.35em;margin-bottom:.7em">Не удалось загрузить плейлист</div><div style="opacity:.65;max-width:32em;margin:0 auto 1.2em;line-height:1.5">' + esc(message) + '</div><div class="iptv3__action selector" id="iptv3-retry">Повторить</div><div class="iptv3__action selector" id="iptv3-back" style="margin-left:.5em">Плейлисты</div></div></div></div>';
+                var retry = html.querySelector('#iptv3-retry');
+                var back = html.querySelector('#iptv3-back');
+                if (retry) retry.addEventListener('hover:enter', function () { self.openPlaylist(item); });
+                if (back) back.addEventListener('hover:enter', function () { self.showPlaylists(); });
+                self.setController(html.querySelector('.iptv3'));
+                try { Lampa.Noty.show('IPTV: ' + message); } catch (_) {}
+            });
         };
         this.playChannel = function (ch, playlist) {
             try {
