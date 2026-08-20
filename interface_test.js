@@ -4,7 +4,7 @@
   // ============================================================================
   // PLUGIN METADATA
   // ============================================================================
-  var PLUGIN_VERSION = '4.1.0-test';
+  var PLUGIN_VERSION = '4.1.1-test';
   var PLUGIN_AUTHOR = '@pavelpikta';
 
   // Plugin Icon (Emerald gradient)
@@ -2091,207 +2091,127 @@
   };
 
   // ============================================================================
-  // CINEMATIC FULL CARD OVERLAY (TEST)
-  // Title enters from the left, year/country from the right.
-  // Elements remain above the trailer while it is playing.
+  // CINEMATIC FULL CARD OVERLAY (SAFE TEST)
   // ============================================================================
   var CinematicFullCard = {
     styleId: 'inmod_cinematic_full_card_test',
 
     css: function () {
       return [
-        '@keyframes inmodCineTitleIn {',
-        '  from { opacity: 0; transform: translate3d(-42px, 0, 0); filter: blur(5px); }',
-        '  to   { opacity: 1; transform: translate3d(0, 0, 0); filter: blur(0); }',
-        '}',
-        '@keyframes inmodCineMetaIn {',
-        '  from { opacity: 0; transform: translate3d(42px, 0, 0); filter: blur(5px); }',
-        '  to   { opacity: 1; transform: translate3d(0, 0, 0); filter: blur(0); }',
-        '}',
-        '@keyframes inmodCineBadgeIn {',
-        '  from { opacity: 0; transform: translate3d(18px, -8px, 0) scale(.92); }',
-        '  to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }',
-        '}',
-        '.inmod-cine-overlay {',
-        '  position: absolute !important;',
-        '  inset: 0 !important;',
-        '  z-index: 30 !important;',
-        '  pointer-events: none !important;',
-        '  overflow: hidden !important;',
-        '}',
-        '.inmod-cine-title {',
-        '  position: absolute !important;',
-        '  left: 4.5% !important;',
-        '  right: 12% !important;',
-        '  bottom: 24% !important;',
-        '  margin: 0 !important;',
-        '  color: #fff !important;',
-        '  font-size: clamp(1.35rem, 4.2vw, 2.6rem) !important;',
-        '  font-weight: 800 !important;',
-        '  line-height: 1.05 !important;',
-        '  letter-spacing: -.02em !important;',
-        '  text-shadow: 0 2px 16px rgba(0,0,0,.8), 0 1px 3px rgba(0,0,0,.95) !important;',
-        '  white-space: nowrap !important;',
-        '  overflow: hidden !important;',
-        '  text-overflow: ellipsis !important;',
-        '  animation: inmodCineTitleIn .72s cubic-bezier(.2,.8,.2,1) both !important;',
-        '}',
-        '.inmod-cine-meta {',
-        '  position: absolute !important;',
-        '  left: 4.5% !important;',
-        '  right: 12% !important;',
-        '  bottom: 16.5% !important;',
-        '  margin: 0 !important;',
-        '  color: rgba(255,255,255,.92) !important;',
-        '  font-size: clamp(.82rem, 2.5vw, 1.25rem) !important;',
-        '  font-weight: 500 !important;',
-        '  line-height: 1.2 !important;',
-        '  text-shadow: 0 2px 12px rgba(0,0,0,.85) !important;',
-        '  white-space: nowrap !important;',
-        '  overflow: hidden !important;',
-        '  text-overflow: ellipsis !important;',
-        '  animation: inmodCineMetaIn .72s .10s cubic-bezier(.2,.8,.2,1) both !important;',
-        '}',
-        '.inmod-cine-badge {',
-        '  position: absolute !important;',
-        '  top: 4.5% !important;',
-        '  right: 4.5% !important;',
-        '  min-width: 74px !important;',
-        '  padding: .42em .62em !important;',
-        '  border: 1px solid rgba(255,255,255,.18) !important;',
-        '  border-radius: .65em !important;',
-        '  background: rgba(12,14,16,.62) !important;',
-        '  box-shadow: 0 8px 24px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.06) !important;',
-        '  color: #fff !important;',
-        '  text-align: center !important;',
-        '  line-height: 1.05 !important;',
-        '  backdrop-filter: blur(8px) !important;',
-        '  -webkit-backdrop-filter: blur(8px) !important;',
-        '  animation: inmodCineBadgeIn .58s .18s cubic-bezier(.2,.8,.2,1) both !important;',
-        '}',
-        '.inmod-cine-badge-label {',
-        '  display: block !important;',
-        '  font-size: .58em !important;',
-        '  font-weight: 600 !important;',
-        '  letter-spacing: .04em !important;',
-        '  opacity: .72 !important;',
-        '  text-transform: uppercase !important;',
-        '}',
-        '.inmod-cine-badge-year {',
-        '  display: block !important;',
-        '  margin-top: .12em !important;',
-        '  font-size: 1.05em !important;',
-        '  font-weight: 800 !important;',
-        '}',
-        '.inmod-cine-overlay--hidden { opacity: 0 !important; }',
-        '@media (prefers-reduced-motion: reduce) {',
-        '  .inmod-cine-title, .inmod-cine-meta, .inmod-cine-badge { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }',
-        '}',
-        '@media screen and (max-width: 480px) {',
-        '  .inmod-cine-title { left: 4.5% !important; right: 8% !important; bottom: 23% !important; font-size: clamp(1.28rem, 6vw, 1.9rem) !important; }',
-        '  .inmod-cine-meta { left: 4.5% !important; right: 8% !important; bottom: 15.5% !important; font-size: clamp(.78rem, 3.5vw, 1rem) !important; }',
-        '  .inmod-cine-badge { top: 3.5% !important; right: 3.5% !important; min-width: 68px !important; }',
-        '}',
-        '/* The old TMDB status text can leak into the poster. */',
-        '.full-start-new__poster .inmod-hide-returning-series { display: none !important; }'
+        '@keyframes inmodCineTitleIn { from { opacity: 0; transform: translateX(-42px); } to { opacity: 1; transform: translateX(0); } }',
+        '@keyframes inmodCineMetaIn { from { opacity: 0; transform: translateX(42px); } to { opacity: 1; transform: translateX(0); } }',
+        '@keyframes inmodCineBadgeIn { from { opacity: 0; transform: translateX(18px) scale(.92); } to { opacity: 1; transform: translateX(0) scale(1); } }',
+        '.inmod-cine-overlay { position:absolute !important; inset:0 !important; z-index:30 !important; pointer-events:none !important; overflow:hidden !important; }',
+        '.inmod-cine-title { position:absolute !important; left:4.5% !important; right:8% !important; bottom:24% !important; margin:0 !important; color:#fff !important; font-size:1.9rem !important; font-weight:800 !important; line-height:1.05 !important; text-shadow:0 2px 16px rgba(0,0,0,.85),0 1px 3px rgba(0,0,0,.95) !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; animation:inmodCineTitleIn .72s cubic-bezier(.2,.8,.2,1) both !important; }',
+        '.inmod-cine-meta { position:absolute !important; left:4.5% !important; right:8% !important; bottom:15.5% !important; margin:0 !important; color:rgba(255,255,255,.92) !important; font-size:1rem !important; font-weight:500 !important; line-height:1.2 !important; text-shadow:0 2px 12px rgba(0,0,0,.85) !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; animation:inmodCineMetaIn .72s .10s cubic-bezier(.2,.8,.2,1) both !important; }',
+        '.inmod-cine-badge { position:absolute !important; top:3.5% !important; right:3.5% !important; min-width:68px !important; padding:.42em .62em !important; border:1px solid rgba(255,255,255,.18) !important; border-radius:.65em !important; background:rgba(12,14,16,.68) !important; box-shadow:0 8px 24px rgba(0,0,0,.28) !important; color:#fff !important; text-align:center !important; line-height:1.05 !important; backdrop-filter:blur(8px) !important; -webkit-backdrop-filter:blur(8px) !important; animation:inmodCineBadgeIn .58s .18s cubic-bezier(.2,.8,.2,1) both !important; }',
+        '.inmod-cine-badge-label { display:block !important; font-size:.58em !important; font-weight:600 !important; letter-spacing:.04em !important; opacity:.72 !important; text-transform:uppercase !important; }',
+        '.inmod-cine-badge-year { display:block !important; margin-top:.12em !important; font-size:1.05em !important; font-weight:800 !important; }',
+        '.full-start-new__poster .inmod-hide-returning-series { display:none !important; }',
+        '@media (prefers-reduced-motion: reduce) { .inmod-cine-title, .inmod-cine-meta, .inmod-cine-badge { animation:none !important; opacity:1 !important; transform:none !important; } }'
       ].join('\n');
     },
 
+    safeMovie: function (movie) {
+      return (movie && typeof movie === 'object') ? movie : {};
+    },
+
     getYear: function (movie) {
-      if (!movie) return '';
-      var date = movie.release_date || movie.first_air_date || movie.air_date || '';
-      var m = String(date).match(/(19|20)\\d{2}/);
-      if (m) return m[0];
-      if (movie.year) return String(movie.year).slice(0, 4);
-      return '';
-    },
-
-    getCountry: function (movie) {
-      if (!movie) return '';
-      var direct = movie.country || movie.country_name || movie.countries;
-      if (typeof direct === 'string' && direct.trim()) return direct.trim();
-      if (Array.isArray(direct) && direct.length) {
-        var first = direct[0];
-        if (typeof first === 'string') return first;
-        if (first && (first.name || first.title || first.iso_3166_1)) return first.name || first.title || first.iso_3166_1;
-      }
-      var prod = movie.production_countries;
-      if (Array.isArray(prod) && prod.length) {
-        var names = prod.map(function (x) {
-          return x && (x.name || x.iso_3166_1);
-        }).filter(Boolean);
-        if (names.length) return names.slice(0, 2).join(', ');
-      }
-      var origin = movie.origin_country;
-      if (Array.isArray(origin) && origin.length) {
-        var map = {
-          US: 'США', GB: 'Великобритания', CA: 'Канада', FR: 'Франция', DE: 'Германия',
-          IT: 'Италия', ES: 'Испания', AU: 'Австралия', JP: 'Япония', KR: 'Южная Корея',
-          CN: 'Китай', RU: 'Россия', UA: 'Украина', IN: 'Индия', PL: 'Польша', SE: 'Швеция'
-        };
-        return origin.slice(0, 2).map(function (x) { return map[String(x).toUpperCase()] || x; }).join(', ');
-      }
-      return '';
-    },
-
-    getTitle: function (movie, $root) {
-      var title = movie && (movie.title || movie.name || movie.original_title || movie.original_name);
-      if (title) return String(title);
       try {
-        var domTitle = $root.find('.full-start-new__title').first().text().trim();
-        if (domTitle) return domTitle;
+        movie = this.safeMovie(movie);
+        var date = movie.release_date || movie.first_air_date || movie.air_date || '';
+        var match = String(date).match(/(19|20)\\d{2}/);
+        if (match) return match[0];
+        if (movie.year !== undefined && movie.year !== null) return String(movie.year).slice(0, 4);
       } catch (e) {}
       return '';
     },
 
-    removeOld: function (root) {
-      var $root = root && root.jquery ? root : $(root || document);
-      $root.find('.inmod-cine-overlay').remove();
+    getCountry: function (movie) {
+      try {
+        movie = this.safeMovie(movie);
+        var direct = movie.country || movie.country_name;
+        if (typeof direct === 'string' && direct.trim()) return direct.trim();
+
+        var prod = movie.production_countries;
+        if (Array.isArray(prod) && prod.length) {
+          var names = [];
+          for (var i = 0; i < prod.length && names.length < 2; i++) {
+            var item = prod[i];
+            if (item && (item.name || item.iso_3166_1)) names.push(item.name || item.iso_3166_1);
+          }
+          if (names.length) return names.join(', ');
+        }
+
+        var origin = movie.origin_country;
+        if (Array.isArray(origin) && origin.length) {
+          var map = { US:'США', GB:'Великобритания', CA:'Канада', FR:'Франция', DE:'Германия', IT:'Италия', ES:'Испания', AU:'Австралия', JP:'Япония', KR:'Южная Корея', CN:'Китай', RU:'Россия', UA:'Украина', IN:'Индия', PL:'Польша', SE:'Швеция' };
+          return String(origin[0]).toUpperCase() in map ? map[String(origin[0]).toUpperCase()] : String(origin[0]);
+        }
+      } catch (e) {}
+      return '';
     },
 
-    hideReturningSeries: function (root) {
-      var $root = root && root.jquery ? root : $(root || document);
-      $root.find('.full-start-new__poster *').each(function () {
-        var $el = $(this);
-        if ($el.children().length) return;
-        var txt = $el.text().trim();
-        if (/^Returning Series$/i.test(txt)) {
-          $el.addClass('inmod-hide-returning-series');
-        }
-      });
+    getTitle: function (movie, $root) {
+      try {
+        movie = this.safeMovie(movie);
+        var title = movie.title || movie.name || movie.original_title || movie.original_name;
+        if (title) return String(title);
+      } catch (e) {}
+      try {
+        var domTitle = $root.find('.full-start-new__title, .full-start-new__name').first().text().trim();
+        if (domTitle) return domTitle;
+      } catch (e2) {}
+      return '';
+    },
+
+    removeOld: function ($root) {
+      try { $root.find('.inmod-cine-overlay').remove(); } catch (e) {}
+    },
+
+    hideReturningSeries: function ($root) {
+      try {
+        $root.find('.full-start-new__poster *').each(function () {
+          try {
+            var $el = $(this);
+            if ($el.children().length) return;
+            var text = $el.text().trim();
+            if (/^Returning Series$/i.test(text)) $el.addClass('inmod-hide-returning-series');
+          } catch (e) {}
+        });
+      } catch (e2) {}
     },
 
     add: function (movie, root) {
-      if (!isEnabled() || !movie) return;
-      var $root = root && root.jquery ? root : $(root || document);
-      var $poster = $root.find('.full-start-new__poster').first();
-      if (!$poster.length) return;
+      try {
+        if (!isEnabled()) return;
+        var $root = root && root.jquery ? root : $(root || document);
+        if (!$root || !$root.length) return;
+        var $poster = $root.find('.full-start-new__poster').first();
+        if (!$poster.length) return;
 
-      this.removeOld($root);
-      this.hideReturningSeries($root);
+        this.removeOld($root);
+        this.hideReturningSeries($root);
 
-      var title = this.getTitle(movie, $root);
-      var year = this.getYear(movie);
-      var country = this.getCountry(movie);
-      if (!title && !year && !country) return;
+        var title = this.getTitle(movie, $root);
+        var year = this.getYear(movie);
+        var country = this.getCountry(movie);
+        if (!title && !year && !country) return;
 
-      $poster.css('position', 'relative');
+        $poster.css('position', 'relative');
+        var $overlay = $('<div class="inmod-cine-overlay"></div>');
 
-      var $overlay = $('<div class="inmod-cine-overlay"></div>');
-      if (title) {
-        $('<div class="inmod-cine-title"></div>').text(title).appendTo($overlay);
+        if (title) $('<div class="inmod-cine-title"></div>').text(title).appendTo($overlay);
+        if (year || country) $('<div class="inmod-cine-meta"></div>').text([year, country].filter(Boolean).join(' • ')).appendTo($overlay);
+        if (year) {
+          var $badge = $('<div class="inmod-cine-badge"><span class="inmod-cine-badge-label">Выпущен</span><span class="inmod-cine-badge-year"></span></div>');
+          $badge.find('.inmod-cine-badge-year').text(year);
+          $badge.appendTo($overlay);
+        }
+        $poster.append($overlay);
+      } catch (e) {
+        try { console.log('[INMOD] Cinematic overlay error', e); } catch (ignore) {}
       }
-      if (year || country) {
-        var meta = [year, country].filter(Boolean).join(' • ');
-        $('<div class="inmod-cine-meta"></div>').text(meta).appendTo($overlay);
-      }
-      if (year) {
-        var $badge = $('<div class="inmod-cine-badge"><span class="inmod-cine-badge-label">Выпущен</span><span class="inmod-cine-badge-year"></span></div>');
-        $badge.find('.inmod-cine-badge-year').text(year);
-        $badge.appendTo($overlay);
-      }
-
-      $poster.append($overlay);
     },
 
     enable: function () {
@@ -2301,8 +2221,7 @@
 
     disable: function () {
       Utils.removeStyleById(this.styleId);
-      $('.inmod-cine-overlay').remove();
-      $('.inmod-hide-returning-series').removeClass('inmod-hide-returning-series');
+      try { $('.inmod-cine-overlay').remove(); $('.inmod-hide-returning-series').removeClass('inmod-hide-returning-series'); } catch (e) {}
     }
   };
 
@@ -2398,7 +2317,6 @@
         // Movie Type labels
         MovieTypeLabels.addToFullPoster(data.data.movie, data.object.activity.render());
 
-        // Cinematic overlay: stays above the trailer iframe during playback.
         CinematicFullCard.add(data.data.movie, $render);
 
         // Colored elements
@@ -2446,12 +2364,6 @@
               var $render = $(active.activity.render());
               var $full = $render.find('.full-start-new');
               if (!$full.length) $full = $render.filter('.full-start-new');
-
-              if ($full.length) {
-                var activeMovie = null;
-                try { activeMovie = active && active.activity && active.activity.data && active.activity.data.movie; } catch (eMovie) {}
-                if (activeMovie) CinematicFullCard.add(activeMovie, $render);
-              }
 
               if ($full.length && $full.hasClass('inmod-sources-ready')) {
                 // Ensure buttons are processed
@@ -2546,4 +2458,73 @@
         } catch (err) {
           Utils.log('Focus fix error:', err);
         }
-  
+      }, 15);
+    });
+  }
+
+  // ============================================================================
+  // PLUGIN INITIALIZATION
+  // ============================================================================
+  function startPlugin() {
+    Utils.log('Starting plugin v' + PLUGIN_VERSION);
+    if (State.started) return;
+    State.started = true;
+
+    // Step 1: Register translations (needed for settings UI)
+    registerTranslations();
+    fixStatusTranslations();
+
+    // Step 2: Load settings from localStorage FIRST
+    // This ensures we have saved values before registering UI
+    Settings.load();
+
+    // Step 3: Register settings UI
+    // Settings UI will use loaded values from State.settings
+    Settings.register();
+
+    // Step 4: Setup event listeners (before enabling features)
+    setupEventListeners();
+
+    // Step 5: Apply features ONLY if plugin is enabled
+    // Features will use loaded settings from State.settings
+    if (isEnabled()) {
+      Utils.log('Plugin enabled, applying features...');
+      Features.enableAll();
+    } else {
+      Utils.log('Plugin disabled, skipping features');
+    }
+  }
+
+  // Register plugin manifest
+  if (Lampa.Manifest && Lampa.Manifest.plugins) {
+    Lampa.Manifest.plugins = {
+      type: 'interface',
+      version: PLUGIN_VERSION,
+      name: 'Interface Mod',
+      description: 'Модификация интерфейса Lampa с темой Emerald и улучшенными стилями',
+      author: PLUGIN_AUTHOR,
+      icon: PLUGIN_ICON
+    };
+  }
+
+  // Start plugin when app is ready
+  if (window.appready) {
+    startPlugin();
+  } else {
+    Lampa.Listener.follow('app', function (event) {
+      if (event.type === 'ready') {
+        startPlugin();
+      }
+    });
+  }
+
+  // Expose for debugging
+  if (State.debug) {
+    window.interface_mod_v2 = {
+      State: State,
+      Utils: Utils,
+      Features: Features
+    };
+  }
+
+})();
