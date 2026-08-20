@@ -457,7 +457,7 @@
         this.root = root; this.owner = owner; this.playlist = playlist; this.parsed = parsed;
         this.group = '';
         this.epg = {};
-        this.render = function () { this.draw(); };
+        this.render = function () { this.draw(); return this.root; };
         this.draw = function () {
             var self = this;
             root.innerHTML = '';
@@ -597,11 +597,15 @@
         this.draw();
         var viewSelf = this;
         this.refreshTimer = setInterval(function () {
-            if (document.body.contains(root)) {
-                var currentWrap = root.querySelector('.iptv3');
-                if (currentWrap) viewSelf.drawChannels(currentWrap);
-            }
+            if (!document.body.contains(root)) return;
+            var currentWrap = root.querySelector('.iptv3');
+            if (currentWrap && currentWrap.querySelector('.iptv3__channels')) viewSelf.drawChannels(currentWrap);
         }, 60000);
+        this.destroy = function () {
+            try { if (this.refreshTimer) clearInterval(this.refreshTimer); } catch (e) {}
+            this.refreshTimer = null;
+            try { root.innerHTML = ''; } catch (e) {}
+        };
     }
 
     function Component() {
@@ -661,14 +665,17 @@
                 var play = { title: ch.name, url: ch.url, tv: true };
                 if (ch.userAgent || ch.referer) play.headers = { 'User-Agent': ch.userAgent || '', 'Referer': ch.referer || '' };
                 Lampa.Player.play(play);
-                Lampa.Player.playlist(playlist.map(function (a) { return { title: a.name, url: a.url, tv: true }; }));
             } catch (e) { showError(e); }
         };
         this.start = function () { this.activity.loader(false); this.initialize(); };
         this.pause = function () {};
         this.stop = function () {};
         this.render = function () { return html; };
-        this.destroy = function () { html.innerHTML = ''; };
+        this.destroy = function () {
+            try { if (currentView && currentView.destroy) currentView.destroy(); } catch (e) {}
+            currentView = null;
+            html.innerHTML = '';
+        };
     }
 
     function registerSettings() {
@@ -681,12 +688,12 @@
             });
             Lampa.SettingsApi.addParam({
                 component: COMPONENT,
-                param: { name: STORAGE_SETTINGS_M3U, type: 'input', default: getStorage(STORAGE_SETTINGS_M3U, '') },
+                param: { name: STORAGE_SETTINGS_M3U, type: 'input' },
                 field: { name: 'M3U / M3U8 плейлист', description: 'Прямая ссылка на IPTV-плейлист' }
             });
             Lampa.SettingsApi.addParam({
                 component: COMPONENT,
-                param: { name: STORAGE_SETTINGS_EPG, type: 'input', default: getStorage(STORAGE_SETTINGS_EPG, '') },
+                param: { name: STORAGE_SETTINGS_EPG, type: 'input' },
                 field: { name: 'EPG / XMLTV', description: 'Прямая ссылка на XMLTV телепрограмму. Можно оставить пустым, если EPG указан в M3U.' }
             });
             Lampa.SettingsApi.addParam({
@@ -739,7 +746,7 @@
     }
 
     Lampa.Manifest.plugins = Lampa.Manifest.plugins || {};
-    Lampa.Manifest.plugins[COMPONENT] = { type:'video', version:'3.3.0', name:'IPTV v3.3', description:'IPTV M3U/M3U8 + EPG client', component:COMPONENT };
+    Lampa.Manifest.plugins[COMPONENT] = { type:'video', version:'3.4.0', name:'IPTV v3.4', description:'IPTV M3U/M3U8 + EPG client', component:COMPONENT };
     Lampa.Component.add(COMPONENT, Component);
     registerSettings();
     addMenu();
