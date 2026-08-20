@@ -20,7 +20,7 @@
         .iptv3__action.focus{background:#fff;color:#000;}
         .iptv3__layout{display:flex;height:calc(100% - 4.2em);min-height:0;gap:1.2em;}
         .iptv3__groups{width:18em;flex:0 0 18em;min-height:0;}
-        .iptv3__channels{flex:1;min-width:0;min-height:0;}
+        .iptv3__channels{flex:1;min-width:0;min-height:0;height:100%;overflow-y:auto;overflow-x:hidden;padding-right:.25em;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;} .iptv3__channels::-webkit-scrollbar{width:0;} .iptv3__category-action{padding:.55em .9em;border-radius:.7em;background:rgba(255,255,255,.09);font-size:1.05em;max-width:18em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} .iptv3__category-action.focus{background:#fff;color:#000;}
         .iptv3__group{padding:.72em .9em;border-radius:.7em;font-size:1.1em;opacity:.72;margin-bottom:.35em;}
         .iptv3__group.active{opacity:1;background:rgba(255,255,255,.1);}
         .iptv3__group.focus{background:#fff;color:#000;opacity:1;}
@@ -39,8 +39,6 @@
         .iptv3__empty{height:100%;display:flex;align-items:center;justify-content:center;opacity:.6;text-align:center;padding:2em;font-size:1.2em;}
         .iptv3__loader{height:100%;display:flex;align-items:center;justify-content:center;opacity:.7;font-size:1.2em;}
         .iptv3__mobile-groups{display:none;}
-        .iptv3__mobile-group{display:inline-block;padding:.55em .85em;border-radius:.7em;background:rgba(255,255,255,.08);margin-right:.5em;margin-bottom:.5em;white-space:nowrap;}
-        .iptv3__mobile-group.active{background:rgba(255,255,255,.2);}
         .iptv3__playlist{padding:1em;background:rgba(255,255,255,.07);border-radius:1em;margin-bottom:.7em;}
         .iptv3__playlist.focus{background:#fff;color:#000;}
         .iptv3__playlist-name{font-size:1.15em;font-weight:650;}
@@ -55,7 +53,7 @@
             .iptv3__action{font-size:.9em;}
             .iptv3__layout{display:block;height:calc(100% - 3.2em);}
             .iptv3__groups{display:none;}
-            .iptv3__mobile-groups{display:block;overflow:hidden;white-space:nowrap;margin-bottom:.65em;}
+            .iptv3__mobile-groups{display:none;}
             .iptv3__channel{min-height:5.7em;padding:.65em .7em;gap:.7em;margin-bottom:.5em;}
             .iptv3__logo{width:4.2em;height:3.1em;flex-basis:4.2em;}
             .iptv3__channel-name{font-size:1em;}
@@ -451,26 +449,48 @@
             var self = this;
             root.innerHTML = '';
             var wrap = document.createElement('div'); wrap.className = 'iptv3';
-            wrap.innerHTML = '<div class="iptv3__head"><div class="iptv3__title">' + esc(playlist.name || 'IPTV') + '</div><div class="iptv3__action selector">Плейлисты</div><div class="iptv3__action selector">Избранное</div></div><div class="iptv3__mobile-groups"></div><div class="iptv3__layout"><div class="iptv3__groups"></div><div class="iptv3__channels"></div></div>';
+            wrap.innerHTML = '<div class="iptv3__head"><div class="iptv3__title">' + esc(playlist.name || 'IPTV') + '</div><div class="iptv3__category-action selector">Категория: Все каналы ▾</div><div class="iptv3__action selector">Плейлисты</div><div class="iptv3__action selector">Избранное</div></div><div class="iptv3__layout"><div class="iptv3__groups"></div><div class="iptv3__channels"></div></div>';
             root.appendChild(wrap);
+            var categoryAction = wrap.querySelector('.iptv3__category-action');
             var headActions = wrap.querySelectorAll('.iptv3__action');
+            categoryAction.addEventListener('hover:enter', function () { self.openCategoryMenu(categoryAction); });
             headActions[0].addEventListener('hover:enter', function () { owner.showPlaylists(); });
-            headActions[1].addEventListener('hover:enter', function () { self.group = '__fav'; self.drawChannels(wrap); });
+            headActions[1].addEventListener('hover:enter', function () { self.group = '__fav'; self.updateCategoryLabel(categoryAction); self.drawChannels(wrap); });
             var groups = parsed.groups.slice();
             var groupBox = wrap.querySelector('.iptv3__groups');
-            var mobile = wrap.querySelector('.iptv3__mobile-groups');
             groups.forEach(function (g, idx) {
                 var item = document.createElement('div'); item.className = 'iptv3__group selector' + ((!self.group && idx === 0) ? ' active' : '');
                 item.innerHTML = esc(g.name || 'Все каналы') + ' <span style="opacity:.5;float:right">' + g.count + '</span>';
-                item.addEventListener('hover:enter', function () { self.group = g.name; self.drawChannels(wrap); });
+                item.addEventListener('hover:enter', function () { self.group = g.name; self.updateCategoryLabel(categoryAction); self.drawChannels(wrap); });
                 groupBox.appendChild(item);
-                var mi = document.createElement('span'); mi.className = 'iptv3__mobile-group selector' + ((!self.group && idx === 0) ? ' active' : ''); mi.textContent = g.name || 'Все каналы';
-                mi.addEventListener('hover:enter', function () { self.group = g.name; self.drawChannels(wrap); });
-                mobile.appendChild(mi);
             });
             self.drawChannels(wrap);
             owner.setController(wrap);
         };
+        this.updateCategoryLabel = function (element) {
+            var label = self.group === '__fav' ? 'Избранное' : (self.group || 'Все каналы');
+            element.textContent = 'Категория: ' + label + ' ▾';
+        };
+        this.openCategoryMenu = function (element) {
+            var selfView = this;
+            var items = [{ title: 'Все каналы', value: '' }];
+            parsed.groups.slice(1).forEach(function (g) { items.push({ title: g.name + ' (' + g.count + ')', value: g.name }); });
+            items.push({ title: 'Избранное (' + favorites().length + ')', value: '__fav' });
+            try {
+                Lampa.Select.show({
+                    title: 'Категория',
+                    items: items.map(function (it) { return { title: it.title, value: it.value, selected: it.value === selfView.group }; }),
+                    onSelect: function (item) {
+                        selfView.group = item && item.value !== undefined ? item.value : '';
+                        selfView.updateCategoryLabel(element);
+                        selfView.drawChannels(wrap);
+                    }
+                });
+            } catch (e) {
+                console.warn('[IPTV v3] category select', e);
+            }
+        };
+
         this.drawChannels = function (wrap) {
             var self = this, box = wrap.querySelector('.iptv3__channels');
             box.innerHTML = '';
@@ -488,13 +508,27 @@
                 var next = prog.next ? '<div class="iptv3__next">Далее ' + esc(formatTime(prog.next.start) + '  ' + prog.next.title) + '</div>' : '';
                 var progress = prog.now && prog.now.stop > prog.now.start ? Math.max(0, Math.min(100, (Date.now()-prog.now.start)/(prog.now.stop-prog.now.start)*100)) : 0;
                 el.innerHTML = '<div class="iptv3__logo">' + (ch.logo && validUrl(ch.logo) ? '<img src="' + esc(ch.logo) + '">' : esc(initial)) + '</div><div class="iptv3__channel-main"><div class="iptv3__channel-name">' + esc(ch.name) + '</div><div class="iptv3__meta">' + esc(ch.group || 'Без категории') + (isFav(ch) ? ' · ★' : '') + '</div></div><div class="iptv3__program">' + now + next + '<div class="iptv3__progress"><div style="width:' + progress.toFixed(1) + '%"></div></div></div>';
+                el.addEventListener('hover:focus', function () {
+                    try {
+                        var target = el.offsetTop - (box.clientHeight / 2) + (el.offsetHeight / 2);
+                        box.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+                    } catch (e) { box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight / 2); }
+                });
+                el.addEventListener('click', function () { owner.playChannel(ch, channels); });
                 el.addEventListener('hover:enter', function () { owner.playChannel(ch, channels); });
                 el.addEventListener('hover:long', function () { toggleFav(ch); try { Lampa.Noty.show(isFav(ch) ? 'Добавлено в избранное' : 'Удалено из избранного'); } catch(e){}; self.drawChannels(wrap); });
                 box.appendChild(el);
             });
-            this.refreshTimer = this.refreshTimer || setInterval(function () { if (document.body.contains(wrap)) self.drawChannels(wrap); }, 60000);
+
         };
         this.draw();
+        var viewSelf = this;
+        this.refreshTimer = setInterval(function () {
+            if (document.body.contains(root)) {
+                var currentWrap = root.querySelector('.iptv3');
+                if (currentWrap) viewSelf.drawChannels(currentWrap);
+            }
+        }, 60000);
     }
 
     function Component() {
@@ -574,7 +608,7 @@
     }
 
     Lampa.Manifest.plugins = Lampa.Manifest.plugins || {};
-    Lampa.Manifest.plugins[COMPONENT] = { type:'video', version:'3.0.0', name:'IPTV v3', description:'IPTV M3U/M3U8 client', component:COMPONENT };
+    Lampa.Manifest.plugins[COMPONENT] = { type:'video', version:'3.2.0', name:'IPTV v3.2', description:'IPTV M3U/M3U8 client', component:COMPONENT };
     Lampa.Component.add(COMPONENT, Component);
     registerSettings();
     addMenu();
