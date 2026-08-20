@@ -332,7 +332,6 @@
 
         try {
             Lampa.Player.play(item);
-            Lampa.Player.playlist([item]);
         } catch (e) {
             Lampa.Noty.show('Не удалось запустить канал');
         }
@@ -503,18 +502,9 @@
                 }
             ];
 
-            var enabled = Lampa.Controller.enabled().name;
             Lampa.Select.show({
                 title: channel.name,
-                items: menu,
-                onBack: function () {
-                    Lampa.Controller.toggle(enabled);
-                },
-                onSelect: function (item) {
-                    if (item && item.action) item.action();
-                    Lampa.Select.close();
-                    Lampa.Controller.toggle(enabled);
-                }
+                items: menu
             });
         });
 
@@ -668,9 +658,12 @@
 
     function refreshCurrent() {
         try {
+            if (Lampa.Activity && Lampa.Activity.refresh) {
+                Lampa.Activity.refresh();
+                return;
+            }
             var active = Lampa.Activity.active();
             if (active && active.activity && active.activity.component === PLUGIN.component) {
-                active.activity.render().empty();
                 active.activity.create();
             }
         } catch (e) {}
@@ -701,9 +694,8 @@
                         );
                     } else {
                         var loaded = buildGroupList(state.groups, object);
-                        wrap.replaceWith(loaded.wrap);
-                        wrap = loaded.wrap;
-                        items = loaded.items;
+                        wrap.empty().append(loaded.wrap.children());
+                        items = wrap.find('.selector');
                     }
 
                     self.activity.toggle();
@@ -724,6 +716,10 @@
             items = built.items;
 
             return wrap;
+        };
+
+        this.render = function () {
+            return wrap || $('<div class="lampa-iptv-ref"></div>');
         };
 
         this.start = function () {
