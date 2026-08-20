@@ -10,6 +10,8 @@
     var STORAGE_ACTIVE = 'iptv_v3_active';
     var STORAGE_FAV = 'iptv_v3_favorites';
     var STORAGE_EPG = 'iptv_v3_epg_cache';
+    var STORAGE_SETTINGS_M3U = 'iptv_v3_settings_m3u';
+    var STORAGE_SETTINGS_EPG = 'iptv_v3_settings_epg';
 
     var css = `
         .iptv3{height:100%;width:100%;box-sizing:border-box;padding:0 1.5em 1.5em;color:#fff;}
@@ -36,6 +38,17 @@
         .iptv3__next{opacity:.5;font-size:.84em;margin-top:.3em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
         .iptv3__progress{height:.22em;background:rgba(255,255,255,.13);border-radius:1em;margin-top:.55em;overflow:hidden;}
         .iptv3__progress>div{height:100%;background:currentColor;border-radius:1em;width:0;}
+        .iptv3__guide{height:100%;display:flex;min-height:0;gap:1em;}
+        .iptv3__guide-channels{width:22em;flex:0 0 22em;overflow-y:auto;min-height:0;}
+        .iptv3__guide-programs{flex:1;min-width:0;overflow-y:auto;min-height:0;}
+        .iptv3__guide-channel{padding:.8em 1em;border-radius:.7em;background:rgba(255,255,255,.07);margin-bottom:.45em;}
+        .iptv3__guide-channel.focus,.iptv3__guide-channel.active{background:#fff;color:#000;}
+        .iptv3__guide-program{padding:.8em 1em;border-radius:.7em;background:rgba(255,255,255,.07);margin-bottom:.55em;position:relative;}
+        .iptv3__guide-program.current{box-shadow:inset 3px 0 0 currentColor;}
+        .iptv3__guide-time{width:4.5em;display:inline-block;opacity:.65;vertical-align:top;}
+        .iptv3__guide-title{display:inline-block;width:calc(100% - 5em);font-weight:600;}
+        .iptv3__guide-desc{margin: .35em 0 0 4.5em;opacity:.5;font-size:.85em;}
+        @media(max-width:767px){.iptv3__guide{display:block}.iptv3__guide-channels{width:100%;height:5em;display:flex;overflow-x:auto;overflow-y:hidden}.iptv3__guide-channel{flex:0 0 auto;margin-right:.5em}.iptv3__guide-programs{height:calc(100% - 6em);margin-top:.7em}}
         .iptv3__empty{height:100%;display:flex;align-items:center;justify-content:center;opacity:.6;text-align:center;padding:2em;font-size:1.2em;}
         .iptv3__loader{height:100%;display:flex;align-items:center;justify-content:center;opacity:.7;font-size:1.2em;}
         .iptv3__mobile-groups{display:none;}
@@ -449,13 +462,14 @@
             var self = this;
             root.innerHTML = '';
             var wrap = document.createElement('div'); wrap.className = 'iptv3';
-            wrap.innerHTML = '<div class="iptv3__head"><div class="iptv3__title">' + esc(playlist.name || 'IPTV') + '</div><div class="iptv3__category-action selector">Категория: Все каналы ▾</div><div class="iptv3__action selector">Плейлисты</div><div class="iptv3__action selector">Избранное</div></div><div class="iptv3__layout"><div class="iptv3__groups"></div><div class="iptv3__channels"></div></div>';
+            wrap.innerHTML = '<div class="iptv3__head"><div class="iptv3__title">' + esc(playlist.name || 'IPTV') + '</div><div class="iptv3__category-action selector">Категория: Все каналы ▾</div><div class="iptv3__action selector">Телепрограмма</div><div class="iptv3__action selector">Плейлисты</div><div class="iptv3__action selector">Избранное</div></div><div class="iptv3__layout"><div class="iptv3__groups"></div><div class="iptv3__channels"></div></div>';
             root.appendChild(wrap);
             var categoryAction = wrap.querySelector('.iptv3__category-action');
             var headActions = wrap.querySelectorAll('.iptv3__action');
             categoryAction.addEventListener('hover:enter', function () { self.openCategoryMenu(categoryAction); });
-            headActions[0].addEventListener('hover:enter', function () { owner.showPlaylists(); });
-            headActions[1].addEventListener('hover:enter', function () { self.group = '__fav'; self.updateCategoryLabel(categoryAction); self.drawChannels(wrap); });
+            headActions[0].addEventListener('hover:enter', function () { self.openGuide(); });
+            headActions[1].addEventListener('hover:enter', function () { owner.showPlaylists(); });
+            headActions[2].addEventListener('hover:enter', function () { self.group = '__fav'; self.updateCategoryLabel(categoryAction); self.drawChannels(wrap); });
             var groups = parsed.groups.slice();
             var groupBox = wrap.querySelector('.iptv3__groups');
             groups.forEach(function (g, idx) {
@@ -468,7 +482,7 @@
             owner.setController(wrap);
         };
         this.updateCategoryLabel = function (element) {
-            var label = self.group === '__fav' ? 'Избранное' : (self.group || 'Все каналы');
+            var label = this.group === '__fav' ? 'Избранное' : (this.group || 'Все каналы');
             element.textContent = 'Категория: ' + label + ' ▾';
         };
         this.openCategoryMenu = function (element) {
@@ -479,16 +493,75 @@
             try {
                 Lampa.Select.show({
                     title: 'Категория',
-                    items: items.map(function (it) { return { title: it.title, value: it.value, selected: it.value === selfView.group }; }),
+                    items: items.map(function (it) { return { title: it.title, value: it.value }; }),
                     onSelect: function (item) {
                         selfView.group = item && item.value !== undefined ? item.value : '';
                         selfView.updateCategoryLabel(element);
-                        selfView.drawChannels(wrap);
+                        selfView.drawChannels(root.querySelector('.iptv3'));
                     }
                 });
             } catch (e) {
                 console.warn('[IPTV v3] category select', e);
             }
+        };
+
+        this.openGuide = function () {
+            var selfView = this;
+            var channels = this.parsed.items.slice();
+            var current = channels.length ? channels[0] : null;
+            var guideRoot = root;
+            guideRoot.innerHTML = '';
+            var wrap = document.createElement('div');
+            wrap.className = 'iptv3';
+            wrap.innerHTML = '<div class="iptv3__head"><div class="iptv3__title">Телепрограмма</div><div class="iptv3__action selector">Назад к каналам</div></div><div class="iptv3__guide"><div class="iptv3__guide-channels"></div><div class="iptv3__guide-programs"></div></div>';
+            guideRoot.appendChild(wrap);
+            var chBox = wrap.querySelector('.iptv3__guide-channels');
+            var progBox = wrap.querySelector('.iptv3__guide-programs');
+            var back = wrap.querySelector('.iptv3__action');
+            back.addEventListener('hover:enter', function () { selfView.draw(); });
+
+            function drawPrograms(channel) {
+                current = channel;
+                progBox.innerHTML = '';
+                var list = findPrograms(selfView.epg, channel);
+                var now = Date.now();
+                if (!list.length) {
+                    progBox.innerHTML = '<div class="iptv3__empty">Для канала «' + esc(channel.name) + '» программа передач не найдена.</div>';
+                    return;
+                }
+                var startWindow = now - 6 * 60 * 60 * 1000;
+                var endWindow = now + 30 * 60 * 60 * 1000;
+                list.filter(function (p) { return (!p.stop || p.stop >= startWindow) && (!p.start || p.start <= endWindow); }).forEach(function (p) {
+                    var cur = p.start <= now && (!p.stop || p.stop > now);
+                    var el = document.createElement('div');
+                    el.className = 'iptv3__guide-program selector' + (cur ? ' current' : '');
+                    el.innerHTML = '<span class="iptv3__guide-time">' + esc(formatTime(p.start)) + '</span><span class="iptv3__guide-title">' + esc(p.title) + '</span>' + (p.desc ? '<div class="iptv3__guide-desc">' + esc(p.desc) + '</div>' : '');
+                    el.addEventListener('hover:enter', function () { if (cur) selfView.owner.playChannel(channel, channels); });
+                    progBox.appendChild(el);
+                });
+                Lampa.Controller.collectionSet(progBox);
+                Lampa.Controller.collectionFocus(false, progBox);
+            }
+
+            channels.forEach(function (ch, idx) {
+                var el = document.createElement('div');
+                el.className = 'iptv3__guide-channel selector' + (idx === 0 ? ' active' : '');
+                el.innerHTML = esc(ch.name);
+                el.addEventListener('hover:focus', function () {
+                    chBox.querySelectorAll('.iptv3__guide-channel').forEach(function (x) { x.classList.remove('active'); });
+                    el.classList.add('active');
+                });
+                el.addEventListener('hover:enter', function () { drawPrograms(ch); });
+                chBox.appendChild(el);
+            });
+            if (current) drawPrograms(current);
+            Lampa.Controller.add('content', {
+                toggle: function () { Lampa.Controller.collectionSet(chBox); Lampa.Controller.collectionFocus(false, chBox); },
+                left: function () { Lampa.Controller.toggle('menu'); },
+                up: function () { Lampa.Controller.toggle('head'); },
+                back: function () { selfView.draw(); }
+            });
+            Lampa.Controller.toggle('content');
         };
 
         this.drawChannels = function (wrap) {
@@ -535,9 +608,19 @@
         var html = document.createElement('div');
         var currentView = null;
         var self = this;
-        this.create = function () { addCss(); return html; };
-        this.initialize = function () { this.showPlaylists(); };
+        this.create = function (object) { if (object && object.activity) this.activity = object.activity; addCss(); return html; };
+        this.initialize = function () {
+            var configured = getStorage(STORAGE_SETTINGS_M3U, '');
+            var list = playlists();
+            if (configured && validUrl(configured) && !list.length) {
+                var epg = getStorage(STORAGE_SETTINGS_EPG, '');
+                list.push({ id: uid(), name: 'Мой IPTV', url: configured, epg: epg || '' });
+                savePlaylists(list);
+            }
+            this.showPlaylists();
+        };
         this.showPlaylists = function () { currentView = new PlaylistView(html, self); };
+        this.openGuideFromStart = function () { var list = playlists(); if (!list.length) { this.showPlaylists(); return; } this.openPlaylist(list[0], true); };
         this.setController = function (wrap) {
             Lampa.Controller.add('content', {
                 toggle: function () { Lampa.Controller.collectionSet(wrap); Lampa.Controller.collectionFocus(false, wrap); },
@@ -547,7 +630,7 @@
             });
             Lampa.Controller.toggle('content');
         };
-        this.openPlaylist = function (item) {
+        this.openPlaylist = function (item, openGuide) {
             setStorage(STORAGE_ACTIVE, item.id);
             html.innerHTML = '<div class="iptv3"><div class="iptv3__loader">Загрузка плейлиста…</div></div>';
             loadM3U(item.url).then(function (parsed) {
@@ -559,6 +642,7 @@
                     else loadEPG(epgUrl).then(function (epg) { view.epg = epg; view.draw(); }).catch(function (e) { console.warn('[IPTV v3] EPG', e); });
                 }
                 currentView = view;
+                if (openGuide) { setTimeout(function () { if (view.epg && Object.keys(view.epg).length) view.openGuide(); }, 50); }
             }).catch(function (e) {
                 var message = e && e.message ? e.message : String(e || 'Неизвестная ошибка');
                 console.error('[IPTV v3] M3U', e);
@@ -574,7 +658,9 @@
         this.playChannel = function (ch, playlist) {
             try {
                 Lampa.Player.runas(Lampa.Storage.field('player_iptv'));
-                Lampa.Player.play({ title: ch.name, url: ch.url, tv: true, headers: { 'User-Agent': ch.userAgent || '', 'Referer': ch.referer || '' } });
+                var play = { title: ch.name, url: ch.url, tv: true };
+                if (ch.userAgent || ch.referer) play.headers = { 'User-Agent': ch.userAgent || '', 'Referer': ch.referer || '' };
+                Lampa.Player.play(play);
                 Lampa.Player.playlist(playlist.map(function (a) { return { title: a.name, url: a.url, tv: true }; }));
             } catch (e) { showError(e); }
         };
@@ -591,9 +677,54 @@
             Lampa.SettingsApi.addComponent({
                 component: COMPONENT,
                 icon: '<svg height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="8" width="34" height="21" rx="3" stroke="currentColor" stroke-width="3"/><line x1="13" y1="2" x2="16" y2="7" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="25" y1="2" x2="22" y2="7" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="9" y1="34" x2="29" y2="34" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>',
-                name: 'IPTV v3'
+                name: 'IPTV'
             });
-            Lampa.SettingsApi.addParam({ component: COMPONENT, param: { type: 'button' }, field: { name: 'Открыть IPTV', onChange: function () { Lampa.Activity.push({ url:'', title:'IPTV', component:COMPONENT, page:1 }); } } });
+            Lampa.SettingsApi.addParam({
+                component: COMPONENT,
+                param: { name: STORAGE_SETTINGS_M3U, type: 'input', default: getStorage(STORAGE_SETTINGS_M3U, '') },
+                field: { name: 'M3U / M3U8 плейлист', description: 'Прямая ссылка на IPTV-плейлист' }
+            });
+            Lampa.SettingsApi.addParam({
+                component: COMPONENT,
+                param: { name: STORAGE_SETTINGS_EPG, type: 'input', default: getStorage(STORAGE_SETTINGS_EPG, '') },
+                field: { name: 'EPG / XMLTV', description: 'Прямая ссылка на XMLTV телепрограмму. Можно оставить пустым, если EPG указан в M3U.' }
+            });
+            Lampa.SettingsApi.addParam({
+                component: COMPONENT,
+                param: { type: 'button' },
+                field: { name: 'Загрузить / применить плейлист', description: 'Сохранит M3U и EPG и откроет IPTV.' },
+                onChange: function () {
+                    var m3u = getStorage(STORAGE_SETTINGS_M3U, '');
+                    var epg = getStorage(STORAGE_SETTINGS_EPG, '');
+                    if (!m3u || !validUrl(m3u)) return showError('Укажите корректный URL M3U / M3U8 в настройках IPTV');
+                    setStorage(STORAGE_SETTINGS_M3U, m3u);
+                    setStorage(STORAGE_SETTINGS_EPG, epg || '');
+                    var list = playlists();
+                    var item = list.length ? list[0] : { id: uid(), name: 'Мой IPTV', url: m3u, epg: epg || '' };
+                    item.url = m3u;
+                    item.epg = epg || '';
+                    if (!list.length) list.push(item);
+                    savePlaylists(list);
+                    Lampa.Noty.show('Плейлист сохранён');
+                    setTimeout(function () { Lampa.Activity.push({ url:'', title:'IPTV', component:COMPONENT, page:1 }); }, 100);
+                }
+            });
+            Lampa.SettingsApi.addParam({
+                component: COMPONENT,
+                param: { type: 'button' },
+                field: { name: 'Телепрограмма', description: 'Открыть EPG для текущего плейлиста' },
+                onChange: function () {
+                    var list = playlists();
+                    if (!list.length) return showError('Сначала добавьте M3U-плейлист');
+                    Lampa.Activity.push({ url:'', title:'IPTV', component:COMPONENT, page:1 });
+                }
+            });
+            Lampa.SettingsApi.addParam({
+                component: COMPONENT,
+                param: { type: 'button' },
+                field: { name: 'Открыть IPTV' },
+                onChange: function () { Lampa.Activity.push({ url:'', title:'IPTV', component:COMPONENT, page:1 }); }
+            });
         } catch (e) { console.warn('[IPTV v3] settings', e); }
     }
 
@@ -608,7 +739,7 @@
     }
 
     Lampa.Manifest.plugins = Lampa.Manifest.plugins || {};
-    Lampa.Manifest.plugins[COMPONENT] = { type:'video', version:'3.2.0', name:'IPTV v3.2', description:'IPTV M3U/M3U8 client', component:COMPONENT };
+    Lampa.Manifest.plugins[COMPONENT] = { type:'video', version:'3.3.0', name:'IPTV v3.3', description:'IPTV M3U/M3U8 + EPG client', component:COMPONENT };
     Lampa.Component.add(COMPONENT, Component);
     registerSettings();
     addMenu();
