@@ -678,61 +678,95 @@
         };
     }
 
+    function openIptvActivity() {
+        try {
+            Lampa.Activity.push({ url: '', title: 'IPTV', component: COMPONENT, page: 1 });
+        } catch (e) {
+            showError(e);
+        }
+    }
+
+    function openEpgSettings() {
+        var list = playlists();
+        var activeId = getStorage(STORAGE_ACTIVE, '');
+        var item = list.filter(function (x) { return x.id === activeId; })[0] || list[0];
+
+        if (!item) {
+            showError('Сначала добавьте M3U-плейлист');
+            return;
+        }
+
+        Lampa.Select.show({
+            title: 'Телепрограмма — ' + (item.name || 'IPTV'),
+            items: [
+                { title: 'Указать / изменить EPG URL', name: 'set' },
+                { title: 'Очистить EPG URL', name: 'clear' },
+                { title: 'Открыть телепрограмму', name: 'open' }
+            ],
+            onSelect: function (a) {
+                if (!a) return;
+                if (a.name === 'set') {
+                    input('URL XMLTV EPG', item.epg || '', function (v) {
+                        if (v === undefined) return;
+                        item.epg = String(v || '').trim();
+                        savePlaylists(playlists());
+                        try { Lampa.Noty.show(item.epg ? 'EPG сохранён' : 'EPG отключён'); } catch (e) {}
+                    });
+                }
+                if (a.name === 'clear') {
+                    item.epg = '';
+                    savePlaylists(playlists());
+                    try { Lampa.Noty.show('EPG URL очищен'); } catch (e) {}
+                }
+                if (a.name === 'open') {
+                    openIptvActivity();
+                }
+            }
+        });
+    }
+
     function registerSettings() {
         if (!Lampa.SettingsApi || !Lampa.SettingsApi.addComponent) return;
         try {
+            // Важный момент: не используем SettingsApi input-поля напрямую.
+            // На некоторых версиях Lampa они вызывают внутренний update с undefined.
+            // Оригинальный IPTV также использует button -> Lampa.Settings.create().
             Lampa.SettingsApi.addComponent({
                 component: COMPONENT,
                 icon: '<svg height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="8" width="34" height="21" rx="3" stroke="currentColor" stroke-width="3"/><line x1="13" y1="2" x2="16" y2="7" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="25" y1="2" x2="22" y2="7" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="9" y1="34" x2="29" y2="34" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>',
                 name: 'IPTV'
             });
-            Lampa.SettingsApi.addParam({
-                component: COMPONENT,
-                param: { name: STORAGE_SETTINGS_M3U, type: 'input' },
-                field: { name: 'M3U / M3U8 плейлист', description: 'Прямая ссылка на IPTV-плейлист' }
-            });
-            Lampa.SettingsApi.addParam({
-                component: COMPONENT,
-                param: { name: STORAGE_SETTINGS_EPG, type: 'input' },
-                field: { name: 'EPG / XMLTV', description: 'Прямая ссылка на XMLTV телепрограмму. Можно оставить пустым, если EPG указан в M3U.' }
-            });
+
             Lampa.SettingsApi.addParam({
                 component: COMPONENT,
                 param: { type: 'button' },
-                field: { name: 'Загрузить / применить плейлист', description: 'Сохранит M3U и EPG и откроет IPTV.' },
-                onChange: function () {
-                    var m3u = getStorage(STORAGE_SETTINGS_M3U, '');
-                    var epg = getStorage(STORAGE_SETTINGS_EPG, '');
-                    if (!m3u || !validUrl(m3u)) return showError('Укажите корректный URL M3U / M3U8 в настройках IPTV');
-                    setStorage(STORAGE_SETTINGS_M3U, m3u);
-                    setStorage(STORAGE_SETTINGS_EPG, epg || '');
-                    var list = playlists();
-                    var item = list.length ? list[0] : { id: uid(), name: 'Мой IPTV', url: m3u, epg: epg || '' };
-                    item.url = m3u;
-                    item.epg = epg || '';
-                    if (!list.length) list.push(item);
-                    savePlaylists(list);
-                    Lampa.Noty.show('Плейлист сохранён');
-                    setTimeout(function () { Lampa.Activity.push({ url:'', title:'IPTV', component:COMPONENT, page:1 }); }, 100);
-                }
+                field: { name: 'Добавить плейлист M3U / M3U8' },
+                onChange: function () { addPlaylist(); }
             });
+
             Lampa.SettingsApi.addParam({
                 component: COMPONENT,
                 param: { type: 'button' },
-                field: { name: 'Телепрограмма', description: 'Открыть EPG для текущего плейлиста' },
-                onChange: function () {
-                    var list = playlists();
-                    if (!list.length) return showError('Сначала добавьте M3U-плейлист');
-                    Lampa.Activity.push({ url:'', title:'IPTV', component:COMPONENT, page:1 });
-                }
+                field: { name: 'Мои плейлисты' },
+                onChange: function () { openIptvActivity(); }
             });
+
+            Lampa.SettingsApi.addParam({
+                component: COMPONENT,
+                param: { type: 'button' },
+                field: { name: 'EPG / Телепрограмма' },
+                onChange: function () { openEpgSettings(); }
+            });
+
             Lampa.SettingsApi.addParam({
                 component: COMPONENT,
                 param: { type: 'button' },
                 field: { name: 'Открыть IPTV' },
-                onChange: function () { Lampa.Activity.push({ url:'', title:'IPTV', component:COMPONENT, page:1 }); }
+                onChange: function () { openIptvActivity(); }
             });
-        } catch (e) { console.warn('[IPTV v3] settings', e); }
+        } catch (e) {
+            console.warn('[IPTV v3] settings registration', e);
+        }
     }
 
     function addMenu() {
@@ -746,7 +780,7 @@
     }
 
     Lampa.Manifest.plugins = Lampa.Manifest.plugins || {};
-    Lampa.Manifest.plugins[COMPONENT] = { type:'video', version:'3.4.0', name:'IPTV v3.4', description:'IPTV M3U/M3U8 + EPG client', component:COMPONENT };
+    Lampa.Manifest.plugins[COMPONENT] = { type:'video', version:'3.5.0', name:'IPTV v3.5', description:'IPTV M3U/M3U8 + EPG client', component:COMPONENT };
     Lampa.Component.add(COMPONENT, Component);
     registerSettings();
     addMenu();
