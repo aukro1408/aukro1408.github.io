@@ -1,25 +1,27 @@
 /**
- * CinemaX v2 — Новинки проката + Стриминги
- * Based on the supplied CinemaX.js source. Cleaned and hardened for Lampa compatibility.
+ * Flixio — Новинки проката + Стриминги (standalone extraction)
+ * Based on the supplied Flixio.js source.
  * This plugin intentionally does NOT replace Lampa's main TMDB API loader,
  * so it can coexist with other home-page plugins.
  */
 (function(){
     'use strict';
     if (typeof Lampa === 'undefined') return;
-    if (window.CINEMAX_EXTRACT_LOADED) return;
-    window.CINEMAX_EXTRACT_LOADED = true;
-    window.CINEMAX_VERSION = '2.0.0';
+    if (window.FLIXIO_EXTRACT_LOADED) return;
+    window.FLIXIO_EXTRACT_LOADED = true;
 
-    var CINEMAX_LANG = (Lampa.Storage.get('language', 'uk') || 'uk').toLowerCase();
-    if (CINEMAX_LANG === 'ua') CINEMAX_LANG = 'uk';
-    if (['uk','ru','en','pl'].indexOf(CINEMAX_LANG) === -1) CINEMAX_LANG = 'en';
+    var FLIXIO_LANG = (Lampa.Storage.get('language', 'uk') || 'uk').toLowerCase();
+    if (FLIXIO_LANG === 'ua') FLIXIO_LANG = 'uk';
+    if (['uk','ru','en','pl'].indexOf(FLIXIO_LANG) === -1) FLIXIO_LANG = 'en';
 
-    var CINEMAX_I18N = {
+    var FLIXIO_I18N = {
         hero_row_title: { uk: 'Новинки прокату', ru: 'Новинки проката', en: 'New theatrical releases', pl: 'Nowości kinowe' },
-        hero_row_title_full: { uk: 'Новинки прокату', ru: 'Новинки проката', en: 'New theatrical releases', pl: 'Nowości kinowe' },
+        hero_row_title_full: { uk: '🔥 Новинки прокату', ru: '🔥 Новинки проката', en: '🔥 New theatrical releases', pl: '🔥 Nowości kinowe' },
         streamings_row_title: { uk: 'Стрімінги', ru: 'Стриминги', en: 'Streaming', pl: 'Serwisy streamingowe' },
-        streamings_row_title_full: { uk: 'Стрімінги', ru: 'Стриминги', en: 'Streaming', pl: 'Serwisy streamingowe' },
+        streamings_row_title_full: { uk: '📺 Стрімінги', ru: '📺 Стриминги', en: '📺 Streaming', pl: '📺 Serwisy streamingowe' },
+        ukrainian_feed_name: { uk: 'Українська стрічка', ru: 'Украинская лента', en: 'Ukrainian feed', pl: 'Ukraiński feed' },
+        polish_feed_name: { uk: 'Польська стрічка', ru: 'Польская лента', en: 'Polish feed', pl: 'Polski feed' },
+        russian_feed_name: { uk: 'Російська стрічка', ru: 'Русская лента', en: 'Russian feed', pl: 'Rosyjski feed' },
         ru_new_movies: { uk: '🔥 Нові фільми', ru: '🔥 Новые фильмы', en: '🔥 New movies', pl: '🔥 Nowe filmy' },
         ru_new_tv: { uk: '🔥 Нові серіали', ru: '🔥 Новые сериалы', en: '🔥 New series', pl: '🔥 Nowe seriale' },
         ru_shows: { uk: '🎤 Шоу та Реаліті', ru: '🎤 Шоу и реалити', en: '🎤 Shows & Reality', pl: '🎤 Show i Reality' },
@@ -29,6 +31,12 @@
         ru_all_movies: { uk: '🎬 Всі фільми (Ru)', ru: '🎬 Все фильмы (Ru)', en: '🎬 All movies (Ru)', pl: '🎬 Wszystkie filmy (Ru)' },
         ru_all_series: { uk: '📺 Всі серіали (Ru)', ru: '📺 Все сериалы (Ru)', en: '📺 All series (Ru)', pl: '📺 Wszystkie seriale (Ru)' },
         ru_all_shows: { uk: '🎤 Всі шоу (Ru)', ru: '🎤 Все шоу (Ru)', en: '🎤 All shows (Ru)', pl: '🎤 Wszystkie show (Ru)' },
+        ukrainian_row_title: { uk: 'Новинки української стрічки', ru: 'Новинки украинской ленты', en: 'New in Ukrainian feed', pl: 'Nowości w ukraińskiej sekcji' },
+        ukrainian_row_title_full: { uk: '🇺🇦 Новинки української стрічки', ru: '🇺🇦 Новинки украинской ленты', en: '🇺🇦 New in Ukrainian feed', pl: '🇺🇦 Nowości w ukraińskiej sekcji' },
+        polish_row_title: { uk: 'Новинки польської стрічки', ru: 'Новинки польской ленты', en: 'New in Polish feed', pl: 'Nowości w polskiej sekcji' },
+        polish_row_title_full: { uk: '🇵🇱 Новинки польської стрічки', ru: '🇵🇱 Новинки польской ленты', en: '🇵🇱 New in Polish feed', pl: '🇵🇱 Nowości w polskiej секcji' },
+        russian_row_title: { uk: 'Новинки російської стрічки', ru: 'Новинки Русской ленты', en: 'New in Russian feed', pl: 'Nowości w rosyjskiej sekcji' },
+        russian_row_title_full: { uk: '🇷🇺 Новинки російської стрічки', ru: '🇷🇺 Новинки Русской ленты', en: '🇷🇺 New in Russian feed', pl: '🇷🇺 Nowości w rosyjskiej sekcji' },
         english_row_title: { uk: 'Новинки англомовної стрічки', ru: 'Новинки Английской ленты', en: 'New in English feed', pl: 'Nowości w anglojęzycznej sekcji' },
         english_row_title_full: { uk: 'En Новинки англомовної стрічки', ru: 'En Новинки Английской ленты', en: 'En New in English feed', pl: 'En Nowości w anglojęzycznej sekcji' },
         mood_row_title: { uk: 'Кіно під настрій', ru: 'Кино по настроению', en: 'Mood movies', pl: 'Kino na nastrój' },
@@ -107,8 +115,8 @@
         pl_all_movies: { uk: 'Польські фільми (повна підбірка)', ru: 'Польские фильмы (полная подборка)', en: 'Polish movies (full collection)', pl: 'Polskie filmy (pełna kolekcja)' },
         pl_all_series: { uk: 'Польські серіали (повна підбірка)', ru: 'Польские сериалы (полная подборка)', en: 'Polish series (full collection)', pl: 'Polskie seriale (pełna kolekcja)' },
         pl_all_shows: { uk: 'Польські шоу та програми (повна підбірка)', ru: 'Польские шоу и программы (полная подборка)', en: 'Polish shows and programs (full collection)', pl: 'Polskie show i programy (pełna kolekcja)' },
-        settings_tab_title: { uk: 'CinemaX', ru: 'CinemaX', en: 'CinemaX', pl: 'CinemaX' },
-        settings_header_info: { uk: 'CinemaX — кастомна головна сторінка з стрімінгами, мітками якості та українською озвучкою. Автор: aukro1408', ru: 'CinemaX — кастомная главная страница со стримингами, метками качества и украинской озвучкой. Автор: aukro1408', en: 'CinemaX — custom home screen with streamings, quality badges and Ukrainian audio. Author: aukro1408', pl: 'CinemaX — niestandardowa strona główna ze streamingami, oznaczeniami jakości i ukraińskim dubbingiem. Autor: aukro1408' },
+        settings_tab_title: { uk: 'Ліхтар', ru: 'Flixio', en: 'Flixio', pl: 'Flixio' },
+        settings_header_info: { uk: 'Ліхтар — кастомна головна сторінка з стрімінгами, мітками якості та українською озвучкою. Автор: Flixio Team', ru: 'Flixio — кастомная главная страница со стримингами, метками качества и украинской озвучкой. Автор: Flixio Team', en: 'Flixio — custom home screen with streamings, quality badges and Ukrainian audio. Author: Flixio Team', pl: 'Flixio — niestandardowa strona główna ze streamingami, oznaczeniami jakości i ukraińskim dubbingiem. Autor: Flixio Team' },
         settings_sections_title: { uk: 'Секції головної сторінки', ru: 'Секции главной страницы', en: 'Main screen sections', pl: 'Sekcje ekranu głównego' },
         settings_streamings_name: { uk: 'Стрімінги', ru: 'Стриминги', en: 'Streaming', pl: 'Serwisy streamingowe' },
         settings_streamings_desc: { uk: 'Секція з логотипами стрімінгових сервісів', ru: 'Секция с логотипами стриминговых сервисов', en: 'Row with streaming services logos', pl: 'Sekcja z logo serwisów streamingowych' },
@@ -212,9 +220,9 @@
     };
 
     function tr(key) {
-        var pack = CINEMAX_I18N[key];
+        var pack = FLIXIO_I18N[key];
         if (!pack) return key;
-        return pack[CINEMAX_LANG] || pack.uk || pack.en || key;
+        return pack[FLIXIO_LANG] || pack.uk || pack.en || key;
     }
     var SERVICE_CONFIGS = {
         'netflix': {
@@ -367,7 +375,7 @@
 
 
     function getTmdbKey() {
-        var custom = (Lampa.Storage.get('cinemax_tmdb_apikey') || '').trim();
+        var custom = (Lampa.Storage.get('flixio_tmdb_apikey') || '').trim();
         return custom || (Lampa.TMDB && Lampa.TMDB.key ? Lampa.TMDB.key() : '');
     }
 
@@ -486,10 +494,10 @@
     }
 
     // =================================================================
-    // ПІДПИСКИ НА СТУДІЇ (CinemaX — інтегровано з studio_subscription)
+    // ПІДПИСКИ НА СТУДІЇ (Ліхтар — інтегровано з studio_subscription)
     // =================================================================
-    var CinemaXStudioSubscription = (function () {
-        var storageKey = 'cinemax_subscription_studios';
+    var FlixioStudioSubscription = (function () {
+        var storageKey = 'flixio_subscription_studios';
 
         function getParams() {
             var raw = Lampa.Storage.get(storageKey, '[]');
@@ -707,7 +715,7 @@
                 url: data.url,
                 params: data.params,
                 title: data.title,
-                component: 'cinemax_extract_studios_view',
+                component: 'flixio_extract_studios_view',
                 page: 1
             });
         };
@@ -724,8 +732,8 @@
         { title: tr('ua_trending_movies'), url: 'discover/movie', params: { with_origin_country: 'UA', sort_by: 'popularity.desc' } },
         { title: tr('ua_trending_series'), url: 'discover/tv', params: { with_origin_country: 'UA', sort_by: 'popularity.desc' } },
         { title: tr('ua_best_movies'), url: 'discover/movie', params: { with_origin_country: 'UA', sort_by: 'vote_average.desc', 'vote_count.gte': '50' } },
-        { type: 'from_global', globalKey: 'CINEMAX_UA_MOVIES', title: tr('ua_all_movies') },
-        { type: 'from_global', globalKey: 'CINEMAX_UA_SERIES', title: tr('ua_all_series') }
+        { type: 'from_global', globalKey: 'FLIXIO_UA_MOVIES', title: tr('ua_all_movies') },
+        { type: 'from_global', globalKey: 'FLIXIO_UA_SERIES', title: tr('ua_all_series') }
     ];
 
     function UkrainianFeedMain(object) {
@@ -815,7 +823,7 @@
                 url: data.url,
                 params: data.params,
                 title: data.title,
-                component: 'cinemax_extract_studios_view',
+                component: 'flixio_extract_studios_view',
                 page: 1
             });
         };
@@ -831,9 +839,9 @@
         { title: tr('pl_trending_movies'), url: 'discover/movie', params: { with_origin_country: 'PL', sort_by: 'popularity.desc' } },
         { title: tr('pl_trending_series'), url: 'discover/tv', params: { with_origin_country: 'PL', sort_by: 'popularity.desc' } },
         { title: tr('pl_best_movies'), url: 'discover/movie', params: { with_origin_country: 'PL', sort_by: 'vote_average.desc', 'vote_count.gte': '50' } },
-        { type: 'from_global', globalKey: 'CINEMAX_PL_MOVIES', title: tr('pl_all_movies') },
-        { type: 'from_global', globalKey: 'CINEMAX_PL_SERIES', title: tr('pl_all_series') },
-        { type: 'from_global', globalKey: 'CINEMAX_PL_SHOWS', title: tr('pl_all_shows') }
+        { type: 'from_global', globalKey: 'FLIXIO_PL_MOVIES', title: tr('pl_all_movies') },
+        { type: 'from_global', globalKey: 'FLIXIO_PL_SERIES', title: tr('pl_all_series') },
+        { type: 'from_global', globalKey: 'FLIXIO_PL_SHOWS', title: tr('pl_all_shows') }
     ];
 
     function PolishFeedMain(object) {
@@ -923,7 +931,7 @@
                 url: data.url,
                 params: data.params,
                 title: data.title,
-                component: 'cinemax_extract_studios_view',
+                component: 'flixio_extract_studios_view',
                 page: 1
             });
         };
@@ -939,9 +947,9 @@
         { title: tr('ru_trending_movies'), url: 'discover/movie', params: { with_original_language: 'ru', sort_by: 'popularity.desc' } },
         { title: tr('ru_trending_series'), url: 'discover/tv', params: { with_original_language: 'ru', sort_by: 'popularity.desc' } },
         { title: tr('ru_best_movies'), url: 'discover/movie', params: { with_original_language: 'ru', sort_by: 'vote_average.desc', 'vote_count.gte': '50' } },
-        { type: 'from_global', globalKey: 'CINEMAX_RU_MOVIES', title: tr('ru_all_movies') },
-        { type: 'from_global', globalKey: 'CINEMAX_RU_SERIES', title: tr('ru_all_series') },
-        { type: 'from_global', globalKey: 'CINEMAX_RU_SHOWS', title: tr('ru_all_shows') }
+        { type: 'from_global', globalKey: 'FLIXIO_RU_MOVIES', title: tr('ru_all_movies') },
+        { type: 'from_global', globalKey: 'FLIXIO_RU_SERIES', title: tr('ru_all_series') },
+        { type: 'from_global', globalKey: 'FLIXIO_RU_SHOWS', title: tr('ru_all_shows') }
     ];
 
     function RussianFeedMain(object) {
@@ -1031,7 +1039,7 @@
                 url: data.url,
                 params: data.params,
                 title: data.title,
-                component: 'cinemax_extract_studios_view',
+                component: 'flixio_extract_studios_view',
                 page: 1
             });
         };
@@ -1040,11 +1048,11 @@
     }
 
     function makeHeroResultItem(movie, heightEm) {
-        if (!$('#cinemax-extract-hero-css').length) {
-            $('body').append('<style id="cinemax-extract-hero-css">.hero-banner .card-marks, .hero-banner .card__icons, .hero-banner .card__quality { display: none !important; }</style>');
+        if (!$('#flixio-extract-hero-css').length) {
+            $('body').append('<style id="flixio-extract-hero-css">.hero-banner .card-marks, .hero-banner .card__icons, .hero-banner .card__quality { display: none !important; }</style>');
         }
-        if (!$('#cinemax-extract-show-more-css').length) {
-            $('body').append('<style id="cinemax-extract-show-more-css">' +
+        if (!$('#flixio-extract-show-more-css').length) {
+            $('body').append('<style id="flixio-extract-show-more-css">' +
                 '.show-more-button.focus { transform: scale(1.05) !important; box-shadow: 0 0 0 3px #fff !important; z-index: 10 !important; }' +
                 '.card.show-more-button:focus { transform: scale(1.05) !important; box-shadow: 0 0 0 3px #fff !important; z-index: 10 !important; }' +
                 '.kino-card.show-more-button:hover { transform: scale(1.05) !important; box-shadow: 0 0 0 3px #fff !important; z-index: 10 !important; }' +
@@ -1344,7 +1352,7 @@
     function addHeroRow() {
         Lampa.ContentRows.add({
             index: 0,
-            name: 'cinemax_extract_hero_row',
+            name: 'flixio_extract_hero_row',
             title: tr('hero_row_title'),
             screen: ['main'],
             call: function (params) {
@@ -1390,41 +1398,18 @@
         });
     }
 
-    // White Lampa-style icons for the two CinemaX section headers.
-    // v2: vanilla DOM only. No $.trim and no jQuery dependency here.
-    function installCinemaXHeaderIcons() {
-        if (document.getElementById('cinemax-header-icons-css')) return;
-
-        var style = document.createElement('style');
-        style.id = 'cinemax-header-icons-css';
-        style.textContent =
-            '.cinemax-section-icon{' +
-            'display:inline-flex;align-items:center;justify-content:center;' +
-            'width:1.02em;height:1.02em;margin-right:.36em;' +
-            'vertical-align:-.12em;color:#fff;opacity:.96;' +
-            '}' +
-            '.cinemax-section-icon svg{width:100%;height:100%;display:block;}' +
-            '.cinemax-section-icon path,.cinemax-section-icon rect{' +
-            'vector-effect:non-scaling-stroke;' +
-            '}';
-        document.head.appendChild(style);
-
-        function addIcon(titleText, type) {
-            var selectors = '.row__title, .row__title-text, .category__title, .category__title-text';
-            var nodes = document.querySelectorAll(selectors);
-
-            for (var i = 0; i < nodes.length; i++) {
-                var el = nodes[i];
-                if (!el || el.getAttribute('data-cinemax-icon')) continue;
-
-                var text = (el.textContent || '').replace(/\\s+/g, ' ').trim();
-                if (text !== titleText) continue;
-
-                var span = document.createElement('span');
-                span.className = 'cinemax-section-icon';
-                span.setAttribute('aria-hidden', 'true');
-
-                if (type === 'fire') {
-                    span.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M13.2 2.2c.5 3.1-.6 4.8-2.1 6.1-1.3-1.2-1.6-2.9-1.3-4.3-3.1 2.1-5.1 5.1-5.1 8.6 0 4.4 3.3 7.5 8 7.5s8-3.2 8-7.7c0-3.4-2.1-6.6-5.2-9.2-.1 2.1-.8 3.4-1.7 4.4.2-2-.1-3.6-.6-5.4z"/></svg>';
-                } else {
-                    span.innerHTML = '<svg viewBox="0 0 24 24"><r
+    // ========== ROW 2: STUDIOS (Moved Up) ==========
+    function addStudioRow() {
+    // Скрытые стриминги сохраняются локально. Долгий тап по карточке удаляет
+    // только её из главной страницы, обычный тап продолжает открывать сервис.
+    var hiddenKey = 'cinemax_hidden_streamings';
+    function getHiddenStreamings() {
+        var hidden = Lampa.Storage.get(hiddenKey, '[]');
+        if (typeof hidden === 'string') {
+            try { hidden = JSON.parse(hidden); } catch (e) { hidden = []; }
+        }
+        return Array.isArray(hidden) ? hidden : [];
+    }
+    function hideStreaming(id) {
+        var hidden = getHiddenStreamings();
+        if (hidden.indexOf(id) === -
