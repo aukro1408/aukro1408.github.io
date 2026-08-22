@@ -497,6 +497,16 @@
 
         comp.create = function () {
             var _this = this;
+
+            // Все полноэкранные каталоги, открываемые этим компонентом
+            // (Netflix, Disney+, Apple TV+, HBO/Max, Prime и т.д.),
+            // получают отдельный body-класс. Так мы переопределяем
+            // фиксированную ширину Interface Mod только здесь и не
+            // затрагиваем остальные каталоги Lampa.
+            try {
+                $('body').addClass('cinemax-streaming-layout');
+            } catch (e) {}
+
             network.silent(buildUrl(1), function (json) {
                 // FIX: Ensure all items have poster_path for display
                 // If backdrop_path exists but poster_path doesn't, use backdrop_path
@@ -509,6 +519,10 @@
                 }
                 _this.build(json);
             }, this.empty.bind(this));
+        };
+
+        comp.destroy = function () {
+            try { $('body').removeClass('cinemax-streaming-layout'); } catch (e) {}
         };
 
         comp.nextPageReuest = function (object, resolve, reject) {
@@ -2164,13 +2178,13 @@
             '@media screen and (min-width:900px){.cinemax-horror-layout .category-full .card--wide{width:calc((100vw - 7em) / 5) !important;}}' +
             '@media screen and (min-width:1400px){.cinemax-horror-layout .category-full .card--wide{width:calc((100vw - 9em) / 7) !important;}}' +
             '@media screen and (min-width:2000px){.cinemax-horror-layout .category-full .card--wide{width:calc((100vw - 11em) / 9) !important;}}' +
-            /* Full-page streaming catalogs: override Interface Mod's more-specific 18.3em rule. */
-            '.flixio-extract .studios_view .category-full{padding-left:1em;padding-right:1em;}' +
-            '.flixio-extract .studios_view .category-full .card--wide{width:calc((100vw - 4.5em) / 3) !important;}' +
-            '.flixio-extract .studios_view .category-full .card--wide .card__view{padding-bottom:56% !important;}' +
-            '@media screen and (min-width:900px){.flixio-extract .studios_view .category-full .card--wide{width:calc((100vw - 7em) / 5) !important;}}' +
-            '@media screen and (min-width:1400px){.flixio-extract .studios_view .category-full .card--wide{width:calc((100vw - 9em) / 7) !important;}}' +
-            '@media screen and (min-width:2000px){.flixio-extract .studios_view .category-full .card--wide{width:calc((100vw - 11em) / 9) !important;}}' +
+            /* Full-page streaming catalogs: use the same 3-column mobile grid as Horror. */
+            '.cinemax-streaming-layout .category-full{padding-left:1em !important;padding-right:1em !important;}' +
+            '.cinemax-streaming-layout .category-full .card--wide{width:calc((100vw - 4.5em) / 3) !important;max-width:none !important;}' +
+            '.cinemax-streaming-layout .category-full .card--wide .card__view{padding-bottom:56% !important;}' +
+            '@media screen and (min-width:900px){.cinemax-streaming-layout .category-full .card--wide{width:calc((100vw - 7em) / 5) !important;}}' +
+            '@media screen and (min-width:1400px){.cinemax-streaming-layout .category-full .card--wide{width:calc((100vw - 9em) / 7) !important;}}' +
+            '@media screen and (min-width:2000px){.cinemax-streaming-layout .category-full .card--wide{width:calc((100vw - 11em) / 9) !important;}}' +
             '</style>');
     }
 
