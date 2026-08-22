@@ -1,14 +1,13 @@
 /**
- * Flixio — Новинки проката + Стриминги (standalone extraction)
- * Based on the supplied Flixio.js source.
- * This plugin intentionally does NOT replace Lampa's main TMDB API loader,
- * so it can coexist with other home-page plugins.
+ * CinemaX — standalone catalog plugin
+ * Developer: aukro1408
+ * CinemaX uses Lampa/TMDB APIs without replacing Lampa's main TMDB loader.
  */
 (function(){
     'use strict';
     if (typeof Lampa === 'undefined') return;
-    if (window.FLIXIO_EXTRACT_LOADED) return;
-    window.FLIXIO_EXTRACT_LOADED = true;
+    if (window.CINEMAX_AUKRO1408_LOADED) return;
+    window.CINEMAX_AUKRO1408_LOADED = true;
 
     var FLIXIO_LANG = (Lampa.Storage.get('language', 'uk') || 'uk').toLowerCase();
     if (FLIXIO_LANG === 'ua') FLIXIO_LANG = 'uk';
@@ -657,8 +656,11 @@
         var comp = new Lampa.InteractionMain(object);
         var network = new Lampa.Reguest();
 
-        // Важно: фильмы и сериалы запрашиваются ОТДЕЛЬНО, как в каталогах
-        // стриминговых сервисов Lampa. Никакого смешивания movie/tv в одном запросе.
+        // TMDB НЕ имеет отдельного жанра Horror для TV.
+        // В фильмах Horror = 27, а в TV используются собственные жанры.
+        // Поэтому для сериалов CinemaX сначала находит ключевое слово "horror"
+        // через TMDB /search/keyword, а затем использует его в discover/tv —
+        // тот же принцип фильтрации, который используется в каталогах сервисов.
         var HORROR_CATEGORIES = [
             {
                 title: '🔥 Новые фильмы',
@@ -676,7 +678,7 @@
                 title: '🔥 Новые сериалы',
                 url: 'discover/tv',
                 params: {
-                    with_genres: '27',
+                    with_keywords: '__HORROR_KEYWORD__',
                     sort_by: 'first_air_date.desc',
                     'first_air_date.lte': '{current_date}',
                     'first_air_date.gte': '{year_ago}',
@@ -699,7 +701,7 @@
                 title: '⭐ Лучшие сериалы',
                 url: 'discover/tv',
                 params: {
-                    with_genres: '27',
+                    with_keywords: '__HORROR_KEYWORD__',
                     sort_by: 'vote_average.desc',
                     'vote_count.gte': '50',
                     'vote_average.gte': '7'
@@ -710,9 +712,7 @@
 
         function dateValue(token) {
             var d = new Date();
-            if (token === '{current_date}') d = new Date();
-            else if (token === '{year_ago}') {
-                d = new Date();
+            if (token === '{year_ago}') {
                 d.setFullYear(d.getFullYear() - 1);
             }
             return [
@@ -750,7 +750,6 @@
                 item.media_type = mediaType;
                 item.type = mediaType;
 
-                // Lampa uses title for movies and name for TV.
                 if (mediaType === 'tv') {
                     if (!item.name && item.original_name) item.name = item.original_name;
                     if (!item.first_air_date && item.release_date) item.first_air_date = item.release_date;
@@ -765,38 +764,134 @@
             return out;
         }
 
+        function resolveHorrorKeyword(done) {
+            var url = Lampa.TMDB.api(
+                'search/keyword?api_key=' + encodeURIComponent(getTmdbKey()) +
+                '&query=horror&page=1&language=en-US'
+            );
+
+            network.silent(url, function (json) {
+                var list = json && json.results ? json.results : [];
+                var exact = list.find(function (item) {
+                    return item && String(item.name || '').trim().toLowerCase() === 'horror';
+                });
+
+                if (exact && exact.id) {
+                    console.log('[CinemaX Horror] TMDB horror keyword:', exact.id);
+                    done(String(exact.id));
+                    return;
+                }
+
+                // Если точного совпадения нет, не ломаем раздел:
+                // используем первый релевантный результат поиска.
+                if (list[0] && list[0].id) {
+                    console.log('[CinemaX Horror] TMDB keyword fallback:', list[0].id, list[0].name);
+                    done(String(list[0].id));
+                    return;
+                }
+
+                console.warn('[CinemaX Horror] Horror keyword not found');
+                done(null);
+            }, function () {
+                console.warn('[CinemaX Horror] Horror keyword request failed');
+                done(null);
+            });
+        }
+
         function requestCategory(cat, done) {
             var url = Lampa.TMDB.api(cat.url + '?' + buildParams(cat, 1));
+            console.log('[CinemaX Horror] request:', cat.title, url);
+
             network.silent(url, function (json) {
                 var results = normalizeResults(json && json.results, cat.mediaType);
+                done(results);
+            }, function () {
+                console.warn('[CinemaX Horror] request failed:', cat.title);
+                done([]);
+            });
+        }
 
-                // Для новых сериалов делаем второй, более мягкий запрос.
-                // Это повторяет подход сервисных каталогов: если свежий диапазон
-                // пуст, не скрываем саму категорию.
-                if (cat.mediaType === 'tv' && results.length === 0 && cat.title.indexOf('Новые') === 0) {
-                    var fallback = {
+        function buildRows(keywordId, callback) {
+            HORROR_CATEGORIES.forEach(function (cat) {
+                if (cat.mediaType === 'tv' && keywordId) {
+                    cat.params.with_keywords = keywordId;
+                }
+            });
+
+            var rows = new Array(HORROR_CATEGORIES.length);
+            var pending = HORROR_CATEGORIES.length;
+
+            HORROR_CATEGORIES.forEach(function (cat, index) {
+                if (cat.mediaType === 'tv' && !keywordId) {
+                    var fallbackNoKeyword = {
                         title: cat.title,
-                        url: cat.url,
+                        url: 'discover/tv',
                         params: {
-                            with_genres: '27',
-                            sort_by: 'popularity.desc',
-                            'vote_count.gte': '1'
+                            with_genres: '10765|9648|18',
+                            sort_by: cat.title.indexOf('Новые') === 0 ? 'first_air_date.desc' : 'vote_average.desc',
+                            'vote_count.gte': cat.title.indexOf('Новые') === 0 ? '1' : '50',
+                            'vote_average.gte': cat.title.indexOf('Новые') === 0 ? '0' : '7'
                         },
                         mediaType: 'tv'
                     };
-                    var fallbackUrl = Lampa.TMDB.api(fallback.url + '?' + buildParams(fallback, 1));
-                    network.silent(fallbackUrl, function (fallbackJson) {
-                        done(normalizeResults(fallbackJson && fallbackJson.results, 'tv'));
-                    }, function () {
-                        done([]);
+                    requestCategory(fallbackNoKeyword, function (fallbackResults) {
+                        rows[index] = makeRow(cat, fallbackResults, fallbackNoKeyword.url, fallbackNoKeyword.params);
+                        finishOne();
                     });
                     return;
                 }
 
-                done(results);
-            }, function () {
-                done([]);
+                requestCategory(cat, function (results) {
+                    // Если keyword-поиск не сработал, для TV делаем запасной запрос
+                    // по наиболее близким официальным TV-жанрам TMDB, чтобы секция
+                    // всё равно могла показать хоррор-подобные сериалы.
+                    if (cat.mediaType === 'tv' && results.length === 0) {
+                        var fallback = {
+                            title: cat.title,
+                            url: 'discover/tv',
+                            params: {
+                                with_genres: '10765|9648|18',
+                                sort_by: cat.title.indexOf('Новые') === 0 ? 'first_air_date.desc' : 'vote_average.desc',
+                                'vote_count.gte': cat.title.indexOf('Новые') === 0 ? '1' : '50',
+                                'vote_average.gte': cat.title.indexOf('Новые') === 0 ? '0' : '7'
+                            },
+                            mediaType: 'tv'
+                        };
+                        requestCategory(fallback, function (fallbackResults) {
+                            cat.__fallbackParams = fallback.params;
+                            rows[index] = makeRow(cat, fallbackResults, fallback.url, fallback.params);
+                            finishOne();
+                        });
+                        return;
+                    }
+
+                    rows[index] = makeRow(cat, results, cat.url, cat.params);
+                    finishOne();
+                });
             });
+
+            function makeRow(cat, results, url, params) {
+                return {
+                    title: cat.title,
+                    results: results,
+                    url: url,
+                    query_params: params,
+                    params: {
+                        items: {
+                            mapping: 'line',
+                            view: 15
+                        }
+                    }
+                };
+            }
+
+            function finishOne() {
+                pending--;
+                if (pending !== 0) return;
+                callback(rows.filter(function (row) {
+                    return row && row.results && row.results.length;
+                }));
+            }
         }
 
         comp.create = function () {
@@ -814,40 +909,16 @@
 
             this.activity.loader(true);
 
-            var rows = new Array(HORROR_CATEGORIES.length);
-            var pending = HORROR_CATEGORIES.length;
-
-            HORROR_CATEGORIES.forEach(function (cat, index) {
-                requestCategory(cat, function (results) {
-                    rows[index] = {
-                        title: cat.title,
-                        results: results,
-                        url: cat.url,
-                        query_params: cat.params,
-                        // Это ключевой момент: НЕ wide. Используем стандартную
-                        // строку Lampa, как у Netflix/других сервисных каталогов.
-                        params: {
-                            items: {
-                                mapping: 'line',
-                                view: 15
-                            }
-                        }
-                    };
-
-                    pending--;
-                    if (pending !== 0) return;
-
-                    var validRows = rows.filter(function (row) {
-                        return row && row.results && row.results.length;
-                    });
-
+            // Сначала определяем реальное TMDB keyword "horror" для TV,
+            // затем запускаем те же discover-запросы, что и для фильмов.
+            resolveHorrorKeyword(function (keywordId) {
+                buildRows(keywordId, function (validRows) {
                     if (validRows.length) {
                         _this.build(validRows);
                     } else {
-                        console.warn('[CinemaX] TMDB не вернул контент для раздела Ужасы');
+                        console.warn('[CinemaX Horror] TMDB не вернул контент для раздела Ужасы');
                         _this.empty();
                     }
-
                     _this.activity.loader(false);
                 });
             });
@@ -2093,6 +2164,9 @@
             '@media screen and (min-width:900px){.cinemax-horror-layout .category-full .card--wide{width:calc((100vw - 7em) / 5) !important;}}' +
             '@media screen and (min-width:1400px){.cinemax-horror-layout .category-full .card--wide{width:calc((100vw - 9em) / 7) !important;}}' +
             '@media screen and (min-width:2000px){.cinemax-horror-layout .category-full .card--wide{width:calc((100vw - 11em) / 9) !important;}}' +
+            '.studios_main .card--wide,.studios_view .card--wide{width:calc((100vw - 4.5em) / 3) !important;}' +
+            '@media screen and (min-width:900px){.studios_main .card--wide,.studios_view .card--wide{width:calc((100vw - 7em) / 5) !important;}}' +
+            '@media screen and (min-width:1400px){.studios_main .card--wide,.studios_view .card--wide{width:calc((100vw - 9em) / 7) !important;}}' +
             '</style>');
     }
 
