@@ -228,7 +228,7 @@
     // Белые минималистичные иконки в заголовках двух оставленных рядов.
     function addSectionTitleIcons() {
         var icons = {
-            releases: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v13H4zM4 9h16M8 5.5v3.2M16 5.5v3.2M9.5 13.2l5 3v-6z"/></svg>',
+            releases: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.2 2.8c.5 3.3-1.5 4.8-3.1 6.7-1.1 1.3-1.7 2.6-1.7 4.3a4.7 4.7 0 0 0 9.4 0c0-2.4-1.1-4.2-2.7-5.9-.5 1.6-1.2 2.5-2.3 3.4.1-3.2.5-5.4.6-8.5Z"/><path d="M12 13.2c1.1 1.1 1.6 2 1.6 3a1.6 1.6 0 1 1-3.2 0c0-.8.5-1.8 1.6-3Z"/></svg>',
             streaming: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M10 9.5l5 2.5-5 2.5z"/></svg>'
         };
         var labels = {
