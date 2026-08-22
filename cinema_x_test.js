@@ -94,122 +94,77 @@
         return movie.title || movie.original_title || '';
     }
 
-    function makeHero(movie) {
-        var title = getMovieTitle(movie);
-        var year = getYear(movie);
-        var rating = movie.vote_average ? Number(movie.vote_average).toFixed(1) : '';
-        var bg = backdrop(movie.backdrop_path || movie.poster_path);
-        var posterUrl = poster(movie.poster_path);
+    function makeHeroResultItem(movie, heightEm) {
+        heightEm = heightEm || 22.5;
 
-        var genres = '';
-        if (movie.genre_ids && movie.genre_ids.length) {
-            genres = movie.genre_ids.slice(0, 3).map(function (id) {
-                var map = {
-                    28: 'Экшен',
-                    12: 'Приключения',
-                    16: 'Анимация',
-                    35: 'Комедия',
-                    80: 'Криминал',
-                    99: 'Документальный',
-                    18: 'Драма',
-                    10751: 'Семейный',
-                    14: 'Фэнтези',
-                    27: 'Ужасы',
-                    9648: 'Детектив',
-                    10749: 'Мелодрама',
-                    878: 'Фантастика',
-                    53: 'Триллер',
-                    10752: 'Военный',
-                    37: 'Вестерн'
-                };
-                return map[id] || '';
-            }).filter(Boolean).join(' • ');
-        }
+        var item = {
+            title: getMovieTitle(movie),
+            img: poster(movie.poster_path),
+            params: {
+                createInstance: function (element) {
+                    return Lampa.Maker.make('Card', element, function (module) {
+                        return module.only('Card', 'Callback');
+                    });
+                },
+                emit: {
+                    onCreate: function () {
+                        try {
+                            var card = $(this.html);
+                            var bg = backdrop(movie.backdrop_path || movie.poster_path);
 
-        var root = $('<div class="aukro1408-hero"></div>');
+                            card.addClass('aukro1408-hero');
+                            card.css({
+                                'background-image': 'linear-gradient(90deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.70) 35%, rgba(0,0,0,.18) 75%, rgba(0,0,0,.08) 100%), linear-gradient(0deg, rgba(0,0,0,.78), transparent 55%), url("' + bg + '")',
+                                'width': '100%',
+                                'height': heightEm + 'em',
+                                'background-size': 'cover',
+                                'background-position': 'center',
+                                'border-radius': '1em',
+                                'position': 'relative',
+                                'overflow': 'hidden',
+                                'box-shadow': '0 0 20px rgba(0,0,0,.45)',
+                                'margin-bottom': '.6em'
+                            });
 
-        root.css({
-            position: 'relative',
-            width: '100%',
-            height: '31em',
-            overflow: 'hidden',
-            'border-radius': '1.1em',
-            'background-color': '#111',
-            'background-image': 'linear-gradient(90deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.72) 34%, rgba(0,0,0,.28) 72%, rgba(0,0,0,.15) 100%), linear-gradient(0deg, rgba(0,0,0,.8), transparent 45%), url("' + bg + '")',
-            'background-size': 'cover',
-            'background-position': 'center'
-        });
+                            card.find('.card__view, .card__title, .card__age, .card-marks, .card__icons, .card__quality').remove();
 
-        var content = $('<div class="aukro1408-hero__content"></div>').css({
-            position: 'absolute',
-            left: '2.4em',
-            bottom: '2.2em',
-            width: '52%',
-            'z-index': 3
-        });
+                            var title = esc(getMovieTitle(movie));
+                            var year = esc(getYear(movie));
+                            var rating = movie.vote_average ? '★ ' + Number(movie.vote_average).toFixed(1) : '';
 
-        if (posterUrl) {
-            var posterEl = $('<img class="aukro1408-hero__poster">').attr('src', posterUrl).css({
-                position: 'absolute',
-                right: '8%',
-                top: '10%',
-                height: '80%',
-                width: 'auto',
-                'max-width': '32%',
-                'object-fit': 'cover',
-                'border-radius': '.8em',
-                'box-shadow': '0 1.2em 3em rgba(0,0,0,.55)',
-                'z-index': 2
-            });
-            root.append(posterEl);
-        }
+                            var meta = [];
+                            if (year) meta.push(year);
+                            if (rating) meta.push(rating);
 
-        var titleEl = $('<div class="aukro1408-hero__title"></div>').html(esc(title)).css({
-            color: '#fff',
-            'font-size': '2.5em',
-            'font-weight': '700',
-            'line-height': '1.05',
-            'margin-bottom': '.35em'
-        });
+                            var posterUrl = poster(movie.poster_path);
+                            var posterHtml = posterUrl
+                                ? '<img src="' + posterUrl + '" style="position:absolute;right:7%;top:8%;height:84%;width:auto;max-width:30%;object-fit:cover;border-radius:.7em;box-shadow:0 1em 2.5em rgba(0,0,0,.55);z-index:2;">'
+                                : '';
 
-        var meta = $('<div class="aukro1408-hero__meta"></div>').css({
-            display: 'flex',
-            'align-items': 'center',
-            gap: '.65em',
-            color: 'rgba(255,255,255,.9)',
-            'font-size': '1em',
-            'margin-bottom': '.7em'
-        });
+                            var html =
+                                posterHtml +
+                                '<div style="position:absolute;left:2.2em;right:34%;bottom:1.8em;z-index:3;">' +
+                                    '<div style="font-size:2.35em;line-height:1.05;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.8);margin-bottom:.35em;">' + title + '</div>' +
+                                    '<div style="display:flex;gap:.65em;align-items:center;color:rgba(255,255,255,.9);font-size:1em;margin-bottom:.55em;">' +
+                                        meta.map(function (m) { return '<span>' + m + '</span>'; }).join('') +
+                                    '</div>' +
+                                    '<div style="font-size:.92em;line-height:1.4;color:rgba(255,255,255,.78);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">' +
+                                        esc(movie.overview || '') +
+                                    '</div>' +
+                                '</div>';
 
-        if (year) meta.append($('<span>').text(year));
-        if (genres) meta.append($('<span>').text(genres));
-        if (rating) meta.append($('<span>').text('★ ' + rating));
-
-        var overview = $('<div class="aukro1408-hero__overview"></div>').text(movie.overview || '').css({
-            color: 'rgba(255,255,255,.78)',
-            'font-size': '.95em',
-            'line-height': '1.45',
-            display: '-webkit-box',
-            '-webkit-line-clamp': '3',
-            '-webkit-box-orient': 'vertical',
-            overflow: 'hidden',
-            'max-width': '95%'
-        });
-
-        content.append(titleEl).append(meta).append(overview);
-        root.append(content);
-
-        root.on('hover:enter', function () {
-            if (Lampa.Activity && Lampa.Activity.push) {
-                Lampa.Activity.push({
-                    url: '',
-                    component: 'full',
-                    card: movie
-                });
+                            card.append(html);
+                            card[0].heroMovieData = movie;
+                            card.addClass('hero-banner');
+                        } catch (e) {
+                            console.warn('[aukro1408] hero render:', e);
+                        }
+                    }
+                }
             }
-        });
+        };
 
-        return root;
+        return item;
     }
 
     function loadMovies(callback) {
@@ -249,13 +204,7 @@
                         var items = [];
 
                         movies.forEach(function (movie) {
-                            items.push({
-                                title: getMovieTitle(movie),
-                                img: poster(movie.poster_path),
-                                backdrop: backdrop(movie.backdrop_path),
-                                movie: movie,
-                                component: 'aukro1408_hero_item'
-                            });
+                            items.push(makeHeroResultItem(movie, 22.5));
                         });
 
                         callback({
