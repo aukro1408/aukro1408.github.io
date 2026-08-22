@@ -383,6 +383,17 @@
                 { "title": tr('cat_monsters_paranormal'), "url": "discover/tv", "params": { "with_networks": "77", "with_genres": "9648,10765", "without_keywords": "3801", "sort_by": "popularity.desc" } }
             ]
         },
+        'megogo': {
+            title: 'MEGOGO',
+            logo: 'logos/megogo.svg',
+            icon: '<svg viewBox="0 0 120 24" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MEGOGO"><text x="0" y="18" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="1">MEGOGO</text></svg>',
+            categories: [
+                { "title": tr('cat_new_movies'), "url": "discover/movie", "params": { "with_watch_providers": "213", "watch_region": "UA", "sort_by": "primary_release_date.desc", "primary_release_date.lte": "{current_date}", "vote_count.gte": "2" } },
+                { "title": tr('cat_new_tv'), "url": "discover/tv", "params": { "with_watch_providers": "213", "watch_region": "UA", "sort_by": "first_air_date.desc", "first_air_date.lte": "{current_date}", "vote_count.gte": "2" } },
+                { "title": tr('cat_top_movies'), "url": "discover/movie", "params": { "with_watch_providers": "213", "watch_region": "UA", "sort_by": "popularity.desc" } },
+                { "title": tr('cat_top_tv'), "url": "discover/tv", "params": { "with_watch_providers": "213", "watch_region": "UA", "sort_by": "popularity.desc" } }
+            ]
+        },
         'educational_and_reality': {
             title: tr('educational_title'),
             logo: 'logos/Discovery.svg',
@@ -1433,6 +1444,12 @@
             svg: '<svg viewBox="0 0 256 69" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M35.2 64.726c-3.85.676-7.77.88-11.823 1.42L11.013 29.93V67.7c-3.85.405-7.364.946-11.013 1.486V0h10.27l14.053 39.255V0H35.2v64.726zm21.283-39.39l14.46-.203v10.8l-14.46.203v16.08l19.12-1.15v10.404l-29.93 2.365V0h29.93v10.8h-19.12v14.526zm59.32-14.526H104.59v49.727l-10.8.135V10.81H82.564V0h33.24v10.81zm17.567 13.783h14.797v10.8H133.37V59.93h-10.608V0h30.202v10.8H133.37v13.783zm37.16 25.877c6.15.135 12.364.608 18.377.946V62.09l-29.187-1.42V0h10.8v50.47zm27.5 12.364c3.446.203 7.094.406 10.607.81V0H198.03v62.835zM256 0l-13.716 32.904L256 69.186c-4.054-.54-8.108-1.284-12.162-1.96l-7.77-19.998-7.904 18.378c-3.92-.676-7.703-.88-11.62-1.42l13.918-31.688L217.894 0h11.62l7.094 18.175L244.176 0H256z" fill="#E50914"/></svg>', 
             providerId: '8' 
         },
+        {
+            id: 'megogo',
+            name: 'MEGOGO',
+            svg: '<svg viewBox="0 0 240 54" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MEGOGO"><text x="0" y="40" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="700" letter-spacing="2">MEGOGO</text></svg>',
+            providerId: '213'
+        },
         { 
             id: 'disney', 
             name: 'Disney+', 
@@ -1545,6 +1562,7 @@
                                         // Colors/Wallpapers map for services
                                         var serviceBGs = {
                                             'netflix': 'linear-gradient(135deg, #000000, #4c0000)',
+                                            'megogo': 'linear-gradient(135deg, #121a4a, #2f55d4)',
                                             'disney': 'linear-gradient(135deg, #050f2c, #1a2f63)',
                                             'hbo': 'linear-gradient(135deg, #0f0c29, #302b63)',
                                             'apple': 'linear-gradient(135deg, #000000, #333333)',
@@ -1574,6 +1592,7 @@
                                         // Colors/Wallpapers map for services
                                         var serviceBGs = {
                                             'netflix': 'linear-gradient(135deg, #000000, #4c0000)',
+                                            'megogo': 'linear-gradient(135deg, #121a4a, #2f55d4)',
                                             'disney': 'linear-gradient(135deg, #050f2c, #1a2f63)',
                                             'hbo': 'linear-gradient(135deg, #0f0c29, #302b63)',
                                             'apple': 'linear-gradient(135deg, #000000, #333333)',
