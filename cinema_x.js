@@ -1,6 +1,6 @@
 /**
- * CinemaX — Новинки проката + Стриминги (standalone extraction)
- * Based on the supplied CinemaX.js source.
+ * CinemaX v2 — Новинки проката + Стриминги
+ * Based on the supplied CinemaX.js source. Cleaned and hardened for Lampa compatibility.
  * This plugin intentionally does NOT replace Lampa's main TMDB API loader,
  * so it can coexist with other home-page plugins.
  */
@@ -9,6 +9,7 @@
     if (typeof Lampa === 'undefined') return;
     if (window.CINEMAX_EXTRACT_LOADED) return;
     window.CINEMAX_EXTRACT_LOADED = true;
+    window.CINEMAX_VERSION = '2.0.0';
 
     var CINEMAX_LANG = (Lampa.Storage.get('language', 'uk') || 'uk').toLowerCase();
     if (CINEMAX_LANG === 'ua') CINEMAX_LANG = 'uk';
@@ -19,9 +20,6 @@
         hero_row_title_full: { uk: 'Новинки прокату', ru: 'Новинки проката', en: 'New theatrical releases', pl: 'Nowości kinowe' },
         streamings_row_title: { uk: 'Стрімінги', ru: 'Стриминги', en: 'Streaming', pl: 'Serwisy streamingowe' },
         streamings_row_title_full: { uk: 'Стрімінги', ru: 'Стриминги', en: 'Streaming', pl: 'Serwisy streamingowe' },
-        ukrainian_feed_name: { uk: 'Українська стрічка', ru: 'Украинская лента', en: 'Ukrainian feed', pl: 'Ukraiński feed' },
-        polish_feed_name: { uk: 'Польська стрічка', ru: 'Польская лента', en: 'Polish feed', pl: 'Polski feed' },
-        russian_feed_name: { uk: 'Російська стрічка', ru: 'Русская лента', en: 'Russian feed', pl: 'Rosyjski feed' },
         ru_new_movies: { uk: '🔥 Нові фільми', ru: '🔥 Новые фильмы', en: '🔥 New movies', pl: '🔥 Nowe filmy' },
         ru_new_tv: { uk: '🔥 Нові серіали', ru: '🔥 Новые сериалы', en: '🔥 New series', pl: '🔥 Nowe seriale' },
         ru_shows: { uk: '🎤 Шоу та Реаліті', ru: '🎤 Шоу и реалити', en: '🎤 Shows & Reality', pl: '🎤 Show i Reality' },
@@ -31,12 +29,6 @@
         ru_all_movies: { uk: '🎬 Всі фільми (Ru)', ru: '🎬 Все фильмы (Ru)', en: '🎬 All movies (Ru)', pl: '🎬 Wszystkie filmy (Ru)' },
         ru_all_series: { uk: '📺 Всі серіали (Ru)', ru: '📺 Все сериалы (Ru)', en: '📺 All series (Ru)', pl: '📺 Wszystkie seriale (Ru)' },
         ru_all_shows: { uk: '🎤 Всі шоу (Ru)', ru: '🎤 Все шоу (Ru)', en: '🎤 All shows (Ru)', pl: '🎤 Wszystkie show (Ru)' },
-        ukrainian_row_title: { uk: 'Новинки української стрічки', ru: 'Новинки украинской ленты', en: 'New in Ukrainian feed', pl: 'Nowości w ukraińskiej sekcji' },
-        ukrainian_row_title_full: { uk: '🇺🇦 Новинки української стрічки', ru: '🇺🇦 Новинки украинской ленты', en: '🇺🇦 New in Ukrainian feed', pl: '🇺🇦 Nowości w ukraińskiej sekcji' },
-        polish_row_title: { uk: 'Новинки польської стрічки', ru: 'Новинки польской ленты', en: 'New in Polish feed', pl: 'Nowości w polskiej sekcji' },
-        polish_row_title_full: { uk: '🇵🇱 Новинки польської стрічки', ru: '🇵🇱 Новинки польской ленты', en: '🇵🇱 New in Polish feed', pl: '🇵🇱 Nowości w polskiej секcji' },
-        russian_row_title: { uk: 'Новинки російської стрічки', ru: 'Новинки Русской ленты', en: 'New in Russian feed', pl: 'Nowości w rosyjskiej sekcji' },
-        russian_row_title_full: { uk: '🇷🇺 Новинки російської стрічки', ru: '🇷🇺 Новинки Русской ленты', en: '🇷🇺 New in Russian feed', pl: '🇷🇺 Nowości w rosyjskiej sekcji' },
         english_row_title: { uk: 'Новинки англомовної стрічки', ru: 'Новинки Английской ленты', en: 'New in English feed', pl: 'Nowości w anglojęzycznej sekcji' },
         english_row_title_full: { uk: 'En Новинки англомовної стрічки', ru: 'En Новинки Английской ленты', en: 'En New in English feed', pl: 'En Nowości w anglojęzycznej sekcji' },
         mood_row_title: { uk: 'Кіно під настрій', ru: 'Кино по настроению', en: 'Mood movies', pl: 'Kino na nastrój' },
@@ -116,7 +108,7 @@
         pl_all_series: { uk: 'Польські серіали (повна підбірка)', ru: 'Польские сериалы (полная подборка)', en: 'Polish series (full collection)', pl: 'Polskie seriale (pełna kolekcja)' },
         pl_all_shows: { uk: 'Польські шоу та програми (повна підбірка)', ru: 'Польские шоу и программы (полная подборка)', en: 'Polish shows and programs (full collection)', pl: 'Polskie show i programy (pełna kolekcja)' },
         settings_tab_title: { uk: 'CinemaX', ru: 'CinemaX', en: 'CinemaX', pl: 'CinemaX' },
-        settings_header_info: { uk: 'Ліхтар — кастомна головна сторінка з стрімінгами, мітками якості та українською озвучкою. Автор: aukro1408', ru: 'CinemaX — кастомная главная страница со стримингами, метками качества и украинской озвучкой. Автор: aukro1408', en: 'CinemaX — custom home screen with streamings, quality badges and Ukrainian audio. Author: aukro1408', pl: 'CinemaX — niestandardowa strona główna ze streamingami, oznaczeniami jakości i ukraińskim dubbingiem. Autor: CinemaX Team' },
+        settings_header_info: { uk: 'CinemaX — кастомна головна сторінка з стрімінгами, мітками якості та українською озвучкою. Автор: aukro1408', ru: 'CinemaX — кастомная главная страница со стримингами, метками качества и украинской озвучкой. Автор: aukro1408', en: 'CinemaX — custom home screen with streamings, quality badges and Ukrainian audio. Author: aukro1408', pl: 'CinemaX — niestandardowa strona główna ze streamingami, oznaczeniami jakości i ukraińskim dubbingiem. Autor: aukro1408' },
         settings_sections_title: { uk: 'Секції головної сторінки', ru: 'Секции главной страницы', en: 'Main screen sections', pl: 'Sekcje ekranu głównego' },
         settings_streamings_name: { uk: 'Стрімінги', ru: 'Стриминги', en: 'Streaming', pl: 'Serwisy streamingowe' },
         settings_streamings_desc: { uk: 'Секція з логотипами стрімінгових сервісів', ru: 'Секция с логотипами стриминговых сервисов', en: 'Row with streaming services logos', pl: 'Sekcja z logo serwisów streamingowych' },
@@ -494,7 +486,7 @@
     }
 
     // =================================================================
-    // ПІДПИСКИ НА СТУДІЇ (Ліхтар — інтегровано з studio_subscription)
+    // ПІДПИСКИ НА СТУДІЇ (CinemaX — інтегровано з studio_subscription)
     // =================================================================
     var CinemaXStudioSubscription = (function () {
         var storageKey = 'cinemax_subscription_studios';
@@ -1399,11 +1391,40 @@
     }
 
     // White Lampa-style icons for the two CinemaX section headers.
+    // v2: vanilla DOM only. No $.trim and no jQuery dependency here.
     function installCinemaXHeaderIcons() {
         if (document.getElementById('cinemax-header-icons-css')) return;
-        $('body').append('<style id="cinemax-header-icons-css">' +
-            '.cinemax-section-icon{display:inline-flex;align-items:center;justify-content:center;width:1.02em;height:1.02em;margin-right:.36em;vertical-align:-.12em;color:#fff;opacity:.96;}' +
+
+        var style = document.createElement('style');
+        style.id = 'cinemax-header-icons-css';
+        style.textContent =
+            '.cinemax-section-icon{' +
+            'display:inline-flex;align-items:center;justify-content:center;' +
+            'width:1.02em;height:1.02em;margin-right:.36em;' +
+            'vertical-align:-.12em;color:#fff;opacity:.96;' +
+            '}' +
             '.cinemax-section-icon svg{width:100%;height:100%;display:block;}' +
-            '</style>');
+            '.cinemax-section-icon path,.cinemax-section-icon rect{' +
+            'vector-effect:non-scaling-stroke;' +
+            '}';
+        document.head.appendChild(style);
+
         function addIcon(titleText, type) {
-            $('.row__title, .row__title-text, .category__title, .category__title
+            var selectors = '.row__title, .row__title-text, .category__title, .category__title-text';
+            var nodes = document.querySelectorAll(selectors);
+
+            for (var i = 0; i < nodes.length; i++) {
+                var el = nodes[i];
+                if (!el || el.getAttribute('data-cinemax-icon')) continue;
+
+                var text = (el.textContent || '').replace(/\\s+/g, ' ').trim();
+                if (text !== titleText) continue;
+
+                var span = document.createElement('span');
+                span.className = 'cinemax-section-icon';
+                span.setAttribute('aria-hidden', 'true');
+
+                if (type === 'fire') {
+                    span.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M13.2 2.2c.5 3.1-.6 4.8-2.1 6.1-1.3-1.2-1.6-2.9-1.3-4.3-3.1 2.1-5.1 5.1-5.1 8.6 0 4.4 3.3 7.5 8 7.5s8-3.2 8-7.7c0-3.4-2.1-6.6-5.2-9.2-.1 2.1-.8 3.4-1.7 4.4.2-2-.1-3.6-.6-5.4z"/></svg>';
+                } else {
+                    span.innerHTML = '<svg viewBox="0 0 24 24"><r
