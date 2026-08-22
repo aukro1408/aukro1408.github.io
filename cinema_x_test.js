@@ -1,236 +1,159 @@
 /**
- * aukro1408 — Hero Новинки проката
- * Автор: aukro1408
- * Версия: 1.0.0
- *
- * Чистый standalone-плагин для Lampa.
- * Не зависит от Flixio и не заменяет основной TMDB API.
+ * Flixio Lite
+ * Только: «Новинки проката» и карточки стримингов.
+ * Русская, польская и украинская ленты намеренно не включены.
  */
 (function () {
     'use strict';
 
     if (typeof Lampa === 'undefined') return;
-    if (window.AUKRO1408_HERO_LOADED) return;
-    window.AUKRO1408_HERO_LOADED = true;
 
-    var LANG = (Lampa.Storage && Lampa.Storage.get('language', 'ru') || 'ru').toLowerCase();
-    if (LANG === 'ua') LANG = 'uk';
-    if (['ru', 'uk', 'en', 'pl'].indexOf(LANG) === -1) LANG = 'en';
-
-    var TITLE = {
-        ru: 'Новинки проката',
-        uk: 'Новинки прокату',
-        en: 'New theatrical releases',
-        pl: 'Nowości kinowe'
+    var LANGUAGE = (Lampa.Storage.get('language', 'uk') || 'uk').toLowerCase();
+    var TEXT = {
+        releases: { uk: 'Новинки прокату', ru: 'Новинки проката', en: 'New theatrical releases', pl: 'Nowości kinowe' },
+        streaming: { uk: 'Стрімінги', ru: 'Стриминги', en: 'Streaming', pl: 'Serwisy streamingowe' },
+        new_movies: { uk: 'Нові фільми', ru: 'Новые фильмы', en: 'New movies', pl: 'Nowe filmy' },
+        new_series: { uk: 'Нові серіали', ru: 'Новые сериалы', en: 'New series', pl: 'Nowe seriale' }
     };
 
-    var API_KEY = null;
-
-    function getTmdbKey() {
-        try {
-            if (Lampa.TMDB && Lampa.TMDB.key) return Lampa.TMDB.key;
-            if (Lampa.Api && Lampa.Api.sources && Lampa.Api.sources.tmdb && Lampa.Api.sources.tmdb.key) {
-                return Lampa.Api.sources.tmdb.key;
-            }
-            if (Lampa.Storage) {
-                return Lampa.Storage.get('tmdb_key', '');
-            }
-        } catch (e) {}
-        return '';
+    function tr(key) {
+        var pack = TEXT[key];
+        return pack && (pack[LANGUAGE] || pack.uk || pack.en) || key;
     }
 
-    function tmdbUrl(path, params) {
-        var query = [];
-        params = params || {};
-
-        API_KEY = getTmdbKey();
-        if (API_KEY) query.push('api_key=' + encodeURIComponent(API_KEY));
-
-        query.push('language=' + encodeURIComponent(LANG === 'uk' ? 'uk-UA' : LANG === 'ru' ? 'ru-RU' : LANG === 'pl' ? 'pl-PL' : 'en-US'));
-
-        Object.keys(params).forEach(function (key) {
-            if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
-                query.push(encodeURIComponent(key) + '=' + encodeURIComponent(params[key]));
-            }
-        });
-
-        if (Lampa.TMDB && typeof Lampa.TMDB.api === 'function') {
-            return Lampa.TMDB.api(path + '?' + query.join('&'));
-        }
-
-        return 'https://api.themoviedb.org/3/' + path + '?' + query.join('&');
+    function tmdbKey() {
+        return (Lampa.Storage.get('flixio_tmdb_apikey') || '').trim() ||
+            (Lampa.TMDB && Lampa.TMDB.key ? Lampa.TMDB.key() : '');
     }
 
-    function poster(path) {
-        if (!path) return '';
-        if (typeof Lampa.TMDB !== 'undefined' && typeof Lampa.TMDB.image === 'function') {
-            return Lampa.TMDB.image(path, 'w780');
-        }
-        return 'https://image.tmdb.org/t/p/w780' + path;
+    function today() {
+        var d = new Date();
+        return [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
     }
 
-    function backdrop(path) {
-        if (!path) return '';
-        if (typeof Lampa.TMDB !== 'undefined' && typeof Lampa.TMDB.image === 'function') {
-            return Lampa.TMDB.image(path, 'w1280');
-        }
-        return 'https://image.tmdb.org/t/p/w1280' + path;
+    // ID провайдера TMDB и ID сети TMDB сохранены из Flixio.
+    // Карточек украинской, польской и русской лент здесь нет.
+    var SERVICES = [
+        { id: 'netflix', title: 'Netflix', provider: '8', network: '213' },
+        { id: 'disney', title: 'Disney+', provider: '337', network: '2739' },
+        { id: 'hbo', title: 'HBO / Max', provider: '384', network: '49|3186' },
+        { id: 'apple', title: 'Apple TV+', provider: '350', network: '2552|3235' },
+        { id: 'amazon', title: 'Prime Video', provider: '119', network: '1024' },
+        { id: 'hulu', title: 'Hulu', provider: '15', network: '453' },
+        { id: 'paramount', title: 'Paramount+', provider: '531', network: '4330' },
+        { id: 'sky_showtime', title: 'SkyShowtime', company: '4|33|521' },
+        { id: 'syfy', title: 'Syfy', network: '77' },
+        { id: 'educational', title: 'Discovery / Nat Geo', network: '64|91|43|2696|4|65' }
+    ];
+
+    function requestUrl(kind, filter, page) {
+        var params = [
+            'api_key=' + encodeURIComponent(tmdbKey()),
+            'language=' + encodeURIComponent(Lampa.Storage.get('language', 'uk')),
+            'page=' + (page || 1),
+            'sort_by=' + (kind === 'movie' ? 'primary_release_date.desc' : 'first_air_date.desc'),
+            (kind === 'movie' ? 'primary_release_date.lte=' : 'first_air_date.lte=') + today(),
+            'vote_count.gte=1'
+        ];
+        if (filter.provider) params.push('with_watch_providers=' + filter.provider, 'watch_region=UA');
+        if (filter.network) params.push('with_networks=' + filter.network);
+        if (filter.company) params.push('with_companies=' + filter.company);
+        return Lampa.TMDB.api('discover/' + kind + '?' + params.join('&'));
     }
 
-    function esc(value) {
-        return String(value || '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
-    }
+    function StreamingView(object) {
+        var comp = new Lampa.InteractionMain(object);
+        var service = SERVICES.filter(function (item) { return item.id === object.service_id; })[0];
+        if (!service) return comp;
 
-    function getYear(movie) {
-        var date = movie.release_date || '';
-        return date ? date.slice(0, 4) : '';
-    }
+        comp.create = function () {
+            var self = this;
+            var network = new Lampa.Reguest();
+            var pending = 2;
+            var rows = [];
 
-    function getMovieTitle(movie) {
-        return movie.title || movie.original_title || '';
-    }
-
-    function makeHeroResultItem(movie, heightEm) {
-        heightEm = heightEm || 22.5;
-
-        var item = {
-            title: getMovieTitle(movie),
-            img: poster(movie.poster_path),
-            params: {
-                createInstance: function (element) {
-                    return Lampa.Maker.make('Card', element, function (module) {
-                        return module.only('Card', 'Callback');
-                    });
-                },
-                emit: {
-                    onCreate: function () {
-                        try {
-                            var card = $(this.html);
-                            var bg = backdrop(movie.backdrop_path || movie.poster_path);
-
-                            card.addClass('aukro1408-hero');
-                            card.css({
-                                'background-image': 'linear-gradient(90deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.70) 35%, rgba(0,0,0,.18) 75%, rgba(0,0,0,.08) 100%), linear-gradient(0deg, rgba(0,0,0,.78), transparent 55%), url("' + bg + '")',
-                                'width': '100%',
-                                'height': heightEm + 'em',
-                                'background-size': 'cover',
-                                'background-position': 'center',
-                                'border-radius': '1em',
-                                'position': 'relative',
-                                'overflow': 'hidden',
-                                'box-shadow': '0 0 20px rgba(0,0,0,.45)',
-                                'margin-bottom': '.6em'
-                            });
-
-                            card.find('.card__view, .card__title, .card__age, .card-marks, .card__icons, .card__quality').remove();
-
-                            var title = esc(getMovieTitle(movie));
-                            var year = esc(getYear(movie));
-                            var rating = movie.vote_average ? '★ ' + Number(movie.vote_average).toFixed(1) : '';
-
-                            var meta = [];
-                            if (year) meta.push(year);
-                            if (rating) meta.push(rating);
-
-                            var posterUrl = poster(movie.poster_path);
-                            var posterHtml = posterUrl
-                                ? '<img src="' + posterUrl + '" style="position:absolute;right:7%;top:8%;height:84%;width:auto;max-width:30%;object-fit:cover;border-radius:.7em;box-shadow:0 1em 2.5em rgba(0,0,0,.55);z-index:2;">'
-                                : '';
-
-                            var html =
-                                posterHtml +
-                                '<div style="position:absolute;left:2.2em;right:34%;bottom:1.8em;z-index:3;">' +
-                                    '<div style="font-size:2.35em;line-height:1.05;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.8);margin-bottom:.35em;">' + title + '</div>' +
-                                    '<div style="display:flex;gap:.65em;align-items:center;color:rgba(255,255,255,.9);font-size:1em;margin-bottom:.55em;">' +
-                                        meta.map(function (m) { return '<span>' + m + '</span>'; }).join('') +
-                                    '</div>' +
-                                    '<div style="font-size:.92em;line-height:1.4;color:rgba(255,255,255,.78);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">' +
-                                        esc(movie.overview || '') +
-                                    '</div>' +
-                                '</div>';
-
-                            card.append(html);
-                            card[0].heroMovieData = movie;
-                            card.addClass('hero-banner');
-                        } catch (e) {
-                            console.warn('[aukro1408] hero render:', e);
-                        }
-                    }
+            function done(title, json) {
+                var results = json && json.results || [];
+                if (results.length) rows.push({ title: title, results: results, url: '', params: {} });
+                pending -= 1;
+                if (!pending) {
+                    if (rows.length) self.build(rows);
+                    else self.empty();
                 }
             }
+
+            network.silent(requestUrl('movie', service), function (json) { done(tr('new_movies'), json); }, function () { done(tr('new_movies')); });
+            network.silent(requestUrl('tv', service), function (json) { done(tr('new_series'), json); }, function () { done(tr('new_series')); });
+            return this.render();
         };
-
-        return item;
+        return comp;
     }
 
-    function loadMovies(callback) {
-        var url = tmdbUrl('movie/now_playing', {
-            page: 1,
-            region: LANG === 'ru' ? 'RU' : LANG === 'uk' ? 'UA' : LANG === 'pl' ? 'PL' : 'US'
-        });
-
-        if (!Lampa.Reguest) {
-            callback([]);
-            return;
-        }
-
-        var network = new Lampa.Reguest();
-
-        network.silent(url, function (json) {
-            var results = json && Array.isArray(json.results) ? json.results : [];
-            callback(results.filter(function (item) {
-                return item && (item.backdrop_path || item.poster_path);
-            }).slice(0, 10));
-        }, function () {
-            callback([]);
-        });
-    }
-
-    function addHeroRow() {
-        if (!Lampa.ContentRows || typeof Lampa.ContentRows.add !== 'function') return;
-
+    function addReleaseRow() {
         Lampa.ContentRows.add({
             index: 0,
-            name: 'aukro1408_hero',
-            title: TITLE[LANG] || TITLE.en,
+            name: 'flixio_lite_releases',
+            title: tr('releases'),
             screen: ['main'],
             call: function () {
                 return function (callback) {
-                    loadMovies(function (movies) {
-                        var items = [];
+                    var network = new Lampa.Reguest();
+                    var url = Lampa.TMDB.api('movie/now_playing?api_key=' + encodeURIComponent(tmdbKey()) +
+                        '&language=' + encodeURIComponent(Lampa.Storage.get('language', 'uk')) + '&region=UA');
+                    network.silent(url, function (json) {
+                        callback({ results: json.results || [], title: tr('releases'), params: { items: { view: 15, mapping: 'line' } } });
+                    }, function () { callback({ results: [] }); });
+                };
+            }
+        });
+    }
 
-                        movies.forEach(function (movie) {
-                            items.push(makeHeroResultItem(movie, 22.5));
-                        });
-
-                        callback({
-                            results: items,
-                            title: TITLE[LANG] || TITLE.en,
-                            params: {
-                                items: {
-                                    view: 5,
-                                    mapping: 'line'
+    function addStreamingRow() {
+        Lampa.ContentRows.add({
+            index: 1,
+            name: 'flixio_lite_streaming',
+            title: tr('streaming'),
+            screen: ['main'],
+            call: function () {
+                return function (callback) {
+                    callback({
+                        results: SERVICES.map(function (service) {
+                            return {
+                                id: service.id,
+                                title: service.title,
+                                params: {
+                                    createInstance: function () {
+                                        return Lampa.Maker.make('Card', this, function (module) { return module.only('Card', 'Callback'); });
+                                    },
+                                    emit: {
+                                        onCreate: function () {
+                                            var card = $(this.html);
+                                            card.addClass('card--studio flixio-lite-service');
+                                            card.find('.card__view').empty().append($('<div class="flixio-lite-logo"></div>').text(service.title));
+                                            card.find('.card__age, .card__year, .card__type, .card__textbox, .card__title').remove();
+                                        },
+                                        onlyEnter: function () {
+                                            Lampa.Activity.push({ url: '', title: service.title, component: 'flixio_lite_streaming_view', service_id: service.id, page: 1 });
+                                        }
+                                    }
                                 }
-                            }
-                        });
+                            };
+                        }),
+                        title: tr('streaming'),
+                        params: { items: { view: 15, mapping: 'line' } }
                     });
                 };
             }
         });
     }
 
-    function init() {
-        try {
-            addHeroRow();
-        } catch (e) {
-            console.warn('[aukro1408] init error:', e);
-        }
+    function addStyles() {
+        if ($('#flixio-lite-css').length) return;
+        $('body').append('<style id="flixio-lite-css">.flixio-lite-service .card__view{background:linear-gradient(135deg,#121212,#313131);display:flex;align-items:center;justify-content:center}.flixio-lite-logo{padding:.65em;text-align:center;font-size:1.15em;font-weight:700;line-height:1.2;color:#fff}</style>');
     }
 
-    init();
-
-})();
+    Lampa.Component.add('flixio_lite_streaming_view', StreamingView);
+    addStyles();
+    addReleaseRow();
+    addStreamingRow();
+}());
