@@ -674,7 +674,8 @@
                 params: {
                     with_genres: '27',
                     sort_by: 'first_air_date.desc',
-                    'vote_count.gte': '5',
+                    'vote_count.gte': '1',
+                    'first_air_date.gte': '{year_ago}',
                     'first_air_date.lte': '{current_date}'
                 }
             },
@@ -708,12 +709,20 @@
             for (var key in cat.params) {
                 var val = cat.params[key];
 
+                var d = new Date();
                 if (val === '{current_date}') {
-                    var d = new Date();
                     val = [
                         d.getFullYear(),
                         ('0' + (d.getMonth() + 1)).slice(-2),
                         ('0' + d.getDate()).slice(-2)
+                    ].join('-');
+                } else if (val === '{year_ago}') {
+                    var y = new Date(d.getTime());
+                    y.setFullYear(y.getFullYear() - 1);
+                    val = [
+                        y.getFullYear(),
+                        ('0' + (y.getMonth() + 1)).slice(-2),
+                        ('0' + y.getDate()).slice(-2)
                     ].join('-');
                 }
 
@@ -725,6 +734,15 @@
 
         comp.create = function () {
             var _this = this;
+            $('body').addClass('cinemax-horror-layout');
+            if (this.activity && !this.activity.__cinemaxHorrorDestroyWrapped) {
+                this.activity.__cinemaxHorrorDestroyWrapped = true;
+                var oldDestroy = this.activity.destroy;
+                this.activity.destroy = function () {
+                    $('body').removeClass('cinemax-horror-layout');
+                    if (oldDestroy) oldDestroy.apply(this, arguments);
+                };
+            }
             this.activity.loader(true);
 
             var status = new Lampa.Status(HORROR_CATEGORIES.length);
@@ -745,13 +763,16 @@
                             if (!cat || !data || !data.results || !data.results.length) return;
 
                             data.results.forEach(function (item) {
+                                var isTV = cat.url.indexOf('/tv') !== -1;
                                 if (!item.poster_path && item.backdrop_path) {
                                     item.poster_path = item.backdrop_path;
                                 }
 
-                                if (!item.media_type) {
-                                    item.media_type = cat.url.indexOf('/tv') !== -1 ? 'tv' : 'movie';
-                                }
+                                // Явно помечаем тип: это важно для Lampa при построении category-full.
+                                item.media_type = isTV ? 'tv' : 'movie';
+                                item.type = isTV ? 'tv' : 'movie';
+                                if (isTV && !item.first_air_date && item.release_date) item.first_air_date = item.release_date;
+                                if (!isTV && !item.release_date && item.first_air_date) item.release_date = item.first_air_date;
                             });
 
                             Lampa.Utils.extendItemsParams(data.results, {
@@ -785,12 +806,26 @@
                 network.silent(
                     url,
                     function (json) {
-                        if (json && json.results && Array.isArray(json.results)) {
-                            json.results.forEach(function (item) {
-                                if (!item.poster_path && item.backdrop_path) {
-                                    item.poster_path = item.backdrop_path;
-                                }
+                        var hasResults = json && Array.isArray(json.results) && json.results.length;
+                        var isTV = cat.url.indexOf('/tv') !== -1;
+
+                        // Если TMDB вернул пусто для новых сериалов, повторяем запрос без жёсткого периода.
+                        // Так ряд не исчезает из-за особенностей региональных данных TMDB.
+                        if (isTV && !hasResults && index === 1) {
+                            var fallbackParams = [
+                                'api_key=' + getTmdbKey(),
+                                'language=' + encodeURIComponent(Lampa.Storage.get('language', 'uk')),
+                                'page=1',
+                                'with_genres=27',
+                                'sort_by=first_air_date.desc',
+                                'vote_count.gte=1'
+                            ].join('&');
+                            network.silent(Lampa.TMDB.api('discover/tv?' + fallbackParams), function (fallback) {
+                                status.append(String(index), fallback || { results: [] });
+                            }, function () {
+                                status.append(String(index), { results: [] });
                             });
+                            return;
                         }
 
                         status.append(String(index), json || { results: [] });
@@ -2033,6 +2068,16 @@
     function addExtractStyles(){
         if ($('#flixio-extract-css').length) return;
         $('body').append('<style id="flixio-extract-css"> .card.hero-banner {     width: 52vw !important;     height: 25em !important;     margin: 0 1.5em 0.3em 0 !important;     display: inline-block;     scroll-snap-align: start;     scroll-margin-left: 1.5em !important; } .scroll__content:has(.hero-banner) {     scroll-snap-type: x mandatory;     padding-left: 1.5em !important; } .scroll--mask .scroll__content { padding: 1.2em 1em 1em; } .row--card { margin-bottom: -1.2em !important; } .items-line { padding-bottom: 2em !important; } .card--studio {     width: 12em !important;     height: 6.75em !important;     padding: 0 !important;     background: #f5f7fa;     border-radius: 0.8em;     display: flex;     align-items: center;     justify-content: center;     overflow: hidden;     box-shadow: 0 3px 10px rgba(0,0,0,0.35);     border: 1px solid rgba(255,255,255,0.06);     transition: transform 0.18s ease-out, box-shadow 0.18s ease-out; } .card--studio.focus {     transform: scale(1.06);     box-shadow: 0 0 18px rgba(255,255,255,0.9);     z-index: 10; } .card--studio .card__view {     width: 100%; height: 100%; padding: 0.6em !important;     box-sizing: border-box !important;     background-origin: content-box;     display: block; position: relative; } .studio-logo-wrap {     width: 100%; height: 100%; display: flex;     align-items: center; justify-content: center; } .studio-logo-img {     max-width: 70%; max-height: 60%; object-fit: contain; display: block; } .studio-logo-fallback {     display: none; font-weight: 700; font-size: 1.05em;     text-align: center; color: #000; padding: 0.4em; } .flixio-service-logo { display:inline-block; vertical-align:middle; margin-right:.4em; margin-bottom:.1em; } .flixio-service-logo img { height:1.4em; width:auto; display:block; } .flixio-extract .studios_main .card--wide, .flixio-extract .studios_view .card--wide, .studios_main .card--wide, .studios_view .card--wide { width:18.3em !important; } .studios_view .category-full { padding-top:1em; } .studio-subscription-btn {     display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;     margin-left:.4em; padding:.18em .22em; font-size:.4em; font-weight:800;     line-height:1; letter-spacing:.02em; border-radius:.25em;     border:1px solid rgba(255,255,255,.2); cursor:pointer;     transition:box-shadow .15s, transform .15s; } .company-start__name { display:inline-flex; align-items:center; flex-wrap:wrap; } .studio-subscription-btn.studio-subscription-btn--sub {     background:linear-gradient(135deg,#1565c0,#42a5f5); color:#fff; border-color:rgba(66,165,245,.4); } .studio-subscription-btn.studio-subscription-btn--unsub {     background:linear-gradient(135deg,#37474f,#78909c); color:#fff; border-color:rgba(120,144,156,.4); } .studio-subscription-btn.focus { box-shadow:0 0 0 2px #fff; transform:scale(1.05); } .flixio-more-btn {     width:14em !important; height:21em !important; border-radius:.8em;     background:rgba(255,255,255,.05); display:flex; align-items:center;     justify-content:center; cursor:pointer; transition:transform .2s, background .2s;     order:9999 !important; } .flixio-more-btn:hover,.flixio-more-btn.focus {     background:rgba(255,255,255,.15); transform:scale(1.05); box-shadow:0 0 0 3px #fff; } .flixio-more-btn > div { text-align:center; } .hero-banner .card-marks,.hero-banner .card__icons,.hero-banner .card__quality { display:none !important; } .show-more-button.focus,.card.show-more-button:focus,.kino-card.show-more-button:hover,.kino-card.show-more-button.focus {     transform:scale(1.05) !important; box-shadow:0 0 0 3px #fff !important; z-index:10 !important; } </style>');
+        // Адаптивная сетка для CinemaX Horror: на телефоне 3 карточки, на ТВ больше,
+        // при этом стандартная сетка других разделов Lampa не затрагивается.
+        $('body').append('<style id="cinemax-horror-grid-css">' +
+            '.cinemax-horror-layout .category-full{padding-left:1em;padding-right:1em;}' +
+            '.cinemax-horror-layout .category-full .card--wide{width:calc((100vw - 4.5em) / 3) !important;}' +
+            '.cinemax-horror-layout .category-full .card--wide .card__view{padding-bottom:56% !important;}' +
+            '@media screen and (min-width:900px){.cinemax-horror-layout .category-full .card--wide{width:calc((100vw - 7em) / 5) !important;}}' +
+            '@media screen and (min-width:1400px){.cinemax-horror-layout .category-full .card--wide{width:calc((100vw - 9em) / 7) !important;}}' +
+            '@media screen and (min-width:2000px){.cinemax-horror-layout .category-full .card--wide{width:calc((100vw - 11em) / 9) !important;}}' +
+            '</style>');
     }
 
     function setupExtractSettings(){
