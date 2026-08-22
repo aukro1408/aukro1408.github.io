@@ -2164,9 +2164,13 @@
             '@media screen and (min-width:900px){.cinemax-horror-layout .category-full .card--wide{width:calc((100vw - 7em) / 5) !important;}}' +
             '@media screen and (min-width:1400px){.cinemax-horror-layout .category-full .card--wide{width:calc((100vw - 9em) / 7) !important;}}' +
             '@media screen and (min-width:2000px){.cinemax-horror-layout .category-full .card--wide{width:calc((100vw - 11em) / 9) !important;}}' +
-            '.studios_main .card--wide,.studios_view .card--wide{width:calc((100vw - 4.5em) / 3) !important;}' +
-            '@media screen and (min-width:900px){.studios_main .card--wide,.studios_view .card--wide{width:calc((100vw - 7em) / 5) !important;}}' +
-            '@media screen and (min-width:1400px){.studios_main .card--wide,.studios_view .card--wide{width:calc((100vw - 9em) / 7) !important;}}' +
+            /* Full-page streaming catalogs: override Interface Mod's more-specific 18.3em rule. */
+            '.flixio-extract .studios_view .category-full{padding-left:1em;padding-right:1em;}' +
+            '.flixio-extract .studios_view .category-full .card--wide{width:calc((100vw - 4.5em) / 3) !important;}' +
+            '.flixio-extract .studios_view .category-full .card--wide .card__view{padding-bottom:56% !important;}' +
+            '@media screen and (min-width:900px){.flixio-extract .studios_view .category-full .card--wide{width:calc((100vw - 7em) / 5) !important;}}' +
+            '@media screen and (min-width:1400px){.flixio-extract .studios_view .category-full .card--wide{width:calc((100vw - 9em) / 7) !important;}}' +
+            '@media screen and (min-width:2000px){.flixio-extract .studios_view .category-full .card--wide{width:calc((100vw - 11em) / 9) !important;}}' +
             '</style>');
     }
 
