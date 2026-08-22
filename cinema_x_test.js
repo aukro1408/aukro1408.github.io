@@ -657,6 +657,8 @@
         var comp = new Lampa.InteractionMain(object);
         var network = new Lampa.Reguest();
 
+        // Важно: фильмы и сериалы запрашиваются ОТДЕЛЬНО, как в каталогах
+        // стриминговых сервисов Lampa. Никакого смешивания movie/tv в одном запросе.
         var HORROR_CATEGORIES = [
             {
                 title: '🔥 Новые фильмы',
@@ -664,9 +666,11 @@
                 params: {
                     with_genres: '27',
                     sort_by: 'primary_release_date.desc',
-                    'vote_count.gte': '5',
-                    'primary_release_date.lte': '{current_date}'
-                }
+                    'primary_release_date.lte': '{current_date}',
+                    'primary_release_date.gte': '{year_ago}',
+                    'vote_count.gte': '1'
+                },
+                mediaType: 'movie'
             },
             {
                 title: '🔥 Новые сериалы',
@@ -674,10 +678,11 @@
                 params: {
                     with_genres: '27',
                     sort_by: 'first_air_date.desc',
-                    'vote_count.gte': '1',
+                    'first_air_date.lte': '{current_date}',
                     'first_air_date.gte': '{year_ago}',
-                    'first_air_date.lte': '{current_date}'
-                }
+                    'vote_count.gte': '1'
+                },
+                mediaType: 'tv'
             },
             {
                 title: '⭐ Лучшие фильмы',
@@ -685,8 +690,10 @@
                 params: {
                     with_genres: '27',
                     sort_by: 'vote_average.desc',
-                    'vote_count.gte': '100'
-                }
+                    'vote_count.gte': '100',
+                    'vote_average.gte': '7'
+                },
+                mediaType: 'movie'
             },
             {
                 title: '⭐ Лучшие сериалы',
@@ -694,47 +701,108 @@
                 params: {
                     with_genres: '27',
                     sort_by: 'vote_average.desc',
-                    'vote_count.gte': '100'
-                }
+                    'vote_count.gte': '50',
+                    'vote_average.gte': '7'
+                },
+                mediaType: 'tv'
             }
         ];
 
-        function buildParams(cat) {
+        function dateValue(token) {
+            var d = new Date();
+            if (token === '{current_date}') d = new Date();
+            else if (token === '{year_ago}') {
+                d = new Date();
+                d.setFullYear(d.getFullYear() - 1);
+            }
+            return [
+                d.getFullYear(),
+                ('0' + (d.getMonth() + 1)).slice(-2),
+                ('0' + d.getDate()).slice(-2)
+            ].join('-');
+        }
+
+        function buildParams(cat, page) {
             var params = [
-                'api_key=' + getTmdbKey(),
+                'api_key=' + encodeURIComponent(getTmdbKey()),
                 'language=' + encodeURIComponent(Lampa.Storage.get('language', 'uk')),
-                'page=1'
+                'page=' + (page || 1),
+                'include_adult=false'
             ];
 
-            for (var key in cat.params) {
+            Object.keys(cat.params).forEach(function (key) {
                 var val = cat.params[key];
-
-                var d = new Date();
-                if (val === '{current_date}') {
-                    val = [
-                        d.getFullYear(),
-                        ('0' + (d.getMonth() + 1)).slice(-2),
-                        ('0' + d.getDate()).slice(-2)
-                    ].join('-');
-                } else if (val === '{year_ago}') {
-                    var y = new Date(d.getTime());
-                    y.setFullYear(y.getFullYear() - 1);
-                    val = [
-                        y.getFullYear(),
-                        ('0' + (y.getMonth() + 1)).slice(-2),
-                        ('0' + y.getDate()).slice(-2)
-                    ].join('-');
-                }
-
-                params.push(key + '=' + encodeURIComponent(val));
-            }
+                if (val === '{current_date}' || val === '{year_ago}') val = dateValue(val);
+                params.push(encodeURIComponent(key) + '=' + encodeURIComponent(val));
+            });
 
             return params.join('&');
+        }
+
+        function normalizeResults(results, mediaType) {
+            var seen = {};
+            var out = [];
+
+            (results || []).forEach(function (item) {
+                if (!item || !item.id || seen[item.id]) return;
+                seen[item.id] = true;
+
+                item.media_type = mediaType;
+                item.type = mediaType;
+
+                // Lampa uses title for movies and name for TV.
+                if (mediaType === 'tv') {
+                    if (!item.name && item.original_name) item.name = item.original_name;
+                    if (!item.first_air_date && item.release_date) item.first_air_date = item.release_date;
+                } else {
+                    if (!item.title && item.original_title) item.title = item.original_title;
+                    if (!item.release_date && item.first_air_date) item.release_date = item.first_air_date;
+                }
+
+                out.push(item);
+            });
+
+            return out;
+        }
+
+        function requestCategory(cat, done) {
+            var url = Lampa.TMDB.api(cat.url + '?' + buildParams(cat, 1));
+            network.silent(url, function (json) {
+                var results = normalizeResults(json && json.results, cat.mediaType);
+
+                // Для новых сериалов делаем второй, более мягкий запрос.
+                // Это повторяет подход сервисных каталогов: если свежий диапазон
+                // пуст, не скрываем саму категорию.
+                if (cat.mediaType === 'tv' && results.length === 0 && cat.title.indexOf('Новые') === 0) {
+                    var fallback = {
+                        title: cat.title,
+                        url: cat.url,
+                        params: {
+                            with_genres: '27',
+                            sort_by: 'popularity.desc',
+                            'vote_count.gte': '1'
+                        },
+                        mediaType: 'tv'
+                    };
+                    var fallbackUrl = Lampa.TMDB.api(fallback.url + '?' + buildParams(fallback, 1));
+                    network.silent(fallbackUrl, function (fallbackJson) {
+                        done(normalizeResults(fallbackJson && fallbackJson.results, 'tv'));
+                    }, function () {
+                        done([]);
+                    });
+                    return;
+                }
+
+                done(results);
+            }, function () {
+                done([]);
+            });
         }
 
         comp.create = function () {
             var _this = this;
             $('body').addClass('cinemax-horror-layout');
+
             if (this.activity && !this.activity.__cinemaxHorrorDestroyWrapped) {
                 this.activity.__cinemaxHorrorDestroyWrapped = true;
                 var oldDestroy = this.activity.destroy;
@@ -743,108 +811,54 @@
                     if (oldDestroy) oldDestroy.apply(this, arguments);
                 };
             }
+
             this.activity.loader(true);
 
-            var status = new Lampa.Status(HORROR_CATEGORIES.length);
-
-            status.onComplite = function () {
-                var rows = [];
-
-                if (status.data) {
-                    Object.keys(status.data)
-                        .sort(function (a, b) {
-                            return parseInt(a, 10) - parseInt(b, 10);
-                        })
-                        .forEach(function (key) {
-                            var index = parseInt(key, 10);
-                            var cat = HORROR_CATEGORIES[index];
-                            var data = status.data[key];
-
-                            if (!cat || !data || !data.results || !data.results.length) return;
-
-                            data.results.forEach(function (item) {
-                                var isTV = cat.url.indexOf('/tv') !== -1;
-                                if (!item.poster_path && item.backdrop_path) {
-                                    item.poster_path = item.backdrop_path;
-                                }
-
-                                // Явно помечаем тип: это важно для Lampa при построении category-full.
-                                item.media_type = isTV ? 'tv' : 'movie';
-                                item.type = isTV ? 'tv' : 'movie';
-                                if (isTV && !item.first_air_date && item.release_date) item.first_air_date = item.release_date;
-                                if (!isTV && !item.release_date && item.first_air_date) item.release_date = item.first_air_date;
-                            });
-
-                            Lampa.Utils.extendItemsParams(data.results, {
-                                style: { name: 'wide' }
-                            });
-
-                            rows.push({
-                                title: cat.title,
-                                results: data.results,
-                                url: cat.url,
-                                params: cat.params
-                            });
-                        });
-                }
-
-                if (rows.length) {
-                    _this.build(rows);
-                    _this.activity.loader(false);
-                } else {
-                    console.warn('[CinemaX] TMDB не вернул контент для раздела Ужасы');
-                    _this.empty();
-                    _this.activity.loader(false);
-                }
-            };
+            var rows = new Array(HORROR_CATEGORIES.length);
+            var pending = HORROR_CATEGORIES.length;
 
             HORROR_CATEGORIES.forEach(function (cat, index) {
-                var url = Lampa.TMDB.api(
-                    cat.url + '?' + buildParams(cat)
-                );
-
-                network.silent(
-                    url,
-                    function (json) {
-                        var hasResults = json && Array.isArray(json.results) && json.results.length;
-                        var isTV = cat.url.indexOf('/tv') !== -1;
-
-                        // Если TMDB вернул пусто для новых сериалов, повторяем запрос без жёсткого периода.
-                        // Так ряд не исчезает из-за особенностей региональных данных TMDB.
-                        if (isTV && !hasResults && index === 1) {
-                            var fallbackParams = [
-                                'api_key=' + getTmdbKey(),
-                                'language=' + encodeURIComponent(Lampa.Storage.get('language', 'uk')),
-                                'page=1',
-                                'with_genres=27',
-                                'sort_by=first_air_date.desc',
-                                'vote_count.gte=1'
-                            ].join('&');
-                            network.silent(Lampa.TMDB.api('discover/tv?' + fallbackParams), function (fallback) {
-                                status.append(String(index), fallback || { results: [] });
-                            }, function () {
-                                status.append(String(index), { results: [] });
-                            });
-                            return;
+                requestCategory(cat, function (results) {
+                    rows[index] = {
+                        title: cat.title,
+                        results: results,
+                        url: cat.url,
+                        query_params: cat.params,
+                        // Это ключевой момент: НЕ wide. Используем стандартную
+                        // строку Lampa, как у Netflix/других сервисных каталогов.
+                        params: {
+                            items: {
+                                mapping: 'line',
+                                view: 15
+                            }
                         }
+                    };
 
-                        status.append(String(index), json || { results: [] });
-                    },
-                    function () {
-                        status.append(String(index), { results: [] });
+                    pending--;
+                    if (pending !== 0) return;
+
+                    var validRows = rows.filter(function (row) {
+                        return row && row.results && row.results.length;
+                    });
+
+                    if (validRows.length) {
+                        _this.build(validRows);
+                    } else {
+                        console.warn('[CinemaX] TMDB не вернул контент для раздела Ужасы');
+                        _this.empty();
                     }
-                );
-            });
 
-            return this.render();
+                    _this.activity.loader(false);
+                });
+            });
         };
 
         comp.onMore = function (data) {
             Lampa.Activity.push({
                 url: data.url,
-                params: data.params,
+                params: data.query_params || data.params || {},
                 title: data.title,
-                component: 'flixio_extract_studios_view',
+                component: 'category_full',
                 page: 1
             });
         };
@@ -874,12 +888,17 @@
                         var data = status.data[key];
                         var cat = categories[num];
                         if (cat && data && data.results && data.results.length) {
-                            Lampa.Utils.extendItemsParams(data.results, { style: { name: 'wide' } });
                             fulldata.push({
                                 title: cat.title,
                                 results: data.results,
                                 url: cat.url,
-                                params: cat.params,
+                                params: {
+                                    items: {
+                                        mapping: 'line',
+                                        view: 15
+                                    }
+                                },
+                                query_params: cat.params,
                                 service_id: object.service_id
                             });
                         }
@@ -987,7 +1006,6 @@
                         var data = status.data[key];
                         var cat = categories[requestIndices[parseInt(key, 10)]];
                         if (cat && data && data.results && data.results.length) {
-                            Lampa.Utils.extendItemsParams(data.results, { style: { name: 'wide' } });
                             fulldata.push({
                                 title: cat.title,
                                 results: data.results,
@@ -1095,7 +1113,6 @@
                         var data = status.data[key];
                         var cat = categories[requestIndices[parseInt(key, 10)]];
                         if (cat && data && data.results && data.results.length) {
-                            Lampa.Utils.extendItemsParams(data.results, { style: { name: 'wide' } });
                             fulldata.push({
                                 title: cat.title,
                                 results: data.results,
@@ -1203,7 +1220,6 @@
                         var data = status.data[key];
                         var cat = categories[requestIndices[parseInt(key, 10)]];
                         if (cat && data && data.results && data.results.length) {
-                            Lampa.Utils.extendItemsParams(data.results, { style: { name: 'wide' } });
                             fulldata.push({
                                 title: cat.title,
                                 results: data.results,
