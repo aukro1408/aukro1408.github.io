@@ -1,52 +1,20 @@
 /**
- * CinemaX — плагін головної сторінки. Разработчик: aukro1408.
- * Кастомна головна, стрімінги, студії, підписки на студії, Кіноогляд.
+ * Flixio — Новинки проката + Стриминги (standalone extraction)
+ * Based on the supplied Flixio.js source.
+ * This plugin intentionally does NOT replace Lampa's main TMDB API loader,
+ * so it can coexist with other home-page plugins.
  */
-(function () {
+(function(){
     'use strict';
+    if (typeof Lampa === 'undefined') return;
+    if (window.FLIXIO_EXTRACT_LOADED) return;
+    window.FLIXIO_EXTRACT_LOADED = true;
 
-    window.CINEMAX_STUDIOS_VER = '4.0';
-    window.CINEMAX_STUDIOS_LOADED = false;
-    window.CINEMAX_STUDIOS_ERROR = null;
+    var FLIXIO_LANG = (Lampa.Storage.get('language', 'uk') || 'uk').toLowerCase();
+    if (FLIXIO_LANG === 'ua') FLIXIO_LANG = 'uk';
+    if (['uk','ru','en','pl'].indexOf(FLIXIO_LANG) === -1) FLIXIO_LANG = 'en';
 
-    if (typeof Lampa === 'undefined') {
-        window.CINEMAX_STUDIOS_ERROR = 'Lampa not found (script loaded before app?)';
-        return;
-    }
-
-
-    // =================================================================
-    // CONFIGURATION & CONSTANTS
-    // =================================================================
-
-    var currentScript = document.currentScript || [].slice.call(document.getElementsByTagName('script')).filter(function (s) {
-        return (s.src || '').indexOf('studios') !== -1 || (s.src || '').indexOf('fix.js') !== -1 || (s.src || '').indexOf('cinemax') !== -1;
-    })[0];
-
-    // Force CDN usage to ensure logos load correctly regardless of installation method
-    var CINEMAX_BASE_URL = 'https://cdn.jsdelivr.net/gh/syvyj/studio_2@main/';
-    var CINEMAX_LOGO_FALLBACK_CDN = 'https://cdn.jsdelivr.net/gh/syvyj/studio_2@main/';
-/*
-    var CINEMAX_BASE_URL = (currentScript && currentScript.src) ? currentScript.src.replace(/[#?].*$/, '').replace(/[^/]+$/, '') : 'http://127.0.0.1:3000/';
-    
-    if (CINEMAX_BASE_URL.indexOf('raw.githubusercontent.com') !== -1) {
-        CINEMAX_BASE_URL = CINEMAX_BASE_URL
-            .replace('raw.githubusercontent.com', 'cdn.jsdelivr.net/gh')
-            .replace(/\/([^@/]+\/[^@/]+)\/main\//, '/$1@main/')
-            .replace(/\/([^@/]+\/[^@/]+)\/master\//, '/$1@master/');
-    } else if (CINEMAX_BASE_URL.indexOf('.github.io') !== -1) {
-        // e.g. https://syvyj.github.io/studio_2/ → https://cdn.jsdelivr.net/gh/syvyj/studio_2@main/
-        var gitioMatch = CINEMAX_BASE_URL.match(/https?:\/\/([^.]+)\.github\.io\/([^/]+)\//i);
-        if (gitioMatch) {
-            CINEMAX_BASE_URL = 'https://cdn.jsdelivr.net/gh/' + gitioMatch[1] + '/' + gitioMatch[2] + '@main/';
-        }
-    }
-*/
-    var CINEMAX_LANG = (Lampa.Storage.get('language', 'uk') || 'uk').toLowerCase();
-    if (CINEMAX_LANG === 'ua') CINEMAX_LANG = 'uk';
-    if (['uk', 'ru', 'en', 'pl'].indexOf(CINEMAX_LANG) === -1) CINEMAX_LANG = 'en';
-
-    var CINEMAX_I18N = {
+    var FLIXIO_I18N = {
         hero_row_title: { uk: 'Новинки прокату', ru: 'Новинки проката', en: 'New theatrical releases', pl: 'Nowości kinowe' },
         hero_row_title_full: { uk: '🔥 Новинки прокату', ru: '🔥 Новинки проката', en: '🔥 New theatrical releases', pl: '🔥 Nowości kinowe' },
         streamings_row_title: { uk: 'Стрімінги', ru: 'Стриминги', en: 'Streaming', pl: 'Serwisy streamingowe' },
@@ -147,13 +115,11 @@
         pl_all_movies: { uk: 'Польські фільми (повна підбірка)', ru: 'Польские фильмы (полная подборка)', en: 'Polish movies (full collection)', pl: 'Polskie filmy (pełna kolekcja)' },
         pl_all_series: { uk: 'Польські серіали (повна підбірка)', ru: 'Польские сериалы (полная подборка)', en: 'Polish series (full collection)', pl: 'Polskie seriale (pełna kolekcja)' },
         pl_all_shows: { uk: 'Польські шоу та програми (повна підбірка)', ru: 'Польские шоу и программы (полная подборка)', en: 'Polish shows and programs (full collection)', pl: 'Polskie show i programy (pełna kolekcja)' },
-        settings_tab_title: { uk: 'CinemaX', ru: 'CinemaX', en: 'CinemaX', pl: 'CinemaX' },
-        settings_header_info: { uk: 'CinemaX — кастомна головна сторінка зі стрімінгами та мітками якості. Розробник: aukro1408', ru: 'CinemaX — кастомная главная страница со стримингами и метками качества. Разработчик: aukro1408', en: 'CinemaX — custom home screen with streaming services and quality badges. Developer: aukro1408', pl: 'CinemaX — niestandardowa strona główna ze streamingami i oznaczeniami jakości. Autor: aukro1408' },
+        settings_tab_title: { uk: 'Ліхтар', ru: 'Flixio', en: 'Flixio', pl: 'Flixio' },
+        settings_header_info: { uk: 'Ліхтар — кастомна головна сторінка з стрімінгами, мітками якості та українською озвучкою. Автор: Flixio Team', ru: 'Flixio — кастомная главная страница со стримингами, метками качества и украинской озвучкой. Автор: Flixio Team', en: 'Flixio — custom home screen with streamings, quality badges and Ukrainian audio. Author: Flixio Team', pl: 'Flixio — niestandardowa strona główna ze streamingami, oznaczeniami jakości i ukraińskim dubbingiem. Autor: Flixio Team' },
         settings_sections_title: { uk: 'Секції головної сторінки', ru: 'Секции главной страницы', en: 'Main screen sections', pl: 'Sekcje ekranu głównego' },
         settings_streamings_name: { uk: 'Стрімінги', ru: 'Стриминги', en: 'Streaming', pl: 'Serwisy streamingowe' },
         settings_streamings_desc: { uk: 'Секція з логотипами стрімінгових сервісів', ru: 'Секция с логотипами стриминговых сервисов', en: 'Row with streaming services logos', pl: 'Sekcja z logo serwisów streamingowych' },
-        settings_streaming_selection_title: { uk: 'Стрімінги на головній', ru: 'Стриминги на главной', en: 'Streaming services on home', pl: 'Serwisy streamingowe na stronie głównej' },
-        settings_streaming_selection_desc: { uk: 'Показувати цей сервіс у ряду стрімінгів на головній', ru: 'Показывать этот сервис в ряду стримингов на главной', en: 'Show this service in the streaming row on home', pl: 'Pokaż ten serwis w rzędzie streamingów na stronie głównej' },
         settings_hero_name: { uk: 'Новинки прокату', ru: 'Новинки проката', en: 'New theatrical releases', pl: 'Nowości kinowe' },
         settings_hero_desc: { uk: 'Ряд з новинками прокату на початку головної', ru: 'Ряд с новинками проката в начале главной', en: 'Row with theatrical new releases at the top', pl: 'Rząd z nowościami kinowymi na początku ekranu' },
         settings_row_ru_name: { uk: 'Новинки російської ленти', ru: 'Новинки Русской ленты', en: 'New in Russian feed', pl: 'Nowości rosyjskiej sekcji' },
@@ -254,11 +220,10 @@
     };
 
     function tr(key) {
-        var pack = CINEMAX_I18N[key];
+        var pack = FLIXIO_I18N[key];
         if (!pack) return key;
-        return pack[CINEMAX_LANG] || pack.uk || pack.en || key;
+        return pack[FLIXIO_LANG] || pack.uk || pack.en || key;
     }
-
     var SERVICE_CONFIGS = {
         'netflix': {
             title: 'Netflix',
@@ -410,7 +375,7 @@
 
 
     function getTmdbKey() {
-        var custom = (Lampa.Storage.get('cinemax_tmdb_apikey') || '').trim();
+        var custom = (Lampa.Storage.get('flixio_tmdb_apikey') || '').trim();
         return custom || (Lampa.TMDB && Lampa.TMDB.key ? Lampa.TMDB.key() : '');
     }
 
@@ -482,12 +447,612 @@
     // =================================================================
 
     // Один елемент геро-рядка (backdrop + overlay). heightEm — висота банеру (напр. 28).
-    function makeHeroResultItem(movie, heightEm) {
-        if (!$('#studios5-hero-css').length) {
-            $('body').append('<style id="studios5-hero-css">.hero-banner .card-marks, .hero-banner .card__icons, .hero-banner .card__quality { display: none !important; }</style>');
+    function StudiosView(object) {
+        var comp = new Lampa.InteractionCategory(object);
+        var network = new Lampa.Reguest();
+
+        function buildUrl(page) {
+            var params = [];
+            params.push('api_key=' + getTmdbKey());
+            params.push('language=' + Lampa.Storage.get('language', 'uk'));
+            params.push('page=' + page);
+
+            if (object.params) {
+                for (var key in object.params) {
+                    var val = object.params[key];
+                    if (val === '{current_date}') {
+                        var d = new Date();
+                        val = [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
+                    }
+                    params.push(key + '=' + val);
+                }
+            }
+            return Lampa.TMDB.api(object.url + '?' + params.join('&'));
         }
-        if (!$('#studios5-show-more-css').length) {
-            $('body').append('<style id="studios5-show-more-css">' +
+
+        comp.create = function () {
+            var _this = this;
+            network.silent(buildUrl(1), function (json) {
+                // FIX: Ensure all items have poster_path for display
+                // If backdrop_path exists but poster_path doesn't, use backdrop_path
+                if (json && json.results && Array.isArray(json.results)) {
+                    json.results.forEach(function (item) {
+                        if (!item.poster_path && item.backdrop_path) {
+                            item.poster_path = item.backdrop_path;
+                        }
+                    });
+                }
+                _this.build(json);
+            }, this.empty.bind(this));
+        };
+
+        comp.nextPageReuest = function (object, resolve, reject) {
+            network.silent(buildUrl(object.page), resolve, reject);
+        };
+
+        return comp;
+    }
+
+    // =================================================================
+    // ПІДПИСКИ НА СТУДІЇ (Ліхтар — інтегровано з studio_subscription)
+    // =================================================================
+    var FlixioStudioSubscription = (function () {
+        var storageKey = 'flixio_subscription_studios';
+
+        function getParams() {
+            var raw = Lampa.Storage.get(storageKey, '[]');
+            return typeof raw === 'string' ? (function () { try { return JSON.parse(raw); } catch (e) { return []; } })() : (Array.isArray(raw) ? raw : []);
+        }
+
+        function setParams(params) {
+            Lampa.Storage.set(storageKey, params);
+        }
+
+        function add(company) {
+            var c = { id: company.id, name: company.name || '', logo_path: company.logo_path || '' };
+            var studios = getParams();
+            if (!studios.find(function (s) { return String(s.id) === String(c.id); })) {
+                studios.push(c);
+                setParams(studios);
+                Lampa.Noty.show(Lampa.Lang.translate('title_bookmarked') || 'Додано в підписки');
+            }
+        }
+
+        function remove(company) {
+            var studios = getParams();
+            var idx = studios.findIndex(function (c) { return c.id === company.id; });
+            if (idx !== -1) {
+                studios.splice(idx, 1);
+                setParams(studios);
+                Lampa.Noty.show(Lampa.Lang.translate('title_unbookmarked'));
+            }
+        }
+
+        function isSubscribed(company) {
+            return !!getParams().find(function (c) { return c.id === company.id; });
+        }
+
+        function injectButton(object) {
+            var attempts = 0;
+            var interval = setInterval(function () {
+                var nameEl = $('.company-start__name');
+                var company = object.company;
+                if (!nameEl.length || !company || !company.id) {
+                    attempts++;
+                    if (attempts > 25) clearInterval(interval);
+                    return;
+                }
+                clearInterval(interval);
+                if (nameEl.find('.studio-subscription-btn').length) return;
+
+                var btn = $('<div class="studio-subscription-btn selector"></div>');
+
+                function updateState() {
+                    var sub = isSubscribed(company);
+                    btn.text(sub ? 'Відписатися' : 'Підписатися');
+                    btn.removeClass('studio-subscription-btn--sub studio-subscription-btn--unsub').addClass(sub ? 'studio-subscription-btn--unsub' : 'studio-subscription-btn--sub');
+                }
+
+                function doToggle() {
+                    if (isSubscribed(company)) remove(company);
+                    else add({ id: company.id, name: company.name || '', logo_path: company.logo_path || '' });
+                    updateState();
+                }
+
+                btn.on('click', function (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    doToggle();
+                });
+                btn.on('hover:enter', doToggle);
+
+                updateState();
+                nameEl.append(btn);
+
+                // Auto-focus the subscription button so it's visible immediately
+                setTimeout(function () {
+                    try {
+                        if (Lampa.Controller && Lampa.Controller.collectionFocus) {
+                            Lampa.Controller.collectionFocus(btn[0]);
+                        }
+                    } catch (e) { }
+                }, 300);
+            }, 200);
+        }
+
+        function registerComponent() {
+            // Удален компонент "Мои подписки"
+        }
+
+        return {
+            init: function () {
+                var existing = Lampa.Storage.get(storageKey, '[]');
+                var fromOld = Lampa.Storage.get('subscription_studios', '[]');
+                if ((!existing || existing === '[]' || (Array.isArray(existing) && !existing.length)) && fromOld && fromOld !== '[]') {
+                    try {
+                        var arr = typeof fromOld === 'string' ? JSON.parse(fromOld) : fromOld;
+                        if (Array.isArray(arr) && arr.length) setParams(arr);
+                    } catch (e) { }
+                }
+                registerComponent();
+            }
+        };
+    })();
+
+    // =================================================================
+    // MAIN PAGE ROWS
+    // =================================================================
+
+    // ========== Прибираємо секцію Shots ==========
+    function removeShotsSection() {
+        function doRemove() {
+            $('.items-line').each(function () {
+                var title = $(this).find('.items-line__title').text().trim();
+                if (title === 'Shots' || title === 'shots') {
+                    $(this).remove();
+                }
+            });
+        }
+        // Виконуємо із затримкою, бо Shots може підвантажитись пізніше
+        setTimeout(doRemove, 1000);
+        setTimeout(doRemove, 3000);
+        setTimeout(doRemove, 6000);
+    }
+
+    // ========== ROW 1: HERO SLIDER (New Releases) ==========
+    function StudiosMain(object) {
+        var comp = new Lampa.InteractionMain(object);
+        var config = SERVICE_CONFIGS[object.service_id];
+        if (!config) { comp.empty && comp.empty(); return comp; }
+
+        comp.create = function () {
+            var _this = this;
+            this.activity.loader(true);
+            var categories = config.categories;
+            var network = new Lampa.Reguest();
+            var total = categories.length; // No hero section
+            var status = new Lampa.Status(total);
+
+            status.onComplite = function () {
+                var fulldata = [];
+                // Hero section removed - only show categories
+                if (status.data) {
+                    Object.keys(status.data).sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); }).forEach(function (key) {
+                        var num = parseInt(key, 10);
+                        var data = status.data[key];
+                        var cat = categories[num];
+                        if (cat && data && data.results && data.results.length) {
+                            Lampa.Utils.extendItemsParams(data.results, { style: { name: 'wide' } });
+                            fulldata.push({
+                                title: cat.title,
+                                results: data.results,
+                                url: cat.url,
+                                params: cat.params,
+                                service_id: object.service_id
+                            });
+                        }
+                    });
+                }
+
+                if (fulldata.length) {
+                    _this.build(fulldata);
+                    _this.activity.loader(false);
+                } else {
+                    _this.empty();
+                }
+            };
+
+            var refCat = categories.find(function (c) { return c.params && (c.params.with_watch_providers || c.params.with_networks || c.params.with_companies); });
+            var filterSuffix = '';
+            if (refCat && refCat.params) {
+                if (refCat.params.with_watch_providers) {
+                    filterSuffix = '&with_watch_providers=' + refCat.params.with_watch_providers + '&watch_region=' + (refCat.params.watch_region || 'UA');
+                } else if (refCat.params.with_networks) {
+                    filterSuffix = '&with_networks=' + refCat.params.with_networks;
+                } else if (refCat.params.with_companies) {
+                    filterSuffix = '&with_companies=' + refCat.params.with_companies;
+                }
+            }
+
+            // Hero section removed - just load categories
+            categories.forEach(function (cat, index) {
+                var params = [];
+                params.push('api_key=' + getTmdbKey());
+                params.push('language=' + Lampa.Storage.get('language', 'uk'));
+                if (cat.params) {
+                    for (var key in cat.params) {
+                        var val = cat.params[key];
+                        if (val === '{current_date}') {
+                            var d = new Date();
+                            val = [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
+                        }
+                        params.push(key + '=' + val);
+                    }
+                }
+                var url = Lampa.TMDB.api(cat.url + '?' + params.join('&'));
+
+                console.log('[StudiosMain] Category', index + 1, ':', cat.title, 'URL:', url);
+
+                network.silent(url, function (json) {
+                    console.log('[StudiosMain] Category', index + 1, 'data received:', json);
+                    // FIX: Normalize image paths
+                    if (json && json.results && Array.isArray(json.results)) {
+                        json.results.forEach(function (item) {
+                            if (!item.poster_path && item.backdrop_path) {
+                                item.poster_path = item.backdrop_path;
+                            }
+                        });
+                    }
+                    status.append(index.toString(), json);
+                }, function () { status.error(); });
+            });
+
+            return this.render();
+        };
+
+        comp.onMore = function (data) {
+            Lampa.Activity.push({
+                url: data.url,
+                params: data.params,
+                title: data.title,
+                component: 'flixio_extract_studios_view',
+                page: 1
+            });
+        };
+
+        return comp;
+    }
+
+    // Категорії для секції «Українська стрічка» — фільми/серіали/шоу українського виробництва (TMDB)
+    // Жанри TV: Reality 10764, Talk 10767
+    var UKRAINIAN_FEED_CATEGORIES = [
+        { title: tr('ua_new_movies'), url: 'discover/movie', params: { with_origin_country: 'UA', sort_by: 'primary_release_date.desc', 'vote_count.gte': '5' } },
+        { title: tr('ua_new_tv'), url: 'discover/tv', params: { with_origin_country: 'UA', sort_by: 'first_air_date.desc', 'vote_count.gte': '5' } },
+        { title: tr('ua_shows'), url: 'discover/tv', params: { with_origin_country: 'UA', with_genres: '10764,10767', sort_by: 'popularity.desc' } },
+        { title: tr('ua_trending_movies'), url: 'discover/movie', params: { with_origin_country: 'UA', sort_by: 'popularity.desc' } },
+        { title: tr('ua_trending_series'), url: 'discover/tv', params: { with_origin_country: 'UA', sort_by: 'popularity.desc' } },
+        { title: tr('ua_best_movies'), url: 'discover/movie', params: { with_origin_country: 'UA', sort_by: 'vote_average.desc', 'vote_count.gte': '50' } },
+        { type: 'from_global', globalKey: 'FLIXIO_UA_MOVIES', title: tr('ua_all_movies') },
+        { type: 'from_global', globalKey: 'FLIXIO_UA_SERIES', title: tr('ua_all_series') }
+    ];
+
+    function UkrainianFeedMain(object) {
+        var comp = new Lampa.InteractionMain(object);
+        var network = new Lampa.Reguest();
+        var categories = UKRAINIAN_FEED_CATEGORIES;
+
+        comp.create = function () {
+            var _this = this;
+            this.activity.loader(true);
+            var requestIndices = [];
+            categories.forEach(function (c, i) { if (c.type !== 'from_global') requestIndices.push(i); });
+            var status = new Lampa.Status(requestIndices.length);
+
+            status.onComplite = function () {
+                var fulldata = [];
+                if (status.data) {
+                    Object.keys(status.data).sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); }).forEach(function (key) {
+                        var data = status.data[key];
+                        var cat = categories[requestIndices[parseInt(key, 10)]];
+                        if (cat && data && data.results && data.results.length) {
+                            Lampa.Utils.extendItemsParams(data.results, { style: { name: 'wide' } });
+                            fulldata.push({
+                                title: cat.title,
+                                results: data.results,
+                                url: cat.url,
+                                params: cat.params
+                            });
+                        }
+                    });
+                }
+                categories.forEach(function (cat) {
+                    if (cat.type === 'from_global' && cat.globalKey && window[cat.globalKey] && window[cat.globalKey].results && window[cat.globalKey].results.length) {
+                        var raw = window[cat.globalKey].results;
+                        var results = Array.isArray(raw) ? raw.slice(0, 100) : (raw.results || []).slice(0, 100);
+                        if (results.length === 0) return;
+                        Lampa.Utils.extendItemsParams(results, { style: { name: 'wide' } });
+                        var mediaType = (results[0] && results[0].media_type) ? results[0].media_type : 'movie';
+                        fulldata.push({
+                            title: cat.title,
+                            results: results,
+                            url: mediaType === 'tv' ? 'discover/tv' : 'discover/movie',
+                            params: { with_origin_country: 'UA' }
+                        });
+                    }
+                });
+                if (fulldata.length) {
+                    _this.build(fulldata);
+                    _this.activity.loader(false);
+                } else {
+                    _this.empty();
+                }
+            };
+
+            requestIndices.forEach(function (catIndex, rIdx) {
+                var cat = categories[catIndex];
+                var params = ['api_key=' + getTmdbKey(), 'language=' + Lampa.Storage.get('language', 'uk')];
+                if (cat.params) {
+                    for (var key in cat.params) {
+                        var val = cat.params[key];
+                        if (val === '{current_date}') {
+                            var d = new Date();
+                            val = [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
+                        }
+                        params.push(key + '=' + val);
+                    }
+                }
+                var url = Lampa.TMDB.api(cat.url + '?' + params.join('&'));
+                network.silent(url, function (json) {
+                    // FIX: Normalize image paths for all items
+                    if (json && json.results && Array.isArray(json.results)) {
+                        json.results.forEach(function (item) {
+                            if (!item.poster_path && item.backdrop_path) {
+                                item.poster_path = item.backdrop_path;
+                            }
+                        });
+                    }
+                    status.append(rIdx.toString(), json);
+                }, function () { status.error(); });
+            });
+
+            return this.render();
+        };
+
+        comp.onMore = function (data) {
+            Lampa.Activity.push({
+                url: data.url,
+                params: data.params,
+                title: data.title,
+                component: 'flixio_extract_studios_view',
+                page: 1
+            });
+        };
+
+        return comp;
+    }
+
+    // Категорії для секції «Польська стрічка» — фільми/серіали/шоу польського виробництва (TMDB)
+    var POLISH_FEED_CATEGORIES = [
+        { title: tr('pl_new_movies'), url: 'discover/movie', params: { with_origin_country: 'PL', sort_by: 'primary_release_date.desc', 'vote_count.gte': '5' } },
+        { title: tr('pl_new_tv'), url: 'discover/tv', params: { with_origin_country: 'PL', sort_by: 'first_air_date.desc', 'vote_count.gte': '5' } },
+        { title: tr('pl_shows'), url: 'discover/tv', params: { with_origin_country: 'PL', with_genres: '10764,10767', sort_by: 'popularity.desc' } },
+        { title: tr('pl_trending_movies'), url: 'discover/movie', params: { with_origin_country: 'PL', sort_by: 'popularity.desc' } },
+        { title: tr('pl_trending_series'), url: 'discover/tv', params: { with_origin_country: 'PL', sort_by: 'popularity.desc' } },
+        { title: tr('pl_best_movies'), url: 'discover/movie', params: { with_origin_country: 'PL', sort_by: 'vote_average.desc', 'vote_count.gte': '50' } },
+        { type: 'from_global', globalKey: 'FLIXIO_PL_MOVIES', title: tr('pl_all_movies') },
+        { type: 'from_global', globalKey: 'FLIXIO_PL_SERIES', title: tr('pl_all_series') },
+        { type: 'from_global', globalKey: 'FLIXIO_PL_SHOWS', title: tr('pl_all_shows') }
+    ];
+
+    function PolishFeedMain(object) {
+        var comp = new Lampa.InteractionMain(object);
+        var network = new Lampa.Reguest();
+        var categories = POLISH_FEED_CATEGORIES;
+
+        comp.create = function () {
+            var _this = this;
+            this.activity.loader(true);
+            var requestIndices = [];
+            categories.forEach(function (c, i) { if (c.type !== 'from_global') requestIndices.push(i); });
+            var status = new Lampa.Status(requestIndices.length);
+
+            status.onComplite = function () {
+                var fulldata = [];
+                if (status.data) {
+                    Object.keys(status.data).sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); }).forEach(function (key) {
+                        var data = status.data[key];
+                        var cat = categories[requestIndices[parseInt(key, 10)]];
+                        if (cat && data && data.results && data.results.length) {
+                            Lampa.Utils.extendItemsParams(data.results, { style: { name: 'wide' } });
+                            fulldata.push({
+                                title: cat.title,
+                                results: data.results,
+                                url: cat.url,
+                                params: cat.params
+                            });
+                        }
+                    });
+                }
+                categories.forEach(function (cat) {
+                    if (cat.type === 'from_global' && cat.globalKey && window[cat.globalKey] && window[cat.globalKey].results && window[cat.globalKey].results.length) {
+                        var raw = window[cat.globalKey].results;
+                        var results = Array.isArray(raw) ? raw.slice(0, 100) : (raw.results || []).slice(0, 100);
+                        if (results.length === 0) return;
+                        Lampa.Utils.extendItemsParams(results, { style: { name: 'wide' } });
+                        var mediaType = (results[0] && results[0].media_type) ? results[0].media_type : 'movie';
+                        fulldata.push({
+                            title: cat.title,
+                            results: results,
+                            url: mediaType === 'tv' ? 'discover/tv' : 'discover/movie',
+                            params: { with_origin_country: 'PL' }
+                        });
+                    }
+                });
+                if (fulldata.length) {
+                    _this.build(fulldata);
+                    _this.activity.loader(false);
+                } else {
+                    _this.empty();
+                }
+            };
+
+            requestIndices.forEach(function (catIndex, rIdx) {
+                var cat = categories[catIndex];
+                var params = ['api_key=' + getTmdbKey(), 'language=' + Lampa.Storage.get('language', 'uk')];
+                if (cat.params) {
+                    for (var key in cat.params) {
+                        var val = cat.params[key];
+                        if (val === '{current_date}') {
+                            var d = new Date();
+                            val = [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
+                        }
+                        params.push(key + '=' + val);
+                    }
+                }
+                var url = Lampa.TMDB.api(cat.url + '?' + params.join('&'));
+                network.silent(url, function (json) {
+                    // FIX: Normalize image paths
+                    if (json && json.results && Array.isArray(json.results)) {
+                        json.results.forEach(function (item) {
+                            if (!item.poster_path && item.backdrop_path) {
+                                item.poster_path = item.backdrop_path;
+                            }
+                        });
+                    }
+                    status.append(rIdx.toString(), json);
+                }, function () { status.error(); });
+            });
+
+            return this.render();
+        };
+
+        comp.onMore = function (data) {
+            Lampa.Activity.push({
+                url: data.url,
+                params: data.params,
+                title: data.title,
+                component: 'flixio_extract_studios_view',
+                page: 1
+            });
+        };
+
+        return comp;
+    }
+
+    // Категорії для секції «Російська стрічка» — фільми/серіали/шоу російською мовою (TMDB)
+    var RUSSIAN_FEED_CATEGORIES = [
+        { title: tr('ru_new_movies'), url: 'discover/movie', params: { with_original_language: 'ru', sort_by: 'primary_release_date.desc', 'vote_count.gte': '5' } },
+        { title: tr('ru_new_tv'), url: 'discover/tv', params: { with_original_language: 'ru', sort_by: 'first_air_date.desc', 'vote_count.gte': '5' } },
+        { title: tr('ru_shows'), url: 'discover/tv', params: { with_original_language: 'ru', with_genres: '10764,10767', sort_by: 'popularity.desc' } },
+        { title: tr('ru_trending_movies'), url: 'discover/movie', params: { with_original_language: 'ru', sort_by: 'popularity.desc' } },
+        { title: tr('ru_trending_series'), url: 'discover/tv', params: { with_original_language: 'ru', sort_by: 'popularity.desc' } },
+        { title: tr('ru_best_movies'), url: 'discover/movie', params: { with_original_language: 'ru', sort_by: 'vote_average.desc', 'vote_count.gte': '50' } },
+        { type: 'from_global', globalKey: 'FLIXIO_RU_MOVIES', title: tr('ru_all_movies') },
+        { type: 'from_global', globalKey: 'FLIXIO_RU_SERIES', title: tr('ru_all_series') },
+        { type: 'from_global', globalKey: 'FLIXIO_RU_SHOWS', title: tr('ru_all_shows') }
+    ];
+
+    function RussianFeedMain(object) {
+        var comp = new Lampa.InteractionMain(object);
+        var network = new Lampa.Reguest();
+        var categories = RUSSIAN_FEED_CATEGORIES;
+
+        comp.create = function () {
+            var _this = this;
+            this.activity.loader(true);
+            var requestIndices = [];
+            categories.forEach(function (c, i) { if (c.type !== 'from_global') requestIndices.push(i); });
+            var status = new Lampa.Status(requestIndices.length);
+
+            status.onComplite = function () {
+                var fulldata = [];
+                if (status.data) {
+                    Object.keys(status.data).sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); }).forEach(function (key) {
+                        var data = status.data[key];
+                        var cat = categories[requestIndices[parseInt(key, 10)]];
+                        if (cat && data && data.results && data.results.length) {
+                            Lampa.Utils.extendItemsParams(data.results, { style: { name: 'wide' } });
+                            fulldata.push({
+                                title: cat.title,
+                                results: data.results,
+                                url: cat.url,
+                                params: cat.params
+                            });
+                        }
+                    });
+                }
+                categories.forEach(function (cat) {
+                    if (cat.type === 'from_global' && cat.globalKey && window[cat.globalKey] && window[cat.globalKey].results && window[cat.globalKey].results.length) {
+                        var raw = window[cat.globalKey].results;
+                        var results = Array.isArray(raw) ? raw.slice(0, 100) : (raw.results || []).slice(0, 100);
+                        if (results.length === 0) return;
+                        Lampa.Utils.extendItemsParams(results, { style: { name: 'wide' } });
+                        var mediaType = (results[0] && results[0].media_type) ? results[0].media_type : 'movie';
+                        fulldata.push({
+                            title: cat.title,
+                            results: results,
+                            url: mediaType === 'tv' ? 'discover/tv' : 'discover/movie',
+                            params: { with_original_language: 'ru' }
+                        });
+                    }
+                });
+                if (fulldata.length) {
+                    _this.build(fulldata);
+                    _this.activity.loader(false);
+                } else {
+                    _this.empty();
+                }
+            };
+
+            requestIndices.forEach(function (catIndex, rIdx) {
+                var cat = categories[catIndex];
+                var params = ['api_key=' + getTmdbKey(), 'language=' + Lampa.Storage.get('language', 'uk')];
+                if (cat.params) {
+                    for (var key in cat.params) {
+                        var val = cat.params[key];
+                        if (val === '{current_date}') {
+                            var d = new Date();
+                            val = [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
+                        }
+                        params.push(key + '=' + val);
+                    }
+                }
+                var url = Lampa.TMDB.api(cat.url + '?' + params.join('&'));
+                network.silent(url, function (json) {
+                    // FIX: Normalize image paths
+                    if (json && json.results && Array.isArray(json.results)) {
+                        json.results.forEach(function (item) {
+                            if (!item.poster_path && item.backdrop_path) {
+                                item.poster_path = item.backdrop_path;
+                            }
+                        });
+                    }
+                    status.append(rIdx.toString(), json);
+                }, function () { status.error(); });
+            });
+
+            return this.render();
+        };
+
+        comp.onMore = function (data) {
+            Lampa.Activity.push({
+                url: data.url,
+                params: data.params,
+                title: data.title,
+                component: 'flixio_extract_studios_view',
+                page: 1
+            });
+        };
+
+        return comp;
+    }
+
+    function makeHeroResultItem(movie, heightEm) {
+        if (!$('#flixio-extract-hero-css').length) {
+            $('body').append('<style id="flixio-extract-hero-css">.hero-banner .card-marks, .hero-banner .card__icons, .hero-banner .card__quality { display: none !important; }</style>');
+        }
+        if (!$('#flixio-extract-show-more-css').length) {
+            $('body').append('<style id="flixio-extract-show-more-css">' +
                 '.show-more-button.focus { transform: scale(1.05) !important; box-shadow: 0 0 0 3px #fff !important; z-index: 10 !important; }' +
                 '.card.show-more-button:focus { transform: scale(1.05) !important; box-shadow: 0 0 0 3px #fff !important; z-index: 10 !important; }' +
                 '.kino-card.show-more-button:hover { transform: scale(1.05) !important; box-shadow: 0 0 0 3px #fff !important; z-index: 10 !important; }' +
@@ -784,610 +1349,10 @@
         };
     }
 
-    function StudiosMain(object) {
-        var comp = new Lampa.InteractionMain(object);
-        var config = SERVICE_CONFIGS[object.service_id];
-        if (!config) { comp.empty && comp.empty(); return comp; }
-
-        comp.create = function () {
-            var _this = this;
-            this.activity.loader(true);
-            var categories = config.categories;
-            var network = new Lampa.Reguest();
-            var total = categories.length; // No hero section
-            var status = new Lampa.Status(total);
-
-            status.onComplite = function () {
-                var fulldata = [];
-                // Hero section removed - only show categories
-                if (status.data) {
-                    Object.keys(status.data).sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); }).forEach(function (key) {
-                        var num = parseInt(key, 10);
-                        var data = status.data[key];
-                        var cat = categories[num];
-                        if (cat && data && data.results && data.results.length) {
-                            Lampa.Utils.extendItemsParams(data.results, { style: { name: 'wide' } });
-                            fulldata.push({
-                                title: cat.title,
-                                results: data.results,
-                                url: cat.url,
-                                params: cat.params,
-                                service_id: object.service_id
-                            });
-                        }
-                    });
-                }
-
-                if (fulldata.length) {
-                    _this.build(fulldata);
-                    _this.activity.loader(false);
-                } else {
-                    _this.empty();
-                }
-            };
-
-            var refCat = categories.find(function (c) { return c.params && (c.params.with_watch_providers || c.params.with_networks || c.params.with_companies); });
-            var filterSuffix = '';
-            if (refCat && refCat.params) {
-                if (refCat.params.with_watch_providers) {
-                    filterSuffix = '&with_watch_providers=' + refCat.params.with_watch_providers + '&watch_region=' + (refCat.params.watch_region || 'UA');
-                } else if (refCat.params.with_networks) {
-                    filterSuffix = '&with_networks=' + refCat.params.with_networks;
-                } else if (refCat.params.with_companies) {
-                    filterSuffix = '&with_companies=' + refCat.params.with_companies;
-                }
-            }
-
-            // Hero section removed - just load categories
-            categories.forEach(function (cat, index) {
-                var params = [];
-                params.push('api_key=' + getTmdbKey());
-                params.push('language=' + Lampa.Storage.get('language', 'uk'));
-                if (cat.params) {
-                    for (var key in cat.params) {
-                        var val = cat.params[key];
-                        if (val === '{current_date}') {
-                            var d = new Date();
-                            val = [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
-                        }
-                        params.push(key + '=' + val);
-                    }
-                }
-                var url = Lampa.TMDB.api(cat.url + '?' + params.join('&'));
-
-                console.log('[StudiosMain] Category', index + 1, ':', cat.title, 'URL:', url);
-
-                network.silent(url, function (json) {
-                    console.log('[StudiosMain] Category', index + 1, 'data received:', json);
-                    // FIX: Normalize image paths
-                    if (json && json.results && Array.isArray(json.results)) {
-                        json.results.forEach(function (item) {
-                            if (!item.poster_path && item.backdrop_path) {
-                                item.poster_path = item.backdrop_path;
-                            }
-                        });
-                    }
-                    status.append(index.toString(), json);
-                }, function () { status.error(); });
-            });
-
-            return this.render();
-        };
-
-        comp.onMore = function (data) {
-            Lampa.Activity.push({
-                url: data.url,
-                params: data.params,
-                title: data.title,
-                component: 'studios_view',
-                page: 1
-            });
-        };
-
-        return comp;
-    }
-
-    // Категорії для секції «Українська стрічка» — фільми/серіали/шоу українського виробництва (TMDB)
-    // Жанри TV: Reality 10764, Talk 10767
-    var UKRAINIAN_FEED_CATEGORIES = [
-        { title: tr('ua_new_movies'), url: 'discover/movie', params: { with_origin_country: 'UA', sort_by: 'primary_release_date.desc', 'vote_count.gte': '5' } },
-        { title: tr('ua_new_tv'), url: 'discover/tv', params: { with_origin_country: 'UA', sort_by: 'first_air_date.desc', 'vote_count.gte': '5' } },
-        { title: tr('ua_shows'), url: 'discover/tv', params: { with_origin_country: 'UA', with_genres: '10764,10767', sort_by: 'popularity.desc' } },
-        { title: tr('ua_trending_movies'), url: 'discover/movie', params: { with_origin_country: 'UA', sort_by: 'popularity.desc' } },
-        { title: tr('ua_trending_series'), url: 'discover/tv', params: { with_origin_country: 'UA', sort_by: 'popularity.desc' } },
-        { title: tr('ua_best_movies'), url: 'discover/movie', params: { with_origin_country: 'UA', sort_by: 'vote_average.desc', 'vote_count.gte': '50' } },
-        { type: 'from_global', globalKey: 'CINEMAX_UA_MOVIES', title: tr('ua_all_movies') },
-        { type: 'from_global', globalKey: 'CINEMAX_UA_SERIES', title: tr('ua_all_series') }
-    ];
-
-    function UkrainianFeedMain(object) {
-        var comp = new Lampa.InteractionMain(object);
-        var network = new Lampa.Reguest();
-        var categories = UKRAINIAN_FEED_CATEGORIES;
-
-        comp.create = function () {
-            var _this = this;
-            this.activity.loader(true);
-            var requestIndices = [];
-            categories.forEach(function (c, i) { if (c.type !== 'from_global') requestIndices.push(i); });
-            var status = new Lampa.Status(requestIndices.length);
-
-            status.onComplite = function () {
-                var fulldata = [];
-                if (status.data) {
-                    Object.keys(status.data).sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); }).forEach(function (key) {
-                        var data = status.data[key];
-                        var cat = categories[requestIndices[parseInt(key, 10)]];
-                        if (cat && data && data.results && data.results.length) {
-                            Lampa.Utils.extendItemsParams(data.results, { style: { name: 'wide' } });
-                            fulldata.push({
-                                title: cat.title,
-                                results: data.results,
-                                url: cat.url,
-                                params: cat.params
-                            });
-                        }
-                    });
-                }
-                categories.forEach(function (cat) {
-                    if (cat.type === 'from_global' && cat.globalKey && window[cat.globalKey] && window[cat.globalKey].results && window[cat.globalKey].results.length) {
-                        var raw = window[cat.globalKey].results;
-                        var results = Array.isArray(raw) ? raw.slice(0, 100) : (raw.results || []).slice(0, 100);
-                        if (results.length === 0) return;
-                        Lampa.Utils.extendItemsParams(results, { style: { name: 'wide' } });
-                        var mediaType = (results[0] && results[0].media_type) ? results[0].media_type : 'movie';
-                        fulldata.push({
-                            title: cat.title,
-                            results: results,
-                            url: mediaType === 'tv' ? 'discover/tv' : 'discover/movie',
-                            params: { with_origin_country: 'UA' }
-                        });
-                    }
-                });
-                if (fulldata.length) {
-                    _this.build(fulldata);
-                    _this.activity.loader(false);
-                } else {
-                    _this.empty();
-                }
-            };
-
-            requestIndices.forEach(function (catIndex, rIdx) {
-                var cat = categories[catIndex];
-                var params = ['api_key=' + getTmdbKey(), 'language=' + Lampa.Storage.get('language', 'uk')];
-                if (cat.params) {
-                    for (var key in cat.params) {
-                        var val = cat.params[key];
-                        if (val === '{current_date}') {
-                            var d = new Date();
-                            val = [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
-                        }
-                        params.push(key + '=' + val);
-                    }
-                }
-                var url = Lampa.TMDB.api(cat.url + '?' + params.join('&'));
-                network.silent(url, function (json) {
-                    // FIX: Normalize image paths for all items
-                    if (json && json.results && Array.isArray(json.results)) {
-                        json.results.forEach(function (item) {
-                            if (!item.poster_path && item.backdrop_path) {
-                                item.poster_path = item.backdrop_path;
-                            }
-                        });
-                    }
-                    status.append(rIdx.toString(), json);
-                }, function () { status.error(); });
-            });
-
-            return this.render();
-        };
-
-        comp.onMore = function (data) {
-            Lampa.Activity.push({
-                url: data.url,
-                params: data.params,
-                title: data.title,
-                component: 'studios_view',
-                page: 1
-            });
-        };
-
-        return comp;
-    }
-
-    // Категорії для секції «Польська стрічка» — фільми/серіали/шоу польського виробництва (TMDB)
-    var POLISH_FEED_CATEGORIES = [
-        { title: tr('pl_new_movies'), url: 'discover/movie', params: { with_origin_country: 'PL', sort_by: 'primary_release_date.desc', 'vote_count.gte': '5' } },
-        { title: tr('pl_new_tv'), url: 'discover/tv', params: { with_origin_country: 'PL', sort_by: 'first_air_date.desc', 'vote_count.gte': '5' } },
-        { title: tr('pl_shows'), url: 'discover/tv', params: { with_origin_country: 'PL', with_genres: '10764,10767', sort_by: 'popularity.desc' } },
-        { title: tr('pl_trending_movies'), url: 'discover/movie', params: { with_origin_country: 'PL', sort_by: 'popularity.desc' } },
-        { title: tr('pl_trending_series'), url: 'discover/tv', params: { with_origin_country: 'PL', sort_by: 'popularity.desc' } },
-        { title: tr('pl_best_movies'), url: 'discover/movie', params: { with_origin_country: 'PL', sort_by: 'vote_average.desc', 'vote_count.gte': '50' } },
-        { type: 'from_global', globalKey: 'CINEMAX_PL_MOVIES', title: tr('pl_all_movies') },
-        { type: 'from_global', globalKey: 'CINEMAX_PL_SERIES', title: tr('pl_all_series') },
-        { type: 'from_global', globalKey: 'CINEMAX_PL_SHOWS', title: tr('pl_all_shows') }
-    ];
-
-    function PolishFeedMain(object) {
-        var comp = new Lampa.InteractionMain(object);
-        var network = new Lampa.Reguest();
-        var categories = POLISH_FEED_CATEGORIES;
-
-        comp.create = function () {
-            var _this = this;
-            this.activity.loader(true);
-            var requestIndices = [];
-            categories.forEach(function (c, i) { if (c.type !== 'from_global') requestIndices.push(i); });
-            var status = new Lampa.Status(requestIndices.length);
-
-            status.onComplite = function () {
-                var fulldata = [];
-                if (status.data) {
-                    Object.keys(status.data).sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); }).forEach(function (key) {
-                        var data = status.data[key];
-                        var cat = categories[requestIndices[parseInt(key, 10)]];
-                        if (cat && data && data.results && data.results.length) {
-                            Lampa.Utils.extendItemsParams(data.results, { style: { name: 'wide' } });
-                            fulldata.push({
-                                title: cat.title,
-                                results: data.results,
-                                url: cat.url,
-                                params: cat.params
-                            });
-                        }
-                    });
-                }
-                categories.forEach(function (cat) {
-                    if (cat.type === 'from_global' && cat.globalKey && window[cat.globalKey] && window[cat.globalKey].results && window[cat.globalKey].results.length) {
-                        var raw = window[cat.globalKey].results;
-                        var results = Array.isArray(raw) ? raw.slice(0, 100) : (raw.results || []).slice(0, 100);
-                        if (results.length === 0) return;
-                        Lampa.Utils.extendItemsParams(results, { style: { name: 'wide' } });
-                        var mediaType = (results[0] && results[0].media_type) ? results[0].media_type : 'movie';
-                        fulldata.push({
-                            title: cat.title,
-                            results: results,
-                            url: mediaType === 'tv' ? 'discover/tv' : 'discover/movie',
-                            params: { with_origin_country: 'PL' }
-                        });
-                    }
-                });
-                if (fulldata.length) {
-                    _this.build(fulldata);
-                    _this.activity.loader(false);
-                } else {
-                    _this.empty();
-                }
-            };
-
-            requestIndices.forEach(function (catIndex, rIdx) {
-                var cat = categories[catIndex];
-                var params = ['api_key=' + getTmdbKey(), 'language=' + Lampa.Storage.get('language', 'uk')];
-                if (cat.params) {
-                    for (var key in cat.params) {
-                        var val = cat.params[key];
-                        if (val === '{current_date}') {
-                            var d = new Date();
-                            val = [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
-                        }
-                        params.push(key + '=' + val);
-                    }
-                }
-                var url = Lampa.TMDB.api(cat.url + '?' + params.join('&'));
-                network.silent(url, function (json) {
-                    // FIX: Normalize image paths
-                    if (json && json.results && Array.isArray(json.results)) {
-                        json.results.forEach(function (item) {
-                            if (!item.poster_path && item.backdrop_path) {
-                                item.poster_path = item.backdrop_path;
-                            }
-                        });
-                    }
-                    status.append(rIdx.toString(), json);
-                }, function () { status.error(); });
-            });
-
-            return this.render();
-        };
-
-        comp.onMore = function (data) {
-            Lampa.Activity.push({
-                url: data.url,
-                params: data.params,
-                title: data.title,
-                component: 'studios_view',
-                page: 1
-            });
-        };
-
-        return comp;
-    }
-
-    // Категорії для секції «Російська стрічка» — фільми/серіали/шоу російською мовою (TMDB)
-    var RUSSIAN_FEED_CATEGORIES = [
-        { title: tr('ru_new_movies'), url: 'discover/movie', params: { with_original_language: 'ru', sort_by: 'primary_release_date.desc', 'vote_count.gte': '5' } },
-        { title: tr('ru_new_tv'), url: 'discover/tv', params: { with_original_language: 'ru', sort_by: 'first_air_date.desc', 'vote_count.gte': '5' } },
-        { title: tr('ru_shows'), url: 'discover/tv', params: { with_original_language: 'ru', with_genres: '10764,10767', sort_by: 'popularity.desc' } },
-        { title: tr('ru_trending_movies'), url: 'discover/movie', params: { with_original_language: 'ru', sort_by: 'popularity.desc' } },
-        { title: tr('ru_trending_series'), url: 'discover/tv', params: { with_original_language: 'ru', sort_by: 'popularity.desc' } },
-        { title: tr('ru_best_movies'), url: 'discover/movie', params: { with_original_language: 'ru', sort_by: 'vote_average.desc', 'vote_count.gte': '50' } },
-        { type: 'from_global', globalKey: 'CINEMAX_RU_MOVIES', title: tr('ru_all_movies') },
-        { type: 'from_global', globalKey: 'CINEMAX_RU_SERIES', title: tr('ru_all_series') },
-        { type: 'from_global', globalKey: 'CINEMAX_RU_SHOWS', title: tr('ru_all_shows') }
-    ];
-
-    function RussianFeedMain(object) {
-        var comp = new Lampa.InteractionMain(object);
-        var network = new Lampa.Reguest();
-        var categories = RUSSIAN_FEED_CATEGORIES;
-
-        comp.create = function () {
-            var _this = this;
-            this.activity.loader(true);
-            var requestIndices = [];
-            categories.forEach(function (c, i) { if (c.type !== 'from_global') requestIndices.push(i); });
-            var status = new Lampa.Status(requestIndices.length);
-
-            status.onComplite = function () {
-                var fulldata = [];
-                if (status.data) {
-                    Object.keys(status.data).sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); }).forEach(function (key) {
-                        var data = status.data[key];
-                        var cat = categories[requestIndices[parseInt(key, 10)]];
-                        if (cat && data && data.results && data.results.length) {
-                            Lampa.Utils.extendItemsParams(data.results, { style: { name: 'wide' } });
-                            fulldata.push({
-                                title: cat.title,
-                                results: data.results,
-                                url: cat.url,
-                                params: cat.params
-                            });
-                        }
-                    });
-                }
-                categories.forEach(function (cat) {
-                    if (cat.type === 'from_global' && cat.globalKey && window[cat.globalKey] && window[cat.globalKey].results && window[cat.globalKey].results.length) {
-                        var raw = window[cat.globalKey].results;
-                        var results = Array.isArray(raw) ? raw.slice(0, 100) : (raw.results || []).slice(0, 100);
-                        if (results.length === 0) return;
-                        Lampa.Utils.extendItemsParams(results, { style: { name: 'wide' } });
-                        var mediaType = (results[0] && results[0].media_type) ? results[0].media_type : 'movie';
-                        fulldata.push({
-                            title: cat.title,
-                            results: results,
-                            url: mediaType === 'tv' ? 'discover/tv' : 'discover/movie',
-                            params: { with_original_language: 'ru' }
-                        });
-                    }
-                });
-                if (fulldata.length) {
-                    _this.build(fulldata);
-                    _this.activity.loader(false);
-                } else {
-                    _this.empty();
-                }
-            };
-
-            requestIndices.forEach(function (catIndex, rIdx) {
-                var cat = categories[catIndex];
-                var params = ['api_key=' + getTmdbKey(), 'language=' + Lampa.Storage.get('language', 'uk')];
-                if (cat.params) {
-                    for (var key in cat.params) {
-                        var val = cat.params[key];
-                        if (val === '{current_date}') {
-                            var d = new Date();
-                            val = [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
-                        }
-                        params.push(key + '=' + val);
-                    }
-                }
-                var url = Lampa.TMDB.api(cat.url + '?' + params.join('&'));
-                network.silent(url, function (json) {
-                    // FIX: Normalize image paths
-                    if (json && json.results && Array.isArray(json.results)) {
-                        json.results.forEach(function (item) {
-                            if (!item.poster_path && item.backdrop_path) {
-                                item.poster_path = item.backdrop_path;
-                            }
-                        });
-                    }
-                    status.append(rIdx.toString(), json);
-                }, function () { status.error(); });
-            });
-
-            return this.render();
-        };
-
-        comp.onMore = function (data) {
-            Lampa.Activity.push({
-                url: data.url,
-                params: data.params,
-                title: data.title,
-                component: 'studios_view',
-                page: 1
-            });
-        };
-
-        return comp;
-    }
-
-    function StudiosView(object) {
-        var comp = new Lampa.InteractionCategory(object);
-        var network = new Lampa.Reguest();
-
-        function buildUrl(page) {
-            var params = [];
-            params.push('api_key=' + getTmdbKey());
-            params.push('language=' + Lampa.Storage.get('language', 'uk'));
-            params.push('page=' + page);
-
-            if (object.params) {
-                for (var key in object.params) {
-                    var val = object.params[key];
-                    if (val === '{current_date}') {
-                        var d = new Date();
-                        val = [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
-                    }
-                    params.push(key + '=' + val);
-                }
-            }
-            return Lampa.TMDB.api(object.url + '?' + params.join('&'));
-        }
-
-        comp.create = function () {
-            var _this = this;
-            network.silent(buildUrl(1), function (json) {
-                // FIX: Ensure all items have poster_path for display
-                // If backdrop_path exists but poster_path doesn't, use backdrop_path
-                if (json && json.results && Array.isArray(json.results)) {
-                    json.results.forEach(function (item) {
-                        if (!item.poster_path && item.backdrop_path) {
-                            item.poster_path = item.backdrop_path;
-                        }
-                    });
-                }
-                _this.build(json);
-            }, this.empty.bind(this));
-        };
-
-        comp.nextPageReuest = function (object, resolve, reject) {
-            network.silent(buildUrl(object.page), resolve, reject);
-        };
-
-        return comp;
-    }
-
-    // =================================================================
-    // ПІДПИСКИ НА СТУДІЇ (CinemaX — інтегровано з studio_subscription)
-    // =================================================================
-    var CinemaXStudioSubscription = (function () {
-        var storageKey = 'cinemax_subscription_studios';
-
-        function getParams() {
-            var raw = Lampa.Storage.get(storageKey, '[]');
-            return typeof raw === 'string' ? (function () { try { return JSON.parse(raw); } catch (e) { return []; } })() : (Array.isArray(raw) ? raw : []);
-        }
-
-        function setParams(params) {
-            Lampa.Storage.set(storageKey, params);
-        }
-
-        function add(company) {
-            var c = { id: company.id, name: company.name || '', logo_path: company.logo_path || '' };
-            var studios = getParams();
-            if (!studios.find(function (s) { return String(s.id) === String(c.id); })) {
-                studios.push(c);
-                setParams(studios);
-                Lampa.Noty.show(Lampa.Lang.translate('title_bookmarked') || 'Додано в підписки');
-            }
-        }
-
-        function remove(company) {
-            var studios = getParams();
-            var idx = studios.findIndex(function (c) { return c.id === company.id; });
-            if (idx !== -1) {
-                studios.splice(idx, 1);
-                setParams(studios);
-                Lampa.Noty.show(Lampa.Lang.translate('title_unbookmarked'));
-            }
-        }
-
-        function isSubscribed(company) {
-            return !!getParams().find(function (c) { return c.id === company.id; });
-        }
-
-        function injectButton(object) {
-            var attempts = 0;
-            var interval = setInterval(function () {
-                var nameEl = $('.company-start__name');
-                var company = object.company;
-                if (!nameEl.length || !company || !company.id) {
-                    attempts++;
-                    if (attempts > 25) clearInterval(interval);
-                    return;
-                }
-                clearInterval(interval);
-                if (nameEl.find('.studio-subscription-btn').length) return;
-
-                var btn = $('<div class="studio-subscription-btn selector"></div>');
-
-                function updateState() {
-                    var sub = isSubscribed(company);
-                    btn.text(sub ? 'Відписатися' : 'Підписатися');
-                    btn.removeClass('studio-subscription-btn--sub studio-subscription-btn--unsub').addClass(sub ? 'studio-subscription-btn--unsub' : 'studio-subscription-btn--sub');
-                }
-
-                function doToggle() {
-                    if (isSubscribed(company)) remove(company);
-                    else add({ id: company.id, name: company.name || '', logo_path: company.logo_path || '' });
-                    updateState();
-                }
-
-                btn.on('click', function (e) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    doToggle();
-                });
-                btn.on('hover:enter', doToggle);
-
-                updateState();
-                nameEl.append(btn);
-
-                // Auto-focus the subscription button so it's visible immediately
-                setTimeout(function () {
-                    try {
-                        if (Lampa.Controller && Lampa.Controller.collectionFocus) {
-                            Lampa.Controller.collectionFocus(btn[0]);
-                        }
-                    } catch (e) { }
-                }, 300);
-            }, 200);
-        }
-
-        function registerComponent() {
-            // Удален компонент "Мои подписки"
-        }
-
-        return {
-            init: function () {
-                var existing = Lampa.Storage.get(storageKey, '[]');
-                var fromOld = Lampa.Storage.get('subscription_studios', '[]');
-                if ((!existing || existing === '[]' || (Array.isArray(existing) && !existing.length)) && fromOld && fromOld !== '[]') {
-                    try {
-                        var arr = typeof fromOld === 'string' ? JSON.parse(fromOld) : fromOld;
-                        if (Array.isArray(arr) && arr.length) setParams(arr);
-                    } catch (e) { }
-                }
-                registerComponent();
-            }
-        };
-    })();
-
-    // =================================================================
-    // MAIN PAGE ROWS
-    // =================================================================
-
-    // ========== Прибираємо секцію Shots ==========
-    function removeShotsSection() {
-        function doRemove() {
-            $('.items-line').each(function () {
-                var title = $(this).find('.items-line__title').text().trim();
-                if (title === 'Shots' || title === 'shots') {
-                    $(this).remove();
-                }
-            });
-        }
-        // Виконуємо із затримкою, бо Shots може підвантажитись пізніше
-        setTimeout(doRemove, 1000);
-        setTimeout(doRemove, 3000);
-        setTimeout(doRemove, 6000);
-    }
-
-    // ========== ROW 1: HERO SLIDER (New Releases) ==========
     function addHeroRow() {
         Lampa.ContentRows.add({
             index: 0,
-            name: 'custom_hero_row',
+            name: 'flixio_extract_hero_row',
             title: tr('hero_row_title'),
             screen: ['main'],
             call: function (params) {
@@ -1400,4 +1365,51 @@
                         var items = json.results || [];
                         if (!items.length) {
                             // Fallback if no fresh movies
-                            url = Lampa.TMDB.api('trending/all/week?api_key=' + getTmdb
+                            url = Lampa.TMDB.api('trending/all/week?api_key=' + getTmdbKey() + '&language=' + Lampa.Storage.get('language', 'uk'));
+                            network.silent(url, function (retryJson) {
+                                items = retryJson.results || [];
+                                build(items);
+                            });
+                            return;
+                        }
+                        build(items);
+
+                        function build(movies) {
+                            var moviesWithBackdrop = movies.filter(function (m) { return m.backdrop_path; });
+                            var results = moviesWithBackdrop.slice(0, 15).map(function (movie) { return makeHeroResultItem(movie, 22.5); });
+
+                            callback({
+                                results: results,
+                                title: tr('hero_row_title_full'),
+                                params: {
+                                    items: {
+                                        mapping: 'line',
+                                        view: 15
+                                    }
+                                }
+                            });
+                        }
+
+                    }, function () {
+                        callback({ results: [] });
+                    });
+                };
+            }
+        });
+    }
+
+    // ========== ROW 2: STUDIOS (Moved Up) ==========
+    function addStudioRow() {
+    // Скрытые стриминги сохраняются локально. Долгий тап по карточке удаляет
+    // только её из главной страницы, обычный тап продолжает открывать сервис.
+    var hiddenKey = 'cinemax_hidden_streamings';
+    function getHiddenStreamings() {
+        var hidden = Lampa.Storage.get(hiddenKey, '[]');
+        if (typeof hidden === 'string') {
+            try { hidden = JSON.parse(hidden); } catch (e) { hidden = []; }
+        }
+        return Array.isArray(hidden) ? hidden : [];
+    }
+    function hideStreaming(id) {
+        var hidden = getHiddenStreamings();
+        if (hidden.indexOf(id) === -
