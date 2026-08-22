@@ -372,6 +372,12 @@
                 { "title": tr('cat_adult_animation'), "url": "discover/tv", "params": { "with_networks": "453", "with_genres": "16", "sort_by": "popularity.desc" } }
             ]
         },
+        'megogo': {
+            title: 'MEGOGO',
+            logo: 'megogo',
+            icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#111"/><path d="M7 15.5V8.5l5 4 5-4v7" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+            categories: []
+        },
         'syfy': {
             title: 'Syfy',
             logo: 'logos/Syfy.svg',
@@ -647,127 +653,86 @@
 
     // ========== ROW 1: HERO SLIDER (New Releases) ==========
 
-    // ========== MEGOGO: TMDB WATCH PROVIDER DISCOVERY ==========
     function CinemaXMegogo(object) {
         var comp = new Lampa.InteractionMain(object);
 
         comp.create = function () {
             var _this = this;
             this.activity.loader(true);
-
             var network = new Lampa.Reguest();
-            var apiKey = 'api_key=' + getTmdbKey();
+            var key = getTmdbKey();
             var lang = Lampa.Storage.get('language', 'uk');
             var region = 'UA';
 
-            function findProvider(list) {
-                var results = (list && list.results) || [];
-                for (var i = 0; i < results.length; i++) {
-                    var name = String(results[i].provider_name || '').toLowerCase();
-                    if (name.indexOf('megogo') !== -1 || name.indexOf('mego go') !== -1) {
-                        return results[i];
+            function findProvider(json) {
+                var list = (json && json.results) || [];
+                for (var i = 0; i < list.length; i++) {
+                    if (String(list[i].provider_name || '').toLowerCase().indexOf('megogo') !== -1) {
+                        return list[i];
                     }
                 }
                 return null;
             }
 
-            function loadType(type, providerId, done) {
+            function discover(type, providerId, done) {
                 var url = Lampa.TMDB.api(
                     'discover/' + type +
-                    '?' + apiKey +
+                    '?api_key=' + key +
                     '&language=' + encodeURIComponent(lang) +
                     '&watch_region=' + region +
                     '&with_watch_providers=' + encodeURIComponent(providerId) +
                     '&sort_by=popularity.desc&page=1'
                 );
-
                 network.silent(url, function (json) {
                     done(json && json.results ? json.results : []);
-                }, function () {
-                    done([]);
-                });
+                }, function () { done([]); });
             }
 
-            function build(provider) {
+            function loadProvider(endpoint, done) {
+                var url = Lampa.TMDB.api(
+                    'watch/providers/' + endpoint +
+                    '?api_key=' + key +
+                    '&language=' + encodeURIComponent(lang) +
+                    '&watch_region=' + region
+                );
+                network.silent(url, function (json) {
+                    done(findProvider(json));
+                }, function () { done(null); });
+            }
+
+            function render(provider) {
                 if (!provider || !provider.provider_id) {
-                    console.warn('[CinemaX] MEGOGO не найден среди TMDB watch providers для UA');
+                    console.warn('[CinemaX] MEGOGO provider not found in TMDB for UA');
                     _this.empty();
                     _this.activity.loader(false);
                     return;
                 }
 
-                console.log('[CinemaX] MEGOGO TMDB provider:', provider.provider_id, provider.provider_name);
-
                 var status = new Lampa.Status(2);
-                var data = {};
+                var movies = [], tv = [];
 
                 status.onComplite = function () {
                     var rows = [];
-
-                    if (data.movies && data.movies.length) {
-                        Lampa.Utils.extendItemsParams(data.movies, { style: { name: 'wide' } });
-                        rows.push({
-                            title: 'MEGOGO — Фильмы',
-                            results: data.movies,
-                            params: { items: { mapping: 'line', view: 15 } }
-                        });
+                    if (movies.length) {
+                        Lampa.Utils.extendItemsParams(movies, {style:{name:'wide'}});
+                        rows.push({title:'MEGOGO — Фильмы', results:movies, params:{items:{mapping:'line',view:15}}});
                     }
-
-                    if (data.tv && data.tv.length) {
-                        Lampa.Utils.extendItemsParams(data.tv, { style: { name: 'wide' } });
-                        rows.push({
-                            title: 'MEGOGO — Сериалы',
-                            results: data.tv,
-                            params: { items: { mapping: 'line', view: 15 } }
-                        });
+                    if (tv.length) {
+                        Lampa.Utils.extendItemsParams(tv, {style:{name:'wide'}});
+                        rows.push({title:'MEGOGO — Сериалы', results:tv, params:{items:{mapping:'line',view:15}}});
                     }
-
-                    if (rows.length) {
-                        _this.build(rows);
-                    } else {
-                        console.warn('[CinemaX] MEGOGO найден в TMDB, но контент не найден');
-                        _this.empty();
-                    }
-
+                    if (rows.length) _this.build(rows);
+                    else _this.empty();
                     _this.activity.loader(false);
                 };
 
-                loadType('movie', provider.provider_id, function (items) {
-                    data.movies = items;
-                    status.append();
-                });
-
-                loadType('tv', provider.provider_id, function (items) {
-                    data.tv = items;
-                    status.append();
-                });
+                discover('movie', provider.provider_id, function (r) { movies = r; status.append(); });
+                discover('tv', provider.provider_id, function (r) { tv = r; status.append(); });
             }
 
-            function discoverProvider(endpoint, fallback) {
-                network.silent(
-                    Lampa.TMDB.api('watch/providers/' + endpoint + '?' + apiKey +
-                        '&language=' + encodeURIComponent(lang) +
-                        '&watch_region=' + region),
-                    function (json) {
-                        var provider = findProvider(json);
-                        if (provider) {
-                            build(provider);
-                        } else if (fallback) {
-                            fallback();
-                        } else {
-                            build(null);
-                        }
-                    },
-                    function () {
-                        if (fallback) fallback();
-                        else build(null);
-                    }
-                );
-            }
-
-            // First check movie providers, then TV providers.
-            discoverProvider('movie', function () {
-                discoverProvider('tv');
+            loadProvider('movie', function (provider) {
+                if (provider) render(provider);
+                else loadProvider('tv', render);
             });
         };
 
@@ -1561,6 +1526,12 @@
             svg: '<svg viewBox="0 0 256 69" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M35.2 64.726c-3.85.676-7.77.88-11.823 1.42L11.013 29.93V67.7c-3.85.405-7.364.946-11.013 1.486V0h10.27l14.053 39.255V0H35.2v64.726zm21.283-39.39l14.46-.203v10.8l-14.46.203v16.08l19.12-1.15v10.404l-29.93 2.365V0h29.93v10.8h-19.12v14.526zm59.32-14.526H104.59v49.727l-10.8.135V10.81H82.564V0h33.24v10.81zm17.567 13.783h14.797v10.8H133.37V59.93h-10.608V0h30.202v10.8H133.37v13.783zm37.16 25.877c6.15.135 12.364.608 18.377.946V62.09l-29.187-1.42V0h10.8v50.47zm27.5 12.364c3.446.203 7.094.406 10.607.81V0H198.03v62.835zM256 0l-13.716 32.904L256 69.186c-4.054-.54-8.108-1.284-12.162-1.96l-7.77-19.998-7.904 18.378c-3.92-.676-7.703-.88-11.62-1.42l13.918-31.688L217.894 0h11.62l7.094 18.175L244.176 0H256z" fill="#E50914"/></svg>', 
             providerId: '8' 
         },
+        {
+            id: 'megogo',
+            name: 'MEGOGO',
+            svg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="15 27 56 32.2"><path d="M23 37.7427V33.5028C23 29.5323 27.1293 26.8716 30.8059 28.4731L40.887 32.8642C42.3163 33.4868 43.9447 33.4868 45.3741 32.8642L55.4551 28.4731C59.1317 26.8716 63.2611 29.5323 63.2611 33.5028V37.7427M23 50.696V52.6991C23 55.7349 25.4904 58.1958 28.5624 58.1958H57.6987C60.7707 58.1958 63.2611 55.7349 63.2611 52.6991V50.696" stroke="#22C3B1" stroke-width="2"/><path d="M21.3881 41.175V47.4379H19.7955V44.0649L18.2746 46.579H18.1135L16.6015 44.0738V47.4379H15V41.175H16.6015L18.194 43.8502L19.7955 41.175H21.3881Z" fill="black"/><path d="M27.2948 45.9348H29.7194V47.4379H25.6933V41.175H29.6747V42.6692H27.2948V43.537H29.451V45.0133H27.2948V45.9348Z" fill="black"/><path d="M39.9661 43.8502V44.4854C39.9661 45.4039 39.6768 46.1495 39.0982 46.7221C38.5256 47.2888 37.78 47.5721 36.8615 47.5721C35.8833 47.5721 35.0781 47.2589 34.4458 46.6327C33.8195 46.0064 33.5064 45.234 33.5064 44.3154C33.5064 43.3969 33.8195 42.6215 34.4458 41.9892C35.0721 41.357 35.8475 41.0408 36.772 41.0408C37.3565 41.0408 37.8904 41.1721 38.3735 41.4345C38.8626 41.6969 39.2443 42.0459 39.5187 42.4813L38.1588 43.2597C38.0335 43.0628 37.8486 42.9048 37.6041 42.7855C37.3655 42.6662 37.0941 42.6065 36.7899 42.6065C36.2948 42.6065 35.8893 42.7676 35.5731 43.0897C35.257 43.4118 35.0989 43.8233 35.0989 44.3244C35.0989 44.8075 35.254 45.2161 35.5642 45.5501C35.8803 45.8841 36.3217 46.0511 36.8883 46.0511C37.616 46.0511 38.0962 45.7767 38.3288 45.228H36.8078V43.8502H39.9661Z" fill="black"/><path d="M49.39 46.6327C48.7578 47.2589 47.9824 47.5721 47.0638 47.5721C46.1453 47.5721 45.3669 47.2589 44.7287 46.6327C44.0964 46.0004 43.7803 45.225 43.7803 44.3065C43.7803 43.3879 44.0964 42.6155 44.7287 41.9892C45.3669 41.357 46.1453 41.0408 47.0638 41.0408C47.9824 41.0408 48.7578 41.357 49.39 41.9892C50.0282 42.6155 50.3473 43.3879 50.3473 44.3065C50.3473 45.225 50.0282 46.0004 49.39 46.6327ZM45.856 45.5322C46.1781 45.8483 46.5807 46.0064 47.0638 46.0064C47.547 46.0064 47.9496 45.8483 48.2717 45.5322C48.5937 45.2101 48.7548 44.8015 48.7548 44.3065C48.7548 43.8114 48.5937 43.4058 48.2717 43.0897C47.9496 42.7676 47.547 42.6065 47.0638 42.6065C46.5807 42.6065 46.1781 42.7676 45.856 43.0897C45.5339 43.4058 45.3729 43.8114 45.3729 44.3065C45.3729 44.8015 45.5339 45.2101 45.856 45.5322Z" fill="black"/><path d="M60.6187 43.8502V44.4854C60.6187 45.4039 60.3294 46.1495 59.7509 46.7221C59.1783 47.2888 58.4327 47.5721 57.5142 47.5721C56.536 47.5721 55.7307 47.2589 55.0985 46.6327C54.4722 46.0064 54.1591 45.234 54.1591 44.3154C54.1591 43.3969 54.4722 42.6215 55.0985 41.9892C55.7248 41.357 56.5002 41.0408 57.4247 41.0408C58.0092 41.0408 58.543 41.1721 59.0262 41.4345C59.5153 41.6969 59.897 42.0459 60.1714 42.4813L58.8115 43.2597C58.6862 43.0628 58.5013 42.9048 58.2567 42.7855C58.0182 42.6662 57.7468 42.6065 57.4426 42.6065C56.9475 42.6065 56.5419 42.7676 56.2258 43.0897C55.9097 43.4118 55.7516 43.8233 55.7516 44.3244C55.7516 44.8075 55.9067 45.2161 56.2169 45.5501C56.533 45.8841 56.9744 46.0511 57.541 46.0511C58.2687 46.0511 58.7488 45.7767 58.9814 45.228H57.4605V43.8502H60.6187Z" fill="black"/><path d="M70.0427 46.6327C69.4104 47.2589 68.635 47.5721 67.7165 47.5721C66.7979 47.5721 66.0196 47.2589 65.3813 46.6327C64.7491 46.0004 64.433 45.225 64.433 44.3065C64.433 43.3879 64.7491 42.6155 65.3813 41.9892C66.0196 41.357 66.7979 41.0408 67.7165 41.0408C68.635 41.0408 69.4104 41.357 70.0427 41.9892C70.6809 42.6155 71 43.3879 71 44.3065C71 45.225 70.6809 46.0004 70.0427 46.6327ZM66.5087 45.5322C66.8307 45.8483 67.2334 46.0064 67.7165 46.0064C68.1996 46.0064 68.6022 45.8483 68.9243 45.5322C69.2464 45.2101 69.4075 44.8015 69.4075 44.3065C69.4075 43.8114 69.2464 43.4058 68.9243 43.0897C68.6022 42.7676 68.1996 42.6065 67.7165 42.6065C67.2334 42.6065 66.8307 42.7676 66.5087 43.0897C66.1866 43.4058 66.0255 43.8114 66.0255 44.3065C66.0255 44.8015 66.1866 45.2101 66.5087 45.5322Z" fill="black"/></svg>',
+            providerId: 'megogo'
+        },
         { 
             id: 'disney', 
             name: 'Disney+', 
@@ -2022,7 +1993,7 @@ Lampa.Activity.push({
             addExtractStyles();
             addSectionTitleIcons();
             Lampa.Component.add('cinemax_megogo', CinemaXMegogo);
-            Lampa.Component.add('flixio_extract_studios_main', StudiosMain);
+Lampa.Component.add('flixio_extract_studios_main', StudiosMain);
             Lampa.Component.add('flixio_extract_studios_view', StudiosView);
             if (Lampa.Storage.get('flixio_extract_hero', true)) addHeroRow();
             if (Lampa.Storage.get('flixio_extract_streamings', true)) addStudioRow();
