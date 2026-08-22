@@ -1,6 +1,5 @@
 /**
 Flixio Extract — Minimal Version (Hero + Streamings only)
-Исправлено: убран scroll-snap-type для решения проблемы двойного нажатия влево
 */
 (function(){
 'use strict';
@@ -14,9 +13,9 @@ if (['uk','ru','en','pl'].indexOf(FLIXIO_LANG) === -1) FLIXIO_LANG = 'en';
 
 var FLIXIO_I18N = {
     hero_row_title: { uk: 'Новинки прокату', ru: 'Новинки проката', en: 'New theatrical releases', pl: 'Nowości kinowe' },
-    hero_row_title_full: { uk: '🎬 Новинки прокату', ru: '🎬 Новинки проката', en: '🎬 New theatrical releases', pl: '🎬 Nowości kinowe' },
+    hero_row_title_full: { uk: '🎬 Новинки прокату', ru: '🎬 Новинки проката', en: '🎬 New theatrical releases', pl: ' Nowości kinowe' },
     streamings_row_title: { uk: 'Стрімінги', ru: 'Стриминги', en: 'Streaming', pl: 'Serwisy streamingowe' },
-    streamings_row_title_full: { uk: '📺 Стрімінги', ru: '📺 Стриминги', en: '📺 Streaming', pl: '📺 Serwisy streamingowe' },
+    streamings_row_title_full: { uk: ' Стрімінги', ru: ' Стриминги', en: '📺 Streaming', pl: '📺 Serwisy streamingowe' },
     menu_title: { uk: 'Меню', ru: 'Меню', en: 'Menu', pl: 'Menu' },
     menu_details: { uk: 'Детальніше', ru: 'Подробнее', en: 'Details', pl: 'Szczegóły' },
     menu_trailer: { uk: 'Трейлер', ru: 'Трейлер', en: 'Trailer', pl: 'Zwiastun' },
@@ -34,7 +33,6 @@ function getTmdbKey() {
     return custom || (Lampa.TMDB && Lampa.TMDB.key ? Lampa.TMDB.key() : '');
 }
 
-// YouTube Player
 function playYouTubeCustom(key) {
     var overlay = $('<div class="youtube-pro-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;background:#000;"></div>');
     var playerContainer = $('<div id="yt-player-custom"></div>');
@@ -76,7 +74,6 @@ function playYouTubeCustom(key) {
     }
 }
 
-// Hero Item
 function makeHeroResultItem(movie, heightEm) {
     heightEm = heightEm || 22.5;
     var pad = (heightEm / 35 * 2).toFixed(1);
@@ -175,7 +172,6 @@ function makeHeroResultItem(movie, heightEm) {
     };
 }
 
-// Hero Row
 function addHeroRow() {
     Lampa.ContentRows.add({
         index:0, name:'flixio_hero_row', title:tr('hero_row_title'), screen:['main'],
@@ -205,7 +201,6 @@ function addHeroRow() {
     });
 }
 
-// Studios
 var STUDIOS = [
     {id:'netflix',name:'Netflix',svg:'<svg viewBox="0 0 256 69" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M35.2 64.726c-3.85.676-7.77.88-11.823 1.42L11.013 29.93V67.7c-3.85.405-7.364.946-11.013 1.486V0h10.27l14.053 39.255V0H35.2v64.726z" fill="#E50914"/></svg>',providerId:'8'},
     {id:'disney',name:'Disney+',svg:'<svg viewBox="0 0 1041 565" xmlns="http://www.w3.org/2000/svg"><path fill="#113CCF" fill-rule="evenodd" d="M735.8 365.7C721.4 369 683.5 370.9 683.5 370.9L678.7 385.9c0 0 18.9-1.6 32.7-.2"/></svg>',providerId:'337'},
@@ -215,55 +210,14 @@ var STUDIOS = [
     {id:'paramount',name:'Paramount+',svg:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 22H22L12 2Z"/></svg>',providerId:'531'}
 ];
 
-function addStudioRow() {
-    Lampa.ContentRows.add({
-        index:1, name:'flixio_studio_row', title:tr('streamings_row_title'), screen:['main'],
-        call:function(params){
-            return function(callback){
-                var items = STUDIOS.map(function(s){
-                    return {
-                        title:s.name,
-                        params:{
-                            createInstance:function(){ return Lampa.Maker.make('Card',this,function(module){return module.only('Card','Callback');}); },
-                            emit:{
-                                onCreate:function(){
-                                    var item = $(this.html);
-                                    item.addClass('card--studio');
-                                    var view = item.find('.card__view');
-                                    view.empty();
-                                    var wrapper = $('<div class="studio-logo-wrap"></div>');
-                                    if(s.svg){
-                                        var svgEl = $(s.svg);
-                                        svgEl.addClass('studio-logo-img').css({'max-width':'70%','max-height':'60%','display':'block'});
-                                        wrapper.append(svgEl);
-                                    }else{
-                                        wrapper.append($('<div class="studio-logo-fallback" style="display:block;font-weight:700;text-align:center;">').text(s.name));
-                                    }
-                                    view.append(wrapper);
-                                    item.find('.card__age,.card__year,.card__type,.card__textbox,.card__title').remove();
-                                },
-                                onlyEnter:function(){
-                                    Lampa.Activity.push({url:'',title:s.name,component:'flixio_studios_main',service_id:s.id,page:1});
-                                }
-                            }
-                        }
-                    };
-                });
-                callback({results:items,title:tr('streamings_row_title_full'),params:{items:{view:15,mapping:'line'}});
-            };
-        }
-    });
-}
-
-// Studios Main Component
 function StudiosMain(object) {
     var comp = new Lampa.InteractionMain(object);
     var config = {
         categories:[
-            {title:' Нові фільми',url:'discover/movie',params:{with_watch_providers:object.service_id==='netflix'?'8':(object.service_id==='disney'?'337':(object.service_id==='hbo'?'384':(object.service_id==='apple'?'350':(object.service_id==='amazon'?'119':'531')))),watch_region:'UA',sort_by:'primary_release_date.desc',primary_release_date.lte:'{current_date}',vote_count.gte:'5'}},
+            {title:'🔥 Нові фільми',url:'discover/movie',params:{with_watch_providers:object.service_id==='netflix'?'8':(object.service_id==='disney'?'337':(object.service_id==='hbo'?'384':(object.service_id==='apple'?'350':(object.service_id==='amazon'?'119':'531')))),watch_region:'UA',sort_by:'primary_release_date.desc',primary_release_date.lte:'{current_date}',vote_count.gte:'5'}},
             {title:'🔥 Нові серіали',url:'discover/tv',params:{with_networks:object.service_id==='netflix'?'213':(object.service_id==='disney'?'2739':(object.service_id==='hbo'?'49|3186':(object.service_id==='apple'?'2552|3235':(object.service_id==='amazon'?'1024':'4330')))),sort_by:'first_air_date.desc',first_air_date.lte:'{current_date}',vote_count.gte:'5'}},
             {title:'🏆 Топ фільми',url:'discover/movie',params:{with_watch_providers:object.service_id==='netflix'?'8':(object.service_id==='disney'?'337':(object.service_id==='hbo'?'384':(object.service_id==='apple'?'350':(object.service_id==='amazon'?'119':'531')))),watch_region:'UA',sort_by:'popularity.desc'}},
-            {title:' Топ серіали',url:'discover/tv',params:{with_networks:object.service_id==='netflix'?'213':(object.service_id==='disney'?'2739':(object.service_id==='hbo'?'49|3186':(object.service_id==='apple'?'2552|3235':(object.service_id==='amazon'?'1024':'4330')))),sort_by:'popularity.desc'}}
+            {title:'🏆 Топ серіали',url:'discover/tv',params:{with_networks:object.service_id==='netflix'?'213':(object.service_id==='disney'?'2739':(object.service_id==='hbo'?'49|3186':(object.service_id==='apple'?'2552|3235':(object.service_id==='amazon'?'1024':'4330')))),sort_by:'popularity.desc'}}
         ]
     };
     
@@ -362,7 +316,46 @@ function StudiosView(object) {
     return comp;
 }
 
-// CSS Styles — ИСПРАВЛЕНО: убран scroll-snap-type для решения проблемы двойного нажатия
+function addStudioRow() {
+    Lampa.ContentRows.add({
+        index:1, name:'flixio_studio_row', title:tr('streamings_row_title'), screen:['main'],
+        call:function(params){
+            return function(callback){
+                var items = STUDIOS.map(function(s){
+                    return {
+                        title:s.name,
+                        params:{
+                            createInstance:function(){ return Lampa.Maker.make('Card',this,function(module){return module.only('Card','Callback');}); },
+                            emit:{
+                                onCreate:function(){
+                                    var item = $(this.html);
+                                    item.addClass('card--studio');
+                                    var view = item.find('.card__view');
+                                    view.empty();
+                                    var wrapper = $('<div class="studio-logo-wrap"></div>');
+                                    if(s.svg){
+                                        var svgEl = $(s.svg);
+                                        svgEl.addClass('studio-logo-img').css({'max-width':'70%','max-height':'60%','display':'block'});
+                                        wrapper.append(svgEl);
+                                    }else{
+                                        wrapper.append($('<div class="studio-logo-fallback" style="display:block;font-weight:700;text-align:center;">').text(s.name));
+                                    }
+                                    view.append(wrapper);
+                                    item.find('.card__age,.card__year,.card__type,.card__textbox,.card__title').remove();
+                                },
+                                onlyEnter:function(){
+                                    Lampa.Activity.push({url:'',title:s.name,component:'flixio_studios_main',service_id:s.id,page:1});
+                                }
+                            }
+                        }
+                    };
+                });
+                callback({results:items,title:tr('streamings_row_title_full'),params:{items:{view:15,mapping:'line'}});
+            };
+        }
+    });
+}
+
 function addExtractStyles(){
     if($('#flixio-extract-css').length) return;
     $('body').append('<style id="flixio-extract-css">'+
@@ -381,7 +374,6 @@ function addExtractStyles(){
     '</style>');
 }
 
-// Init
 function initExtract(){
     try{
         addExtractStyles();
