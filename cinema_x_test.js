@@ -16,9 +16,9 @@
 
     var FLIXIO_I18N = {
         hero_row_title: { uk: 'Новинки прокату', ru: 'Новинки проката', en: 'New theatrical releases', pl: 'Nowości kinowe' },
-        hero_row_title_full: { uk: '🔥 Новинки прокату', ru: '🔥 Новинки проката', en: '🔥 New theatrical releases', pl: '🔥 Nowości kinowe' },
+        hero_row_title_full: { uk: 'Новинки прокату', ru: 'Новинки проката', en: 'New theatrical releases', pl: 'Nowości kinowe' },
         streamings_row_title: { uk: 'Стрімінги', ru: 'Стриминги', en: 'Streaming', pl: 'Serwisy streamingowe' },
-        streamings_row_title_full: { uk: '📺 Стрімінги', ru: '📺 Стриминги', en: '📺 Streaming', pl: '📺 Serwisy streamingowe' },
+        streamings_row_title_full: { uk: 'Стрімінги', ru: 'Стриминги', en: 'Streaming', pl: 'Serwisy streamingowe' },
         ukrainian_feed_name: { uk: 'Українська стрічка', ru: 'Украинская лента', en: 'Ukrainian feed', pl: 'Ukraiński feed' },
         polish_feed_name: { uk: 'Польська стрічка', ru: 'Польская лента', en: 'Polish feed', pl: 'Polski feed' },
         russian_feed_name: { uk: 'Російська стрічка', ru: 'Русская лента', en: 'Russian feed', pl: 'Rosyjski feed' },
@@ -223,6 +223,32 @@
         var pack = FLIXIO_I18N[key];
         if (!pack) return key;
         return pack[FLIXIO_LANG] || pack.uk || pack.en || key;
+    }
+
+    // Белые минималистичные иконки в заголовках двух оставленных рядов.
+    function addSectionTitleIcons() {
+        var icons = {
+            releases: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v13H4zM4 9h16M8 5.5v3.2M16 5.5v3.2M9.5 13.2l5 3v-6z"/></svg>',
+            streaming: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M10 9.5l5 2.5-5 2.5z"/></svg>'
+        };
+        var labels = {
+            releases: tr('hero_row_title_full'),
+            streaming: tr('streamings_row_title_full')
+        };
+
+        function decorate() {
+            $('.items-line__title, .row__title').each(function () {
+                var title = $(this);
+                if (title.find('.flixio-section-icon').length) return;
+                var text = $.trim(title.text());
+                var type = text === labels.releases ? 'releases' : (text === labels.streaming ? 'streaming' : '');
+                if (type) title.prepend('<span class="flixio-section-icon flixio-section-icon--' + type + '">' + icons[type] + '</span>');
+            });
+        }
+
+        $('body').append('<style id="flixio-section-icons-css">.flixio-section-icon{display:inline-flex;vertical-align:-.17em;width:1.12em;height:1.12em;margin-right:.42em;color:#fff}.flixio-section-icon svg{display:block;width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}.flixio-section-icon--releases svg path:last-child{fill:currentColor;stroke:none}</style>');
+        decorate();
+        new MutationObserver(decorate).observe(document.body, { childList: true, subtree: true });
     }
     var SERVICE_CONFIGS = {
         'netflix': {
@@ -1856,6 +1882,7 @@
         try {
             setupExtractSettings();
             addExtractStyles();
+            addSectionTitleIcons();
             Lampa.Component.add('flixio_extract_studios_main', StudiosMain);
             Lampa.Component.add('flixio_extract_studios_view', StudiosView);
             if (Lampa.Storage.get('flixio_extract_hero', true)) addHeroRow();
