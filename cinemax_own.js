@@ -281,6 +281,8 @@
     function css() {
         if ($('#cinemax-v3-studio-css').length) return;
         $('head').append('<style id="cinemax-v3-studio-css">' +
+            '.hero-banner .hero-status-badge{position:absolute!important;top:.7em!important;left:.7em!important;z-index:20!important;pointer-events:none}' +
+            '.hero-banner .cinemax-hero-rating{white-space:nowrap}' +
             '.hero-banner .hero-age-badge{position:absolute!important;top:.7em!important;right:.7em!important;z-index:20!important;display:none;pointer-events:none}' +
             '.hero-banner .hero-age-badge span{min-width:3.2em!important;height:3.2em!important;font-size:1.3em!important}' +
             '.cinemax-section-icon svg{width:100%!important;height:100%!important;display:block!important;overflow:visible!important}' +
@@ -312,6 +314,67 @@ function getTmdbKey() {
         try { return (Lampa.Storage.get('flixio_tmdb_apikey') || '').trim() || (Lampa.TMDB && Lampa.TMDB.key ? Lampa.TMDB.key() : ''); } catch (e) { return key(); }
     }
 
+
+function cinemaxHeroStatus(details, type, movie) {
+    var now = new Date();
+    var releases = [];
+
+    if (details && details.release_dates && details.release_dates.results) {
+        details.release_dates.results.forEach(function (country) {
+            (country.release_dates || []).forEach(function (r) {
+                if (r && r.release_date) releases.push(r);
+            });
+        });
+    }
+
+    if (!releases.length) {
+        var fallback = details && (details.release_date || details.first_air_date || movie.release_date || movie.first_air_date);
+        if (fallback) releases.push({ release_date: fallback, type: 0 });
+    }
+
+    releases.sort(function (a, b) {
+        return new Date(a.release_date) - new Date(b.release_date);
+    });
+
+    var theatrical = releases.filter(function (r) {
+        return r.type === 2 || r.type === 3;
+    });
+
+    var premiere = releases.filter(function (r) {
+        return r.type === 1;
+    });
+
+    function daysSince(dateString) {
+        var d = new Date(dateString);
+        if (isNaN(d.getTime())) return 9999;
+        return Math.floor((now - d) / 86400000);
+    }
+
+    // TMDB release types:
+    // 1 = premiere, 2 = theatrical (limited), 3 = theatrical.
+    if (theatrical.length) {
+        var cinemaDate = theatrical[theatrical.length - 1].release_date;
+        var cinemaDays = daysSince(cinemaDate);
+        if (cinemaDays >= 0 && cinemaDays <= 45) return 'Сейчас в кино';
+    }
+
+    if (premiere.length) {
+        var premiereDate = premiere[0].release_date;
+        var premiereDays = daysSince(premiereDate);
+        if (premiereDays >= 0 && premiereDays <= 30) return 'Премьера';
+    }
+
+    // For titles without a detailed release_dates entry, use the main date
+    // as a conservative premiere marker.
+    var mainDate = details && (details.release_date || details.first_air_date);
+    if (mainDate) {
+        var mainDays = daysSince(mainDate);
+        if (mainDays >= 0 && mainDays <= 14) return 'Премьера';
+    }
+
+    return '';
+}
+
 function makeHeroResultItem(movie, heightEm) {
         if (!$('#studios5-hero-css').length) {
             $('body').append('<style id="studios5-hero-css">.hero-banner .card-marks, .hero-banner .card__icons, .hero-banner .card__quality, .hero-trailer-btn { display: none !important; }</style>');
@@ -331,6 +394,7 @@ function makeHeroResultItem(movie, heightEm) {
 
         var renderHeroContent = function(item, movie) {
             item.empty(); // Clear existing content
+            item.append('<div class="hero-status-badge" style="position:absolute;top:0.7em;left:0.7em;z-index:20;display:none;pointer-events:none;"></div>');
             item.append('<div class="hero-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); padding: ' + pad + 'em; border-radius: 0 0 1em 1em;">' +
                 '<div class="hero-header" style="margin-bottom: 0.3em; min-height: 3em; display: flex; align-items: flex-end;">' +
                     '<div class="hero-title" style="font-size: ' + titleEm + 'em; font-weight: bold; color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">' + (movie.title || movie.name) + '</div>' +
@@ -401,7 +465,19 @@ function makeHeroResultItem(movie, heightEm) {
                 // Rating & Year
                 var headMeta = '';
                 var rating = details.vote_average || movie.vote_average;
-                if (rating) headMeta += '<span class="card__mark card__mark--rating" style="position: static; margin: 0 0.5em 0 0; padding: 0.2em 0.5em; font-size: 0.9em; background: rgba(255,255,255,0.2); border-radius: 0.3em;">★ ' + parseFloat(rating).toFixed(1) + '</span>';
+                if (rating) headMeta += '<span class="cinemax-hero-rating" style="' +
+                    'display:inline-flex;align-items:center;gap:.35em;' +
+                    'padding:.28em .62em;border-radius:.55em;' +
+                    'background:linear-gradient(135deg,rgba(255,255,255,.18),rgba(255,255,255,.08));' +
+                    'border:1px solid rgba(255,255,255,.18);' +
+                    'box-shadow:0 3px 12px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.12);' +
+                    'backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);' +
+                    'color:#fff;font-size:.92em;font-weight:700;line-height:1;' +
+                    'text-shadow:0 1px 2px rgba(0,0,0,.45);' +
+                    '">' +
+                    '<span style="color:#ffd86b;font-size:1.12em;line-height:1;">★</span>' +
+                    '<span>' + parseFloat(rating).toFixed(1) + '</span>' +
+                    '</span>';
                 
                 var date = details.release_date || details.first_air_date || movie.release_date || movie.first_air_date;
                 if (date) headMeta += parseInt(date);
@@ -463,6 +539,25 @@ function makeHeroResultItem(movie, heightEm) {
                         'font-size:1.3em;font-weight:800;line-height:1;' +
                         'text-shadow:0 1px 2px rgba(0,0,0,.5);' +
                         '">' + displayAge + '</span>'
+                    ).css('display', 'block');
+                }
+
+                // Status: theatrical release / premiere.
+                var heroStatus = cinemaxHeroStatus(details, type, movie);
+                if (heroStatus) {
+                    var statusClass = heroStatus === 'Сейчас в кино' ? 'cinemax-status-cinema' : 'cinemax-status-premiere';
+                    var statusIcon = heroStatus === 'Сейчас в кино' ? '●' : '✦';
+                    item.find('.hero-status-badge').html(
+                        '<span class="' + statusClass + '" style="' +
+                        'display:inline-flex;align-items:center;gap:.38em;' +
+                        'padding:.45em .75em;border-radius:.6em;' +
+                        'background:rgba(0,0,0,.56);' +
+                        'border:1px solid rgba(255,255,255,.22);' +
+                        'backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);' +
+                        'color:#fff;font-size:.92em;font-weight:700;line-height:1;' +
+                        'box-shadow:0 4px 14px rgba(0,0,0,.28);' +
+                        'text-shadow:0 1px 2px rgba(0,0,0,.5);' +
+                        '">' + statusIcon + ' ' + heroStatus + '</span>'
                     ).css('display', 'block');
                 }
 
