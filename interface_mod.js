@@ -2098,17 +2098,12 @@
 
     css: function () {
       return [
-        
-        
-        
         '.inmod-cine-overlay { position:absolute !important; inset:0 !important; z-index:30 !important; pointer-events:none !important; overflow:hidden !important; }',
-        '.inmod-cine-title { position:absolute !important; left:4.5% !important; right:8% !important; bottom:24% !important; margin:0 !important; color:#fff !important; font-size:1.9rem !important; font-weight:800 !important; line-height:1.05 !important; text-shadow:0 2px 16px rgba(0,0,0,.85),0 1px 3px rgba(0,0,0,.95) !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important;  }',
-        '.inmod-cine-meta { position:absolute !important; left:4.5% !important; right:8% !important; bottom:15.5% !important; margin:0 !important; color:rgba(255,255,255,.92) !important; font-size:1rem !important; font-weight:500 !important; line-height:1.2 !important; text-shadow:0 2px 12px rgba(0,0,0,.85) !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important;  }',
         '.inmod-cine-badge { position:absolute !important; top:3.5% !important; right:3.5% !important; min-width:68px !important; padding:.42em .62em !important; border:1px solid rgba(255,255,255,.18) !important; border-radius:.65em !important; background:rgba(12,14,16,.68) !important; box-shadow:0 8px 24px rgba(0,0,0,.28) !important; color:#fff !important; text-align:center !important; line-height:1.05 !important; backdrop-filter:blur(8px) !important; -webkit-backdrop-filter:blur(8px) !important;  }',
         '.inmod-cine-badge-label { display:block !important; font-size:.58em !important; font-weight:600 !important; letter-spacing:.04em !important; opacity:.72 !important; text-transform:uppercase !important; }',
         '.inmod-cine-badge-year { display:block !important; margin-top:.12em !important; font-size:1.05em !important; font-weight:800 !important; }',
         '.full-start-new__poster .inmod-hide-returning-series { display:none !important; }',
-        
+        '@media (prefers-reduced-motion: reduce) { .inmod-cine-title, .inmod-cine-meta, .inmod-cine-badge { animation:none !important; opacity:1 !important; transform:none !important; } }'
       ].join('\n');
     },
 
@@ -2196,13 +2191,10 @@
         var title = this.getTitle(movie, $root);
         var year = this.getYear(movie);
         var country = this.getCountry(movie);
-        if (!title && !year && !country) return;
+        if (!year) return;
 
         $poster.css('position', 'relative');
         var $overlay = $('<div class="inmod-cine-overlay"></div>');
-
-        if (title) $('<div class="inmod-cine-title"></div>').text(title).appendTo($overlay);
-        if (year || country) $('<div class="inmod-cine-meta"></div>').text([year, country].filter(Boolean).join(' • ')).appendTo($overlay);
         if (year) {
           var $badge = $('<div class="inmod-cine-badge"><span class="inmod-cine-badge-label">Выпущен</span><span class="inmod-cine-badge-year"></span></div>');
           $badge.find('.inmod-cine-badge-year').text(year);
