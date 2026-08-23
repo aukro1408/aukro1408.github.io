@@ -48,16 +48,49 @@
 
   let mbLastRequestAt = 0;
 
+  // MusicBrainz требует не более одного запроса в секунду и
+  // meaningful User-Agent. В Lampa передаём его через options.
   function mbGet(path) {
     return new Promise(function (resolve, reject) {
-      const wait = Math.max(0, 1100 - (Date.now() - mbLastRequestAt));
+      const wait = Math.max(0, 1250 - (Date.now() - mbLastRequestAt));
+
       setTimeout(function () {
         mbLastRequestAt = Date.now();
+
         const request = new Lampa.Reguest();
         let finished = false;
-        const timer = setTimeout(function () { if (!finished) { finished=true; reject(new Error("MusicBrainz: тайм-аут запроса")); } }, 7000);
-        function done(fn, value) { if (finished) return; finished=true; clearTimeout(timer); fn(value); }
-        request.silent("https://musicbrainz.org/ws/2/"+path+(path.indexOf("?")>=0?"&":"?")+"fmt=json", function(data){done(resolve,data);}, function(){done(reject,new Error("MusicBrainz: запрос не выполнен"));});
+
+        const timer = setTimeout(function () {
+          if (!finished) {
+            finished = true;
+            reject(new Error("MusicBrainz: сервер не ответил за 10 секунд"));
+          }
+        }, 10000);
+
+        function done(fn, value) {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timer);
+          fn(value);
+        }
+
+        const url =
+          "https://musicbrainz.org/ws/2/" +
+          path +
+          (path.indexOf("?") >= 0 ? "&" : "?") +
+          "fmt=json";
+
+        request.silent(
+          url,
+          function (data) { done(resolve, data); },
+          function () { done(reject, new Error("MusicBrainz: запрос не выполнен")); },
+          false,
+          {
+            headers: {
+              "User-Agent": "CinemaX-Soundtrack/1.0 (Lampa plugin)"
+            }
+          }
+        );
       }, wait);
     });
   }
@@ -133,25 +166,125 @@
   }
 
   async function findSoundtrack(movie) {
-    const displayTitle=getMovieTitle(movie), originalTitle=getOriginalTitle(movie);
-    const movieYear=parseInt(getYear(movie),10)||0;
-    if(!movie?.id||!displayTitle) throw new Error("Не удалось определить фильм");
-    const title=originalTitle||displayTitle;
-    const normalize=function(v){return String(v||"").toLowerCase().replace(/[’‘`]/g,"'").replace(/[–—]/g,"-").replace(/\s+/g," ").trim();};
-    const scoreGroup=function(g){const t=normalize(g?.title),y=parseInt(String(g?.["first-release-date"]||"").slice(0,4),10)||0,st=(g?.["secondary-types"]||[]).map(normalize);let n=0;if(t===normalize(title))n+=80;if(t.indexOf(normalize(title))>=0)n+=40;if(t.indexOf("music from")>=0)n+=35;if(t.indexOf("motion picture")>=0)n+=20;if(t.indexOf("score")>=0)n+=15;if(st.indexOf("soundtrack")>=0)n+=45;if(movieYear&&y===movieYear)n+=30;if(t.indexOf("tribute")>=0||t.indexOf("karaoke")>=0)n-=80;return n;};
-    const query='releasegroup:"'+title+'" AND secondarytype:soundtrack';
-    let result=await mbGet("release-group/?query="+encodeURIComponent(query)+"&limit=10");
-    let groups=(result?.["release-groups"]||[]).slice();
-    if(!groups.length){result=await mbGet("release-group/?query="+encodeURIComponent('releasegroup:"'+title+'"')+"&limit=10");groups=(result?.["release-groups"]||[]).slice();}
-    groups.sort(function(a,b){return scoreGroup(b)-scoreGroup(a);});
-    const selected=groups.slice(0,2);
-    if(!selected.length)throw new Error("MusicBrainz: саундтрек не найден. Искали: "+title);
-    const tracks=[],seen={},selectedGroups=[];
-    function addTracks(details,groupTitle){(details?.media||[]).forEach(function(media){(media.tracks||[]).forEach(function(track){const rec=track.recording||{},tt=track.title||rec.title||"";if(!tt)return;const artist=artistCredit(rec["artist-credit"])||artistCredit(track["artist-credit"])||artistCredit(details["artist-credit"])||"",key=normalize(tt)+"|"+normalize(artist);if(seen[key])return;seen[key]=true;const lower=normalize(groupTitle);tracks.push({position:tracks.length+1,title:tt,artist:artist,length:track.length||rec.length||0,category:(lower.indexOf("score")>=0||lower.indexOf("original music")>=0)?"score":"soundtrack",album:groupTitle,links:searchLinks(tt,artist)});});});}
-    for(let i=0;i<selected.length;i++){const group=selected[i];try{const rr=await mbGet("release/?release-group="+encodeURIComponent(group.id)+"&status=official&limit=5");const releases=(rr?.releases||[]).slice().sort(function(a,b){const ay=parseInt(String(a.date||"").slice(0,4),10)||0,by=parseInt(String(b.date||"").slice(0,4),10)||0;return((b.status==="Official"?20:0)+(movieYear&&by===movieYear?15:0))-((a.status==="Official"?20:0)+(movieYear&&ay===movieYear?15:0));});const release=releases[0];if(!release?.id)continue;const details=await mbGet("release/"+encodeURIComponent(release.id)+"?inc=recordings+artist-credits");const groupTitle=group.title||release.title||title;addTracks(details,groupTitle);selectedGroups.push({title:groupTitle,score:scoreGroup(group)});}catch(e){log("MB group failed:",group.id,e);}}
-    if(!tracks.length)throw new Error("MusicBrainz: данные о треках не получены. Попробуйте ещё раз.");
-    tracks.sort(function(a,b){return a.category===b.category?a.position-b.position:(a.category==="soundtrack"?-1:1);});
-    return {movieTitle:displayTitle,originalTitle:originalTitle,imdbId:"",groups:selectedGroups,album:selectedGroups[0]?.title||"",artist:"",date:"",tracks:tracks,albumLinks:{spotify:"",apple:"",youtube:""}};
+    const displayTitle = getMovieTitle(movie);
+    const originalTitle = getOriginalTitle(movie);
+    const movieYear = parseInt(getYear(movie), 10) || 0;
+
+    if (!displayTitle) throw new Error("Не удалось определить фильм");
+
+    const title = originalTitle || displayTitle;
+    const normalize = function (v) {
+      return String(v || "")
+        .toLowerCase()
+        .replace(/[’‘`]/g, "'")
+        .replace(/[–—]/g, "-")
+        .replace(/\\/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    };
+
+    // Важное изменение: больше не делаем цепочку
+    // release-group -> releases -> release для двух групп.
+    // Ищем сразу официальные soundtrack-релизы и затем делаем
+    // только один lookup выбранного релиза.
+    const query =
+      'release:"' + title + '" AND secondarytype:soundtrack AND status:official';
+
+    const result = await mbGet(
+      "release/?query=" + encodeURIComponent(query) + "&limit=10"
+    );
+
+    const releases = (result && result.releases) || [];
+
+    if (!releases.length) {
+      throw new Error("MusicBrainz: саундтрек не найден. Искали: " + title);
+    }
+
+    function scoreRelease(release) {
+      const rt = normalize(release.title);
+      const rg = normalize(release["release-group"] && release["release-group"].title);
+      const year = parseInt(String(release.date || "").slice(0, 4), 10) || 0;
+      let score = 0;
+
+      if (rt === normalize(title)) score += 100;
+      if (rg === normalize(title)) score += 90;
+      if (rt.indexOf(normalize(title)) >= 0) score += 45;
+      if (rg.indexOf(normalize(title)) >= 0) score += 40;
+      if (rt.indexOf("original motion picture") >= 0) score += 25;
+      if (rt.indexOf("soundtrack") >= 0) score += 15;
+      if (rt.indexOf("score") >= 0) score += 10;
+      if (year === movieYear) score += 30;
+      if (release.status === "Official") score += 10;
+
+      return score;
+    }
+
+    releases.sort(function (a, b) {
+      return scoreRelease(b) - scoreRelease(a);
+    });
+
+    const release = releases[0];
+    if (!release || !release.id) {
+      throw new Error("MusicBrainz: не удалось определить релиз саундтрека");
+    }
+
+    // Один lookup: сразу получаем media/tracks + artist credits.
+    const details = await mbGet(
+      "release/" +
+        encodeURIComponent(release.id) +
+        "?inc=recordings+artist-credits+release-groups"
+    );
+
+    const tracks = [];
+    const seen = {};
+
+    (details.media || []).forEach(function (media) {
+      (media.tracks || []).forEach(function (track) {
+        const recording = track.recording || {};
+        const trackTitle = track.title || recording.title || "";
+        if (!trackTitle) return;
+
+        const artist =
+          artistCredit(recording["artist-credit"]) ||
+          artistCredit(track["artist-credit"]) ||
+          artistCredit(details["artist-credit"]) ||
+          "";
+
+        const key = normalize(trackTitle) + "|" + normalize(artist);
+        if (seen[key]) return;
+        seen[key] = true;
+
+        tracks.push({
+          position: tracks.length + 1,
+          title: trackTitle,
+          artist: artist,
+          length: track.length || recording.length || 0,
+          category: "soundtrack",
+          album: release.title || title,
+          links: searchLinks(trackTitle, artist)
+        });
+      });
+    });
+
+    if (!tracks.length) {
+      throw new Error("MusicBrainz: в релизе нет данных о треках");
+    }
+
+    return {
+      movieTitle: displayTitle,
+      originalTitle: originalTitle,
+      imdbId: "",
+      groups: [{ title: release.title || title, score: scoreRelease(release) }],
+      album: release.title || title,
+      artist: artistCredit(details["artist-credit"]) || "",
+      date: release.date || "",
+      tracks: tracks,
+      albumLinks: {
+        spotify: "",
+        apple: "",
+        youtube: ""
+      }
+    };
   }
 
   function formatTime(milliseconds) {
