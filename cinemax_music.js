@@ -46,18 +46,19 @@
     });
   }
 
+  let mbLastRequestAt = 0;
+
   function mbGet(path) {
     return new Promise(function (resolve, reject) {
-      const request = new Lampa.Reguest();
-
-      request.silent(
-        "https://musicbrainz.org/ws/2/" +
-          path +
-          (path.indexOf("?") >= 0 ? "&" : "?") +
-          "fmt=json",
-        resolve,
-        reject
-      );
+      const wait = Math.max(0, 1100 - (Date.now() - mbLastRequestAt));
+      setTimeout(function () {
+        mbLastRequestAt = Date.now();
+        const request = new Lampa.Reguest();
+        let finished = false;
+        const timer = setTimeout(function () { if (!finished) { finished=true; reject(new Error("MusicBrainz: тайм-аут запроса")); } }, 7000);
+        function done(fn, value) { if (finished) return; finished=true; clearTimeout(timer); fn(value); }
+        request.silent("https://musicbrainz.org/ws/2/"+path+(path.indexOf("?")>=0?"&":"?")+"fmt=json", function(data){done(resolve,data);}, function(){done(reject,new Error("MusicBrainz: запрос не выполнен"));});
+      }, wait);
     });
   }
 
@@ -132,477 +133,25 @@
   }
 
   async function findSoundtrack(movie) {
-    const displayTitle = getMovieTitle(movie);
-    const originalTitle = getOriginalTitle(movie);
-    const movieYear = parseInt(getYear(movie), 10) || 0;
-
-    if (!movie?.id || !displayTitle) {
-      throw new Error("Не удалось определить фильм");
-    }
-
-    const type = movie.first_air_date || movie.number_of_seasons
-      ? "tv"
-      : "movie";
-
-    log(
-      "Movie:",
-      displayTitle,
-      "| original:",
-      originalTitle,
-      "| year:",
-      movieYear,
-      "| TMDB:",
-      movie.id
-    );
-
-    let imdbId = "";
-
-    try {
-      const external = await tmdbGet(
-        type + "/" + movie.id + "/external_ids"
-      );
-      imdbId = external?.imdb_id || "";
-    } catch (e) {
-      log("TMDB external_ids failed:", e);
-    }
-
-    const candidates = [];
-    const seenGroups = {};
-
-    function normalize(value) {
-      return String(value || "")
-        .toLowerCase()
-        .replace(/[’‘`]/g, "'")
-        .replace(/[–—]/g, "-")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-    function yearScore(group) {
-      if (!movieYear) return 0;
-
-      const date = String(
-        group?.["first-release-date"] ||
-        group?.["first-release-date"] ||
-        ""
-      );
-
-      const year = parseInt(date.slice(0, 4), 10) || 0;
-
-      if (!year) return 0;
-      if (year === movieYear) return 22;
-      if (Math.abs(year - movieYear) <= 1) return 10;
-
-      return 0;
-    }
-
-    function scoreGroup(group, wanted) {
-      const title = normalize(group?.title);
-      const queryTitle = normalize(wanted);
-
-      let score = 0;
-
-      if (title === queryTitle) score += 42;
-      if (queryTitle && title.indexOf(queryTitle) >= 0) score += 24;
-
-      const secondary = (group?.["secondary-types"] || [])
-        .map(function (v) {
-          return normalize(v);
-        });
-
-      const primary = normalize(group?.["primary-type"]);
-
-      if (secondary.indexOf("soundtrack") >= 0) score += 45;
-      if (title.indexOf("soundtrack") >= 0) score += 30;
-      if (title.indexOf("music from the motion picture") >= 0) score += 35;
-      if (title.indexOf("original motion picture score") >= 0) score += 35;
-      if (title.indexOf("original score") >= 0) score += 22;
-      if (title.indexOf("score") >= 0) score += 16;
-      if (primary === "album") score += 2;
-
-      score += yearScore(group);
-
-      if (
-        title.indexOf("tribute") >= 0 ||
-        title.indexOf("karaoke") >= 0 ||
-        title.indexOf("remix") >= 0
-      ) {
-        score -= 45;
-      }
-
-      return score;
-    }
-
-    function addGroup(group, wanted) {
-      if (!group?.id || seenGroups[group.id]) return;
-
-      const score = scoreGroup(group, wanted);
-
-      // We intentionally allow lower-scoring candidates here because
-      // exact title + soundtrack wording is more important than the
-      // raw MusicBrainz search score.
-      if (score < 18) return;
-
-      seenGroups[group.id] = true;
-
-      candidates.push({
-        group: group,
-        score: score
-      });
-    }
-
-    function addGroups(groups, wanted) {
-      (groups || []).forEach(function (group) {
-        addGroup(group, wanted);
-      });
-    }
-
-    async function searchGroups(query, wanted) {
-      try {
-        log("MB release-group:", query);
-
-        const result = await mbGet(
-          "release-group/?query=" +
-            encodeURIComponent(query) +
-            "&limit=30"
-        );
-
-        addGroups(result?.["release-groups"] || [], wanted);
-      } catch (e) {
-        log("MB release-group search failed:", query, e);
-      }
-    }
-
-    async function searchReleases(query, wanted) {
-      try {
-        log("MB release:", query);
-
-        const result = await mbGet(
-          "release/?query=" +
-            encodeURIComponent(query) +
-            "&limit=20"
-        );
-
-        (result?.releases || []).forEach(function (release) {
-          if (!release?.["release-group"]?.id) return;
-
-          const group = release["release-group"];
-
-          if (!group.title) {
-            group.title = release.title || "";
-          }
-
-          if (!group["first-release-date"] && release.date) {
-            group["first-release-date"] = release.date;
-          }
-
-          addGroup(group, wanted);
-        });
-      } catch (e) {
-        log("MB release search failed:", query, e);
-      }
-    }
-
-    /*
-     * Important fix:
-     *
-     * Plain "The Matrix" is ambiguous in MusicBrainz. It can return
-     * unrelated releases before the actual film soundtrack.
-     *
-     * We therefore use fielded Lucene queries and explicit soundtrack
-     * phrases. MusicBrainz documents `releasegroup` and `release` as
-     * searchable fields for these indexes.
-     */
-    const title = originalTitle || displayTitle;
-
-    const queries = [
-      'releasegroup:"' + title + '"',
-      'releasegroup:"' + title + ': Music From the Motion Picture"',
-      'releasegroup:"' + title + ': Original Motion Picture Score"',
-      'release:"' + title + ': Music From the Motion Picture"',
-      'release:"' + title + ': Original Motion Picture Score"',
-      'releasegroup:' + title + ' soundtrack'
-    ];
-
-    const uniqueQueries = [];
-    queries.forEach(function (q) {
-      if (uniqueQueries.indexOf(q) < 0) {
-        uniqueQueries.push(q);
-      }
-    });
-
-    // Keep requests bounded: 4 group searches + 2 release fallbacks.
-    for (let i = 0; i < Math.min(4, uniqueQueries.length); i++) {
-      await searchGroups(uniqueQueries[i], title);
-    }
-
-    if (candidates.length < 2) {
-      await searchReleases(
-        'release:"' + title + ': Music From the Motion Picture"',
-        title
-      );
-
-      await searchReleases(
-        'release:"' + title + ': Original Motion Picture Score"',
-        title
-      );
-    }
-
-    candidates.sort(function (a, b) {
-      return b.score - a.score;
-    });
-
-    const selected = candidates.slice(0, 4);
-
-    if (!selected.length) {
-      throw new Error(
-        "MusicBrainz: саундтрек не найден. " +
-        "Искали: " + title
-      );
-    }
-
-    log(
-      "Selected groups:",
-      selected.map(function (item) {
-        return item.group.title + " [" + item.score + "]";
-      })
-    );
-
-    const tracks = [];
-    const seenTracks = {};
-
-    function addTracks(details, groupTitle) {
-      (details?.media || []).forEach(function (media) {
-        (media.tracks || []).forEach(function (track) {
-          const recording = track.recording || {};
-
-          const trackTitle =
-            track.title ||
-            recording.title ||
-            "";
-
-          if (!trackTitle) return;
-
-          const artist =
-            artistCredit(recording["artist-credit"]) ||
-            artistCredit(track["artist-credit"]) ||
-            artistCredit(details["artist-credit"]) ||
-            "";
-
-          const key =
-            normalize(trackTitle) +
-            "|" +
-            normalize(artist);
-
-          if (seenTracks[key]) return;
-          seenTracks[key] = true;
-
-          const lowerGroup = normalize(groupTitle);
-
-          const category =
-            lowerGroup.indexOf("score") >= 0 ||
-            lowerGroup.indexOf("original music") >= 0
-              ? "score"
-              : "soundtrack";
-
-          tracks.push({
-            position: tracks.length + 1,
-            title: trackTitle,
-            artist: artist,
-            length: track.length || recording.length || 0,
-            category: category,
-            album: groupTitle,
-            links: searchLinks(trackTitle, artist)
-          });
-        });
-      });
-    }
-
-    /*
-     * One best official release per selected group.
-     * We also prefer a release whose date is close to the film year.
-     */
-    for (let i = 0; i < selected.length; i++) {
-      const item = selected[i];
-
-      try {
-        const result = await mbGet(
-          "release/?release-group=" +
-            encodeURIComponent(item.group.id) +
-            "&limit=10&inc=artist-credits"
-        );
-
-        const releases = result?.releases || [];
-
-        releases.sort(function (a, b) {
-          function releaseScore(release) {
-            let score = 0;
-
-            if (normalize(release.status) === "official") {
-              score += 30;
-            }
-
-            const year = parseInt(
-              String(release.date || "").slice(0, 4),
-              10
-            ) || 0;
-
-            if (movieYear && year === movieYear) {
-              score += 12;
-            }
-
-            if (release.date) score += 2;
-
-            return score;
-          }
-
-          return releaseScore(b) - releaseScore(a);
-        });
-
-        const release = releases[0];
-
-        if (!release?.id) continue;
-
-        log("Loading release:", release.title, release.id);
-
-        const details = await mbGet(
-          "release/" +
-            encodeURIComponent(release.id) +
-            "?inc=recordings+artist-credits"
-        );
-
-        addTracks(
-          details,
-          item.group.title || release.title
-        );
-      } catch (e) {
-        log("Group processing failed:", item.group.id, e);
-      }
-    }
-
-    if (!tracks.length) {
-      throw new Error(
-        "MusicBrainz: релизы найдены, но треки получить не удалось"
-      );
-    }
-
-    tracks.sort(function (a, b) {
-      if (a.category === b.category) {
-        return a.position - b.position;
-      }
-
-      return a.category === "soundtrack" ? -1 : 1;
-    });
-
-    return {
-      movieTitle: displayTitle,
-      originalTitle: originalTitle,
-      imdbId: imdbId,
-      groups: selected.map(function (item) {
-        return {
-          title: item.group.title,
-          score: item.score
-        };
-      }),
-      album: selected[0]?.group?.title || "",
-      artist: "",
-      date: "",
-      tracks: tracks,
-      albumLinks: {
-        spotify: "",
-        apple: "",
-        youtube: ""
-      }
-    };
-  }
-
-  async function loadRelease(releaseId, movieTitle, imdbId) {
-    const release = await mbGet(
-      "release/" +
-        encodeURIComponent(releaseId) +
-        "?inc=recordings+artist-credits+url-rels"
-    );
-
-    if (!release) {
-      throw new Error("MusicBrainz: пустой ответ release");
-    }
-
-    const albumArtist = artistCredit(release["artist-credit"]);
-
-    const tracks = [];
-
-    (release.media || []).forEach(function (media) {
-      (media.tracks || []).forEach(function (track) {
-        const recording = track.recording || {};
-
-        const title =
-          track.title ||
-          recording.title ||
-          "";
-
-        if (!title) return;
-
-        const artist =
-          artistCredit(recording["artist-credit"]) ||
-          artistCredit(track["artist-credit"]) ||
-          albumArtist;
-
-        tracks.push({
-          position: track.position || tracks.length + 1,
-          title: title,
-          artist: artist,
-          length: track.length || recording.length || 0,
-          links: searchLinks(title, artist)
-        });
-      });
-    });
-
-    const albumLinks = {
-      spotify: "",
-      apple: "",
-      youtube: ""
-    };
-
-    (release.relations || []).forEach(function (relation) {
-      const resource = relation?.url?.resource || "";
-      const type = String(relation?.type || "").toLowerCase();
-
-      if (/spotify\.com/i.test(resource)) {
-        albumLinks.spotify = resource;
-      }
-
-      if (
-        /music\.apple\.com|itunes\.apple\.com/i.test(resource)
-      ) {
-        albumLinks.apple = resource;
-      }
-
-      if (
-        /music\.youtube\.com|youtube\.com/i.test(resource)
-      ) {
-        albumLinks.youtube = resource;
-      }
-
-      // Keep this intentionally broad for MusicBrainz URL relationships.
-      if (type === "streaming page") {
-        if (/spotify\.com/i.test(resource)) {
-          albumLinks.spotify = resource;
-        } else if (/apple/i.test(resource)) {
-          albumLinks.apple = resource;
-        }
-      }
-    });
-
-    return {
-      movieTitle: movieTitle,
-      imdbId: imdbId,
-      mbid: release.id,
-      album: release.title || "",
-      artist: albumArtist,
-      date: release.date || "",
-      tracks: tracks,
-      albumLinks: albumLinks
-    };
+    const displayTitle=getMovieTitle(movie), originalTitle=getOriginalTitle(movie);
+    const movieYear=parseInt(getYear(movie),10)||0;
+    if(!movie?.id||!displayTitle) throw new Error("Не удалось определить фильм");
+    const title=originalTitle||displayTitle;
+    const normalize=function(v){return String(v||"").toLowerCase().replace(/[’‘`]/g,"'").replace(/[–—]/g,"-").replace(/\s+/g," ").trim();};
+    const scoreGroup=function(g){const t=normalize(g?.title),y=parseInt(String(g?.["first-release-date"]||"").slice(0,4),10)||0,st=(g?.["secondary-types"]||[]).map(normalize);let n=0;if(t===normalize(title))n+=80;if(t.indexOf(normalize(title))>=0)n+=40;if(t.indexOf("music from")>=0)n+=35;if(t.indexOf("motion picture")>=0)n+=20;if(t.indexOf("score")>=0)n+=15;if(st.indexOf("soundtrack")>=0)n+=45;if(movieYear&&y===movieYear)n+=30;if(t.indexOf("tribute")>=0||t.indexOf("karaoke")>=0)n-=80;return n;};
+    const query='releasegroup:"'+title+'" AND secondarytype:soundtrack';
+    let result=await mbGet("release-group/?query="+encodeURIComponent(query)+"&limit=10");
+    let groups=(result?.["release-groups"]||[]).slice();
+    if(!groups.length){result=await mbGet("release-group/?query="+encodeURIComponent('releasegroup:"'+title+'"')+"&limit=10");groups=(result?.["release-groups"]||[]).slice();}
+    groups.sort(function(a,b){return scoreGroup(b)-scoreGroup(a);});
+    const selected=groups.slice(0,2);
+    if(!selected.length)throw new Error("MusicBrainz: саундтрек не найден. Искали: "+title);
+    const tracks=[],seen={},selectedGroups=[];
+    function addTracks(details,groupTitle){(details?.media||[]).forEach(function(media){(media.tracks||[]).forEach(function(track){const rec=track.recording||{},tt=track.title||rec.title||"";if(!tt)return;const artist=artistCredit(rec["artist-credit"])||artistCredit(track["artist-credit"])||artistCredit(details["artist-credit"])||"",key=normalize(tt)+"|"+normalize(artist);if(seen[key])return;seen[key]=true;const lower=normalize(groupTitle);tracks.push({position:tracks.length+1,title:tt,artist:artist,length:track.length||rec.length||0,category:(lower.indexOf("score")>=0||lower.indexOf("original music")>=0)?"score":"soundtrack",album:groupTitle,links:searchLinks(tt,artist)});});});}
+    for(let i=0;i<selected.length;i++){const group=selected[i];try{const rr=await mbGet("release/?release-group="+encodeURIComponent(group.id)+"&status=official&limit=5");const releases=(rr?.releases||[]).slice().sort(function(a,b){const ay=parseInt(String(a.date||"").slice(0,4),10)||0,by=parseInt(String(b.date||"").slice(0,4),10)||0;return((b.status==="Official"?20:0)+(movieYear&&by===movieYear?15:0))-((a.status==="Official"?20:0)+(movieYear&&ay===movieYear?15:0));});const release=releases[0];if(!release?.id)continue;const details=await mbGet("release/"+encodeURIComponent(release.id)+"?inc=recordings+artist-credits");const groupTitle=group.title||release.title||title;addTracks(details,groupTitle);selectedGroups.push({title:groupTitle,score:scoreGroup(group)});}catch(e){log("MB group failed:",group.id,e);}}
+    if(!tracks.length)throw new Error("MusicBrainz: данные о треках не получены. Попробуйте ещё раз.");
+    tracks.sort(function(a,b){return a.category===b.category?a.position-b.position:(a.category==="soundtrack"?-1:1);});
+    return {movieTitle:displayTitle,originalTitle:originalTitle,imdbId:"",groups:selectedGroups,album:selectedGroups[0]?.title||"",artist:"",date:"",tracks:tracks,albumLinks:{spotify:"",apple:"",youtube:""}};
   }
 
   function formatTime(milliseconds) {
@@ -657,39 +206,7 @@
 
   function renderSoundtrack(movie) {
     Lampa.Loading.start();
-
-    const timeout = new Promise(function (_, reject) {
-      setTimeout(function () {
-        reject(
-          new Error(
-            "MusicBrainz отвечает слишком долго. Попробуйте ещё раз."
-          )
-        );
-      }, 30000);
-    });
-
-    Promise.race([
-      findSoundtrack(movie),
-      timeout
-    ])
-      .then(function (data) {
-        Lampa.Loading.stop();
-
-        data.movieImage = getMovieArtwork(movie);
-        data.moviePoster = movie?.poster_path || movie?.poster || "";
-
-        openSoundtrackModal(data);
-      })
-      .catch(function (error) {
-        Lampa.Loading.stop();
-
-        console.error(LOG, error);
-
-        Lampa.Noty.show(
-          "Не удалось загрузить саундтрек: " +
-          (error?.message || "неизвестная ошибка")
-        );
-      });
+    findSoundtrack(movie).then(function(data){Lampa.Loading.stop();data.movieImage=getMovieArtwork(movie);data.moviePoster=movie?.poster_path||movie?.poster||"";openSoundtrackModal(data);}).catch(function(error){Lampa.Loading.stop();console.error(LOG,error);Lampa.Noty.show("Не удалось загрузить саундтрек: "+(error?.message||"неизвестная ошибка"));});
   }
 
   function openSoundtrackModal(data) {
@@ -1272,6 +789,7 @@
     );
 
     const musicIcon = $('<img class="cinemax-main-music-icon" alt="" />');
+    musicIcon.css({width:"22px",height:"22px",maxWidth:"22px",maxHeight:"22px",minWidth:"22px",minHeight:"22px",objectFit:"contain",flex:"0 0 22px",display:"block"});
     musicIcon.attr("src", "data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjU2IDI1NiIgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pZFlNaWQiPjxwYXRoIGQ9Ik0xMjggMEM1Ny4zMDggMCAwIDU3LjMwOSAwIDEyOGMwIDcwLjY5NiA1Ny4zMDkgMTI4IDEyOCAxMjggNzAuNjk3IDAgMTI4LTU3LjMwNCAxMjgtMTI4QzI1NiA1Ny4zMTQgMTk4LjY5Ny4wMDcgMTI3Ljk5OC4wMDdsLjAwMS0uMDA2Wm01OC42OTkgMTg0LjYxNGMtMi4yOTMgMy43Ni03LjIxNSA0Ljk1Mi0xMC45NzUgMi42NDQtMzAuMDUzLTE4LjM1Ny02Ny44ODUtMjIuNTE1LTExMi40NC0xMi4zMzVhNy45ODEgNy45ODEgMCAwIDEtOS41NTItNi4wMDcgNy45NjggNy45NjggMCAwIDEgNi05LjU1M2M0OC43Ni0xMS4xNCA5MC41ODMtNi4zNDQgMTI0LjMyMyAxNC4yNzYgMy43NiAyLjMwOCA0Ljk1MiA3LjIxNSAyLjY0NCAxMC45NzVabTE1LjY2Ny0zNC44NTNjLTIuODkgNC42OTUtOS4wMzQgNi4xNzgtMTMuNzI2IDMuMjg5LTM0LjQwNi0yMS4xNDgtODYuODUzLTI3LjI3My0xMjcuNTQ4LTE0LjkyLTUuMjc4IDEuNTk0LTEwLjg1Mi0xLjM4LTEyLjQ1NC02LjY0OS0xLjU5LTUuMjc4IDEuMzg2LTEwLjg0MiA2LjY1NS0xMi40NDYgNDYuNDg1LTE0LjEwNiAxMDQuMjc1LTcuMjczIDE0My43ODcgMTcuMDA3IDQuNjkyIDIuODkgNi4xNzUgOS4wMzQgMy4yODYgMTMuNzJ2LS4wMDFabTEuMzQ1LTM2LjI5M0MxNjIuNDU3IDg4Ljk2NCA5NC4zOTQgODYuNzEgNTUuMDA3IDk4LjY2NmMtNi4zMjUgMS45MTgtMTMuMDE0LTEuNjUzLTE0LjkzLTcuOTc4LTEuOTE3LTYuMzI4IDEuNjUtMTMuMDEyIDcuOTgtMTQuOTM1QzkzLjI3IDYyLjAyNyAxNjguNDM0IDY0LjY4IDIxNS45MjkgOTIuODc2YzUuNzAyIDMuMzc2IDcuNTY2IDEwLjcyNCA0LjE4OCAxNi40MDUtMy4zNjIgNS42OS0xMC43MyA3LjU2NS0xNi40IDQuMTg3aC0uMDA2WiIgZmlsbD0iIzFFRDc2MCIvPjwvc3ZnPg==");
     button.prepend(musicIcon);
 
