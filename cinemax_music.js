@@ -743,15 +743,46 @@
           }
 
           .cinemax-track{
-            min-height:64px;
+            display:grid;
+            grid-template-columns:30px minmax(0,1fr);
+            grid-template-rows:auto auto;
+            column-gap:10px;
+            row-gap:7px;
+            min-height:0;
+            padding:12px 10px;
           }
 
-          .cinemax-track-services{
-            display:none;
+          .cinemax-track-number{
+            grid-column:1;
+            grid-row:1;
+            align-self:start;
+            padding-top:2px;
+          }
+
+          .cinemax-track-main{
+            grid-column:2;
+            grid-row:1;
+            min-width:0;
           }
 
           .cinemax-track-time{
             display:none;
+          }
+
+          .cinemax-track-services{
+            grid-column:2;
+            grid-row:2;
+            display:flex;
+            width:100%;
+            gap:6px;
+          }
+
+          .cinemax-track-services .cinemax-music-btn{
+            flex:1 1 0;
+            min-height:32px;
+            padding:0 5px;
+            border-radius:8px;
+            font-size:10px;
           }
 
           .cinemax-track{
