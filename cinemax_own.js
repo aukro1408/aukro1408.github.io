@@ -63,6 +63,8 @@
         syfy: '<svg viewBox="0 0 180 70" xmlns="http://www.w3.org/2000/svg"><text x="90" y="48" text-anchor="middle" font-family="Arial,sans-serif" font-size="38" font-weight="900" fill="#fff">SYFY</text></svg>'
     };
 
+    window.__CINEMAX_STUDIOS = [0];
+
     var STREAMINGS = [
         service('netflix','Netflix',LOGOS.netflix,{provider:'8',region:'UA'},{network:'213'},[
             category('new_movies','🎬 Новые фильмы','movie',{sort_by:'primary_release_date.desc','primary_release_date.lte':'{date}', 'vote_count.gte':'5'}),
@@ -193,18 +195,14 @@
     }
 
     function css() {
-        if ($('#cinemax-v2-css').length) return;
-        $('head').append('<style id="cinemax-v2-css">' +
-            '.cinemax-hero-v2{position:relative!important;overflow:hidden!important;border-radius:1em!important;background-size:cover!important;background-position:center!important;box-shadow:0 0 20px rgba(0,0,0,.45)!important;margin-bottom:10px!important;height:22.5em!important}' +
-            '.cinemax-hero-v2 .card__view,.cinemax-hero-v2 .card__title,.cinemax-hero-v2 .card__age,.cinemax-hero-v2 .card-marks,.cinemax-hero-v2 .card__icons,.cinemax-hero-v2 .card__quality{display:none!important}' +
-            '.cinemax-hero-v2__overlay{position:absolute;left:0;right:0;bottom:0;padding:2em;background:linear-gradient(to top,rgba(0,0,0,.92),transparent);z-index:2}' +
-            '.cinemax-hero-v2__title{font-size:2.2em;font-weight:800;color:#fff;text-shadow:2px 2px 4px #000;max-width:80%}' +
-            '.cinemax-hero-v2__logo{height:4em;max-width:70%;object-fit:contain;object-position:left bottom}' +
-            '.cinemax-hero-v2__meta{display:flex;gap:.7em;color:#ddd;margin:.5em 0;font-size:.9em}' +
-            '.cinemax-hero-v2__desc{max-width:60%;color:#ddd;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}' +
-            '.cinemax-stream-card-v2{position:relative;overflow:hidden}' +
-            '.cinemax-stream-card-v2 .card__view{display:flex!important;align-items:center!important;justify-content:center!important;background:rgba(255,255,255,.055)!important;border:1px solid rgba(255,255,255,.08)!important;border-radius:.8em!important}' +
-            '.cinemax-stream-card-v2 svg{width:80%;height:5em}' +
+        if ($('#cinemax-v3-studio-css').length) return;
+        $('head').append('<style id="cinemax-v3-studio-css">' +
+            '.card--studio{width:12em!important;height:6.75em!important;padding:0!important;background:#f5f7fa;border-radius:.8em;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.06);transition:transform .18s ease-out,box-shadow .18s ease-out}' +
+            '.card--studio.focus{transform:scale(1.06);box-shadow:0 0 18px rgba(255,255,255,.9);z-index:10}' +
+            '.card--studio .card__view{width:100%;height:100%;padding:.6em!important;box-sizing:border-box!important;background-origin:content-box;display:block;position:relative}' +
+            '.studio-logo-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center}' +
+            '.studio-logo-img{max-width:70%;max-height:60%;object-fit:contain;display:block}' +
+            '.studio-logo-fallback{display:block;font-weight:700;font-size:1.05em;text-align:center;color:#111}' +
             '.cinemax-stream-page-v2{padding:1.5em 2em 4em}' +
             '.cinemax-stream-page-v2__title{font-size:2em;font-weight:800;margin-bottom:1em}' +
             '.cinemax-cat-v2{margin-bottom:2em}.cinemax-cat-v2__title{font-size:1.25em;font-weight:700;margin-bottom:.6em}' +
@@ -218,137 +216,403 @@
             '</style>');
     }
 
-    function heroCard(movie) {
-        var card = Lampa.Maker.make('Card', movie, function (m) {
-            return m.only('Card', 'Callback');
-        });
-
-        var el = $(card.render(true));
-        el.addClass('cinemax-hero-v2');
-
-        var type = movie.name ? 'tv' : 'movie';
-        var bg = movie.backdrop_path || movie.poster_path;
-        el.css('background-image', 'url("' + image(bg, 'original') + '")');
-
-        function draw(details) {
-            var logo = details && details.images && details.images.logos || [];
-            var selected = logo.find(function (x) { return x.iso_639_1 === lang(); }) ||
-                logo.find(function (x) { return x.iso_639_1 === 'en'; }) || logo[0];
-
-            var title = $('<div class="cinemax-hero-v2__title"></div>').text(movie.title || movie.name || '');
-            if (selected && selected.file_path) {
-                title = $('<img class="cinemax-hero-v2__logo">').attr('src', image(selected.file_path, 'w500'));
-            }
-
-            var rating = details && details.vote_average || movie.vote_average;
-            var date = details && (details.release_date || details.first_air_date) ||
-                movie.release_date || movie.first_air_date;
-
-            var meta = [];
-            if (rating) meta.push('★ ' + Number(rating).toFixed(1));
-            if (date) meta.push(String(date).slice(0, 4));
-            meta.push(type === 'movie' ? 'Фильм' : 'Сериал');
-
-            el.find('.cinemax-hero-v2__overlay').remove();
-            var overlay = $('<div class="cinemax-hero-v2__overlay"></div>');
-            overlay.append(title);
-            overlay.append($('<div class="cinemax-hero-v2__meta"></div>').text(meta.join('  •  ')));
-            overlay.append($('<div class="cinemax-hero-v2__desc"></div>').text(
-                (details && details.overview) || movie.overview || ''
-            ));
-            el.append(overlay);
+    /* heroCard replaced by source-compatible makeHeroResultItem */
+function makeHeroResultItem(movie, heightEm) {
+        if (!$('#studios5-hero-css').length) {
+            $('body').append('<style id="studios5-hero-css">.hero-banner .card-marks, .hero-banner .card__icons, .hero-banner .card__quality { display: none !important; }</style>');
         }
+        if (!$('#studios5-show-more-css').length) {
+            $('body').append('<style id="studios5-show-more-css">' +
+                '.show-more-button.focus { transform: scale(1.05) !important; box-shadow: 0 0 0 3px #fff !important; z-index: 10 !important; }' +
+                '.card.show-more-button:focus { transform: scale(1.05) !important; box-shadow: 0 0 0 3px #fff !important; z-index: 10 !important; }' +
+                '.kino-card.show-more-button:hover { transform: scale(1.05) !important; box-shadow: 0 0 0 3px #fff !important; z-index: 10 !important; }' +
+                '.kino-card.show-more-button.focus { transform: scale(1.05) !important; box-shadow: 0 0 0 3px #fff !important; z-index: 10 !important; }' +
+            '</style>');
+        }
+        heightEm = heightEm || 22.5;
+        var pad = (heightEm / 35 * 2).toFixed(1);
+        var titleEm = (heightEm / 35 * 2.5).toFixed(2);
+        var descEm = (heightEm / 35 * 1.1).toFixed(2);
 
-        draw(null);
-        request(tmdb(type + '/' + movie.id + '?append_to_response=images'), function (details) {
-            draw(details);
-        });
-
-        el.on('hover:enter', function () {
-            Lampa.Activity.push({
-                url: '',
-                title: movie.title || movie.name || '',
-                component: 'full',
-                card: movie
+        var renderHeroContent = function(item, movie) {
+            item.empty(); // Clear existing content
+            item.append('<div class="hero-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); padding: ' + pad + 'em; border-radius: 0 0 1em 1em;">' +
+                '<div class="hero-header" style="margin-bottom: 0.3em; min-height: 3em; display: flex; align-items: flex-end;">' +
+                    '<div class="hero-title" style="font-size: ' + titleEm + 'em; font-weight: bold; color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">' + (movie.title || movie.name) + '</div>' +
+                '</div>' +
+                '<div class="hero-meta" style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5em; font-size: 0.9em; color: #ccc; margin-bottom: 0.5em;"></div>' +
+                '<div class="hero-desc" style="font-size: ' + descEm + 'em; color: #ddd; max-width: 60%; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.6em;">' + (movie.overview || '') + '</div>' +
+                '<div class="hero-trailer-btn selector" style="display: inline-flex; align-items: center; background: rgba(255, 255, 255, 0.2); padding: 0.4em 0.8em; border-radius: 0.3em; cursor: pointer; transition: background 0.2s;">' +
+                '<svg style="width: 1.2em; height: 1.2em; margin-right: 0.4em;" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>' +
+                '<span style="font-size: 0.9em; font-weight: 600;">Трейлер</span>' +
+                '</div>' +
+                '</div>');
+            
+            // Trailer Click
+            item.find('.hero-trailer-btn').on('hover:enter click', function (e) {
+                e.stopPropagation();
+                var network = new Lampa.Reguest();
+                var type = movie.name ? 'tv' : 'movie';
+                var lang = Lampa.Storage.get('language', 'uk');
+                function search(searchLang) {
+                    var url = Lampa.TMDB.api(type + '/' + movie.id + '/videos?api_key=' + getTmdbKey() + '&language=' + searchLang);
+                    network.silent(url, function (json) {
+                        var videos = json.results || [];
+                        var trailer = videos.find(function(v) { return v.type === 'Trailer' && v.site === 'YouTube'; }) || videos[0];
+                        if (trailer && trailer.key) {
+                            playYouTubeCustom(trailer.key);
+                        } else if (searchLang !== 'en-US') {
+                            search('en-US');
+                        } else {
+                            Lampa.Noty.show('Трейлер не знайдено');
+                        }
+                    }, function() {
+                            if (searchLang !== 'en-US') search('en-US');
+                            else Lampa.Noty.show('Помилка пошуку трейлера');
+                    });
+                }
+                search(lang);
             });
-        });
+
+            // Fetch Details
+            var type = movie.name ? 'tv' : 'movie';
+            var lang = Lampa.Storage.get('language', 'uk');
+            var url = Lampa.TMDB.api(type + '/' + movie.id + '?api_key=' + getTmdbKey() + '&language=' + lang + '&append_to_response=images,release_dates,content_ratings');
+            
+            var network = new Lampa.Reguest();
+            network.silent(url, function(details) {
+                // Logo
+                var logo = null;
+                if (details.images && details.images.logos && details.images.logos.length) {
+                    logo = details.images.logos.find(function(l) { return l.iso_639_1 === lang; }) || 
+                           details.images.logos.find(function(l) { return l.iso_639_1 === 'en'; }) || 
+                           details.images.logos[0];
+                }
+                if (logo) {
+                    var logoUrl = Lampa.TMDB.image('t/p/w500' + logo.file_path);
+                    item.find('.hero-title').html('<img src="' + logoUrl + '" style="height: 4em; width: auto; max-width: 80%; object-fit: contain; display: block;" />');
+                    item.find('.hero-header').css('min-height', 'auto');
+                }
+
+                // Metadata
+                var metaParts = [];
+                
+                // Rating & Year
+                var headMeta = '';
+                var rating = details.vote_average || movie.vote_average;
+                if (rating) headMeta += '<span class="card__mark card__mark--rating" style="position: static; margin: 0 0.5em 0 0; padding: 0.2em 0.5em; font-size: 0.9em; background: rgba(255,255,255,0.2); border-radius: 0.3em;">★ ' + parseFloat(rating).toFixed(1) + '</span>';
+                
+                var date = details.release_date || details.first_air_date || movie.release_date || movie.first_air_date;
+                if (date) headMeta += parseInt(date);
+                
+                if (headMeta) metaParts.push(headMeta);
+                
+                // Type
+                var typeStr = type === 'movie' ? Lampa.Lang.translate('movie') : Lampa.Lang.translate('tv');
+                if (!typeStr || typeStr === 'movie' || typeStr === 'tv') {
+                    typeStr = type === 'movie' ? (lang === 'ru' ? 'Фильм' : 'Фільм') : (lang === 'ru' ? 'Сериал' : 'Серіал');
+                }
+                metaParts.push(typeStr);
+                
+                // Age Rating
+                var age = '';
+                if (type === 'movie' && details.release_dates && details.release_dates.results) {
+                    var rel = details.release_dates.results.find(function(r) { return r.iso_3166_1 === 'US' || r.iso_3166_1 === 'RU'; });
+                    if (rel && rel.release_dates && rel.release_dates.length) age = rel.release_dates[0].certification;
+                } else if (type === 'tv' && details.content_ratings && details.content_ratings.results) {
+                    var rat = details.content_ratings.results.find(function(r) { return r.iso_3166_1 === 'US' || r.iso_3166_1 === 'RU'; });
+                    if (rat) age = rat.rating;
+                }
+                if (age) {
+                    var ageColor = '#fff';
+                    var ageVal = parseInt(age);
+                    var displayAge = age;
+
+                    if (!isNaN(ageVal)) {
+                        displayAge = ageVal + '+';
+                        if (ageVal >= 18) ageColor = '#d32f2f'; // Red
+                        else if (ageVal >= 16) ageColor = '#f57c00'; // Orange
+                        else if (ageVal >= 12) ageColor = '#fbc02d'; // Yellow
+                        else ageColor = '#388e3c'; // Green
+                    } else {
+                        // US Ratings Mapping
+                        if (['R', 'NC-17', 'TV-MA'].indexOf(age) !== -1) {
+                            ageColor = '#d32f2f';
+                            displayAge = '18+';
+                        } else if (['PG-13', 'TV-14'].indexOf(age) !== -1) {
+                            ageColor = '#f57c00';
+                            displayAge = '16+';
+                        } else if (['PG', 'TV-PG', 'TV-Y7'].indexOf(age) !== -1) {
+                            ageColor = '#fbc02d';
+                            displayAge = '12+';
+                        } else {
+                            ageColor = '#388e3c';
+                            displayAge = '0+';
+                        }
+                    }
+                    metaParts.push('<span style="border: 1px solid ' + ageColor + '; color: ' + ageColor + '; padding: 0 0.3em; border-radius: 0.2em; font-size: 0.9em; font-weight: bold;">' + displayAge + '</span>');
+                }
+
+                // Country
+                if (details.production_countries && details.production_countries.length) {
+                    metaParts.push(details.production_countries[0].iso_3166_1);
+                }
+                
+                // Duration
+                var runtime = details.runtime || (details.episode_run_time ? details.episode_run_time[0] : 0);
+                if (runtime) {
+                    var h = Math.floor(runtime / 60);
+                    var m = runtime % 60;
+                    var hStr = h > 0 ? h + (lang === 'ru' ? 'ч.' : 'год.') : '';
+                    var mStr = m > 0 ? m + (lang === 'ru' ? 'м.' : 'хв.') : '';
+                    if (hStr || mStr) metaParts.push((hStr + ' ' + mStr).trim());
+                }
+
+                if (metaParts.length) {
+                    item.find('.hero-meta').html('<span>' + metaParts.join('</span><span>') + '</span>');
+                }
+            });
+        };
 
         return {
             title: 'Hero',
             params: {
-                createInstance: function () {
+                createInstance: function (element) {
+                    var card = Lampa.Maker.make('Card', element, function (module) { return module.only('Card', 'Callback'); });
                     return card;
+                },
+                emit: {
+                    onCreate: function () {
+                        var img = movie.backdrop_path ? Lampa.TMDB.image('t/p/original' + movie.backdrop_path) : (movie.poster_path ? Lampa.TMDB.image('t/p/original' + movie.poster_path) : '');
+                        try {
+                            var item = $(this.html);
+                            item.addClass('hero-banner');
+                            item.css({
+                                'background-image': 'url(' + img + ')',
+                                'width': '100%',
+                                'height': heightEm + 'em',
+                                'background-size': 'cover',
+                                'background-position': 'center',
+                                'border-radius': '1em',
+                                'position': 'relative',
+                                'box-shadow': '0 0 20px rgba(0,0,0,0.5)',
+                                'margin-bottom': '10px'
+                            });
+                            
+                            renderHeroContent(item, movie);
+
+                            item.find('.card__view').remove();
+                            item.find('.card__title').remove();
+                            item.find('.card__age').remove();
+                            item.find('.card-marks').remove();
+                            item.find('.card__icons').remove();
+                            item[0].heroMovieData = movie;
+                        } catch (e) { console.log('Hero onCreate error:', e); }
+                    },
+                    onVisible: function () {
+                        try {
+                            var item = $(this.html);
+                            if (!item.hasClass('hero-banner')) {
+                                var img = movie.backdrop_path ? Lampa.TMDB.image('t/p/original' + movie.backdrop_path) : (movie.poster_path ? Lampa.TMDB.image('t/p/original' + movie.poster_path) : '');
+                                item.addClass('hero-banner');
+                                item.css({
+                                    'background-image': 'url(' + img + ')',
+                                    'width': '100%',
+                                    'height': heightEm + 'em',
+                                    'background-size': 'cover',
+                                    'background-position': 'center',
+                                    'border-radius': '1em',
+                                    'position': 'relative',
+                                    'box-shadow': '0 0 20px rgba(0,0,0,0.5)',
+                                    'margin-bottom': '10px'
+                                });
+                                
+                                renderHeroContent(item, movie);
+
+                                item.find('.card__view').remove();
+                                item.find('.card__title').remove();
+                                item.find('.card__age').remove();
+                                item.find('.card-marks').remove();
+                                item.find('.card__icons').remove();
+                                item[0].heroMovieData = movie;
+                            }
+                            // Stop default image loading
+                            if (this.img) this.img.onerror = function () { };
+                            if (this.img) this.img.onload = function () { };
+                        } catch (e) { console.log('Hero onVisible error:', e); }
+                    },
+                    onlyEnter: function () {
+                        // Функция запуска трейлера (копируем логику из кнопки)
+                        var playHeroTrailer = function() {
+                             var network = new Lampa.Reguest();
+                             var type = movie.name ? 'tv' : 'movie';
+                             var lang = Lampa.Storage.get('language', 'uk');
+                            
+                            function search(searchLang) {
+                                var url = Lampa.TMDB.api(type + '/' + movie.id + '/videos?api_key=' + getTmdbKey() + '&language=' + searchLang);
+                                network.silent(url, function (json) {
+                                    var videos = json.results || [];
+                                    var trailer = videos.find(function(v) { return v.type === 'Trailer' && v.site === 'YouTube'; }) || videos[0];
+                                    if (trailer && trailer.key) {
+                                        playYouTubeCustom(trailer.key);
+                                    } else if (searchLang !== 'en-US') {
+                                        search('en-US');
+                                    } else {
+                                        Lampa.Noty.show('Трейлер не знайдено');
+                                    }
+                                }, function() {
+                                     if (searchLang !== 'en-US') search('en-US');
+                                     else Lampa.Noty.show('Помилка пошуку трейлера');
+                                });
+                            }
+                            search(lang);
+                        };
+
+                        // Меню выбора действия
+                        Lampa.Select.show({
+                            title: tr('menu_title'),
+                            items: [
+                                { title: tr('menu_details'), action: 'open' },
+                                { title: tr('menu_trailer'), action: 'trailer' }
+                            ],
+                            onSelect: function(a) {
+                                if(a.action === 'trailer') {
+                                    playHeroTrailer();
+                                } else {
+                                    Lampa.Activity.push({
+                                        url: '',
+                                        component: 'full',
+                                        id: movie.id,
+                                        method: movie.name ? 'tv' : 'movie',
+                                        card: movie,
+                                        source: 'tmdb'
+                                    });
+                                }
+                            }
+                        });
+                    },
+                    onKey: function(key) {
+                        if (key === 'play') {
+                           // Копия логики запуска трейлера (можно вынести в отдельную функцию выше, но здесь дублируем для надежности области видимости)
+                           var playHeroTrailerKey = function() {
+                                  var network = new Lampa.Reguest();
+                                  var type = movie.name ? 'tv' : 'movie';
+                                  var lang = Lampa.Storage.get('language', 'uk');
+                                  
+                                function search(searchLang) {
+                                    var url = Lampa.TMDB.api(type + '/' + movie.id + '/videos?api_key=' + getTmdbKey() + '&language=' + searchLang);
+                                    network.silent(url, function (json) {
+                                        var videos = json.results || [];
+                                        var trailer = videos.find(function(v) { return v.type === 'Trailer' && v.site === 'YouTube'; }) || videos[0];
+                                        if (trailer && trailer.key) { playYouTubeCustom(trailer.key); } 
+                                        else if (searchLang !== 'en-US') { search('en-US'); } 
+                                        else { Lampa.Noty.show('Трейлер не знайдено'); }
+                                    });
+                                }
+                                search(lang);
+                           };
+                           playHeroTrailerKey();
+                        }
+                    }
                 }
-            },
-            html: el[0]
+            }
         };
     }
 
-    function addHero() {
+    function addHeroRow() {
         Lampa.ContentRows.add({
             index: 0,
-            name: HERO_ROW,
+            name: 'cinemax_hero_v2',
             title: 'Hero',
             screen: ['main'],
-            call: function () {
+            call: function (params) {
                 return function (callback) {
                     var network = new Lampa.Reguest();
-                    var url = tmdb('movie/now_playing?region=UA&page=1');
+                    // Fetch Now Playing movies (Fresh releases)
+                    var url = Lampa.TMDB.api('movie/now_playing?api_key=' + getTmdbKey() + '&language=' + Lampa.Storage.get('language', 'uk') + '&region=UA');
 
                     network.silent(url, function (json) {
-                        var items = (json.results || []).filter(function (x) {
-                            return x.backdrop_path;
-                        }).slice(0, 10);
-
+                        var items = json.results || [];
                         if (!items.length) {
-                            network.silent(tmdb('trending/all/week?page=1'), function (fallback) {
-                                items = (fallback.results || []).filter(function (x) {
-                                    return x.backdrop_path;
-                                }).slice(0, 10);
-                                finish(items);
-                            }, function () { callback({results:[]}); });
-                        } else finish(items);
+                            // Fallback if no fresh movies
+                            url = Lampa.TMDB.api('trending/all/week?api_key=' + getTmdbKey() + '&language=' + Lampa.Storage.get('language', 'uk'));
+                            network.silent(url, function (retryJson) {
+                                items = retryJson.results || [];
+                                build(items);
+                            });
+                            return;
+                        }
+                        build(items);
 
-                        function finish(list) {
+                        function build(movies) {
+                            var moviesWithBackdrop = movies.filter(function (m) { return m.backdrop_path; });
+                            var results = moviesWithBackdrop.slice(0, 15).map(function (movie) { return makeHeroResultItem(movie, 22.5); });
+
                             callback({
-                                results: list.map(function (m) { return heroCard(m); }),
+                                results: results,
                                 title: 'Hero',
-                                params: { items: { mapping: 'line', view: 15 } }
+                                params: {
+                                    items: {
+                                        mapping: 'line',
+                                        view: 15
+                                    }
+                                }
                             });
                         }
-                    }, function () { callback({results:[]}); });
+
+                    }, function () {
+                        callback({ results: [] });
+                    });
                 };
             }
         });
     }
 
     function streamingCard(s) {
-        var card = Lampa.Maker.make('Card', {
-            id: s.id,
-            title: s.title
-        }, function (m) { return m.only('Card', 'Callback'); });
-
-        var el = $(card.render(true));
-        el.addClass('cinemax-stream-card-v2');
-        el.find('.card__view').html(s.svg);
-        el.find('.card__title,.card__age,.card-marks,.card__icons,.card__quality').remove();
-
-        el.on('hover:enter', function () {
-            Lampa.Activity.push({
-                url: '',
-                title: s.title,
-                component: 'cinemax_streaming_main_v2',
-                service_id: s.id,
-                page: 1
-            });
-        });
-
         return {
-            title: s.title,
+            title: s.name || s.title,
             params: {
-                createInstance: function () { return card; }
-            },
-            html: el[0]
+                createInstance: function () {
+                    var card = Lampa.Maker.make('Card', this, function (module) {
+                        return module.only('Card', 'Callback');
+                    });
+                    return card;
+                },
+                emit: {
+                    onCreate: function () {
+                        var item = $(this.html);
+                        item.addClass('card--studio');
+                        var view = item.find('.card__view');
+                        view.empty();
+
+                        var wrapper = $('<div class="studio-logo-wrap"></div>');
+                        if (s.svg) {
+                            var svgEl = $(s.svg);
+                            svgEl.addClass('studio-logo-img');
+                            svgEl.css({
+                                'max-width': '70%',
+                                'max-height': '60%',
+                                'display': 'block'
+                            });
+                            wrapper.append(svgEl);
+                        } else {
+                            wrapper.append($('<div class="studio-logo-fallback"></div>').text(s.name || s.title));
+                        }
+                        view.append(wrapper);
+                        item.find('.card__age, .card__year, .card__type, .card__textbox, .card__title').remove();
+                        item.attr('data-click-processed', '1');
+                    },
+                    onlyEnter: function () {
+                        Lampa.Activity.push({
+                            url: '',
+                            title: s.name || s.title,
+                            component: 'cinemax_streaming_main_v2',
+                            service_id: s.id,
+                            page: 1
+                        });
+                    }
+                }
+            }
         };
     }
 
@@ -360,10 +624,14 @@
             screen: ['main'],
             call: function () {
                 return function (callback) {
+                    var items = STREAMINGS.map(function (cfg) {
+                        var s = (window.__CINEMAX_STUDIOS || []).find(function (x) { return x.id === cfg.id; });
+                        return s || { id: cfg.id, name: cfg.title, title: cfg.title, svg: '' };
+                    });
                     callback({
-                        results: STREAMINGS.map(streamingCard),
+                        results: items.map(streamingCard),
                         title: 'Стриминги',
-                        params: { items: { mapping: 'line', view: 8 } }
+                        params: { items: { view: 15, mapping: 'line' } }
                     });
                 };
             }
@@ -518,11 +786,29 @@
 
     function init() {
         if (!window.Lampa || !Lampa.ContentRows || !Lampa.Maker) return;
-        if ($('#cinemax-v2-css').length) return;
+        if ($('#cinemax-v3-studio-css').length) return;
         css();
         register();
         addHero();
         addStreamings();
+
+        // Match the proven Flixio layout: wide hero cards + correct initial focus.
+        setTimeout(function () {
+            var heroCards = document.querySelectorAll('.hero-banner');
+            for (var i = 0; i < heroCards.length; i++) {
+                heroCards[i].style.width = '85vw';
+                heroCards[i].style.marginRight = '1.5em';
+            }
+
+            var studioCard = $('.card--studio').first();
+            if (studioCard.length && Lampa.Controller && Lampa.Controller.enabled) {
+                try {
+                    if (Lampa.Controller.enabled().name === 'main' && Lampa.Controller.collectionFocus) {
+                        Lampa.Controller.collectionFocus(studioCard[0], $('.scroll__content').eq(1)[0]);
+                    }
+                } catch (e) {}
+            }
+        }, 1000);
     }
 
     if (window.appready) init();
