@@ -217,6 +217,10 @@
     }
 
     /* heroCard replaced by source-compatible makeHeroResultItem */
+function getTmdbKey() {
+        try { return (Lampa.Storage.get('flixio_tmdb_apikey') || '').trim() || (Lampa.TMDB && Lampa.TMDB.key ? Lampa.TMDB.key() : ''); } catch (e) { return key(); }
+    }
+
 function makeHeroResultItem(movie, heightEm) {
         if (!$('#studios5-hero-css').length) {
             $('body').append('<style id="studios5-hero-css">.hero-banner .card-marks, .hero-banner .card__icons, .hero-banner .card__quality { display: none !important; }</style>');
@@ -260,7 +264,7 @@ function makeHeroResultItem(movie, heightEm) {
                         var videos = json.results || [];
                         var trailer = videos.find(function(v) { return v.type === 'Trailer' && v.site === 'YouTube'; }) || videos[0];
                         if (trailer && trailer.key) {
-                            playYouTubeCustom(trailer.key);
+                            Lampa.Activity.push({url:'',component:'full',id:movie.id,method:movie.name?'tv':'movie',card:movie,source:'tmdb'});
                         } else if (searchLang !== 'en-US') {
                             search('en-US');
                         } else {
@@ -442,78 +446,16 @@ function makeHeroResultItem(movie, heightEm) {
                         } catch (e) { console.log('Hero onVisible error:', e); }
                     },
                     onlyEnter: function () {
-                        // Функция запуска трейлера (копируем логику из кнопки)
-                        var playHeroTrailer = function() {
-                             var network = new Lampa.Reguest();
-                             var type = movie.name ? 'tv' : 'movie';
-                             var lang = Lampa.Storage.get('language', 'uk');
-                            
-                            function search(searchLang) {
-                                var url = Lampa.TMDB.api(type + '/' + movie.id + '/videos?api_key=' + getTmdbKey() + '&language=' + searchLang);
-                                network.silent(url, function (json) {
-                                    var videos = json.results || [];
-                                    var trailer = videos.find(function(v) { return v.type === 'Trailer' && v.site === 'YouTube'; }) || videos[0];
-                                    if (trailer && trailer.key) {
-                                        playYouTubeCustom(trailer.key);
-                                    } else if (searchLang !== 'en-US') {
-                                        search('en-US');
-                                    } else {
-                                        Lampa.Noty.show('Трейлер не знайдено');
-                                    }
-                                }, function() {
-                                     if (searchLang !== 'en-US') search('en-US');
-                                     else Lampa.Noty.show('Помилка пошуку трейлера');
-                                });
-                            }
-                            search(lang);
-                        };
-
-                        // Меню выбора действия
-                        Lampa.Select.show({
-                            title: tr('menu_title'),
-                            items: [
-                                { title: tr('menu_details'), action: 'open' },
-                                { title: tr('menu_trailer'), action: 'trailer' }
-                            ],
-                            onSelect: function(a) {
-                                if(a.action === 'trailer') {
-                                    playHeroTrailer();
-                                } else {
-                                    Lampa.Activity.push({
-                                        url: '',
-                                        component: 'full',
-                                        id: movie.id,
-                                        method: movie.name ? 'tv' : 'movie',
-                                        card: movie,
-                                        source: 'tmdb'
-                                    });
-                                }
-                            }
+                        Lampa.Activity.push({
+                            url: '',
+                            component: 'full',
+                            id: movie.id,
+                            method: movie.name ? 'tv' : 'movie',
+                            card: movie,
+                            source: 'tmdb'
                         });
                     },
-                    onKey: function(key) {
-                        if (key === 'play') {
-                           // Копия логики запуска трейлера (можно вынести в отдельную функцию выше, но здесь дублируем для надежности области видимости)
-                           var playHeroTrailerKey = function() {
-                                  var network = new Lampa.Reguest();
-                                  var type = movie.name ? 'tv' : 'movie';
-                                  var lang = Lampa.Storage.get('language', 'uk');
-                                  
-                                function search(searchLang) {
-                                    var url = Lampa.TMDB.api(type + '/' + movie.id + '/videos?api_key=' + getTmdbKey() + '&language=' + searchLang);
-                                    network.silent(url, function (json) {
-                                        var videos = json.results || [];
-                                        var trailer = videos.find(function(v) { return v.type === 'Trailer' && v.site === 'YouTube'; }) || videos[0];
-                                        if (trailer && trailer.key) { playYouTubeCustom(trailer.key); } 
-                                        else if (searchLang !== 'en-US') { search('en-US'); } 
-                                        else { Lampa.Noty.show('Трейлер не знайдено'); }
-                                    });
-                                }
-                                search(lang);
-                           };
-                           playHeroTrailerKey();
-                        }
-                    }
+                    onKey: function(key) {}
                 }
             }
         };
@@ -789,7 +731,7 @@ function makeHeroResultItem(movie, heightEm) {
         if ($('#cinemax-v3-studio-css').length) return;
         css();
         register();
-        addHero();
+        addHeroRow();
         addStreamings();
 
         // Match the proven Flixio layout: wide hero cards + correct initial focus.
