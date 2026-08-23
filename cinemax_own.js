@@ -311,7 +311,7 @@ function getTmdbKey() {
 
 function makeHeroResultItem(movie, heightEm) {
         if (!$('#studios5-hero-css').length) {
-            $('body').append('<style id="studios5-hero-css">.hero-banner .card-marks, .hero-banner .card__icons, .hero-banner .card__quality { display: none !important; }</style>');
+            $('body').append('<style id="studios5-hero-css">.hero-banner .card-marks, .hero-banner .card__icons, .hero-banner .card__quality, .hero-trailer-btn { display: none !important; }</style>');
         }
         if (!$('#studios5-show-more-css').length) {
             $('body').append('<style id="studios5-show-more-css">' +
@@ -332,8 +332,9 @@ function makeHeroResultItem(movie, heightEm) {
                 '<div class="hero-header" style="margin-bottom: 0.3em; min-height: 3em; display: flex; align-items: flex-end;">' +
                     '<div class="hero-title" style="font-size: ' + titleEm + 'em; font-weight: bold; color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">' + (movie.title || movie.name) + '</div>' +
                 '</div>' +
+                '<div class="hero-age-badge" style="position:absolute; top:0.8em; right:0.8em; z-index:5; display:none;"></div>' +
                 '<div class="hero-meta" style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5em; font-size: 0.9em; color: #ccc; margin-bottom: 0.5em;"></div>' +
-                '<div class="hero-desc" style="font-size: ' + descEm + 'em; color: #ddd; max-width: 60%; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.6em;">' + (movie.overview || '') + '</div>' +
+                '<div class="hero-desc" style="font-size: ' + descEm + 'em; color: #ddd; width: 100%; max-width: 100%; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.6em;">' + (movie.overview || '') + '</div>' +
                 '<div class="hero-trailer-btn selector" style="display: inline-flex; align-items: center; background: rgba(255, 255, 255, 0.2); padding: 0.4em 0.8em; border-radius: 0.3em; cursor: pointer; transition: background 0.2s;">' +
                 '<svg style="width: 1.2em; height: 1.2em; margin-right: 0.4em;" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>' +
                 '<span style="font-size: 0.9em; font-weight: 600;">Трейлер</span>' +
@@ -442,7 +443,19 @@ function makeHeroResultItem(movie, heightEm) {
                             displayAge = '0+';
                         }
                     }
-                    metaParts.push('<span style="border: 1px solid ' + ageColor + '; color: ' + ageColor + '; padding: 0 0.3em; border-radius: 0.2em; font-size: 0.9em; font-weight: bold;">' + displayAge + '</span>');
+                    item.find('.hero-age-badge').html(
+                        '<span style="' +
+                        'display:inline-flex;align-items:center;justify-content:center;' +
+                        'min-width:2.8em;height:2.8em;padding:0 0.45em;' +
+                        'box-sizing:border-box;border-radius:0.55em;' +
+                        'border:2px solid ' + ageColor + ';' +
+                        'background:rgba(0,0,0,0.58);' +
+                        'backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);' +
+                        'color:' + ageColor + ';' +
+                        'font-size:1.15em;font-weight:800;line-height:1;' +
+                        'text-shadow:0 1px 2px rgba(0,0,0,.5);' +
+                        '">' + displayAge + '</span>'
+                    ).css('display', 'block');
                 }
 
                 // Country
