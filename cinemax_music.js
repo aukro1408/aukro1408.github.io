@@ -25,6 +25,11 @@
       movie?.original_name || "";
   }
 
+  function getOriginalTitle(movie) {
+    return movie?.original_title || movie?.original_name ||
+      movie?.title || movie?.name || "";
+  }
+
   function getYear(movie) {
     const date = movie?.release_date || movie?.first_air_date || "";
     return date ? date.slice(0, 4) : "";
@@ -127,9 +132,10 @@
   }
 
   async function findSoundtrack(movie) {
-    const title = getMovieTitle(movie);
+    const displayTitle = getMovieTitle(movie);
+    const originalTitle = getOriginalTitle(movie);
 
-    if (!movie?.id || !title) {
+    if (!movie?.id || !displayTitle) {
       throw new Error("Не удалось определить фильм");
     }
 
@@ -137,98 +143,152 @@
       ? "tv"
       : "movie";
 
-    log("Movie:", title, getYear(movie), "TMDB ID:", movie.id);
-
-    // 1. Get IMDb ID through Lampa's already configured TMDB source.
-    const external = await tmdbGet(
-      type + "/" + movie.id + "/external_ids"
+    log(
+      "Movie:",
+      displayTitle,
+      "| original:",
+      originalTitle,
+      "| TMDB ID:",
+      movie.id
     );
 
-    const imdbId = external?.imdb_id || "";
-
-    log("IMDb ID:", imdbId || "не найден");
-
-    // 2. MusicBrainz search.
-    // We first search release-group because it is the stable conceptual
-    // container for an OST, then load its releases.
-    const query = encodeURIComponent(
-      'releasegroup:"' + title + '"'
-    );
-
-    let groups;
+    // 1. TMDB -> IMDb ID.
+    let imdbId = "";
 
     try {
-      groups = await mbGet(
-        "release-group/?query=" + query + "&limit=20"
+      const external = await tmdbGet(
+        type + "/" + movie.id + "/external_ids"
       );
+      imdbId = external?.imdb_id || "";
+      log("IMDb ID:", imdbId || "не найден");
     } catch (e) {
-      // Fallback to release search.
-      log("Release-group search failed, fallback to release search", e);
-
-      const releases = await mbGet(
-        "release/?query=" +
-          encodeURIComponent('release:"' + title + '"') +
-          "&limit=30"
-      );
-
-      const release = pickRelease(releases?.releases || [], title);
-
-      if (!release) {
-        throw new Error("MusicBrainz: саундтрек не найден");
-      }
-
-      return loadRelease(release.id, title, imdbId);
+      log("TMDB external_ids failed:", e);
     }
 
-    const groupsList = groups?.["release-groups"] || [];
+    // 2. IMPORTANT:
+    // Lampa usually gives the localized Russian title in movie.title.
+    // MusicBrainz often stores the original/English title.
+    // The previous test searched the localized title as a release-group
+    // and therefore returned "release-group не найден".
+    //
+    // We now search RELEASE directly, using the original title first.
+    // MusicBrainz documents "release" as a valid search field.
+    const titles = [];
 
-    if (!groupsList.length) {
-      throw new Error("MusicBrainz: release-group не найден");
-    }
-
-    // Prefer soundtrack/score groups and those matching the film title.
-    groupsList.sort(function (a, b) {
-      function s(group) {
-        const t = String(group?.title || "").toLowerCase();
-        let n = 0;
-
-        if (t.indexOf(title.toLowerCase()) >= 0) n += 5;
-        if (group?.primary-type === "Soundtrack") n += 10;
-        if (group?.secondary-types?.indexOf("Soundtrack") >= 0) n += 8;
-
-        return n;
+    [originalTitle, displayTitle].forEach(function (title) {
+      if (title && titles.indexOf(title) < 0) {
+        titles.push(title);
       }
-
-      return s(b) - s(a);
     });
 
-    const group = groupsList[0];
+    let release = null;
 
-    log("MusicBrainz release-group:", group?.id, group?.title);
+    for (let i = 0; i < titles.length && !release; i++) {
+      const title = titles[i];
 
-    const releases = await mbGet(
-      "release/?release-group=" +
-        encodeURIComponent(group.id) +
-        "&limit=50&inc=artist-credits"
-    );
+      const queries = [
+        'release:"' + title + '"',
+        '"' + title + '" soundtrack',
+        title + ' soundtrack'
+      ];
 
-    const release = pickRelease(
-      releases?.releases || [],
-      title
-    );
+      for (let q = 0; q < queries.length && !release; q++) {
+        try {
+          log("MusicBrainz release search:", queries[q]);
 
-    if (!release) {
-      throw new Error("MusicBrainz: релиз саундтрека не найден");
+          const result = await mbGet(
+            "release/?query=" +
+              encodeURIComponent(queries[q]) +
+              "&limit=50"
+          );
+
+          const releases = result?.releases || [];
+
+          release = pickRelease(releases, title);
+
+          if (release) {
+            log(
+              "Selected release:",
+              release.id,
+              release.title,
+              release.status || ""
+            );
+          }
+        } catch (e) {
+          log("Release search failed:", e);
+        }
+      }
     }
 
-    log(
-      "Selected release:",
-      release.id,
-      release.title,
-      release.status || ""
-    );
+    if (!release) {
+      // Last fallback: search release-group by the PLAIN title, not
+      // releasegroup:"..." syntax. This avoids the previous failure.
+      for (let i = 0; i < titles.length && !release; i++) {
+        try {
+          const result = await mbGet(
+            "release-group/?query=" +
+              encodeURIComponent(titles[i]) +
+              "&limit=50"
+          );
 
-    return loadRelease(release.id, title, imdbId);
+          const groups = result?.["release-groups"] || [];
+
+          groups.sort(function (a, b) {
+            function score(group) {
+              const t = String(group?.title || "").toLowerCase();
+              const wanted = String(titles[i] || "").toLowerCase();
+
+              let n = 0;
+
+              if (t === wanted) n += 20;
+              if (t.indexOf(wanted) >= 0) n += 10;
+              if (
+                String(group?.["secondary-types"] || "")
+                  .toLowerCase()
+                  .indexOf("soundtrack") >= 0
+              ) n += 15;
+
+              if (String(group?.["primary-type"] || "")
+                .toLowerCase() === "album") n += 2;
+
+              return n;
+            }
+
+            return score(b) - score(a);
+          });
+
+          const group = groups[0];
+
+          if (group?.id) {
+            const releases = await mbGet(
+              "release/?release-group=" +
+                encodeURIComponent(group.id) +
+                "&limit=50&inc=artist-credits"
+            );
+
+            release = pickRelease(
+              releases?.releases || [],
+              titles[i]
+            );
+          }
+        } catch (e) {
+          log("Release-group fallback failed:", e);
+        }
+      }
+    }
+
+    if (!release) {
+      throw new Error(
+        "MusicBrainz: саундтрек не найден. " +
+        "Искали: " + titles.join(" / ")
+      );
+    }
+
+    return loadRelease(
+      release.id,
+      displayTitle,
+      imdbId
+    );
   }
 
   async function loadRelease(releaseId, movieTitle, imdbId) {
