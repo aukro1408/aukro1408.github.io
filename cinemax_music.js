@@ -148,12 +148,14 @@
       displayTitle,
       "| original:",
       originalTitle,
-      "| TMDB ID:",
+      "| TMDB:",
       movie.id
     );
 
     let imdbId = "";
 
+    // IMDb is useful for diagnostics, but MUST NOT be used to make
+    // dozens of extra MusicBrainz requests.
     try {
       const external = await tmdbGet(
         type + "/" + movie.id + "/external_ids"
@@ -163,246 +165,148 @@
       log("TMDB external_ids failed:", e);
     }
 
-    /*
-     * New strategy:
-     *
-     * We do NOT select the first MusicBrainz release anymore.
-     *
-     * A movie can have:
-     *   1) songs from the movie / inspired-by soundtrack;
-     *   2) original motion picture score;
-     *   3) expanded / deluxe / complete score;
-     *   4) regional or reissued soundtrack releases.
-     *
-     * MusicBrainz models these as release-groups -> releases -> recordings.
-     * Its API supports release-group searches and browsing releases by
-     * release-group, and release groups can have soundtrack as a secondary
-     * type. We collect several relevant groups and deduplicate recordings.
-     */
-
     const titles = [];
     [originalTitle, displayTitle].forEach(function (title) {
       if (title && titles.indexOf(title) < 0) titles.push(title);
     });
 
+    /*
+     * V5 performance fix.
+     *
+     * The previous version could make:
+     *   many release-group searches
+     *   + an IMDb relation request for every candidate
+     *   + several release requests
+     *   + several release-detail requests
+     *
+     * MusicBrainz is rate-limited, so that can look like an endless
+     * loading spinner on a TV/mobile client.
+     *
+     * We now deliberately keep discovery small:
+     *   2 title searches
+     *   1 soundtrack search
+     *   1 score search
+     *   max 4 release groups
+     *   max 1 official release per group
+     *
+     * This gives us enough data to prove the multi-album logic without
+     * hammering MusicBrainz.
+     */
+
     const candidates = [];
     const seenGroups = {};
 
-    function addGroup(group, sourceTitle) {
-      if (!group?.id || seenGroups[group.id]) return;
-
-      const groupTitle = String(group.title || "").trim();
-      if (!groupTitle) return;
-
-      const lower = groupTitle.toLowerCase();
-      const wanted = String(sourceTitle || "").toLowerCase();
+    function scoreGroup(group, wanted) {
+      const title = String(group?.title || "").toLowerCase();
+      const queryTitle = String(wanted || "").toLowerCase();
 
       let score = 0;
 
-      // Exact / close movie-title match.
-      if (lower === wanted) score += 30;
-      if (wanted && lower.indexOf(wanted) >= 0) score += 18;
+      if (title === queryTitle) score += 40;
+      if (queryTitle && title.indexOf(queryTitle) >= 0) score += 25;
 
-      // Strong soundtrack signals.
       const secondary = (group["secondary-types"] || [])
-        .map(function (v) { return String(v).toLowerCase(); });
+        .map(function (v) {
+          return String(v).toLowerCase();
+        });
 
       const primary = String(group["primary-type"] || "").toLowerCase();
 
       if (secondary.indexOf("soundtrack") >= 0) score += 35;
-      if (lower.indexOf("soundtrack") >= 0) score += 20;
-      if (lower.indexOf("original motion picture") >= 0) score += 18;
-      if (lower.indexOf("motion picture score") >= 0) score += 25;
-      if (lower.indexOf("original score") >= 0) score += 20;
-      if (lower.indexOf("score") >= 0) score += 12;
+      if (title.indexOf("soundtrack") >= 0) score += 25;
+      if (title.indexOf("motion picture") >= 0) score += 20;
+      if (title.indexOf("score") >= 0) score += 18;
+      if (title.indexOf("original score") >= 0) score += 12;
       if (primary === "album") score += 2;
 
-      // Avoid obvious unrelated releases.
       if (
-        lower.indexOf("tribute") >= 0 ||
-        lower.indexOf("karaoke") >= 0 ||
-        lower.indexOf("remix") >= 0
+        title.indexOf("tribute") >= 0 ||
+        title.indexOf("karaoke") >= 0 ||
+        title.indexOf("remix") >= 0
       ) {
-        score -= 30;
+        score -= 35;
       }
 
-      candidates.push({
-        group: group,
-        score: score,
-        sourceTitle: sourceTitle
-      });
+      return score;
+    }
 
-      seenGroups[group.id] = true;
+    function addGroups(groups, wanted) {
+      (groups || []).forEach(function (group) {
+        if (!group?.id || seenGroups[group.id]) return;
+
+        const score = scoreGroup(group, wanted);
+
+        if (score < 15) return;
+
+        seenGroups[group.id] = true;
+
+        candidates.push({
+          group: group,
+          score: score
+        });
+      });
     }
 
     async function searchGroups(query) {
       try {
-        log("MusicBrainz release-group search:", query);
+        log("MB release-group:", query);
 
         const result = await mbGet(
           "release-group/?query=" +
             encodeURIComponent(query) +
-            "&limit=50"
+            "&limit=20"
         );
 
         return result?.["release-groups"] || [];
       } catch (e) {
-        log("release-group search failed:", e);
+        log("MB group search failed:", e);
         return [];
       }
     }
 
-    // Search several ways because soundtrack album titles often contain
-    // extra words such as "Music From and Inspired By..." or "Original Score".
-    for (let i = 0; i < titles.length; i++) {
-      const title = titles[i];
+    // Only four discovery calls maximum.
+    const queries = [];
 
-      const queries = [
-        title,
-        '"' + title + '"',
-        title + " soundtrack",
-        title + " score"
-      ];
-
-      for (let q = 0; q < queries.length; q++) {
-        const groups = await searchGroups(queries[q]);
-
-        groups.forEach(function (group) {
-          addGroup(group, title);
-        });
-      }
+    if (originalTitle) queries.push(originalTitle);
+    if (displayTitle && displayTitle !== originalTitle) {
+      queries.push(displayTitle);
     }
 
-    /*
-     * Prefer groups which explicitly point to the movie's IMDb page.
-     * MusicBrainz has a release-group -> IMDb relationship type, so this
-     * is much safer than relying only on text similarity.
-     */
-    const imdbMatches = [];
+    if (originalTitle) {
+      queries.push(originalTitle + " soundtrack");
+      queries.push(originalTitle + " score");
+    }
 
-    if (imdbId && candidates.length) {
-      for (let i = 0; i < candidates.length; i++) {
-        const item = candidates[i];
+    const uniqueQueries = [];
+    queries.forEach(function (q) {
+      if (uniqueQueries.indexOf(q) < 0) uniqueQueries.push(q);
+    });
 
-        try {
-          const details = await mbGet(
-            "release-group/" +
-              encodeURIComponent(item.group.id) +
-              "?inc=url-rels"
-          );
-
-          const relations = details?.relations || [];
-
-          const matched = relations.some(function (relation) {
-            const resource = relation?.url?.resource || "";
-            return resource.indexOf(imdbId) >= 0;
-          });
-
-          if (matched) {
-            item.score += 100;
-            imdbMatches.push(item.group.id);
-          }
-        } catch (e) {
-          // One bad candidate must not stop the whole soundtrack search.
-          log("IMDb relation lookup failed:", item.group.id);
-        }
-      }
+    for (let i = 0; i < Math.min(uniqueQueries.length, 4); i++) {
+      const groups = await searchGroups(uniqueQueries[i]);
+      addGroups(groups, originalTitle || displayTitle);
     }
 
     candidates.sort(function (a, b) {
       return b.score - a.score;
     });
 
-    /*
-     * Collect the best relevant groups.
-     *
-     * We intentionally allow several groups:
-     * - one main soundtrack;
-     * - one original score;
-     * - one expanded/complete score if present.
-     *
-     * Do not pull dozens of random editions. The first few highly ranked
-     * unique groups are enough and keeps the number of API requests sane.
-     */
-    const selected = [];
-    const selectedIds = {};
-
-    candidates.forEach(function (item) {
-      if (selected.length >= 8) return;
-
-      const title = String(item.group.title || "").toLowerCase();
-
-      const relevant =
-        item.score >= 20 ||
-        title.indexOf("soundtrack") >= 0 ||
-        title.indexOf("score") >= 0 ||
-        title.indexOf("motion picture") >= 0;
-
-      if (!relevant) return;
-
-      if (!selectedIds[item.group.id]) {
-        selected.push(item);
-        selectedIds[item.group.id] = true;
-      }
-    });
+    // At most four relevant release groups.
+    const selected = candidates.slice(0, 4);
 
     if (!selected.length) {
       throw new Error(
-        "MusicBrainz: подходящие саундтреки не найдены. " +
+        "MusicBrainz: саундтрек не найден. " +
         "Искали: " + titles.join(" / ")
       );
     }
 
     log(
-      "Selected release groups:",
+      "Selected groups:",
       selected.map(function (item) {
         return item.group.title + " [" + item.score + "]";
       })
     );
-
-    /*
-     * For every selected release-group, browse its releases.
-     * We prefer official releases and avoid promotional/bootleg editions.
-     */
-    const allGroups = [];
-
-    for (let i = 0; i < selected.length; i++) {
-      const item = selected[i];
-
-      try {
-        const releases = await mbGet(
-          "release/?release-group=" +
-            encodeURIComponent(item.group.id) +
-            "&limit=50&inc=artist-credits"
-        );
-
-        const list = releases?.releases || [];
-
-        list.sort(function (a, b) {
-          const aScore =
-            (a.status === "Official" ? 20 : 0) +
-            (a.date ? 3 : 0);
-
-          const bScore =
-            (b.status === "Official" ? 20 : 0) +
-            (b.date ? 3 : 0);
-
-          return bScore - aScore;
-        });
-
-        const official = list.filter(function (release) {
-          return !release.status || release.status === "Official";
-        });
-
-        allGroups.push({
-          group: item.group,
-          score: item.score,
-          releases: (official.length ? official : list).slice(0, 2)
-        });
-      } catch (e) {
-        log("Release browse failed:", item.group.id);
-      }
-    }
 
     const tracks = [];
     const seenTracks = {};
@@ -415,79 +319,104 @@
         .trim();
     }
 
-    /*
-     * Load each selected release. Recordings are deduplicated by
-     * title + artist, so multiple CD/reissue editions won't create
-     * 5 copies of the same song.
-     */
-    for (let g = 0; g < allGroups.length; g++) {
-      const groupItem = allGroups[g];
+    function addTracks(details, groupTitle) {
+      (details?.media || []).forEach(function (media) {
+        (media.tracks || []).forEach(function (track) {
+          const recording = track.recording || {};
 
-      for (let r = 0; r < groupItem.releases.length; r++) {
-        const release = groupItem.releases[r];
+          const title =
+            track.title ||
+            recording.title ||
+            "";
 
-        try {
-          const details = await mbGet(
-            "release/" +
-              encodeURIComponent(release.id) +
-              "?inc=recordings+artist-credits+url-rels"
-          );
+          if (!title) return;
 
-          (details?.media || []).forEach(function (media) {
-            (media.tracks || []).forEach(function (track) {
-              const recording = track.recording || {};
+          const artist =
+            artistCredit(recording["artist-credit"]) ||
+            artistCredit(track["artist-credit"]) ||
+            artistCredit(details["artist-credit"]) ||
+            "";
 
-              const title =
-                track.title ||
-                recording.title ||
-                "";
+          const key =
+            normalize(title) +
+            "|" +
+            normalize(artist);
 
-              if (!title) return;
+          if (seenTracks[key]) return;
+          seenTracks[key] = true;
 
-              const artist =
-                artistCredit(recording["artist-credit"]) ||
-                artistCredit(track["artist-credit"]) ||
-                artistCredit(details["artist-credit"]) ||
-                "";
+          const lowerGroup =
+            String(groupTitle || "").toLowerCase();
 
-              const key =
-                normalize(title) +
-                "|" +
-                normalize(artist);
+          const category =
+            lowerGroup.indexOf("score") >= 0 ||
+            lowerGroup.indexOf("original music") >= 0
+              ? "score"
+              : "soundtrack";
 
-              if (seenTracks[key]) return;
-              seenTracks[key] = true;
-
-              const groupTitle =
-                groupItem.group.title || details.title || "";
-
-              const lowerGroup = groupTitle.toLowerCase();
-
-              let category = "soundtrack";
-
-              if (
-                lowerGroup.indexOf("score") >= 0 ||
-                lowerGroup.indexOf("original music") >= 0 ||
-                lowerGroup.indexOf("original motion picture") >= 0 &&
-                lowerGroup.indexOf("score") >= 0
-              ) {
-                category = "score";
-              }
-
-              tracks.push({
-                position: tracks.length + 1,
-                title: title,
-                artist: artist,
-                length: track.length || recording.length || 0,
-                category: category,
-                album: groupTitle,
-                links: searchLinks(title, artist)
-              });
-            });
+          tracks.push({
+            position: tracks.length + 1,
+            title: title,
+            artist: artist,
+            length: track.length || recording.length || 0,
+            category: category,
+            album: groupTitle,
+            links: searchLinks(title, artist)
           });
-        } catch (e) {
-          log("Release lookup failed:", release.id);
-        }
+        });
+      });
+    }
+
+    /*
+     * For every group request releases, then only the best release.
+     * This is intentionally conservative to keep the plugin responsive.
+     */
+    for (let i = 0; i < selected.length; i++) {
+      const item = selected[i];
+
+      try {
+        const result = await mbGet(
+          "release/?release-group=" +
+            encodeURIComponent(item.group.id) +
+            "&limit=10&inc=artist-credits"
+        );
+
+        const releases = result?.releases || [];
+
+        releases.sort(function (a, b) {
+          const aScore =
+            (a.status === "Official" ? 20 : 0) +
+            (a.date ? 3 : 0);
+
+          const bScore =
+            (b.status === "Official" ? 20 : 0) +
+            (b.date ? 3 : 0);
+
+          return bScore - aScore;
+        });
+
+        const release = releases[0];
+
+        if (!release?.id) continue;
+
+        log(
+          "Loading release:",
+          release.title,
+          release.id
+        );
+
+        const details = await mbGet(
+          "release/" +
+            encodeURIComponent(release.id) +
+            "?inc=recordings+artist-credits"
+        );
+
+        addTracks(
+          details,
+          item.group.title || release.title
+        );
+      } catch (e) {
+        log("Group processing failed:", item.group.id, e);
       }
     }
 
@@ -497,9 +426,11 @@
       );
     }
 
-    // Put songs first, score second. Within each group keep original order.
     tracks.sort(function (a, b) {
-      if (a.category === b.category) return a.position - b.position;
+      if (a.category === b.category) {
+        return a.position - b.position;
+      }
+
       return a.category === "soundtrack" ? -1 : 1;
     });
 
@@ -507,13 +438,13 @@
       movieTitle: displayTitle,
       originalTitle: originalTitle,
       imdbId: imdbId,
-      groups: allGroups.map(function (item) {
+      groups: selected.map(function (item) {
         return {
           title: item.group.title,
           score: item.score
         };
       }),
-      album: allGroups[0]?.group?.title || "",
+      album: selected[0]?.group?.title || "",
       artist: "",
       date: "",
       tracks: tracks,
@@ -651,7 +582,20 @@
   function renderSoundtrack(movie) {
     Lampa.Loading.start();
 
-    findSoundtrack(movie)
+    const timeout = new Promise(function (_, reject) {
+      setTimeout(function () {
+        reject(
+          new Error(
+            "MusicBrainz отвечает слишком долго. Попробуйте ещё раз."
+          )
+        );
+      }, 30000);
+    });
+
+    Promise.race([
+      findSoundtrack(movie),
+      timeout
+    ])
       .then(function (data) {
         Lampa.Loading.stop();
         openSoundtrackModal(data);
