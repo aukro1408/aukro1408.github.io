@@ -35,6 +35,36 @@
     return date ? date.slice(0, 4) : "";
   }
 
+  // Artwork для верхней части карточки саундтрека.
+  // Сначала используем backdrop, как в карточках CinemaX, затем poster.
+  function getMovieArtwork(movie) {
+    const value =
+      movie?.backdrop_path ||
+      movie?.poster_path ||
+      movie?.backdrop ||
+      movie?.poster ||
+      movie?.cover ||
+      movie?.image ||
+      "";
+
+    if (!value) return "";
+
+    if (/^https?:\/\//i.test(value)) return value;
+    if (/^\/\//.test(value)) return "https:" + value;
+
+    try {
+      if (Lampa.TMDB && typeof Lampa.TMDB.image === "function") {
+        return Lampa.TMDB.image(
+          "t/p/original" + (value.charAt(0) === "/" ? value : "/" + value)
+        );
+      }
+    } catch (e) {
+      log("TMDB artwork error", e);
+    }
+
+    return value;
+  }
+
   function tmdbGet(path) {
     return new Promise(function (resolve, reject) {
       if (!Lampa.Api?.sources?.tmdb?.get) {
@@ -339,7 +369,21 @@
 
   function renderSoundtrack(movie) {
     Lampa.Loading.start();
-    findSoundtrack(movie).then(function(data){Lampa.Loading.stop();data.movieImage=getMovieArtwork(movie);data.moviePoster=movie?.poster_path||movie?.poster||"";openSoundtrackModal(data);}).catch(function(error){Lampa.Loading.stop();console.error(LOG,error);Lampa.Noty.show("Не удалось загрузить саундтрек: "+(error?.message||"неизвестная ошибка"));});
+    findSoundtrack(movie)
+      .then(function (data) {
+        Lampa.Loading.stop();
+        data.movieImage = getMovieArtwork(movie);
+        data.moviePoster = movie?.poster_path || movie?.poster || "";
+        openSoundtrackModal(data);
+      })
+      .catch(function (error) {
+        Lampa.Loading.stop();
+        console.error(LOG, error);
+        Lampa.Noty.show(
+          "Не удалось загрузить саундтрек: " +
+          (error?.message || "неизвестная ошибка")
+        );
+      });
   }
 
   function openSoundtrackModal(data) {
