@@ -54,7 +54,18 @@
 
     /* YouTube SVG из предоставленного файла встроен непосредственно в JS,
        по той же схеме, что и остальные SVG-логотипы стримингов. */
-    var YOUTUBE_LOGO_DATA = "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" width=\"120\" height=\"60\">\n  <rect width=\"120\" height=\"60\" rx=\"5\" fill=\"white\"/>\n  <g transform=\"matrix(.223746 0 0 .223746 4.958506 17.693975)\">\n    <path d=\"M154.3 17.5c-1.8-6.7-7.1-12-13.8-13.8C128.4.4 79.7.4 79.7.4S31 .5 18.9 3.8c-6.7 1.8-12 7.1-13.8 13.8C1.9 29.7 1.9 55 1.9 55s0 25.3 3.3 37.5c1.8 6.7 7.1 12 13.8 13.8 12.1 3.3 60.8 3.3 60.8 3.3s48.7 0 60.8-3.3c6.7-1.8 12-7.1 13.8-13.8 3.3-12.1 3.3-37.5 3.3-37.5s-.1-25.3-3.4-37.5z\" fill=\"red\"/>\n    <path d=\"M104.6 55L64.2 31.6v46.8z\" fill=\"#fff\"/>\n    <g fill=\"#282828\">\n      <path d=\"M227.9 99.7c-3.1-2.1-5.3-5.3-6.6-9.7s-1.9-10.2-1.9-17.5v-9.9c0-7.3.7-13.3 2.2-17.7 1.5-4.5 3.8-7.7 7-9.7s7.3-3.1 12.4-3.1c5 0 9.1 1 12.1 3.1s5.3 5.3 6.7 9.7 2.1 10.3 2.1 17.6v9.9c0 7.3-.7 13.1-2.1 17.5s-3.6 7.6-6.7 9.7c-3.1 2-7.3 3.1-12.5 3.1-5.4.1-9.6-1-12.7-3zM245.2 89c.9-2.2 1.3-5.9 1.3-10.9V56.8c0-4.9-.4-8.5-1.3-10.7-.9-2.3-2.4-3.4-4.5-3.4s-3.5 1.1-4.4 3.4-1.3 5.8-1.3 10.7v21.3c0 5 .4 8.7 1.2 10.9s2.3 3.3 4.5 3.3c2.1 0 3.6-1.1 4.5-3.3zm219.2-16.3v3.5l.4 9.9c.3 2.2.8 3.8 1.6 4.8s2.1 1.5 3.8 1.5c2.3 0 3.9-.9 4.7-2.7.9-1.8 1.3-4.8 1.4-8.9l13.3.8c.1.6.1 1.4.1 2.4 0 6.3-1.7 11-5.2 14.1s-8.3 4.7-14.6 4.7c-7.6 0-12.9-2.4-15.9-7.1s-4.6-12.1-4.6-22V61.6c0-10.2 1.6-17.7 4.7-22.4 3.2-4.7 8.6-7.1 16.2-7.1 5.3 0 9.3 1 12.1 2.9s4.8 4.9 6 9 1.7 9.7 1.7 16.9v11.7h-25.7zm2-28.8c-.8 1-1.3 2.5-1.6 4.7s-.4 5.5-.4 10v4.9h11.2v-4.9c0-4.4-.1-7.7-.4-10s-.8-3.9-1.6-4.8-2-1.4-3.6-1.4c-1.7.1-2.9.6-3.6 1.5zM190.5 71.4L173 8.2h15.3l6.1 28.6c1.6 7.1 2.7 13.1 3.5 18h.4c.5-3.6 1.7-9.5 3.5-17.9l6.3-28.7h15.3l-17.7 63.1v30.3h-15.1V71.4z\"/>\n      <use xlink:href=\"#B\"/>\n      <use xlink:href=\"#B\" x=\"78.9\"/>\n      <path d=\"M353.3 20.6H338v81.1h-15V20.6h-15.3V8.2h45.5v12.4zm87.9 23.7c-.9-4.3-2.4-7.4-4.5-9.4-2.1-1.9-4.9-2.9-8.6-2.9-2.8 0-5.5.8-7.9 2.4-2.5 1.6-4.3 3.7-5.7 6.3h-.1v-36h-14.8v96.9h12.7l1.6-6.5h.3c1.2 2.3 3 4.1 5.3 5.5a16.26 16.26 0 0 0 7.9 2c5.2 0 9-2.4 11.5-7.2 2.4-4.8 3.7-12.3 3.7-22.4V62.2c0-7.6-.5-13.6-1.4-17.9zm-14.1 27.9c0 5-.2 8.9-.6 11.7s-1.1 4.8-2.1 6-2.3 1.8-3.9 1.8c-1.3 0-2.4-.3-3.5-.9s-1.9-1.5-2.6-2.7V49.3c.5-1.9 1.4-3.4 2.7-4.6s2.6-1.8 4.1-1.8c1.6 0 2.8.6 3.6 1.8.9 1.2 1.4 3.3 1.8 6.2.3 2.9.5 7 .5 12.4z\"/>\n    </g>\n  </g>\n  <defs>\n    <path id=\"B\" d=\"M311.5 33.4v68.3h-12l-1.3-8.4h-.3c-3.3 6.3-8.2 9.5-14.7 9.5-4.5 0-7.9-1.5-10-4.5-2.2-3-3.2-7.6-3.2-13.9v-51h15.4v50.1c0 3 .3 5.2 1 6.5s1.8 1.9 3.3 1.9c1.3 0 2.6-.4 3.8-1.2s2.1-1.9 2.7-3.1V33.4z\"/>\n  </defs>\n</svg>";
+    var YOUTUBE_LOGO_DATA = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 540 120" preserveAspectRatio="xMidYMid meet">' +
+        '<path d="M154.3 17.5c-1.8-6.7-7.1-12-13.8-13.8C128.4.4 79.7.4 79.7.4S31 .5 18.9 3.8c-6.7 1.8-12 7.1-13.8 13.8C1.9 29.7 1.9 55 1.9 55s0 25.3 3.3 37.5c1.8 6.7 7.1 12 13.8 13.8 12.1 3.3 60.8 3.3 60.8 3.3s48.7 0 60.8-3.3c6.7-1.8 12-7.1 13.8-13.8 3.3-12.1 3.3-37.5 3.3-37.5s-.1-25.3-3.4-37.5z" fill="#ff0000"/>' +
+        '<path d="M104.6 55L64.2 31.6v46.8z" fill="#fff"/>' +
+        '<g fill="#282828">' +
+        '<path d="M227.9 99.7c-3.1-2.1-5.3-5.3-6.6-9.7s-1.9-10.2-1.9-17.5v-9.9c0-7.3.7-13.3 2.2-17.7 1.5-4.5 3.8-7.7 7-9.7s7.3-3.1 12.4-3.1c5 0 9.1 1 12.1 3.1s5.3 5.3 6.7 9.7 2.1 10.3 2.1 17.6v9.9c0 7.3-.7 13.1-2.1 17.5s-3.6 7.6-6.7 9.7c-3.1 2-7.3 3.1-12.5 3.1-5.4.1-9.6-1-12.7-3zM245.2 89c.9-2.2 1.3-5.9 1.3-10.9V56.8c0-4.9-.4-8.5-1.3-10.7-.9-2.3-2.4-3.4-4.5-3.4s-3.5 1.1-4.4 3.4-1.3 5.8-1.3 10.7v21.3c0 5 .4 8.7 1.2 10.9s2.3 3.3 4.5 3.3c2.1 0 3.6-1.1 4.5-3.3zm219.2-16.3v3.5l.4 9.9c.3 2.2.8 3.8 1.6 4.8s2.1 1.5 3.8 1.5c2.3 0 3.9-.9 4.7-2.7.9-1.8 1.3-4.8 1.4-8.9l13.3.8c.1.6.1 1.4.1 2.4 0 6.3-1.7 11-5.2 14.1s-8.3 4.7-14.6 4.7c-7.6 0-12.9-2.4-15.9-7.1s-4.6-12.1-4.6-22V61.6c0-10.2 1.6-17.7 4.7-22.4 3.2-4.7 8.6-7.1 16.2-7.1 5.3 0 9.3 1 12.1 2.9s4.8 4.9 6 9 1.7 9.7 1.7 16.9v11.7h-25.7zm2-28.8c-.8 1-1.3 2.5-1.6 4.7s-.4 5.5-.4 10v4.9h11.2v-4.9c0-4.4-.1-7.7-.4-10s-.8-3.9-1.6-4.8-2-1.4-3.6-1.4c-1.7.1-2.9.6-3.6 1.5zM190.5 71.4L173 8.2h15.3l6.1 28.6c1.6 7.1 2.7 13.1 3.5 18h.4c.5-3.6 1.7-9.5 3.5-17.9l6.3-28.7h15.3l-17.7 63.1v30.3h-15.1V71.4z"/>' +
+        '<use href="#cinemaxYoutubeB" xlink:href="#cinemaxYoutubeB"/>' +
+        '<use href="#cinemaxYoutubeB" xlink:href="#cinemaxYoutubeB" x="78.9"/>' +
+        '<path d="M353.3 20.6H338v81.1h-15V20.6h-15.3V8.2h45.5v12.4zm87.9 23.7c-.9-4.3-2.4-7.4-4.5-9.4-2.1-1.9-4.9-2.9-8.6-2.9-2.8 0-5.5.8-7.9 2.4-2.5 1.6-4.3 3.7-5.7 6.3h-.1v-36h-14.8v96.9h12.7l1.6-6.5h.3c1.2 2.3 3 4.1 5.3 5.5a16.26 16.26 0 0 0 7.9 2c5.2 0 9-2.4 11.5-7.2 2.4-4.8 3.7-12.3 3.7-22.4V62.2c0-7.6-.5-13.6-1.4-17.9zm-14.1 27.9c0 5-.2 8.9-.6 11.7s-1.1 4.8-2.1 6-2.3 1.8-3.9 1.8c-1.3 0-2.4-.3-3.5-.9s-1.9-1.5-2.6-2.7V49.3c.5-1.9 1.4-3.4 2.7-4.6s2.6-1.8 4.1-1.8c1.6 0 2.8.6 3.6 1.8.9 1.2 1.4 3.3 1.8 6.2.3 2.9.5 7 .5 12.4z"/>' +
+        '</g>' +
+        '<defs><path id="cinemaxYoutubeB" d="M311.5 33.4v68.3h-12l-1.3-8.4h-.3c-3.3 6.3-8.2 9.5-14.7 9.5-4.5 0-7.9-1.5-10-4.5-2.2-3-3.2-7.6-3.2-13.9v-51h15.4v50.1c0 3 .3 5.2 1 6.5s1.8 1.9 3.3 1.9c1.3 0 2.6-.4 3.8-1.2s2.1-1.9 2.7-3.1V33.4z"/></defs>' +
+        '</svg>';
+
 
     var LOGOS = {
         netflix: '<svg viewBox="0 0 256 69" xmlns="http://www.w3.org/2000/svg"><text x="128" y="48" text-anchor="middle" font-family="Arial,sans-serif" font-size="42" font-weight="900" fill="#E50914">NETFLIX</text></svg>',
@@ -296,13 +307,15 @@
             '.card--studio .card__view{width:100%;height:100%;padding:.15em!important;box-sizing:border-box!important;background:transparent!important;display:flex;align-items:center;justify-content:center;position:relative;overflow:visible!important}' +
             '.card--studio .card__title,.card--studio .card__textbox,.card--studio .card__age,.card--studio .card__year,.card--studio .card__type,.card--studio .card__quality,.card--studio .card__info,.card--studio .card-marks,.card--studio .card__icons,.card--studio .card__mark,.card--studio .card__status,.card--studio .card__genre,.card--studio [class*="card__type"],.card--studio [class*="card__mark"],.card--studio [class*="card__genre"]{display:none!important}' +
             '.studio-logo-wrap{width:86%;height:78%;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:38% 16% 38% 18% / 34% 20% 34% 20%;overflow:hidden;transform:rotate(-1deg);box-shadow:0 1px 0 rgba(255,255,255,.35),0 8px 18px rgba(0,0,0,.24)}' +
-            '.studio-logo-img{width:auto!important;height:auto!important;max-width:68%!important;max-height:52%!important;object-fit:contain;display:block!important;transform:rotate(1deg)}' +
+            '.studio-logo-img{width:72%!important;height:auto!important;max-width:72%!important;max-height:58%!important;object-fit:contain;display:block!important;transform:rotate(1deg);overflow:visible!important}'+
+            '.card--youtube .studio-logo-img{width:64%!important;max-width:64%!important;max-height:50%!important;height:auto!important}'+
             '.studio-logo-fallback{display:block;font-weight:800;font-size:1.05em;text-align:center;color:#111;transform:rotate(1deg)}' +
+            '.card--studio .card__type,.card--studio .card__type span,.card--studio .card__mark,.card--studio .card__mark span,.card--studio .card__quality,.card--studio .card__age,.card--studio .card__year,.card--studio [class*="type"],.card--studio [class*="mark"]{display:none!important}'+
             '.hero-trailer-btn{display:none!important}' +
             '.cinemax-youtube-page{padding:1.4em 2em 4em;box-sizing:border-box;min-height:100%;touch-action:pan-y}' +
             '.cinemax-youtube-page .selector{cursor:pointer}' +
-            '.cinemax-youtube-page__head{display:flex;align-items:center;gap:.8em;margin-bottom:1.2em}' +
-            '.cinemax-youtube-page__logo{width:2.2em;height:1.1em;object-fit:contain;flex:0 0 auto;display:block}' +
+            '.cinemax-youtube-page__head{display:flex;align-items:center;gap:0;margin-bottom:1.2em}' +
+            '.cinemax-youtube-page__logo{display:none!important}' +
             '.cinemax-youtube-page__title{font-size:2em;font-weight:800;line-height:1}' +
             '.cinemax-youtube-search{display:flex;align-items:center;gap:.7em;margin-bottom:1.3em;padding:.75em 1em;border-radius:1em;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08)}' +
             '.cinemax-youtube-search__icon{font-size:1.2em;opacity:.8}' +
@@ -758,9 +771,11 @@ function makeHeroResultItem(movie, heightEm) {
                             var svgEl = $(s.svg);
                             svgEl.addClass('studio-logo-img');
                             svgEl.css({
-                                'max-width': '70%',
-                                'max-height': '60%',
-                                'display': 'block'
+                                'display': 'block',
+                                'width': '64%',
+                                'height': 'auto',
+                                'max-width': '64%',
+                                'max-height': '50%'
                             });
                             wrapper.append(svgEl);
                         } else {
@@ -1094,8 +1109,6 @@ function makeHeroResultItem(movie, heightEm) {
             comp.html.empty();
 
             var head = $('<div class="cinemax-youtube-page__head"></div>');
-            var headLogo = $(YOUTUBE_LOGO_DATA).addClass('cinemax-youtube-page__logo');
-            head.append(headLogo);
             head.append(
                 $('<div class="cinemax-youtube-page__title"></div>').text('YouTube')
             );
