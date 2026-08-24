@@ -316,7 +316,12 @@
             '.cinemax-youtube-page .selector{cursor:pointer}' +
             '.cinemax-youtube-page__head{display:flex;align-items:center;gap:0;margin-bottom:1.2em}' +
             '.cinemax-youtube-page__logo{display:none!important}' +
-            '.cinemax-youtube-page__title{font-size:2em;font-weight:800;line-height:1}' +
+            '.cinemax-youtube-page__title{font-size:2em;font-weight:800;line-height:1;flex:1;min-width:0}' +
+            '.cinemax-youtube-account{display:flex;align-items:center;gap:.65em;min-width:0;margin-left:1em}' +
+            '.cinemax-youtube-account__avatar{width:2.35em;height:2.35em;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.1)}' +
+            '.cinemax-youtube-account__name{font-size:.9em;max-width:13em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+            '.cinemax-youtube-account__button{padding:.62em .9em;border-radius:.75em;background:rgba(255,255,255,.1);font-size:.88em;white-space:nowrap}' +
+            '.cinemax-youtube-account__button.focus{background:#ff0000;color:#fff}' +
             '.cinemax-youtube-search{display:flex;align-items:center;gap:.7em;margin-bottom:1.3em;padding:.75em 1em;border-radius:1em;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08)}' +
             '.cinemax-youtube-search__icon{font-size:1.2em;opacity:.8}' +
             '.cinemax-youtube-search__text{font-size:1em;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
@@ -987,6 +992,118 @@ function makeHeroResultItem(movie, heightEm) {
     /* ---------------- YouTube page ---------------- */
 
     var YOUTUBE_API_KEY = "AIzaSyBbZ_BNLNdgC9dylYEQdIAPkXc6g3VlLMw";
+    var YOUTUBE_OAUTH_CLIENT_ID = '734856415544-dcucktc7jse371laiui7vulh2i15rbvt.apps.googleusercontent.com';
+    var YOUTUBE_READONLY_SCOPE = 'https://www.googleapis.com/auth/youtube.readonly';
+    var youtubeAccessToken = '';
+    var youtubeAccount = null;
+    var youtubeTokenClient = null;
+    var youtubeGisLoading = null;
+
+    /*
+     * Google Identity Services is loaded only when the viewer chooses to sign
+     * in. The token model is intended for browser apps: it uses no client
+     * secret and keeps the short-lived access token in memory only.
+     */
+    function youtubeLoadGis(done, fail) {
+        if (window.google && google.accounts && google.accounts.oauth2) {
+            done();
+            return;
+        }
+
+        if (youtubeGisLoading) {
+            youtubeGisLoading.push({ done: done, fail: fail });
+            return;
+        }
+
+        youtubeGisLoading = [{ done: done, fail: fail }];
+        var script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+
+        function finish(error) {
+            var queue = youtubeGisLoading || [];
+            youtubeGisLoading = null;
+            queue.forEach(function (item) {
+                if (error) item.fail(error);
+                else item.done();
+            });
+        }
+
+        script.onload = function () { finish(null); };
+        script.onerror = function () { finish(new Error('Google Identity Services недоступен')); };
+        document.head.appendChild(script);
+    }
+
+    function youtubeAuthorizedRequest(path, params, ok, bad) {
+        if (!youtubeAccessToken) {
+            bad({ status: 401, message: 'Требуется вход в YouTube' });
+            return;
+        }
+
+        var url = 'https://www.googleapis.com/youtube/v3/' + path + '?';
+        var parts = [];
+        Object.keys(params || {}).forEach(function (key) {
+            parts.push(encodeURIComponent(key) + '=' + encodeURIComponent(params[key]));
+        });
+        url += parts.join('&');
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.setRequestHeader('Authorization', 'Bearer ' + youtubeAccessToken);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== 4) return;
+            var json = null;
+            try { json = JSON.parse(xhr.responseText || '{}'); } catch (e) {}
+            if (xhr.status >= 200 && xhr.status < 300) ok(json || {});
+            else bad({ status: xhr.status, response: json });
+        };
+        xhr.onerror = function () { bad({ status: 0, message: 'Ошибка сети' }); };
+        xhr.send();
+    }
+
+    function youtubeLoadAccount(done, fail) {
+        youtubeAuthorizedRequest('channels', { part: 'snippet', mine: 'true' }, function (json) {
+            var channel = json && json.items && json.items[0];
+            var snippet = channel && channel.snippet;
+            youtubeAccount = snippet ? {
+                title: snippet.title || 'YouTube',
+                avatar: (snippet.thumbnails && ((snippet.thumbnails.default && snippet.thumbnails.default.url) ||
+                    (snippet.thumbnails.medium && snippet.thumbnails.medium.url))) || ''
+            } : { title: 'YouTube', avatar: '' };
+            done(youtubeAccount);
+        }, fail);
+    }
+
+    function youtubeSignIn(done, fail) {
+        youtubeLoadGis(function () {
+            youtubeTokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: YOUTUBE_OAUTH_CLIENT_ID,
+                scope: YOUTUBE_READONLY_SCOPE,
+                callback: function (response) {
+                    if (!response || response.error || !response.access_token) {
+                        fail(new Error((response && response.error) || 'Вход в YouTube отменён'));
+                        return;
+                    }
+                    youtubeAccessToken = response.access_token;
+                    youtubeLoadAccount(done, fail);
+                },
+                error_callback: function (error) {
+                    fail(new Error((error && error.type) || 'Вход в YouTube отменён'));
+                }
+            });
+            youtubeTokenClient.requestAccessToken({ prompt: 'select_account' });
+        }, fail);
+    }
+
+    function youtubeSignOut(done) {
+        var token = youtubeAccessToken;
+        youtubeAccessToken = '';
+        youtubeAccount = null;
+        if (token && window.google && google.accounts && google.accounts.oauth2 && google.accounts.oauth2.revoke) {
+            google.accounts.oauth2.revoke(token, function () { if (done) done(); });
+        } else if (done) done();
+    }
 
     function youtubeUrl(path, params) {
         var parts = [];
@@ -1114,6 +1231,47 @@ function makeHeroResultItem(movie, heightEm) {
         comp.grid = null;
         comp.scroll = scroll;
 
+        function showAuthError(error) {
+            var message = (error && error.message) || 'Не удалось войти в YouTube';
+            console.log('CinemaX YouTube OAuth error:', error);
+            if (Lampa.Noty && Lampa.Noty.show) Lampa.Noty.show(message);
+            else alert(message);
+        }
+
+        function accountControl() {
+            var account = $('<div class="cinemax-youtube-account"></div>');
+            var button;
+
+            if (youtubeAccount) {
+                if (youtubeAccount.avatar) {
+                    account.append($('<img class="cinemax-youtube-account__avatar" alt="">').attr('src', youtubeAccount.avatar));
+                }
+                account.append($('<div class="cinemax-youtube-account__name"></div>').text(youtubeAccount.title));
+                button = $('<div class="selector cinemax-youtube-account__button"></div>').text('Выйти');
+                button.on('hover:enter', function () {
+                    youtubeSignOut(function () {
+                        comp.render();
+                        comp.loadYoutube();
+                    });
+                });
+            } else {
+                button = $('<div class="selector cinemax-youtube-account__button"></div>').text('Войти в YouTube');
+                button.on('hover:enter', function () {
+                    button.text('Вход…');
+                    youtubeSignIn(function () {
+                        comp.render();
+                        comp.loadYoutube();
+                    }, function (error) {
+                        button.text('Войти в YouTube');
+                        showAuthError(error);
+                    });
+                });
+            }
+
+            account.append(button);
+            return account;
+        }
+
         comp.render = function () {
             comp.html.empty();
 
@@ -1121,6 +1279,7 @@ function makeHeroResultItem(movie, heightEm) {
             head.append(
                 $('<div class="cinemax-youtube-page__title"></div>').text('YouTube')
             );
+            head.append(accountControl());
             comp.html.append(head);
 
             var search = $('<div class="selector cinemax-youtube-search"></div>');
