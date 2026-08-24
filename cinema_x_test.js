@@ -319,7 +319,9 @@
             '.cinemax-youtube-page__title{font-size:2em;font-weight:800;line-height:1;flex:1;min-width:0}' +
             '.cinemax-youtube-account{display:flex;align-items:center;gap:.65em;min-width:0;margin-left:1em}' +
             '.cinemax-youtube-account__avatar{width:2.35em;height:2.35em;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.1)}' +
+            '.cinemax-youtube-account__info{min-width:0;display:flex;flex-direction:column;justify-content:center;line-height:1.15}' +
             '.cinemax-youtube-account__name{font-size:.9em;max-width:13em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+            '.cinemax-youtube-account__email{font-size:.68em;opacity:.55;max-width:18em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.16em}' +
             '.cinemax-youtube-account__button{padding:.62em .9em;border-radius:.75em;background:rgba(255,255,255,.1);font-size:.88em;white-space:nowrap}' +
             '.cinemax-youtube-account__button.focus{background:#ff0000;color:#fff}' +
             '.cinemax-youtube-search{display:flex;align-items:center;gap:.7em;margin-bottom:1.3em;padding:.75em 1em;border-radius:1em;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08)}' +
@@ -993,7 +995,10 @@ function makeHeroResultItem(movie, heightEm) {
 
     var YOUTUBE_API_KEY = "AIzaSyBbZ_BNLNdgC9dylYEQdIAPkXc6g3VlLMw";
     var YOUTUBE_OAUTH_CLIENT_ID = '734856415544-dcucktc7jse371laiui7vulh2i15rbvt.apps.googleusercontent.com';
-    var YOUTUBE_READONLY_SCOPE = 'https://www.googleapis.com/auth/youtube.readonly';
+    // We request the YouTube read scope plus the standard Google profile scopes.
+    // This lets the page show the actual Google account name/avatar even when
+    // the Google account has no public YouTube channel of its own.
+    var YOUTUBE_READONLY_SCOPE = 'https://www.googleapis.com/auth/youtube.readonly openid profile email';
     var youtubeAccessToken = '';
     var youtubeAccount = null;
     var youtubeTokenClient = null;
@@ -1062,16 +1067,52 @@ function makeHeroResultItem(movie, heightEm) {
         xhr.send();
     }
 
+    function youtubeGoogleProfile(done, fail) {
+        if (!youtubeAccessToken) {
+            fail({ status: 401, message: 'Требуется вход в Google' });
+            return;
+        }
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'https://www.googleapis.com/oauth2/v3/userinfo', true);
+        xhr.setRequestHeader('Authorization', 'Bearer ' + youtubeAccessToken);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== 4) return;
+            var json = null;
+            try { json = JSON.parse(xhr.responseText || '{}'); } catch (e) {}
+            if (xhr.status >= 200 && xhr.status < 300 && json) done(json);
+            else fail({ status: xhr.status, response: json });
+        };
+        xhr.onerror = function () { fail({ status: 0, message: 'Ошибка сети' }); };
+        xhr.send();
+    }
+
     function youtubeLoadAccount(done, fail) {
-        youtubeAuthorizedRequest('channels', { part: 'snippet', mine: 'true' }, function (json) {
-            var channel = json && json.items && json.items[0];
-            var snippet = channel && channel.snippet;
-            youtubeAccount = snippet ? {
-                title: snippet.title || 'YouTube',
-                avatar: (snippet.thumbnails && ((snippet.thumbnails.default && snippet.thumbnails.default.url) ||
-                    (snippet.thumbnails.medium && snippet.thumbnails.medium.url))) || ''
-            } : { title: 'YouTube', avatar: '' };
-            done(youtubeAccount);
+        // First load the Google profile. This is the reliable account identity
+        // and does not depend on whether the Google account owns a YouTube channel.
+        youtubeGoogleProfile(function (profile) {
+            youtubeAccount = {
+                title: profile.name || profile.given_name || profile.email || 'Google',
+                email: profile.email || '',
+                avatar: profile.picture || ''
+            };
+
+            // Then try to enrich it with the YouTube channel name/avatar.
+            // A missing channel is NOT an authentication failure.
+            youtubeAuthorizedRequest('channels', { part: 'snippet', mine: 'true' }, function (json) {
+                var channel = json && json.items && json.items[0];
+                var snippet = channel && channel.snippet;
+                if (snippet) {
+                    youtubeAccount.youtubeTitle = snippet.title || '';
+                    youtubeAccount.youtubeAvatar = (snippet.thumbnails &&
+                        ((snippet.thumbnails.medium && snippet.thumbnails.medium.url) ||
+                         (snippet.thumbnails.default && snippet.thumbnails.default.url))) || '';
+                }
+                done(youtubeAccount);
+            }, function () {
+                // Google profile is already enough to confirm successful login.
+                done(youtubeAccount);
+            });
         }, fail);
     }
 
@@ -1243,10 +1284,16 @@ function makeHeroResultItem(movie, heightEm) {
             var button;
 
             if (youtubeAccount) {
-                if (youtubeAccount.avatar) {
-                    account.append($('<img class="cinemax-youtube-account__avatar" alt="">').attr('src', youtubeAccount.avatar));
+                var avatar = youtubeAccount.youtubeAvatar || youtubeAccount.avatar || '';
+                if (avatar) {
+                    account.append($('<img class="cinemax-youtube-account__avatar" alt="">').attr('src', avatar));
                 }
-                account.append($('<div class="cinemax-youtube-account__name"></div>').text(youtubeAccount.title));
+                var accountInfo = $('<div class="cinemax-youtube-account__info"></div>');
+                accountInfo.append($('<div class="cinemax-youtube-account__name"></div>').text(youtubeAccount.youtubeTitle || youtubeAccount.title));
+                if (youtubeAccount.email) {
+                    accountInfo.append($('<div class="cinemax-youtube-account__email"></div>').text(youtubeAccount.email));
+                }
+                account.append(accountInfo);
                 button = $('<div class="selector cinemax-youtube-account__button"></div>').text('Выйти');
                 button.on('hover:enter', function () {
                     youtubeSignOut(function () {
