@@ -281,8 +281,8 @@
     }
 
     function css() {
-        if ($('#cinemax-v3-studio-css').length) return;
-        $('head').append('<style id="cinemax-v3-studio-css">' +
+        if ($('#cinemax-v4-studio-css').length) return;
+        $('head').append('<style id="cinemax-v4-studio-css">' +
             '.hero-banner .hero-status-badge{position:absolute!important;top:.7em!important;left:.7em!important;z-index:20!important;pointer-events:none}' +
             '.hero-banner .cinemax-hero-rating{white-space:nowrap}' +
             '.hero-banner .hero-age-badge{position:absolute!important;top:.7em!important;right:.7em!important;z-index:20!important;display:none;pointer-events:none}' +
@@ -294,7 +294,7 @@
             '.card--studio{width:12em!important;height:6.75em!important;padding:0!important;background:transparent;border-radius:0;display:flex;align-items:center;justify-content:center;overflow:visible;box-shadow:none;border:0;transition:transform .18s ease-out,filter .18s ease-out}' +
             '.card--studio.focus{transform:scale(1.045);filter:drop-shadow(0 0 10px rgba(255,255,255,.18));z-index:10}' +
             '.card--studio .card__view{width:100%;height:100%;padding:.15em!important;box-sizing:border-box!important;background:transparent!important;display:flex;align-items:center;justify-content:center;position:relative;overflow:visible!important}' +
-            '.card--studio .card__title,.card--studio .card__textbox,.card--studio .card__age,.card--studio .card__year,.card--studio .card__type,.card--studio .card__quality,.card--studio .card__info,.card--studio .card-marks,.card--studio .card__icons{display:none!important}' +
+            '.card--studio .card__title,.card--studio .card__textbox,.card--studio .card__age,.card--studio .card__year,.card--studio .card__type,.card--studio .card__quality,.card--studio .card__info,.card--studio .card-marks,.card--studio .card__icons,.card--studio .card__mark,.card--studio .card__status,.card--studio .card__genre,.card--studio [class*="card__type"],.card--studio [class*="card__mark"],.card--studio [class*="card__genre"]{display:none!important}' +
             '.studio-logo-wrap{width:86%;height:78%;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:38% 16% 38% 18% / 34% 20% 34% 20%;overflow:hidden;transform:rotate(-1deg);box-shadow:0 1px 0 rgba(255,255,255,.35),0 8px 18px rgba(0,0,0,.24)}' +
             '.studio-logo-img{width:auto!important;height:auto!important;max-width:68%!important;max-height:52%!important;object-fit:contain;display:block!important;transform:rotate(1deg)}' +
             '.studio-logo-fallback{display:block;font-weight:800;font-size:1.05em;text-align:center;color:#111;transform:rotate(1deg)}' +
@@ -803,7 +803,12 @@ function makeHeroResultItem(movie, heightEm) {
                 return function (callback) {
                     var items = STREAMINGS.map(function (cfg) {
                         var s = (window.__CINEMAX_STUDIOS || []).find(function (x) { return x.id === cfg.id; });
-                        return s || { id: cfg.id, name: cfg.title, title: cfg.title, svg: '' };
+                        return {
+                            id: cfg.id,
+                            name: (s && (s.name || s.title)) || cfg.title,
+                            title: (s && (s.title || s.name)) || cfg.title,
+                            svg: (s && s.svg) || cfg.svg || ''
+                        };
                     });
                     callback({
                         results: items.map(streamingCard),
@@ -1185,10 +1190,19 @@ function makeHeroResultItem(movie, heightEm) {
         };
 
         comp.create = function () {
+            // Give Lampa.Scroll an explicit viewport height. Without this, the
+            // custom activity can grow with the grid and mobile has nothing to scroll.
+            scroll.minus();
+            scroll.render().css({
+                'touch-action': 'pan-y',
+                '-webkit-overflow-scrolling': 'touch'
+            });
+
             comp.render();
 
             setTimeout(function () {
                 comp.loadYoutube();
+                try { scroll.update(comp.html, false); } catch (e) {}
             }, 0);
 
             return scroll.render();
@@ -1276,7 +1290,7 @@ function makeHeroResultItem(movie, heightEm) {
 
     function init() {
         if (!window.Lampa || !Lampa.ContentRows || !Lampa.Maker) return;
-        if ($('#cinemax-v3-studio-css').length) return;
+        if ($('#cinemax-v4-studio-css').length) return;
         css();
         register();
         addHeroRow();
@@ -1307,7 +1321,7 @@ function makeHeroResultItem(movie, heightEm) {
             // Keep Lampa's own Scroll implementation; only explicitly allow
             // vertical touch gestures on the main activity scroll container.
             try {
-                $('.activity__body .scroll').each(function () {
+                $('.activity__body .scroll, .cinemax-youtube-page').each(function () {
                     this.style.touchAction = 'pan-y';
                     this.style.webkitOverflowScrolling = 'touch';
                 });
