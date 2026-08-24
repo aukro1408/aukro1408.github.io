@@ -327,6 +327,20 @@
             '.cinemax-youtube-search{display:flex;align-items:center;gap:.7em;margin-bottom:1.3em;padding:.75em 1em;border-radius:1em;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08)}' +
             '.cinemax-youtube-search__icon{font-size:1.2em;opacity:.8}' +
             '.cinemax-youtube-search__text{font-size:1em;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+            '.cinemax-youtube-nav{display:flex;gap:.55em;margin:0 0 1.35em;overflow-x:auto;padding:.1em 0 .35em;scrollbar-width:none}' +
+            '.cinemax-youtube-nav::-webkit-scrollbar{display:none}' +
+            '.cinemax-youtube-nav__item{flex:0 0 auto;padding:.55em .95em;border-radius:1.2em;background:rgba(255,255,255,.08);font-size:.86em;white-space:nowrap}' +
+            '.cinemax-youtube-nav__item.focus,.cinemax-youtube-nav__item.active{background:#fff;color:#111}' +
+            '.cinemax-youtube-section{margin:0 0 2em}' +
+            '.cinemax-youtube-section__title{font-size:1.25em;font-weight:750;margin:0 0 .7em}' +
+            '.cinemax-youtube-channel-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.85em;margin-bottom:1.35em}' +
+            '.cinemax-youtube-channel{min-width:0;text-align:center;padding:.65em .35em;border-radius:1em;background:rgba(255,255,255,.045)}' +
+            '.cinemax-youtube-channel__avatar{width:4em;height:4em;border-radius:50%;object-fit:cover;background:#242424;margin:0 auto .45em;display:block}' +
+            '.cinemax-youtube-channel__title{font-size:.78em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+            '.cinemax-youtube-channel__count{font-size:.65em;opacity:.48;margin-top:.2em}' +
+            '.cinemax-youtube-profile{display:flex;align-items:center;gap:1em;padding:1em;border-radius:1em;background:rgba(255,255,255,.06);margin-bottom:1.2em}' +
+            '.cinemax-youtube-profile__avatar{width:5em;height:5em;border-radius:50%;object-fit:cover;background:#242424}' +
+            '.cinemax-youtube-profile__name{font-size:1.15em;font-weight:750}.cinemax-youtube-profile__email{font-size:.78em;opacity:.55;margin-top:.25em}' +
             '.cinemax-youtube-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.25em 1em}' +
             '.cinemax-youtube-video{min-width:0}' +
             '.cinemax-youtube-video__thumb{position:relative;width:100%;aspect-ratio:16/9;border-radius:.7em;overflow:hidden;background:#171717}' +
@@ -1003,12 +1017,44 @@ function makeHeroResultItem(movie, heightEm) {
     var youtubeAccount = null;
     var youtubeTokenClient = null;
     var youtubeGisLoading = null;
+    var youtubeRestoreInProgress = false;
+    var YOUTUBE_ACCOUNT_STORAGE_KEY = 'cinemax.youtube.account.v1';
 
     /*
-     * Google Identity Services is loaded only when the viewer chooses to sign
-     * in. The token model is intended for browser apps: it uses no client
-     * secret and keeps the short-lived access token in memory only.
+     * The Google access token is intentionally NOT stored in localStorage:
+     * GIS access tokens are short-lived. We persist only the non-secret
+     * account presentation data and silently ask GIS for a fresh token after
+     * a page reload when the user has already granted access.
      */
+    function youtubeReadStoredAccount() {
+        try {
+            var raw = localStorage.getItem(YOUTUBE_ACCOUNT_STORAGE_KEY);
+            if (!raw) return null;
+            var parsed = JSON.parse(raw);
+            return parsed && parsed.email ? parsed : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function youtubeStoreAccount(account) {
+        try {
+            if (account && account.email) {
+                localStorage.setItem(YOUTUBE_ACCOUNT_STORAGE_KEY, JSON.stringify({
+                    title: account.title || '',
+                    email: account.email || '',
+                    avatar: account.avatar || '',
+                    youtubeTitle: account.youtubeTitle || '',
+                    youtubeAvatar: account.youtubeAvatar || ''
+                }));
+            }
+        } catch (e) {}
+    }
+
+    function youtubeClearStoredAccount() {
+        try { localStorage.removeItem(YOUTUBE_ACCOUNT_STORAGE_KEY); } catch (e) {}
+    }
+
     function youtubeLoadGis(done, fail) {
         if (window.google && google.accounts && google.accounts.oauth2) {
             done();
@@ -1108,12 +1154,65 @@ function makeHeroResultItem(movie, heightEm) {
                         ((snippet.thumbnails.medium && snippet.thumbnails.medium.url) ||
                          (snippet.thumbnails.default && snippet.thumbnails.default.url))) || '';
                 }
+                youtubeStoreAccount(youtubeAccount);
                 done(youtubeAccount);
             }, function () {
                 // Google profile is already enough to confirm successful login.
+                youtubeStoreAccount(youtubeAccount);
                 done(youtubeAccount);
             });
         }, fail);
+    }
+
+    function youtubeRestoreSession(done, fail) {
+        var stored = youtubeReadStoredAccount();
+        if (!stored || youtubeRestoreInProgress) {
+            if (done) done(false);
+            return;
+        }
+
+        youtubeAccount = stored;
+        youtubeRestoreInProgress = true;
+
+        youtubeLoadGis(function () {
+            youtubeTokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: YOUTUBE_OAUTH_CLIENT_ID,
+                scope: YOUTUBE_READONLY_SCOPE,
+                callback: function (response) {
+                    youtubeRestoreInProgress = false;
+                    if (!response || response.error || !response.access_token) {
+                        // Keep the cached profile visible, but do not pretend
+                        // that we still have a valid API token. A normal
+                        // user-initiated login can restore the token.
+                        if (done) done(false);
+                        return;
+                    }
+                    youtubeAccessToken = response.access_token;
+                    youtubeLoadAccount(function (account) {
+                        youtubeAccount = account;
+                        youtubeStoreAccount(account);
+                        if (done) done(true);
+                    }, function () {
+                        if (done) done(true);
+                    });
+                },
+                error_callback: function () {
+                    youtubeRestoreInProgress = false;
+                    if (done) done(false);
+                }
+            });
+
+            // No popup: restore only when Google already has an authenticated
+            // session and this client has already been granted these scopes.
+            youtubeTokenClient.requestAccessToken({
+                prompt: 'none',
+                login_hint: stored.email
+            });
+        }, function (error) {
+            youtubeRestoreInProgress = false;
+            if (fail) fail(error);
+            else if (done) done(false);
+        });
     }
 
     function youtubeSignIn(done, fail) {
@@ -1141,6 +1240,7 @@ function makeHeroResultItem(movie, heightEm) {
         var token = youtubeAccessToken;
         youtubeAccessToken = '';
         youtubeAccount = null;
+        youtubeClearStoredAccount();
         if (token && window.google && google.accounts && google.accounts.oauth2 && google.accounts.oauth2.revoke) {
             google.accounts.oauth2.revoke(token, function () { if (done) done(); });
         } else if (done) done();
@@ -1247,6 +1347,71 @@ function makeHeroResultItem(movie, heightEm) {
         return el;
     }
 
+    function youtubeGetSubscriptions(done, fail) {
+        youtubeAuthorizedRequest('subscriptions', {
+            part: 'snippet,contentDetails',
+            mine: 'true',
+            maxResults: 50
+        }, done, fail);
+    }
+
+    function youtubeGetMyChannels(done, fail) {
+        youtubeAuthorizedRequest('channels', {
+            part: 'snippet,contentDetails,statistics',
+            mine: 'true',
+            maxResults: 50
+        }, done, fail);
+    }
+
+    function youtubeGetChannelDetails(ids, done, fail) {
+        ids = (ids || []).filter(Boolean);
+        if (!ids.length) { done({ items: [] }); return; }
+        youtubeAuthorizedRequest('channels', {
+            part: 'snippet,contentDetails,statistics',
+            id: ids.join(','),
+            maxResults: 50
+        }, done, fail);
+    }
+
+    function youtubeGetUploads(playlistId, done, fail) {
+        youtubeAuthorizedRequest('playlistItems', {
+            part: 'snippet,contentDetails',
+            playlistId: playlistId,
+            maxResults: 12
+        }, done, fail);
+    }
+
+    function youtubeVideoFromPlaylistItem(item) {
+        var id = item && item.contentDetails && item.contentDetails.videoId;
+        if (!id) return null;
+        return {
+            id: id,
+            snippet: {
+                title: item.snippet && item.snippet.title,
+                channelTitle: item.snippet && item.snippet.videoOwnerChannelTitle,
+                channelId: item.snippet && item.snippet.videoOwnerChannelId,
+                publishedAt: (item.contentDetails && item.contentDetails.videoPublishedAt) || (item.snippet && item.snippet.publishedAt),
+                thumbnails: item.snippet && item.snippet.thumbnails
+            }
+        };
+    }
+
+    function youtubeMergeUniqueVideos(groups, limit) {
+        var out = [], seen = {};
+        (groups || []).forEach(function (group) {
+            (group || []).forEach(function (video) {
+                var id = video && video.id && (typeof video.id === 'string' ? video.id : video.id.videoId);
+                if (!id || seen[id]) return;
+                seen[id] = true;
+                out.push(video);
+            });
+        });
+        out.sort(function (a, b) {
+            return new Date((b.snippet && b.snippet.publishedAt) || 0) - new Date((a.snippet && a.snippet.publishedAt) || 0);
+        });
+        return typeof limit === 'number' ? out.slice(0, limit) : out;
+    }
+
     function youtubeSearchModal(current, callback) {
         if (!Lampa.Input || !Lampa.Input.edit) {
             callback('');
@@ -1267,6 +1432,8 @@ function makeHeroResultItem(movie, heightEm) {
         var network = new Lampa.Reguest();
         var scroll = new Lampa.Scroll({ mask: true, over: true });
         var queryText = '';
+        var mode = 'home';
+        var data = { subscriptions: [], channels: [], subscriptionVideos: [], myVideos: [], popular: [] };
 
         comp.html = $('<div class="cinemax-youtube-page"></div>');
         comp.grid = null;
@@ -1282,21 +1449,18 @@ function makeHeroResultItem(movie, heightEm) {
         function accountControl() {
             var account = $('<div class="cinemax-youtube-account"></div>');
             var button;
-
             if (youtubeAccount) {
                 var avatar = youtubeAccount.youtubeAvatar || youtubeAccount.avatar || '';
-                if (avatar) {
-                    account.append($('<img class="cinemax-youtube-account__avatar" alt="">').attr('src', avatar));
-                }
+                if (avatar) account.append($('<img class="cinemax-youtube-account__avatar" alt="">').attr('src', avatar));
                 var accountInfo = $('<div class="cinemax-youtube-account__info"></div>');
                 accountInfo.append($('<div class="cinemax-youtube-account__name"></div>').text(youtubeAccount.youtubeTitle || youtubeAccount.title));
-                if (youtubeAccount.email) {
-                    accountInfo.append($('<div class="cinemax-youtube-account__email"></div>').text(youtubeAccount.email));
-                }
+                if (youtubeAccount.email) accountInfo.append($('<div class="cinemax-youtube-account__email"></div>').text(youtubeAccount.email));
                 account.append(accountInfo);
                 button = $('<div class="selector cinemax-youtube-account__button"></div>').text('Выйти');
                 button.on('hover:enter', function () {
                     youtubeSignOut(function () {
+                        data = { subscriptions: [], channels: [], subscriptionVideos: [], myVideos: [], popular: [] };
+                        mode = 'home';
                         comp.render();
                         comp.loadYoutube();
                     });
@@ -1314,165 +1478,309 @@ function makeHeroResultItem(movie, heightEm) {
                     });
                 });
             }
-
             account.append(button);
             return account;
         }
 
+        function navControl(label, value) {
+            var item = $('<div class="selector cinemax-youtube-nav__item"></div>').text(label);
+            if (mode === value) item.addClass('active');
+            item.on('hover:enter', function () {
+                if (mode === value) return;
+                mode = value;
+                comp.render();
+                comp.loadYoutube();
+            });
+            return item;
+        }
+
+        function section(title) {
+            var el = $('<section class="cinemax-youtube-section"></section>');
+            el.append($('<div class="cinemax-youtube-section__title"></div>').text(title));
+            return el;
+        }
+
+        function channelCard(channel) {
+            var sn = channel && channel.snippet || {};
+            var thumbs = sn.thumbnails || {};
+            var avatar = (thumbs.medium && thumbs.medium.url) || (thumbs.default && thumbs.default.url) || '';
+            var el = $('<div class="selector cinemax-youtube-channel"></div>');
+            if (avatar) el.append($('<img class="cinemax-youtube-channel__avatar" loading="lazy">').attr('src', avatar));
+            el.append($('<div class="cinemax-youtube-channel__title"></div>').text(sn.title || 'Канал'));
+            var count = channel && channel.statistics && channel.statistics.subscriberCount;
+            if (count) el.append($('<div class="cinemax-youtube-channel__count"></div>').text(Number(count).toLocaleString('ru-RU') + ' подписчиков'));
+            el.on('hover:enter', function () {
+                var id = channel && channel.id;
+                if (!id) return;
+                queryText = '';
+                mode = 'channel:' + id;
+                comp.render();
+                youtubeGetUploads(channel.contentDetails && channel.contentDetails.relatedPlaylists && channel.contentDetails.relatedPlaylists.uploads, function (json) {
+                    var videos = (json.items || []).map(youtubeVideoFromPlaylistItem).filter(Boolean);
+                    comp.renderVideoList(videos, sn.title || 'Канал');
+                }, function () {
+                    comp.renderVideoList([], sn.title || 'Канал');
+                });
+            });
+            return el;
+        }
+
+        function profileBlock(channel) {
+            var sn = channel && channel.snippet || {};
+            var thumbs = sn.thumbnails || {};
+            var avatar = (thumbs.medium && thumbs.medium.url) || (thumbs.default && thumbs.default.url) || (youtubeAccount && youtubeAccount.avatar) || '';
+            var el = $('<div class="cinemax-youtube-profile"></div>');
+            if (avatar) el.append($('<img class="cinemax-youtube-profile__avatar">').attr('src', avatar));
+            var info = $('<div></div>');
+            info.append($('<div class="cinemax-youtube-profile__name"></div>').text(sn.title || (youtubeAccount && youtubeAccount.title) || 'Мой канал'));
+            if (youtubeAccount && youtubeAccount.email) info.append($('<div class="cinemax-youtube-profile__email"></div>').text(youtubeAccount.email));
+            el.append(info);
+            return el;
+        }
+
+        comp.renderVideoList = function (videos, title) {
+            comp.grid.empty();
+            var sec = section(title || 'Видео');
+            var grid = $('<div class="cinemax-youtube-grid"></div>');
+            if (!videos || !videos.length) {
+                grid.append($('<div class="cinemax-youtube-empty"></div>').text('Видео не найдены'));
+            } else {
+                videos.forEach(function (video) { grid.append(youtubeCard(video, scroll)); });
+            }
+            sec.append(grid);
+            comp.grid.append(sec);
+            try { scroll.update(comp.html, false); } catch (e) {}
+        };
+
         comp.render = function () {
             comp.html.empty();
-
             var head = $('<div class="cinemax-youtube-page__head"></div>');
-            head.append(
-                $('<div class="cinemax-youtube-page__title"></div>').text('YouTube')
-            );
+            head.append($('<div class="cinemax-youtube-page__title"></div>').text('YouTube'));
             head.append(accountControl());
             comp.html.append(head);
 
             var search = $('<div class="selector cinemax-youtube-search"></div>');
             search.append('<div class="cinemax-youtube-search__icon">⌕</div>');
-            search.append(
-                $('<div class="cinemax-youtube-search__text"></div>')
-                    .text(queryText ? queryText : 'Поиск видео')
-            );
-
+            search.append($('<div class="cinemax-youtube-search__text"></div>').text(queryText ? queryText : 'Поиск видео'));
             search.on('hover:enter', function () {
                 youtubeSearchModal(queryText, function (value) {
                     if (!value) return;
                     queryText = value;
+                    mode = 'search';
+                    comp.render();
                     comp.loadYoutube();
                 });
             });
-
             comp.html.append(search);
+
+            var nav = $('<div class="cinemax-youtube-nav"></div>');
+            nav.append(navControl('Для вас', 'home'));
+            nav.append(navControl('Мои подписки', 'subscriptions'));
+            nav.append(navControl('Мои каналы', 'channels'));
+            comp.html.append(nav);
 
             comp.grid = $('<div class="cinemax-youtube-grid"></div>');
             comp.html.append(comp.grid);
-
             scroll.clear();
             scroll.append(comp.html);
-
             return scroll.render();
         };
 
-        comp.loadYoutube = function () {
-            if (!comp.grid) return;
-
-            comp.grid.empty().append(
-                $('<div class="cinemax-youtube-loading"></div>')
-                    .text('Загрузка видео…')
-            );
-
-            var url;
-
-            if (queryText) {
-                url = youtubeUrl('search', {
-                    part: 'snippet',
-                    q: queryText,
-                    type: 'video',
-                    maxResults: 18,
-                    regionCode: 'UA',
-                    relevanceLanguage: 'ru',
-                    safeSearch: 'moderate'
-                });
-            } else {
-                url = youtubeUrl('videos', {
-                    part: 'snippet,statistics',
-                    chart: 'mostPopular',
-                    maxResults: 18,
-                    regionCode: 'UA'
-                });
+        function renderHome() {
+            comp.grid.empty();
+            if (!youtubeAccount) {
+                var sec = section('Популярное сейчас');
+                var grid = $('<div class="cinemax-youtube-grid"></div>');
+                data.popular.forEach(function (v) { grid.append(youtubeCard(v, scroll)); });
+                sec.append(grid);
+                comp.grid.append(sec);
+                return;
             }
 
-            network.silent(url, function (json) {
-                var results = (json && json.items) || [];
-                comp.grid.empty();
+            var rec = section('Рекомендации для вас');
+            var recGrid = $('<div class="cinemax-youtube-grid"></div>');
+            var recVideos = youtubeMergeUniqueVideos([data.subscriptionVideos, data.popular], 24);
+            recVideos.forEach(function (v) { recGrid.append(youtubeCard(v, scroll)); });
+            if (!recVideos.length) recGrid.append($('<div class="cinemax-youtube-empty"></div>').text('Пока не удалось собрать рекомендации'));
+            rec.append(recGrid);
+            comp.grid.append(rec);
 
-                if (!results.length) {
-                    comp.grid.append(
-                        $('<div class="cinemax-youtube-empty"></div>')
-                            .text('Видео не найдены')
-                    );
-                    return;
-                }
+            if (data.subscriptions.length) {
+                var ch = section('Ваши подписки');
+                var chGrid = $('<div class="cinemax-youtube-channel-grid"></div>');
+                data.subscriptions.slice(0, 10).forEach(function (sub) { chGrid.append(channelCard(sub.__channel || { snippet: sub.snippet, id: sub.snippet && sub.snippet.resourceId && sub.snippet.resourceId.channelId })); });
+                ch.append(chGrid);
+                comp.grid.append(ch);
+            }
+        }
 
-                results.forEach(function (video) {
-                    comp.grid.append(youtubeCard(video, scroll));
+        function renderSubscriptions() {
+            comp.grid.empty();
+            var channels = data.subscriptions.map(function (s) { return s.__channel; }).filter(Boolean);
+            var chSec = section('Мои подписки');
+            var chGrid = $('<div class="cinemax-youtube-channel-grid"></div>');
+            channels.forEach(function (c) { chGrid.append(channelCard(c)); });
+            if (!channels.length) chGrid.append($('<div class="cinemax-youtube-empty"></div>').text('Подписок не найдено'));
+            chSec.append(chGrid);
+            comp.grid.append(chSec);
+
+            var vidSec = section('Новые видео из подписок');
+            var vidGrid = $('<div class="cinemax-youtube-grid"></div>');
+            data.subscriptionVideos.forEach(function (v) { vidGrid.append(youtubeCard(v, scroll)); });
+            if (!data.subscriptionVideos.length) vidGrid.append($('<div class="cinemax-youtube-empty"></div>').text('Новых видео не найдено'));
+            vidSec.append(vidGrid);
+            comp.grid.append(vidSec);
+        }
+
+        function renderChannels() {
+            comp.grid.empty();
+            var sec = section('Мои каналы');
+            var grid = $('<div class="cinemax-youtube-channel-grid"></div>');
+            data.channels.forEach(function (c) { grid.append(channelCard(c)); });
+            if (!data.channels.length) grid.append($('<div class="cinemax-youtube-empty"></div>').text('YouTube-каналы не найдены'));
+            sec.append(grid);
+            comp.grid.append(sec);
+
+            data.channels.forEach(function (c) {
+                var uploads = c.contentDetails && c.contentDetails.relatedPlaylists && c.contentDetails.relatedPlaylists.uploads;
+                if (!uploads) return;
+                var secVideos = section(c.snippet && c.snippet.title ? c.snippet.title : 'Видео канала');
+                var gridVideos = $('<div class="cinemax-youtube-grid"></div>');
+                secVideos.append(gridVideos);
+                comp.grid.append(secVideos);
+                youtubeGetUploads(uploads, function (json) {
+                    (json.items || []).map(youtubeVideoFromPlaylistItem).filter(Boolean).forEach(function (v) { gridVideos.append(youtubeCard(v, scroll)); });
+                    try { scroll.update(comp.html, false); } catch (e) {}
+                }, function () {});
+            });
+        }
+
+        comp.loadYoutube = function () {
+            if (!comp.grid) return;
+            comp.grid.empty().append($('<div class="cinemax-youtube-loading"></div>').text('Загрузка YouTube…'));
+
+            if (queryText || mode === 'search') {
+                var url = youtubeUrl('search', {
+                    part: 'snippet', q: queryText, type: 'video', maxResults: 24,
+                    regionCode: 'UA', relevanceLanguage: 'ru', safeSearch: 'moderate'
                 });
+                network.silent(url, function (json) {
+                    var results = (json && json.items) || [];
+                    comp.grid.empty();
+                    var sec = section('Результаты поиска');
+                    var grid = $('<div class="cinemax-youtube-grid"></div>');
+                    results.forEach(function (v) { grid.append(youtubeCard(v, scroll)); });
+                    if (!results.length) grid.append($('<div class="cinemax-youtube-empty"></div>').text('Видео не найдены'));
+                    sec.append(grid); comp.grid.append(sec);
+                    try { scroll.update(comp.html, false); } catch (e) {}
+                }, function () {
+                    comp.grid.empty().append($('<div class="cinemax-youtube-empty"></div>').text('Не удалось выполнить поиск'));
+                });
+                return;
+            }
 
-                if (Lampa.Controller && Lampa.Controller.collectionFocus) {
-                    try {
-                        var first = comp.grid.find('.selector').first()[0];
-                        if (first) {
-                            Lampa.Controller.collectionFocus(first, comp.grid[0]);
-                        }
-                    } catch (e) {}
-                }
-            }, function (err) {
-                console.log('CinemaX YouTube error:', err);
-                comp.grid.empty().append(
-                    $('<div class="cinemax-youtube-empty"></div>')
-                        .text('Не удалось загрузить YouTube')
-                );
+            function loadPopular(next) {
+                network.silent(youtubeUrl('videos', { part: 'snippet,statistics', chart: 'mostPopular', maxResults: 24, regionCode: 'UA' }), function (json) {
+                    data.popular = (json && json.items) || [];
+                    next();
+                }, function () { data.popular = []; next(); });
+            }
+
+            if (!youtubeAccessToken) {
+                loadPopular(function () { renderHome(); try { scroll.update(comp.html, false); } catch (e) {} });
+                return;
+            }
+
+            youtubeGetSubscriptions(function (subJson) {
+                var subs = subJson.items || [];
+                data.subscriptions = subs;
+                var ids = subs.map(function (s) { return s.snippet && s.snippet.resourceId && s.snippet.resourceId.channelId; }).filter(Boolean);
+                youtubeGetChannelDetails(ids, function (channelJson) {
+                    var byId = {};
+                    (channelJson.items || []).forEach(function (c) { byId[c.id] = c; });
+                    subs.forEach(function (s) { var id = s.snippet && s.snippet.resourceId && s.snippet.resourceId.channelId; s.__channel = byId[id] || null; });
+
+                    var targets = ids.slice(0, 12);
+                    var groups = [];
+                    var pending = targets.length;
+                    if (!pending) {
+                        loadPopular(function () { finishPersonalized(); });
+                        return;
+                    }
+                    targets.forEach(function (id) {
+                        var c = byId[id];
+                        var uploads = c && c.contentDetails && c.contentDetails.relatedPlaylists && c.contentDetails.relatedPlaylists.uploads;
+                        if (!uploads) { pending--; if (!pending) finishPersonalized(); return; }
+                        youtubeGetUploads(uploads, function (json) {
+                            groups.push((json.items || []).map(youtubeVideoFromPlaylistItem).filter(Boolean));
+                            pending--; if (!pending) finishPersonalized();
+                        }, function () { pending--; if (!pending) finishPersonalized(); });
+                    });
+
+                    function finishPersonalized() {
+                        data.subscriptionVideos = youtubeMergeUniqueVideos(groups, 30);
+                        loadPopular(function () {
+                            youtubeGetMyChannels(function (myJson) {
+                                data.channels = (myJson && myJson.items) || [];
+                                if (mode === 'home') renderHome();
+                                else if (mode === 'subscriptions') renderSubscriptions();
+                                else if (mode === 'channels') renderChannels();
+                                try { scroll.update(comp.html, false); } catch (e) {}
+                            }, function () {
+                                data.channels = [];
+                                if (mode === 'home') renderHome();
+                                else if (mode === 'subscriptions') renderSubscriptions();
+                                else renderChannels();
+                                try { scroll.update(comp.html, false); } catch (e) {}
+                            });
+                        });
+                    }
+                }, function () {
+                    data.subscriptions = subs;
+                    data.subscriptionVideos = [];
+                    loadPopular(function () { renderHome(); try { scroll.update(comp.html, false); } catch (e) {} });
+                });
+            }, function () {
+                loadPopular(function () { renderHome(); try { scroll.update(comp.html, false); } catch (e) {} });
             });
         };
 
         comp.create = function () {
-            // Give Lampa.Scroll an explicit viewport height. Without this, the
-            // custom activity can grow with the grid and mobile has nothing to scroll.
             scroll.minus();
-            scroll.render().css({
-                'touch-action': 'pan-y',
-                '-webkit-overflow-scrolling': 'touch'
-            });
-
+            scroll.render().css({ 'touch-action': 'pan-y', '-webkit-overflow-scrolling': 'touch' });
+            var storedAccount = youtubeReadStoredAccount();
+            if (storedAccount && !youtubeAccount) youtubeAccount = storedAccount;
             comp.render();
-
             setTimeout(function () {
+                youtubeRestoreSession(function () {
+                    comp.render();
+                    comp.loadYoutube();
+                    try { scroll.update(comp.html, false); } catch (e) {}
+                });
                 comp.loadYoutube();
                 try { scroll.update(comp.html, false); } catch (e) {}
             }, 0);
-
             return scroll.render();
         };
 
         comp.start = function () {
             if (Lampa.Activity.active().activity !== comp.activity) return;
-
             Lampa.Controller.add('content', {
                 toggle: function () {
                     Lampa.Controller.collectionSet(scroll.render(), comp.html);
                     var first = comp.grid && comp.grid.find('.selector').first()[0];
                     Lampa.Controller.collectionFocus(first || false, scroll.render());
                 },
-                up: function () {
-                    if (Navigator.canmove('up')) Navigator.move('up');
-                    else Lampa.Controller.toggle('head');
-                },
-                down: function () {
-                    Navigator.move('down');
-                },
-                left: function () {
-                    if (Navigator.canmove('left')) Navigator.move('left');
-                    else Lampa.Controller.toggle('menu');
-                },
-                right: function () {
-                    Navigator.move('right');
-                },
-                back: function () {
-                    Lampa.Activity.backward();
-                }
+                up: function () { if (Navigator.canmove('up')) Navigator.move('up'); else Lampa.Controller.toggle('head'); },
+                down: function () { Navigator.move('down'); },
+                left: function () { if (Navigator.canmove('left')) Navigator.move('left'); else Lampa.Controller.toggle('menu'); },
+                right: function () { Navigator.move('right'); },
+                back: function () { Lampa.Activity.backward(); }
             });
-
             Lampa.Controller.toggle('content');
         };
 
-        comp.destroy = function () {
-            network.clear();
-            scroll.destroy();
-            if (comp.html) comp.html.remove();
-        };
-
+        comp.destroy = function () { network.clear(); scroll.destroy(); if (comp.html) comp.html.remove(); };
         return comp;
     }
 
