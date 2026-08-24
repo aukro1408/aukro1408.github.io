@@ -292,14 +292,18 @@
             '.cinemax-section-title{display:inline-flex!important;align-items:center!important;gap:.42em!important;vertical-align:middle!important}' +
             '.cinemax-section-icon{width:1.05em!important;height:1.05em!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;color:#fff!important;flex:0 0 auto!important}' +
             '.cinemax-section-icon svg{width:100%!important;height:100%!important;display:block!important;fill:currentColor!important}' +
-            '.card--studio{width:12em!important;height:6.75em!important;padding:0!important;background:#f5f7fa;border-radius:.8em;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.06);transition:transform .18s ease-out,box-shadow .18s ease-out}' +
-            '.card--studio.focus{transform:scale(1.06);box-shadow:0 0 18px rgba(255,255,255,.9);z-index:10}' +
-            '.card--studio .card__view{width:100%;height:100%;padding:.6em!important;box-sizing:border-box!important;background-origin:content-box;display:block;position:relative}' +
+            '.card--studio{width:12em!important;height:5.75em!important;padding:0!important;background:#f5f7fa;border-radius:1.25em 1.55em 1.35em 1.45em!important;display:flex;align-items:center;justify-content:center;overflow:visible!important;box-shadow:0 4px 12px rgba(0,0,0,.32);border:0!important;transform:rotate(-0.7deg);transition:transform .18s ease-out,box-shadow .18s ease-out;position:relative}' +
+            '.card--studio:before{content:"Фильм";position:absolute;left:0;top:-.05em;z-index:30;padding:.24em .55em .28em;border-radius:0 .25em .25em 0;background:#48c879;color:#fff;font-size:.72em;font-weight:800;line-height:1;pointer-events:none;transform:rotate(0.7deg)}' +
+            '.card--studio.focus{transform:rotate(-0.7deg) scale(1.06);box-shadow:0 0 18px rgba(255,255,255,.85);z-index:10}' +
+            '.card--studio .card__view{width:100%;height:100%;padding:.5em!important;box-sizing:border-box!important;background-origin:content-box;display:block;position:relative}' +
+            '.card--studio .card__title,.card--studio .card__textbox,.card--studio .card__age,.card--studio .card__year,.card--studio .card__type,.card--studio .card__quality,.card--studio .card__info,.card--studio .card-marks,.card--studio .card__icons{display:none!important}' +
             '.studio-logo-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center}' +
-            '.studio-logo-img{max-width:70%;max-height:60%;object-fit:contain;display:block}' +
+            '.studio-logo-img{max-width:70%!important;max-height:64%!important;width:auto!important;height:auto!important;object-fit:contain;display:block!important}' +
+            '.card--youtube .studio-logo-img{max-width:34%!important;max-height:54%!important}' +
             '.studio-logo-fallback{display:block;font-weight:700;font-size:1.05em;text-align:center;color:#111}' +
             '.hero-trailer-btn{display:none!important}' +
-            '.cinemax-youtube-page{padding:1.4em 2em 4em;box-sizing:border-box}' +
+            '.cinemax-youtube-page{padding:1.4em 2em 4em;box-sizing:border-box;min-height:100%;touch-action:pan-y}' +
+            '.cinemax-youtube-page .selector{cursor:pointer}' +
             '.cinemax-youtube-page__head{display:flex;align-items:center;gap:.8em;margin-bottom:1.2em}' +
             '.cinemax-youtube-page__logo{width:2.2em;height:2.2em;object-fit:contain;flex:0 0 auto}' +
             '.cinemax-youtube-page__title{font-size:2em;font-weight:800;line-height:1}' +
@@ -748,9 +752,11 @@ function makeHeroResultItem(movie, heightEm) {
                     onCreate: function () {
                         var item = $(this.html);
                         item.addClass('card--studio');
+                        if (s.id === 'youtube') item.addClass('card--youtube');
 
                         var view = item.find('.card__view');
                         view.empty();
+                        item.children().not('.card__view').remove();
 
                         var wrapper = $('<div class="studio-logo-wrap"></div>');
 
@@ -1009,7 +1015,7 @@ function makeHeroResultItem(movie, heightEm) {
         }
     }
 
-    function youtubeCard(video) {
+    function youtubeCard(video, scroll) {
         var title = (video && video.snippet && video.snippet.title) || 'Без названия';
         var channel = (video && video.snippet && video.snippet.channelTitle) || '';
         var published = youtubeFormatDate(video && video.snippet && video.snippet.publishedAt);
@@ -1054,6 +1060,12 @@ function makeHeroResultItem(movie, heightEm) {
         body.append(meta);
         el.append(body);
 
+        el.on('hover:focus', function () {
+            try {
+                scroll.update(el, true);
+            } catch (e) {}
+        });
+
         el.on('hover:enter', function () {
             if (!url) return;
 
@@ -1090,10 +1102,12 @@ function makeHeroResultItem(movie, heightEm) {
     function YouTubePage(object) {
         var comp = new Lampa.InteractionMain(object);
         var network = new Lampa.Reguest();
+        var scroll = new Lampa.Scroll({ mask: true, over: true });
         var queryText = '';
 
         comp.html = $('<div class="cinemax-youtube-page"></div>');
         comp.grid = null;
+        comp.scroll = scroll;
 
         comp.render = function () {
             comp.html.empty();
@@ -1128,7 +1142,10 @@ function makeHeroResultItem(movie, heightEm) {
             comp.grid = $('<div class="cinemax-youtube-grid"></div>');
             comp.html.append(comp.grid);
 
-            return comp.html;
+            scroll.clear();
+            scroll.append(comp.html);
+
+            return scroll.render();
         };
 
         comp.loadYoutube = function () {
@@ -1173,7 +1190,7 @@ function makeHeroResultItem(movie, heightEm) {
                 }
 
                 results.forEach(function (video) {
-                    comp.grid.append(youtubeCard(video));
+                    comp.grid.append(youtubeCard(video, scroll));
                 });
 
                 if (Lampa.Controller && Lampa.Controller.collectionFocus) {
@@ -1195,13 +1212,48 @@ function makeHeroResultItem(movie, heightEm) {
 
         comp.create = function () {
             comp.render();
+
             setTimeout(function () {
                 comp.loadYoutube();
             }, 0);
-            return comp.render();
+
+            return scroll.render();
+        };
+
+        comp.start = function () {
+            if (Lampa.Activity.active().activity !== comp.activity) return;
+
+            Lampa.Controller.add('content', {
+                toggle: function () {
+                    Lampa.Controller.collectionSet(scroll.render(), comp.html);
+                    var first = comp.grid && comp.grid.find('.selector').first()[0];
+                    Lampa.Controller.collectionFocus(first || false, scroll.render());
+                },
+                up: function () {
+                    if (Navigator.canmove('up')) Navigator.move('up');
+                    else Lampa.Controller.toggle('head');
+                },
+                down: function () {
+                    Navigator.move('down');
+                },
+                left: function () {
+                    if (Navigator.canmove('left')) Navigator.move('left');
+                    else Lampa.Controller.toggle('menu');
+                },
+                right: function () {
+                    Navigator.move('right');
+                },
+                back: function () {
+                    Lampa.Activity.backward();
+                }
+            });
+
+            Lampa.Controller.toggle('content');
         };
 
         comp.destroy = function () {
+            network.clear();
+            scroll.destroy();
             if (comp.html) comp.html.remove();
         };
 
