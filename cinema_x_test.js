@@ -56,6 +56,7 @@
        чтобы плагин оставался одним файлом. При необходимости их можно
        заменить на SVG из твоего исходного файла. */
     var LOGOS = {
+        youtube: '<svg xmlns="http://www.w3.org/2000/svg" class="external-icon" viewBox="0 0 28.57  20" focusable="false" style="pointer-events: none; display: block; width: 100%; height: 100%;">  <svg viewBox="0 0 28.57 20" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">    <g>      <path d="M27.9727 3.12324C27.6435 1.89323 26.6768 0.926623 25.4468 0.597366C23.2197 2.24288e-07 14.285 0 14.285 0C14.285 0 5.35042 2.24288e-07 3.12323 0.597366C1.89323 0.926623 0.926623 1.89323 0.597366 3.12324C2.24288e-07 5.35042 0 10 0 10C0 10 2.24288e-07 14.6496 0.597366 16.8768C0.926623 18.1068 1.89323 19.0734 3.12323 19.4026C5.35042 20 14.285 20 14.285 20C14.285 20 23.2197 20 25.4468 19.4026C26.6768 19.0734 27.6435 18.1068 27.9727 16.8768C28.5701 14.6496 28.5701 10 28.5701 10C28.5701 10 28.5677 5.35042 27.9727 3.12324Z" fill="#FF0000"></path>      <path d="M11.4253 14.2854L18.8477 10.0004L11.4253 5.71533V14.2854Z" fill="white"></path>    </g>  </svg></svg>',
         netflix: '<svg viewBox="0 0 256 69" xmlns="http://www.w3.org/2000/svg"><text x="128" y="48" text-anchor="middle" font-family="Arial,sans-serif" font-size="42" font-weight="900" fill="#E50914">NETFLIX</text></svg>',
         apple: '<svg viewBox="0 0 240 70" xmlns="http://www.w3.org/2000/svg"><text x="120" y="48" text-anchor="middle" font-family="Arial,sans-serif" font-size="34" font-weight="700" fill="#fff">Apple TV+</text></svg>',
         hbo: '<svg viewBox="0 0 180 70" xmlns="http://www.w3.org/2000/svg"><text x="90" y="49" text-anchor="middle" font-family="Arial,sans-serif" font-size="45" font-weight="900" fill="#fff">HBO</text></svg>',
@@ -125,6 +126,8 @@
     ];
 
     var STREAMINGS = [
+        service('youtube','YouTube',LOGOS.youtube,null,null,[]),
+
         service('netflix','Netflix',LOGOS.netflix,{provider:'8',region:'UA'},{network:'213'},[
             category('new_movies','🎬 Новые фильмы','movie',{sort_by:'primary_release_date.desc','primary_release_date.lte':'{date}', 'vote_count.gte':'5'}),
             category('new_tv','📺 Новые сериалы','tv',{sort_by:'first_air_date.desc','first_air_date.lte':'{date}', 'vote_count.gte':'5'}),
@@ -289,13 +292,32 @@
             '.cinemax-section-title{display:inline-flex!important;align-items:center!important;gap:.42em!important;vertical-align:middle!important}' +
             '.cinemax-section-icon{width:1.05em!important;height:1.05em!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;color:#fff!important;flex:0 0 auto!important}' +
             '.cinemax-section-icon svg{width:100%!important;height:100%!important;display:block!important;fill:currentColor!important}' +
-            '.card--studio{width:12em!important;height:6.75em!important;padding:0!important;background:transparent;border-radius:0;display:flex;align-items:center;justify-content:center;overflow:visible;box-shadow:none;border:0;transition:transform .18s ease-out,filter .18s ease-out}' +
-             '.card--studio.focus{transform:scale(1.045);filter:drop-shadow(0 0 10px rgba(255,255,255,.18));z-index:10}' +
-             '.card--studio .card__view{width:100%;height:100%;padding:.15em!important;box-sizing:border-box!important;background:transparent!important;display:flex;align-items:center;justify-content:center;position:relative;overflow:visible!important}' +
-             '.studio-logo-wrap{width:86%;height:78%;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:38% 16% 38% 18% / 34% 20% 34% 20%;overflow:hidden;transform:rotate(-1deg);box-shadow:0 1px 0 rgba(255,255,255,.35),0 8px 18px rgba(0,0,0,.24)}' +
-             '.studio-logo-img{width:auto!important;height:auto!important;max-width:68%!important;max-height:52%!important;object-fit:contain;display:block;transform:rotate(1deg)}' +
-             '.studio-logo-fallback{display:block;font-weight:800;font-size:1.05em;text-align:center;color:#111;transform:rotate(1deg)}' +
+            '.card--studio{width:12em!important;height:6.75em!important;padding:0!important;background:#f5f7fa;border-radius:.8em;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.06);transition:transform .18s ease-out,box-shadow .18s ease-out}' +
+            '.card--studio.focus{transform:scale(1.06);box-shadow:0 0 18px rgba(255,255,255,.9);z-index:10}' +
+            '.card--studio .card__view{width:100%;height:100%;padding:.6em!important;box-sizing:border-box!important;background-origin:content-box;display:block;position:relative}' +
+            '.studio-logo-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center}' +
+            '.studio-logo-img{max-width:70%;max-height:60%;object-fit:contain;display:block}' +
+            '.studio-logo-fallback{display:block;font-weight:700;font-size:1.05em;text-align:center;color:#111}' +
             '.hero-trailer-btn{display:none!important}' +
+            '.card--studio.cinemax-youtube-card{background:#fff!important}' +
+            '.card--studio.cinemax-youtube-card .studio-logo-img{width:54%!important;height:auto!important;max-width:none!important;max-height:none!important}' +
+            '.cinemax-youtube-page{padding:1.4em 2em 4em;box-sizing:border-box}' +
+            '.cinemax-youtube-page__head{display:flex;align-items:center;gap:.8em;margin-bottom:1.2em}' +
+            '.cinemax-youtube-page__logo{width:2.2em;height:2.2em;object-fit:contain;flex:0 0 auto}' +
+            '.cinemax-youtube-page__title{font-size:2em;font-weight:800;line-height:1}' +
+            '.cinemax-youtube-search{display:flex;align-items:center;gap:.7em;margin-bottom:1.3em;padding:.75em 1em;border-radius:1em;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08)}' +
+            '.cinemax-youtube-search__icon{font-size:1.2em;opacity:.8}' +
+            '.cinemax-youtube-search__text{font-size:1em;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+            '.cinemax-youtube-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.25em 1em}' +
+            '.cinemax-youtube-card{min-width:0}' +
+            '.cinemax-youtube-card__thumb{position:relative;width:100%;aspect-ratio:16/9;border-radius:.7em;overflow:hidden;background:#171717}' +
+            '.cinemax-youtube-card__thumb img{width:100%;height:100%;display:block;object-fit:cover}' +
+            '.cinemax-youtube-card__play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:3em;height:3em;border-radius:50%;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;font-size:1.1em}' +
+            '.cinemax-youtube-card__body{padding:.55em .15em 0}' +
+            '.cinemax-youtube-card__title{font-size:.95em;line-height:1.28;font-weight:650;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}' +
+            '.cinemax-youtube-card__meta{font-size:.75em;opacity:.58;margin-top:.3em;display:flex;gap:.4em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+            '.cinemax-youtube-empty{padding:3em 1em;text-align:center;opacity:.6}' +
+            '.cinemax-youtube-loading{padding:3em 1em;text-align:center;opacity:.7}' +
             '.cinemax-stream-page-v2{padding:1.5em 2em 4em}' +
             '.cinemax-stream-page-v2__title{font-size:2em;font-weight:800;margin-bottom:1em}' +
             '.cinemax-cat-v2{margin-bottom:2em}.cinemax-cat-v2__title{font-size:1.25em;font-weight:700;margin-bottom:.6em}' +
@@ -728,27 +750,49 @@ function makeHeroResultItem(movie, heightEm) {
                     onCreate: function () {
                         var item = $(this.html);
                         item.addClass('card--studio');
+
+                        if (s.id === 'youtube') {
+                            item.addClass('cinemax-youtube-card');
+                        }
+
                         var view = item.find('.card__view');
                         view.empty();
 
                         var wrapper = $('<div class="studio-logo-wrap"></div>');
+
                         if (s.svg) {
                             var svgEl = $(s.svg);
                             svgEl.addClass('studio-logo-img');
                             svgEl.css({
-                                'max-width': '70%',
-                                'max-height': '60%',
+                                'max-width': s.id === 'youtube' ? '54%' : '70%',
+                                'max-height': s.id === 'youtube' ? '54%' : '60%',
+                                'width': s.id === 'youtube' ? '54%' : '',
+                                'height': 'auto',
                                 'display': 'block'
                             });
                             wrapper.append(svgEl);
                         } else {
-                            wrapper.append($('<div class="studio-logo-fallback"></div>').text(s.name || s.title));
+                            wrapper.append(
+                                $('<div class="studio-logo-fallback"></div>')
+                                    .text(s.name || s.title)
+                            );
                         }
+
                         view.append(wrapper);
                         item.find('.card__age, .card__year, .card__type, .card__textbox, .card__title').remove();
                         item.attr('data-click-processed', '1');
                     },
                     onlyEnter: function () {
+                        if (s.id === 'youtube') {
+                            Lampa.Activity.push({
+                                url: '',
+                                title: 'YouTube',
+                                component: 'cinemax_youtube_v1',
+                                page: 1
+                            });
+                            return;
+                        }
+
                         Lampa.Activity.push({
                             url: '',
                             title: s.name || s.title,
@@ -932,10 +976,216 @@ function makeHeroResultItem(movie, heightEm) {
         return comp;
     }
 
+
+    /* ---------------- YouTube page ---------------- */
+
+    var YOUTUBE_API_KEY = "AIzaSyBbZ_BNLNdgC9dylYEQdIAPkXc6g3VlLMw";
+    var YOUTUBE_LOGO_DATA = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJleHRlcm5hbC1pY29uIiB2aWV3Qm94PSIwIDAgMjguNTcgIDIwIiBmb2N1c2FibGU9ImZhbHNlIiBzdHlsZT0icG9pbnRlci1ldmVudHM6IG5vbmU7IGRpc3BsYXk6IGJsb2NrOyB3aWR0aDogMTAwJTsgaGVpZ2h0OiAxMDAlOyI+CiAgPHN2ZyB2aWV3Qm94PSIwIDAgMjguNTcgMjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgICA8Zz4KICAgICAgPHBhdGggZD0iTTI3Ljk3MjcgMy4xMjMyNEMyNy42NDM1IDEuODkzMjMgMjYuNjc2OCAwLjkyNjYyMyAyNS40NDY4IDAuNTk3MzY2QzIzLjIxOTcgMi4yNDI4OGUtMDcgMTQuMjg1IDAgMTQuMjg1IDBDMTQuMjg1IDAgNS4zNTA0MiAyLjI0Mjg4ZS0wNyAzLjEyMzIzIDAuNTk3MzY2QzEuODkzMjMgMC45MjY2MjMgMC45MjY2MjMgMS44OTMyMyAwLjU5NzM2NiAzLjEyMzI0QzIuMjQyODhlLTA3IDUuMzUwNDIgMCAxMCAwIDEwQzAgMTAgMi4yNDI4OGUtMDcgMTQuNjQ5NiAwLjU5NzM2NiAxNi44NzY4QzAuOTI2NjIzIDE4LjEwNjggMS44OTMyMyAxOS4wNzM0IDMuMTIzMjMgMTkuNDAyNkM1LjM1MDQyIDIwIDE0LjI4NSAyMCAxNC4yODUgMjBDMTQuMjg1IDIwIDIzLjIxOTcgMjAgMjUuNDQ2OCAxOS40MDI2QzI2LjY3NjggMTkuMDczNCAyNy42NDM1IDE4LjEwNjggMjcuOTcyNyAxNi44NzY4QzI4LjU3MDEgMTQuNjQ5NiAyOC41NzAxIDEwIDI4LjU3MDEgMTBDMjguNTcwMSAxMCAyOC41Njc3IDUuMzUwNDIgMjcuOTcyNyAzLjEyMzI0WiIgZmlsbD0iI0ZGMDAwMCI+PC9wYXRoPgogICAgICA8cGF0aCBkPSJNMTEuNDI1MyAxNC4yODU0TDE4Ljg0NzcgMTAuMDAwNEwxMS40MjUzIDUuNzE1MzNWMTQuMjg1NFoiIGZpbGw9IndoaXRlIj48L3BhdGg+CiAgICA8L2c+CiAgPC9zdmc+Cjwvc3ZnPg==";
+
+    function youtubeUrl(path, params) {
+        var parts = [];
+        Object.keys(params || {}).forEach(function (k) {
+            parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k]));
+        });
+        parts.push('key=' + encodeURIComponent(YOUTUBE_API_KEY));
+        return 'https://www.googleapis.com/youtube/v3/' + path + '?' + parts.join('&');
+    }
+
+    function youtubeFormatDate(value) {
+        if (!value) return '';
+        try {
+            var d = new Date(value);
+            return d.toLocaleDateString(lang() === 'ru' ? 'ru-RU' : undefined, {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            });
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function youtubeCard(video) {
+        var title = video?.snippet?.title || 'Без названия';
+        var channel = video?.snippet?.channelTitle || '';
+        var published = youtubeFormatDate(video?.snippet?.publishedAt);
+        var thumb =
+            video?.snippet?.thumbnails?.high?.url ||
+            video?.snippet?.thumbnails?.medium?.url ||
+            video?.snippet?.thumbnails?.default?.url ||
+            '';
+
+        var id = video?.id?.videoId || video?.id || '';
+        var url = id ? 'https://www.youtube.com/watch?v=' + encodeURIComponent(id) : '';
+
+        var el = $('<div class="selector cinemax-youtube-card"></div>');
+        var thumbEl = $('<div class="cinemax-youtube-card__thumb"></div>');
+
+        if (thumb) {
+            thumbEl.append($('<img loading="lazy">').attr('src', thumb).attr('alt', title));
+        }
+
+        thumbEl.append('<div class="cinemax-youtube-card__play">▶</div>');
+        el.append(thumbEl);
+
+        var body = $('<div class="cinemax-youtube-card__body"></div>');
+        body.append($('<div class="cinemax-youtube-card__title"></div>').text(title));
+
+        var meta = $('<div class="cinemax-youtube-card__meta"></div>');
+        if (channel) meta.append($('<span></span>').text(channel));
+        if (published) meta.append($('<span>•</span>'));
+        if (published) meta.append($('<span></span>').text(published));
+
+        body.append(meta);
+        el.append(body);
+
+        el.on('hover:enter', function () {
+            if (!url) return;
+
+            try {
+                if (window.open) {
+                    var opened = window.open(url, '_blank');
+                    if (!opened) window.location.href = url;
+                } else {
+                    window.location.href = url;
+                }
+            } catch (e) {
+                window.location.href = url;
+            }
+        });
+
+        return el;
+    }
+
+    function youtubeSearchModal(current, callback) {
+        if (!Lampa.Input || !Lampa.Input.edit) {
+            callback('');
+            return;
+        }
+
+        Lampa.Input.edit({
+            title: 'Поиск на YouTube',
+            value: current || '',
+            free: true
+        }, function (value) {
+            callback(String(value || '').trim());
+        });
+    }
+
+    function YouTubePage(object) {
+        var self = this;
+        this.html = $('<div class="cinemax-youtube-page"></div>');
+        var network = new Lampa.Reguest();
+        var queryText = '';
+
+        this.render = function () {
+            self.html.empty();
+
+            var head = $('<div class="cinemax-youtube-page__head"></div>');
+            var logo = $('<img class="cinemax-youtube-page__logo" alt="YouTube">').attr('src', YOUTUBE_LOGO_DATA);
+            head.append(logo);
+            head.append($('<div class="cinemax-youtube-page__title"></div>').text('YouTube'));
+            self.html.append(head);
+
+            var search = $('<div class="selector cinemax-youtube-search"></div>');
+            search.append('<div class="cinemax-youtube-search__icon">⌕</div>');
+            search.append(
+                $('<div class="cinemax-youtube-search__text"></div>')
+                    .text(queryText ? queryText : 'Поиск видео')
+            );
+
+            search.on('hover:enter', function () {
+                youtubeSearchModal(queryText, function (value) {
+                    if (!value) return;
+                    queryText = value;
+                    self.load();
+                });
+            });
+
+            self.html.append(search);
+
+            self.grid = $('<div class="cinemax-youtube-grid"></div>');
+            self.html.append(self.grid);
+
+            return self.html;
+        };
+
+        this.load = function () {
+            self.grid.empty().append(
+                $('<div class="cinemax-youtube-loading"></div>')
+                    .text('Загрузка видео…')
+            );
+
+            var url;
+
+            if (queryText) {
+                url = youtubeUrl('search', {
+                    part: 'snippet',
+                    q: queryText,
+                    type: 'video',
+                    maxResults: 18,
+                    regionCode: 'UA',
+                    relevanceLanguage: 'ru',
+                    safeSearch: 'moderate'
+                });
+            } else {
+                url = youtubeUrl('videos', {
+                    part: 'snippet,statistics',
+                    chart: 'mostPopular',
+                    maxResults: 18,
+                    regionCode: 'UA'
+                });
+            }
+
+            network.silent(url, function (json) {
+                var results = json?.items || [];
+                self.grid.empty();
+
+                if (!results.length) {
+                    self.grid.append(
+                        $('<div class="cinemax-youtube-empty"></div>')
+                            .text('Видео не найдены')
+                    );
+                    return;
+                }
+
+                results.forEach(function (video) {
+                    self.grid.append(youtubeCard(video));
+                });
+
+                if (Lampa.Controller && Lampa.Controller.collectionFocus) {
+                    try {
+                        var first = self.grid.find('.selector').first()[0];
+                        if (first) Lampa.Controller.collectionFocus(first, self.grid[0]);
+                    } catch (e) {}
+                }
+            }, function (err) {
+                console.log('CinemaX YouTube error:', err);
+                self.grid.empty().append(
+                    $('<div class="cinemax-youtube-empty"></div>')
+                        .text('Не удалось загрузить YouTube')
+                );
+            });
+        };
+
+        this.destroy = function () {
+            self.html.remove();
+        };
+
+        this.create = function () {
+            self.render();
+            setTimeout(self.load, 0);
+            return self.html;
+        };
+
+        return this;
+    }
+
     function register() {
         if (!Lampa.Component || !Lampa.Component.add) return;
         Lampa.Component.add('cinemax_studios_main_v5', StreamingMain);
         Lampa.Component.add('cinemax_studios_view_v5', View);
+        Lampa.Component.add('cinemax_youtube_v1', YouTubePage);
     }
 
 
