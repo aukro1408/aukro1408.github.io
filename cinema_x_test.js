@@ -55,8 +55,9 @@
     /* Логотипы встроены в JS. Это только векторные wordmark-варианты,
        чтобы плагин оставался одним файлом. При необходимости их можно
        заменить на SVG из твоего исходного файла. */
+    var YOUTUBE_LOGO_DATA = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJleHRlcm5hbC1pY29uIiB2aWV3Qm94PSIwIDAgMjguNTcgIDIwIiBmb2N1c2FibGU9ImZhbHNlIiBzdHlsZT0icG9pbnRlci1ldmVudHM6IG5vbmU7IGRpc3BsYXk6IGJsb2NrOyB3aWR0aDogMTAwJTsgaGVpZ2h0OiAxMDAlOyI+CiAgPHN2ZyB2aWV3Qm94PSIwIDAgMjguNTcgMjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgICA8Zz4KICAgICAgPHBhdGggZD0iTTI3Ljk3MjcgMy4xMjMyNEMyNy42NDM1IDEuODkzMjMgMjYuNjc2OCAwLjkyNjYyMyAyNS40NDY4IDAuNTk3MzY2QzIzLjIxOTcgMi4yNDI4OGUtMDcgMTQuMjg1IDAgMTQuMjg1IDBDMTQuMjg1IDAgNS4zNTA0MiAyLjI0Mjg4ZS0wNyAzLjEyMzIzIDAuNTk3MzY2QzEuODkzMjMgMC45MjY2MjMgMC45MjY2MjMgMS44OTMyMyAwLjU5NzM2NiAzLjEyMzI0QzIuMjQyODhlLTA3IDUuMzUwNDIgMCAxMCAwIDEwQzAgMTAgMi4yNDI4OGUtMDcgMTQuNjQ5NiAwLjU5NzM2NiAxNi44NzY4QzAuOTI2NjIzIDE4LjEwNjggMS44OTMyMyAxOS4wNzM0IDMuMTIzMjMgMTkuNDAyNkM1LjM1MDQyIDIwIDE0LjI4NSAyMCAxNC4yODUgMjBDMTQuMjg1IDIwIDIzLjIxOTcgMjAgMjUuNDQ2OCAxOS40MDI2QzI2LjY3NjggMTkuMDczNCAyNy42NDM1IDE4LjEwNjggMjcuOTcyNyAxNi44NzY4QzI4LjU3MDEgMTQuNjQ5NiAyOC41NzAxIDEwIDI4LjU3MDEgMTBDMjguNTcwMSAxMCAyOC41Njc3IDUuMzUwNDIgMjcuOTcyNyAzLjEyMzI0WiIgZmlsbD0iI0ZGMDAwMCI+PC9wYXRoPgogICAgICA8cGF0aCBkPSJNMTEuNDI1MyAxNC4yODU0TDE4Ljg0NzcgMTAuMDAwNEwxMS40MjUzIDUuNzE1MzNWMTQuMjg1NFoiIGZpbGw9IndoaXRlIj48L3BhdGg+CiAgICA8L2c+CiAgPC9zdmc+Cjwvc3ZnPg==';
+
     var LOGOS = {
-        youtube: '<svg xmlns="http://www.w3.org/2000/svg" class="external-icon" viewBox="0 0 28.57  20" focusable="false" style="pointer-events: none; display: block; width: 100%; height: 100%;">  <svg viewBox="0 0 28.57 20" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">    <g>      <path d="M27.9727 3.12324C27.6435 1.89323 26.6768 0.926623 25.4468 0.597366C23.2197 2.24288e-07 14.285 0 14.285 0C14.285 0 5.35042 2.24288e-07 3.12323 0.597366C1.89323 0.926623 0.926623 1.89323 0.597366 3.12324C2.24288e-07 5.35042 0 10 0 10C0 10 2.24288e-07 14.6496 0.597366 16.8768C0.926623 18.1068 1.89323 19.0734 3.12323 19.4026C5.35042 20 14.285 20 14.285 20C14.285 20 23.2197 20 25.4468 19.4026C26.6768 19.0734 27.6435 18.1068 27.9727 16.8768C28.5701 14.6496 28.5701 10 28.5701 10C28.5701 10 28.5677 5.35042 27.9727 3.12324Z" fill="#FF0000"></path>      <path d="M11.4253 14.2854L18.8477 10.0004L11.4253 5.71533V14.2854Z" fill="white"></path>    </g>  </svg></svg>',
         netflix: '<svg viewBox="0 0 256 69" xmlns="http://www.w3.org/2000/svg"><text x="128" y="48" text-anchor="middle" font-family="Arial,sans-serif" font-size="42" font-weight="900" fill="#E50914">NETFLIX</text></svg>',
         apple: '<svg viewBox="0 0 240 70" xmlns="http://www.w3.org/2000/svg"><text x="120" y="48" text-anchor="middle" font-family="Arial,sans-serif" font-size="34" font-weight="700" fill="#fff">Apple TV+</text></svg>',
         hbo: '<svg viewBox="0 0 180 70" xmlns="http://www.w3.org/2000/svg"><text x="90" y="49" text-anchor="middle" font-family="Arial,sans-serif" font-size="45" font-weight="900" fill="#fff">HBO</text></svg>',
@@ -126,8 +127,7 @@
     ];
 
     var STREAMINGS = [
-        service('youtube','YouTube',LOGOS.youtube,null,null,[]),
-
+        service('youtube','YouTube',YOUTUBE_LOGO_DATA,null,null,[]),
         service('netflix','Netflix',LOGOS.netflix,{provider:'8',region:'UA'},{network:'213'},[
             category('new_movies','🎬 Новые фильмы','movie',{sort_by:'primary_release_date.desc','primary_release_date.lte':'{date}', 'vote_count.gte':'5'}),
             category('new_tv','📺 Новые сериалы','tv',{sort_by:'first_air_date.desc','first_air_date.lte':'{date}', 'vote_count.gte':'5'}),
@@ -299,8 +299,6 @@
             '.studio-logo-img{max-width:70%;max-height:60%;object-fit:contain;display:block}' +
             '.studio-logo-fallback{display:block;font-weight:700;font-size:1.05em;text-align:center;color:#111}' +
             '.hero-trailer-btn{display:none!important}' +
-            '.card--studio.cinemax-youtube-card{background:#fff!important}' +
-            '.card--studio.cinemax-youtube-card .studio-logo-img{width:54%!important;height:auto!important;max-width:none!important;max-height:none!important}' +
             '.cinemax-youtube-page{padding:1.4em 2em 4em;box-sizing:border-box}' +
             '.cinemax-youtube-page__head{display:flex;align-items:center;gap:.8em;margin-bottom:1.2em}' +
             '.cinemax-youtube-page__logo{width:2.2em;height:2.2em;object-fit:contain;flex:0 0 auto}' +
@@ -309,13 +307,13 @@
             '.cinemax-youtube-search__icon{font-size:1.2em;opacity:.8}' +
             '.cinemax-youtube-search__text{font-size:1em;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
             '.cinemax-youtube-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.25em 1em}' +
-            '.cinemax-youtube-card{min-width:0}' +
-            '.cinemax-youtube-card__thumb{position:relative;width:100%;aspect-ratio:16/9;border-radius:.7em;overflow:hidden;background:#171717}' +
-            '.cinemax-youtube-card__thumb img{width:100%;height:100%;display:block;object-fit:cover}' +
-            '.cinemax-youtube-card__play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:3em;height:3em;border-radius:50%;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;font-size:1.1em}' +
-            '.cinemax-youtube-card__body{padding:.55em .15em 0}' +
-            '.cinemax-youtube-card__title{font-size:.95em;line-height:1.28;font-weight:650;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}' +
-            '.cinemax-youtube-card__meta{font-size:.75em;opacity:.58;margin-top:.3em;display:flex;gap:.4em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+            '.cinemax-youtube-video{min-width:0}' +
+            '.cinemax-youtube-video__thumb{position:relative;width:100%;aspect-ratio:16/9;border-radius:.7em;overflow:hidden;background:#171717}' +
+            '.cinemax-youtube-video__thumb img{width:100%;height:100%;display:block;object-fit:cover}' +
+            '.cinemax-youtube-video__play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:3em;height:3em;border-radius:50%;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;font-size:1.1em}' +
+            '.cinemax-youtube-video__body{padding:.55em .15em 0}' +
+            '.cinemax-youtube-video__title{font-size:.95em;line-height:1.28;font-weight:650;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}' +
+            '.cinemax-youtube-video__meta{font-size:.75em;opacity:.58;margin-top:.3em;display:flex;gap:.4em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
             '.cinemax-youtube-empty{padding:3em 1em;text-align:center;opacity:.6}' +
             '.cinemax-youtube-loading{padding:3em 1em;text-align:center;opacity:.7}' +
             '.cinemax-stream-page-v2{padding:1.5em 2em 4em}' +
@@ -751,26 +749,33 @@ function makeHeroResultItem(movie, heightEm) {
                         var item = $(this.html);
                         item.addClass('card--studio');
 
-                        if (s.id === 'youtube') {
-                            item.addClass('cinemax-youtube-card');
-                        }
-
                         var view = item.find('.card__view');
                         view.empty();
 
                         var wrapper = $('<div class="studio-logo-wrap"></div>');
 
                         if (s.svg) {
-                            var svgEl = $(s.svg);
-                            svgEl.addClass('studio-logo-img');
-                            svgEl.css({
-                                'max-width': s.id === 'youtube' ? '54%' : '70%',
-                                'max-height': s.id === 'youtube' ? '54%' : '60%',
-                                'width': s.id === 'youtube' ? '54%' : '',
-                                'height': 'auto',
+                            var logoEl;
+
+                            // The supplied YouTube SVG contains a nested <svg>. Using it
+                            // as an image keeps the exact artwork and avoids DOM parsing
+                            // differences inside Lampa.
+                            if (s.id === 'youtube') {
+                                logoEl = $('<img class="studio-logo-img" alt="YouTube">')
+                                    .attr('src', s.svg);
+                            } else {
+                                logoEl = $(s.svg);
+                                logoEl.addClass('studio-logo-img');
+                            }
+
+                            logoEl.css({
+                                'max-width': '70%',
+                                'max-height': '60%',
+                                'object-fit': 'contain',
                                 'display': 'block'
                             });
-                            wrapper.append(svgEl);
+
+                            wrapper.append(logoEl);
                         } else {
                             wrapper.append(
                                 $('<div class="studio-logo-fallback"></div>')
@@ -787,7 +792,7 @@ function makeHeroResultItem(movie, heightEm) {
                             Lampa.Activity.push({
                                 url: '',
                                 title: 'YouTube',
-                                component: 'cinemax_youtube_v1',
+                                component: 'cinemax_youtube_v2',
                                 page: 1
                             });
                             return;
@@ -980,7 +985,6 @@ function makeHeroResultItem(movie, heightEm) {
     /* ---------------- YouTube page ---------------- */
 
     var YOUTUBE_API_KEY = "AIzaSyBbZ_BNLNdgC9dylYEQdIAPkXc6g3VlLMw";
-    var YOUTUBE_LOGO_DATA = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJleHRlcm5hbC1pY29uIiB2aWV3Qm94PSIwIDAgMjguNTcgIDIwIiBmb2N1c2FibGU9ImZhbHNlIiBzdHlsZT0icG9pbnRlci1ldmVudHM6IG5vbmU7IGRpc3BsYXk6IGJsb2NrOyB3aWR0aDogMTAwJTsgaGVpZ2h0OiAxMDAlOyI+CiAgPHN2ZyB2aWV3Qm94PSIwIDAgMjguNTcgMjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgICA8Zz4KICAgICAgPHBhdGggZD0iTTI3Ljk3MjcgMy4xMjMyNEMyNy42NDM1IDEuODkzMjMgMjYuNjc2OCAwLjkyNjYyMyAyNS40NDY4IDAuNTk3MzY2QzIzLjIxOTcgMi4yNDI4OGUtMDcgMTQuMjg1IDAgMTQuMjg1IDBDMTQuMjg1IDAgNS4zNTA0MiAyLjI0Mjg4ZS0wNyAzLjEyMzIzIDAuNTk3MzY2QzEuODkzMjMgMC45MjY2MjMgMC45MjY2MjMgMS44OTMyMyAwLjU5NzM2NiAzLjEyMzI0QzIuMjQyODhlLTA3IDUuMzUwNDIgMCAxMCAwIDEwQzAgMTAgMi4yNDI4OGUtMDcgMTQuNjQ5NiAwLjU5NzM2NiAxNi44NzY4QzAuOTI2NjIzIDE4LjEwNjggMS44OTMyMyAxOS4wNzM0IDMuMTIzMjMgMTkuNDAyNkM1LjM1MDQyIDIwIDE0LjI4NSAyMCAxNC4yODUgMjBDMTQuMjg1IDIwIDIzLjIxOTcgMjAgMjUuNDQ2OCAxOS40MDI2QzI2LjY3NjggMTkuMDczNCAyNy42NDM1IDE4LjEwNjggMjcuOTcyNyAxNi44NzY4QzI4LjU3MDEgMTQuNjQ5NiAyOC41NzAxIDEwIDI4LjU3MDEgMTBDMjguNTcwMSAxMCAyOC41Njc3IDUuMzUwNDIgMjcuOTcyNyAzLjEyMzI0WiIgZmlsbD0iI0ZGMDAwMCI+PC9wYXRoPgogICAgICA8cGF0aCBkPSJNMTEuNDI1MyAxNC4yODU0TDE4Ljg0NzcgMTAuMDAwNEwxMS40MjUzIDUuNzE1MzNWMTQuMjg1NFoiIGZpbGw9IndoaXRlIj48L3BhdGg+CiAgICA8L2c+CiAgPC9zdmc+Cjwvc3ZnPg==";
 
     function youtubeUrl(path, params) {
         var parts = [];
@@ -1006,34 +1010,45 @@ function makeHeroResultItem(movie, heightEm) {
     }
 
     function youtubeCard(video) {
-        var title = video?.snippet?.title || 'Без названия';
-        var channel = video?.snippet?.channelTitle || '';
-        var published = youtubeFormatDate(video?.snippet?.publishedAt);
+        var title = (video && video.snippet && video.snippet.title) || 'Без названия';
+        var channel = (video && video.snippet && video.snippet.channelTitle) || '';
+        var published = youtubeFormatDate(video && video.snippet && video.snippet.publishedAt);
+        var thumbs = video && video.snippet && video.snippet.thumbnails;
         var thumb =
-            video?.snippet?.thumbnails?.high?.url ||
-            video?.snippet?.thumbnails?.medium?.url ||
-            video?.snippet?.thumbnails?.default?.url ||
+            (thumbs && thumbs.high && thumbs.high.url) ||
+            (thumbs && thumbs.medium && thumbs.medium.url) ||
+            (thumbs && thumbs.default && thumbs.default.url) ||
             '';
 
-        var id = video?.id?.videoId || video?.id || '';
-        var url = id ? 'https://www.youtube.com/watch?v=' + encodeURIComponent(id) : '';
-
-        var el = $('<div class="selector cinemax-youtube-card"></div>');
-        var thumbEl = $('<div class="cinemax-youtube-card__thumb"></div>');
-
-        if (thumb) {
-            thumbEl.append($('<img loading="lazy">').attr('src', thumb).attr('alt', title));
+        var id = '';
+        if (video && video.id) {
+            id = typeof video.id === 'string' ? video.id : video.id.videoId;
         }
 
-        thumbEl.append('<div class="cinemax-youtube-card__play">▶</div>');
+        var url = id ? 'https://www.youtube.com/watch?v=' + encodeURIComponent(id) : '';
+
+        var el = $('<div class="selector cinemax-youtube-video"></div>');
+        var thumbEl = $('<div class="cinemax-youtube-video__thumb"></div>');
+
+        if (thumb) {
+            thumbEl.append(
+                $('<img loading="lazy">')
+                    .attr('src', thumb)
+                    .attr('alt', title)
+            );
+        }
+
+        thumbEl.append('<div class="cinemax-youtube-video__play">▶</div>');
         el.append(thumbEl);
 
-        var body = $('<div class="cinemax-youtube-card__body"></div>');
-        body.append($('<div class="cinemax-youtube-card__title"></div>').text(title));
+        var body = $('<div class="cinemax-youtube-video__body"></div>');
+        body.append(
+            $('<div class="cinemax-youtube-video__title"></div>').text(title)
+        );
 
-        var meta = $('<div class="cinemax-youtube-card__meta"></div>');
+        var meta = $('<div class="cinemax-youtube-video__meta"></div>');
         if (channel) meta.append($('<span></span>').text(channel));
-        if (published) meta.append($('<span>•</span>'));
+        if (channel && published) meta.append($('<span>•</span>'));
         if (published) meta.append($('<span></span>').text(published));
 
         body.append(meta);
@@ -1073,19 +1088,25 @@ function makeHeroResultItem(movie, heightEm) {
     }
 
     function YouTubePage(object) {
-        var self = this;
-        this.html = $('<div class="cinemax-youtube-page"></div>');
+        var comp = new Lampa.InteractionMain(object);
         var network = new Lampa.Reguest();
         var queryText = '';
 
-        this.render = function () {
-            self.html.empty();
+        comp.html = $('<div class="cinemax-youtube-page"></div>');
+        comp.grid = null;
+
+        comp.render = function () {
+            comp.html.empty();
 
             var head = $('<div class="cinemax-youtube-page__head"></div>');
-            var logo = $('<img class="cinemax-youtube-page__logo" alt="YouTube">').attr('src', YOUTUBE_LOGO_DATA);
-            head.append(logo);
-            head.append($('<div class="cinemax-youtube-page__title"></div>').text('YouTube'));
-            self.html.append(head);
+            head.append(
+                $('<img class="cinemax-youtube-page__logo" alt="YouTube">')
+                    .attr('src', YOUTUBE_LOGO_DATA)
+            );
+            head.append(
+                $('<div class="cinemax-youtube-page__title"></div>').text('YouTube')
+            );
+            comp.html.append(head);
 
             var search = $('<div class="selector cinemax-youtube-search"></div>');
             search.append('<div class="cinemax-youtube-search__icon">⌕</div>');
@@ -1098,20 +1119,22 @@ function makeHeroResultItem(movie, heightEm) {
                 youtubeSearchModal(queryText, function (value) {
                     if (!value) return;
                     queryText = value;
-                    self.load();
+                    comp.loadYoutube();
                 });
             });
 
-            self.html.append(search);
+            comp.html.append(search);
 
-            self.grid = $('<div class="cinemax-youtube-grid"></div>');
-            self.html.append(self.grid);
+            comp.grid = $('<div class="cinemax-youtube-grid"></div>');
+            comp.html.append(comp.grid);
 
-            return self.html;
+            return comp.html;
         };
 
-        this.load = function () {
-            self.grid.empty().append(
+        comp.loadYoutube = function () {
+            if (!comp.grid) return;
+
+            comp.grid.empty().append(
                 $('<div class="cinemax-youtube-loading"></div>')
                     .text('Загрузка видео…')
             );
@@ -1138,11 +1161,11 @@ function makeHeroResultItem(movie, heightEm) {
             }
 
             network.silent(url, function (json) {
-                var results = json?.items || [];
-                self.grid.empty();
+                var results = (json && json.items) || [];
+                comp.grid.empty();
 
                 if (!results.length) {
-                    self.grid.append(
+                    comp.grid.append(
                         $('<div class="cinemax-youtube-empty"></div>')
                             .text('Видео не найдены')
                     );
@@ -1150,42 +1173,46 @@ function makeHeroResultItem(movie, heightEm) {
                 }
 
                 results.forEach(function (video) {
-                    self.grid.append(youtubeCard(video));
+                    comp.grid.append(youtubeCard(video));
                 });
 
                 if (Lampa.Controller && Lampa.Controller.collectionFocus) {
                     try {
-                        var first = self.grid.find('.selector').first()[0];
-                        if (first) Lampa.Controller.collectionFocus(first, self.grid[0]);
+                        var first = comp.grid.find('.selector').first()[0];
+                        if (first) {
+                            Lampa.Controller.collectionFocus(first, comp.grid[0]);
+                        }
                     } catch (e) {}
                 }
             }, function (err) {
                 console.log('CinemaX YouTube error:', err);
-                self.grid.empty().append(
+                comp.grid.empty().append(
                     $('<div class="cinemax-youtube-empty"></div>')
                         .text('Не удалось загрузить YouTube')
                 );
             });
         };
 
-        this.destroy = function () {
-            self.html.remove();
+        comp.create = function () {
+            comp.render();
+            setTimeout(function () {
+                comp.loadYoutube();
+            }, 0);
+            return comp.render();
         };
 
-        this.create = function () {
-            self.render();
-            setTimeout(self.load, 0);
-            return self.html;
+        comp.destroy = function () {
+            if (comp.html) comp.html.remove();
         };
 
-        return this;
+        return comp;
     }
 
     function register() {
         if (!Lampa.Component || !Lampa.Component.add) return;
         Lampa.Component.add('cinemax_studios_main_v5', StreamingMain);
         Lampa.Component.add('cinemax_studios_view_v5', View);
-        Lampa.Component.add('cinemax_youtube_v1', YouTubePage);
+        Lampa.Component.add('cinemax_youtube_v2', YouTubePage);
     }
 
 
