@@ -1065,15 +1065,24 @@ function makeHeroResultItem(movie, heightEm) {
         el.on('hover:enter', function () {
             if (!url) return;
 
+            /*
+             * Do not open YouTube externally. Lampa's own Player detects
+             * youtube.com / youtu.be URLs and routes them through its
+             * built-in YouTube adapter (the same player used by trailers).
+             */
             try {
-                if (window.open) {
-                    var opened = window.open(url, '_blank');
-                    if (!opened) window.location.href = url;
+                if (Lampa.Player && typeof Lampa.Player.play === 'function') {
+                    Lampa.Player.play({
+                        url: url,
+                        title: title,
+                        isonline: true
+                    });
                 } else {
                     window.location.href = url;
                 }
             } catch (e) {
-                window.location.href = url;
+                console.error('CinemaX YouTube player error:', e);
+                try { window.location.href = url; } catch (ignore) {}
             }
         });
 
