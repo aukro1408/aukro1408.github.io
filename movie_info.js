@@ -1,505 +1,363 @@
 /*
- * Movie Info Ultra v2 — Lampa
- * Standalone movie/series information card.
- * Uses Lampa/TMDB data + optional Fanart.tv Personal API Key.
- *
- * No dependency on the Rezka comments plugin.
+ * CinemaX Movie Info — SIMPLE
+ * Только: кнопка -> окно с базовой информацией о фильме/сериале.
+ * Без SettingsApi, без Fanart.tv, без внешнего fetch.
+ * Данные берутся из уже подключенного в Lampa TMDB source.
  */
 (function () {
-    "use strict";
+    'use strict';
 
-    if (window.__movie_info_ultra_loaded) return;
-    window.__movie_info_ultra_loaded = true;
+    var FLAG = '__cinemax_movie_info_simple_loaded';
+    if (window[FLAG]) return;
+    window[FLAG] = true;
 
-    var COMPONENT = "movie_info_ultra";
-    var KEY = "movie_info_ultra_fanart_key";
-    var CACHE_PREFIX = "movie_info_ultra_cache_";
-    var CACHE_TTL = 24 * 60 * 60 * 1000;
+    var STYLE_ID = 'cinemax-movie-info-simple-style';
 
-    function esc(value) {
-        return String(value == null ? "" : value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+    function esc(v) {
+        return String(v == null ? '' : v)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
-    function imageUrl(path, size) {
-        if (!path) return "";
+    function image(path, size) {
+        if (!path) return '';
         if (/^https?:\/\//i.test(path)) return path;
-        return "https://image.tmdb.org/t/p/" + (size || "w780") + path;
-    }
-
-    function yearOf(movie) {
-        return String(movie.release_date || movie.first_air_date || "").slice(0, 4);
+        return 'https://image.tmdb.org/t/p/' + (size || 'w780') + path;
     }
 
     function isTV(movie) {
-        return !!(movie.first_air_date || movie.number_of_seasons || movie.name);
+        return !!(movie && (
+            movie.first_air_date ||
+            movie.number_of_seasons ||
+            movie.name
+        ));
     }
 
-    function runtimeText(minutes) {
-        minutes = Number(minutes || 0);
-        if (!minutes) return "";
+    function year(movie) {
+        var date = movie && (movie.release_date || movie.first_air_date);
+        return date ? String(date).slice(0, 4) : '';
+    }
+
+    function runtime(movie) {
+        var minutes = Number(movie && movie.runtime || 0);
+
+        if (!minutes && movie && Array.isArray(movie.episode_run_time)) {
+            minutes = Number(movie.episode_run_time[0] || 0);
+        }
+
+        if (!minutes) return '';
+
         var h = Math.floor(minutes / 60);
         var m = minutes % 60;
-        if (h && m) return h + " ч " + m + " мин";
-        if (h) return h + " ч";
-        return m + " мин";
+
+        if (h && m) return h + ' ч ' + m + ' мин';
+        if (h) return h + ' ч';
+        return m + ' мин';
     }
 
-    function money(value) {
-        value = Number(value || 0);
-        if (!value) return "";
-        if (value >= 1000000000) return (value / 1000000000).toFixed(1).replace(".0", "") + " млрд $";
-        if (value >= 1000000) return Math.round(value / 1000000) + " млн $";
-        if (value >= 1000) return Math.round(value / 1000) + " тыс. $";
-        return value.toLocaleString("ru-RU") + " $";
-    }
-
-    function cacheGet(key) {
+    function tmdbGet(path, ok, fail) {
         try {
-            var raw = Lampa.Storage.get(CACHE_PREFIX + key, "");
-            if (!raw) return null;
-            var data = JSON.parse(raw);
-            if (!data || Date.now() - data.time > CACHE_TTL) return null;
-            return data.value;
+            if (!Lampa.Api ||
+                !Lampa.Api.sources ||
+                !Lampa.Api.sources.tmdb ||
+                typeof Lampa.Api.sources.tmdb.get !== 'function') {
+                fail(new Error('TMDB source недоступен'));
+                return;
+            }
+
+            Lampa.Api.sources.tmdb.get(path, {}, ok, fail);
         } catch (e) {
-            return null;
+            fail(e);
         }
     }
 
-    function cacheSet(key, value) {
+    function addStyles() {
+        if (document.getElementById(STYLE_ID)) return;
+
+        var style = document.createElement('style');
+        style.id = STYLE_ID;
+        style.textContent =
+            '.cmi-page{position:relative;box-sizing:border-box;width:100%;min-height:100%;' +
+            'background:#101112;color:#fff;overflow:hidden;font-family:inherit}' +
+
+            '.cmi-page:before{content:"";position:absolute;inset:0;z-index:0;' +
+            'background:var(--cmi-bg) center top/cover no-repeat;filter:blur(28px);' +
+            'transform:scale(1.08);opacity:.30}' +
+
+            '.cmi-page:after{content:"";position:absolute;inset:0;z-index:0;' +
+            'background:linear-gradient(to bottom,rgba(10,12,13,.12),#101112 48%,#101112 100%)}' +
+
+            '.cmi-page>*{position:relative;z-index:1}' +
+
+            '.cmi-top{height:58px;display:flex;align-items:center;padding:0 16px;box-sizing:border-box}' +
+            '.cmi-title{font-size:18px;font-weight:700;opacity:.9}' +
+
+            '.cmi-close{position:absolute;right:14px;top:9px;z-index:20;' +
+            'width:42px;height:42px;padding:0;border-radius:50%;' +
+            'border:1px solid rgba(255,255,255,.18);' +
+            'background:rgba(15,17,18,.75);color:#fff;font-size:30px;' +
+            'line-height:38px;text-align:center;cursor:pointer}' +
+
+            '.cmi-hero{position:relative;margin:0 16px;height:320px;border-radius:18px;' +
+            'overflow:hidden;background:#202223}' +
+
+            '.cmi-hero img{width:100%;height:100%;object-fit:cover;display:block}' +
+
+            '.cmi-gradient{position:absolute;inset:0;' +
+            'background:linear-gradient(to top,rgba(5,7,8,.98),rgba(5,7,8,.48) 48%,rgba(5,7,8,.02) 100%)}' +
+
+            '.cmi-info{position:absolute;left:22px;right:22px;bottom:20px}' +
+            '.cmi-info h1{margin:0;font-size:32px;line-height:1.08;font-weight:800}' +
+            '.cmi-original{margin-top:6px;font-size:16px;color:rgba(255,255,255,.65)}' +
+
+            '.cmi-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}' +
+            '.cmi-chip{padding:9px 12px;border-radius:12px;' +
+            'background:rgba(10,12,13,.64);border:1px solid rgba(255,255,255,.13);' +
+            'backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-size:15px}' +
+
+            '.cmi-body{padding:0 16px 30px}' +
+            '.cmi-section{margin-top:22px}' +
+            '.cmi-heading{margin:0 0 10px 4px;font-size:16px;letter-spacing:1.1px;color:rgba(255,255,255,.55)}' +
+
+            '.cmi-description{padding:17px;border-radius:16px;background:#1b1e20;' +
+            'font-size:16px;line-height:1.6;color:rgba(255,255,255,.9)}' +
+
+            '.cmi-row{padding:13px 15px;margin-bottom:7px;border-radius:14px;background:#1b1e20}' +
+            '.cmi-row b{display:block;margin-bottom:4px;font-size:11px;letter-spacing:.7px;color:rgba(255,255,255,.42)}' +
+            '.cmi-row span{font-size:15px;color:rgba(255,255,255,.9)}' +
+
+            '.button--cinemax-movie-info svg{width:20px;height:20px;margin-right:7px}' +
+
+            '@media(max-width:600px){' +
+            '.cmi-top{height:52px}.cmi-hero{height:285px;margin:0 10px;border-radius:16px}' +
+            '.cmi-info{left:17px;right:17px;bottom:16px}.cmi-info h1{font-size:27px}' +
+            '.cmi-body{padding-left:10px;padding-right:10px}.cmi-chip{font-size:13px;padding:8px 10px}' +
+            '}';
+
+        document.head.appendChild(style);
+    }
+
+    function close() {
         try {
-            Lampa.Storage.set(CACHE_PREFIX + key, JSON.stringify({
-                time: Date.now(),
-                value: value
-            }));
+            Lampa.Modal.close();
         } catch (e) {}
-    }
 
-    function tmdbGet(path) {
-        return new Promise(function (resolve, reject) {
-            try {
-                if (Lampa.Api && Lampa.Api.sources && Lampa.Api.sources.tmdb &&
-                    typeof Lampa.Api.sources.tmdb.get === "function") {
-                    Lampa.Api.sources.tmdb.get(path, {}, resolve, reject);
-                    return;
-                }
+        $('.cmi-page').remove();
 
-                // Fallback для сборок Lampa, где источник TMDB недоступен напрямую.
-                var req = new Lampa.Reguest();
-                req.silent(
-                    "https://api.themoviedb.org/3/" + path,
-                    resolve,
-                    reject
-                );
-            } catch (e) {
-                reject(e);
-            }
-        });
-    }
-
-    function getFanartKey() {
-        return String(Lampa.Storage.get(KEY, "") || "").trim();
-    }
-
-    function fanartGet(type, id) {
-        var key = getFanartKey();
-        if (!key || !id) return Promise.resolve(null);
-
-        var cacheKey = "fanart_" + type + "_" + id;
-        var cached = cacheGet(cacheKey);
-        if (cached) return Promise.resolve(cached);
-
-        var url = "https://webservice.fanart.tv/v3.2/" +
-            type + "/" + encodeURIComponent(String(id)) +
-            "?client_key=" + encodeURIComponent(key);
-
-        return new Promise(function (resolve) {
-            try {
-                var req = new Lampa.Reguest();
-                req.silent(
-                    url,
-                    function (data) {
-                        cacheSet(cacheKey, data);
-                        resolve(data);
-                    },
-                    function (err) {
-                        console.warn("[Movie Info Ultra] Fanart:", err);
-                        resolve(null);
-                    }
-                );
-            } catch (e) {
-                console.warn("[Movie Info Ultra] Fanart request:", e);
-                resolve(null);
-            }
-        });
-    }
-
-    function fanartImages(data) {
-        if (!data) return [];
-        var groups = [
-            "moviebackground",
-            "movieart",
-            "movieposter",
-            "moviethumb",
-            "hdmovieclearart",
-            "hdmovielogo"
-        ];
-        var result = [];
-        groups.forEach(function (group) {
-            (Array.isArray(data[group]) ? data[group] : []).forEach(function (item) {
-                if (item && item.url) result.push({
-                    url: String(item.url).replace(/^http:/, "https:"),
-                    type: group,
-                    lang: item.lang || "",
-                    likes: Number(item.likes || 0)
-                });
-            });
-        });
-        result.sort(function (a, b) {
-            return b.likes - a.likes;
-        });
-        return result;
-    }
-
-    function tmdbGallery(data) {
-        var list = data && data.images && Array.isArray(data.images.backdrops)
-            ? data.images.backdrops : [];
-        return list.map(function (x) {
-            return {
-                url: imageUrl(x.file_path, "w1280"),
-                type: "TMDB",
-                lang: x.iso_639_1 || ""
-            };
-        }).filter(function (x) { return x.url; });
-    }
-
-    function uniqueImages(list) {
-        var seen = {};
-        return list.filter(function (x) {
-            if (!x || !x.url || seen[x.url]) return false;
-            seen[x.url] = true;
-            return true;
-        });
-    }
-
-    function makeChip(label, value) {
-        if (!value) return "";
-        return '<span class="miu-chip"><b>' + esc(value) + '</b><small>' + esc(label) + '</small></span>';
-    }
-
-    function closeModal() {
-        try { Lampa.Modal.close(); } catch (e) {}
-        $(".miu-page").remove();
-        $(".miu-gallery").remove();
-        try { Lampa.Controller.toggle("content"); } catch (e) {}
-    }
-
-    function openGallery(images, start) {
-        if (!images || !images.length) return;
-
-        var index = Math.max(0, Math.min(Number(start || 0), images.length - 1));
-
-        $(".miu-gallery").remove();
-
-        var gallery = $(
-            '<div class="miu-gallery">' +
-                '<div class="miu-gallery-bg"></div>' +
-                '<button class="miu-g-close selector" type="button">×</button>' +
-                '<button class="miu-g-prev selector" type="button">‹</button>' +
-                '<img class="miu-g-image" src="" alt="">' +
-                '<button class="miu-g-next selector" type="button">›</button>' +
-                '<div class="miu-g-count"></div>' +
-            '</div>'
-        );
-
-        $("body").append(gallery);
-
-        function render() {
-            var item = images[index];
-            gallery.find(".miu-g-image").attr("src", item.url);
-            gallery.find(".miu-g-count").text((index + 1) + " / " + images.length);
-        }
-
-        gallery.on("click", ".miu-g-close", function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            gallery.remove();
-        });
-
-        gallery.on("click", ".miu-g-prev", function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            index = (index - 1 + images.length) % images.length;
-            render();
-        });
-
-        gallery.on("click", ".miu-g-next", function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            index = (index + 1) % images.length;
-            render();
-        });
-
-        var touchX = 0;
-        gallery.on("touchstart", function (e) {
-            var t = e.originalEvent.touches && e.originalEvent.touches[0];
-            if (t) touchX = t.clientX;
-        });
-        gallery.on("touchend", function (e) {
-            var t = e.originalEvent.changedTouches && e.originalEvent.changedTouches[0];
-            if (!t) return;
-            var dx = t.clientX - touchX;
-            if (Math.abs(dx) > 45) {
-                index = dx < 0
-                    ? (index + 1) % images.length
-                    : (index - 1 + images.length) % images.length;
-                render();
-            }
-        });
-
-        $(document).off("keydown.miuGallery").on("keydown.miuGallery", function (e) {
-            if (!$(".miu-gallery").length) return;
-            if (e.key === "ArrowRight") {
-                index = (index + 1) % images.length;
-                render();
-            } else if (e.key === "ArrowLeft") {
-                index = (index - 1 + images.length) % images.length;
-                render();
-            } else if (e.key === "Escape") {
-                gallery.remove();
-            }
-        });
-
-        render();
-    }
-
-    function openPerson(name) {
-        // Intentionally conservative: use Lampa's search screen rather than
-        // depending on private/unstable category internals.
-        if (!name) return;
         try {
-            Lampa.Activity.push({
-                component: "search",
-                search: name,
-                page: 1,
-                title: name
-            });
-        } catch (e) {
-            try { Lampa.Noty.show("Поиск: " + name); } catch (ignore) {}
-        }
+            Lampa.Controller.toggle('content');
+        } catch (e2) {}
     }
 
-    function renderPeople(movie) {
-        var credits = movie.credits || {};
-        var cast = Array.isArray(credits.cast) ? credits.cast.slice(0, 18) : [];
-        var crew = Array.isArray(credits.crew) ? credits.crew : [];
+    function render(movie) {
+        movie = movie || {};
 
-        var directors = crew.filter(function (x) { return x.job === "Director"; }).slice(0, 6);
-        var writers = crew.filter(function (x) {
-            return /Writer|Screenplay|Story/i.test(String(x.job || ""));
-        }).slice(0, 8);
+        var type = isTV(movie) ? 'tv' : 'movie';
+        var title = movie.title || movie.name || 'Подробнее';
+        var original = movie.original_title || movie.original_name || '';
+        var backdrop = image(movie.backdrop_path, 'w1280');
+        var poster = image(movie.poster_path, 'w780');
+        var hero = backdrop || poster;
 
-        var html = "";
-
-        if (directors.length) {
-            html += '<div class="miu-section"><h3>РЕЖИССЁР</h3><div class="miu-people">';
-            directors.forEach(function (p) {
-                html += '<div class="miu-person selector" data-person="' + esc(p.name) + '">' +
-                    (p.profile_path ? '<img src="' + esc(imageUrl(p.profile_path, "w185")) + '">' : '<div class="miu-person-empty">●</div>') +
-                    '<b>' + esc(p.name) + '</b><small>Режиссёр</small></div>';
-            });
-            html += "</div></div>";
+        var genres = '';
+        if (Array.isArray(movie.genres)) {
+            genres = movie.genres.map(function (g) {
+                return g && g.name ? g.name : '';
+            }).filter(Boolean).join(' • ');
         }
 
-        if (cast.length) {
-            html += '<div class="miu-section"><h3>АКТЁРЫ</h3><div class="miu-people">';
-            cast.forEach(function (p) {
-                html += '<div class="miu-person selector" data-person="' + esc(p.name) + '">' +
-                    (p.profile_path ? '<img src="' + esc(imageUrl(p.profile_path, "w185")) + '">' : '<div class="miu-person-empty">●</div>') +
-                    '<b>' + esc(p.name) + '</b><small>' + esc(p.character || "Актёр") + '</small></div>';
-            });
-            html += "</div></div>";
+        var chips = '';
+
+        if (movie.vote_average) {
+            chips += '<span class="cmi-chip">★ ' +
+                esc(Number(movie.vote_average).toFixed(1)) + '</span>';
         }
 
-        if (writers.length) {
-            html += '<div class="miu-section"><h3>СЦЕНАРИЙ</h3><div class="miu-credit-list">';
-            writers.forEach(function (p) {
-                html += '<span class="miu-credit selector" data-person="' + esc(p.name) + '">' +
-                    esc(p.name) + '<small>' + esc(p.job) + '</small></span>';
-            });
-            html += "</div></div>";
+        if (movie.vote_count) {
+            chips += '<span class="cmi-chip">' +
+                esc(Number(movie.vote_count).toLocaleString('ru-RU')) +
+                ' оценок</span>';
         }
 
-        return html;
-    }
-
-    function openInfo(movie) {
-        Lampa.Loading.start();
-
-        var type = isTV(movie) ? "tv" : "movie";
-        var id = movie.id;
-        var cacheKey = type + "_" + id;
-        var cached = cacheGet("details_" + cacheKey);
-
-        var detailsPromise = cached
-            ? Promise.resolve(cached)
-            : tmdbGet(type + "/" + id + "?append_to_response=credits,images,external_ids,recommendations,videos,translations");
-
-        detailsPromise.then(function (details) {
-            details = details || movie;
-            if (!cached) cacheSet("details_" + cacheKey, details);
-
-            var fanartIdPromise;
-            if (type === "movie") {
-                fanartIdPromise = Promise.resolve(String(details.id || id));
-            } else {
-                var tvdb = details.external_ids && details.external_ids.tvdb_id;
-                fanartIdPromise = Promise.resolve(tvdb ? String(tvdb) : "");
-            }
-
-            return fanartIdPromise.then(function (fanartId) {
-                return fanartGet(type === "movie" ? "movies" : "tv", fanartId).then(function (fanart) {
-                    return { details: details, fanart: fanart };
-                });
-            });
-        }).then(function (payload) {
-            Lampa.Loading.stop();
-            renderModal(payload.details, payload.fanart);
-        }).catch(function (e) {
-            Lampa.Loading.stop();
-            console.error("[Movie Info Ultra]", e);
-            renderModal(movie, null);
-        });
-    }
-
-    function renderModal(movie, fanart) {
-        var type = isTV(movie) ? "tv" : "movie";
-        var title = movie.title || movie.name || "Подробнее";
-        var original = movie.original_title || movie.original_name || "";
-        var backdrop = imageUrl(movie.backdrop_path, "w1280") ||
-            imageUrl(movie.poster_path, "w780");
-
-        var fan = fanartImages(fanart);
-        var galleryImages = uniqueImages(
-            fan.filter(function (x) {
-                return /moviebackground|movieart|moviethumb/i.test(x.type);
-            }).concat(tmdbGallery(movie))
-        );
-
-        var genres = Array.isArray(movie.genres)
-            ? movie.genres.map(function (g) { return g.name; }).filter(Boolean)
-            : [];
-
-        var runtime = movie.runtime ||
-            (Array.isArray(movie.episode_run_time) ? movie.episode_run_time[0] : 0);
-
-        var chips = "";
-        if (movie.vote_average) chips += makeChip("TMDB", Number(movie.vote_average).toFixed(1));
-        if (movie.vote_count) chips += makeChip("оценок", Number(movie.vote_count).toLocaleString("ru-RU"));
-        if (yearOf(movie)) chips += makeChip("год", yearOf(movie));
-        if (runtime) chips += makeChip("время", runtimeText(runtime));
-        if (type === "tv" && movie.number_of_seasons) chips += makeChip("сезонов", movie.number_of_seasons);
-        if (type === "tv" && movie.number_of_episodes) chips += makeChip("серий", movie.number_of_episodes);
-
-        var info = "";
-        if (genres.length) info += '<div class="miu-info-row"><b>ЖАНРЫ</b><span>' + esc(genres.join(" • ")) + '</span></div>';
-        if (movie.origin_country && movie.origin_country.length) info += '<div class="miu-info-row"><b>СТРАНЫ</b><span>' + esc(movie.origin_country.join(" • ")) + '</span></div>';
-        if (movie.release_date || movie.first_air_date) info += '<div class="miu-info-row"><b>ДАТА ВЫХОДА</b><span>' + esc(movie.release_date || movie.first_air_date) + '</span></div>';
-        if (movie.status) info += '<div class="miu-info-row"><b>СТАТУС</b><span>' + esc(movie.status) + '</span></div>';
-        if (movie.budget) info += '<div class="miu-info-row"><b>БЮДЖЕТ</b><span>' + esc(money(movie.budget)) + '</span></div>';
-        if (movie.revenue) info += '<div class="miu-info-row"><b>СБОРЫ</b><span>' + esc(money(movie.revenue)) + '</span></div>';
-        if (movie.imdb_id || (movie.external_ids && movie.external_ids.imdb_id)) {
-            info += '<div class="miu-info-row"><b>IMDb ID</b><span>' +
-                esc(movie.imdb_id || movie.external_ids.imdb_id) + '</span></div>';
+        if (year(movie)) {
+            chips += '<span class="cmi-chip">' + esc(year(movie)) + '</span>';
         }
-        info += '<div class="miu-info-row"><b>TMDB ID</b><span>' + esc(movie.id) + '</span></div>';
 
-        var modal = $(
-            '<div class="miu-page" style="--miu-backdrop:url(\'' + esc(backdrop) + '\')">' +
-                '<div class="miu-head">' +
-                    '<div class="miu-head-title">Подробнее</div>' +
-                    '<button class="miu-close selector" type="button">×</button>' +
+        var rt = runtime(movie);
+        if (rt) {
+            chips += '<span class="cmi-chip">' + esc(rt) + '</span>';
+        }
+
+        if (type === 'tv' && movie.number_of_seasons) {
+            chips += '<span class="cmi-chip">' +
+                esc(movie.number_of_seasons) + ' сез.</span>';
+        }
+
+        var rows = '';
+
+        if (genres) {
+            rows += '<div class="cmi-row"><b>ЖАНРЫ</b><span>' +
+                esc(genres) + '</span></div>';
+        }
+
+        if (movie.overview) {
+            // Description is rendered separately.
+        }
+
+        if (movie.release_date || movie.first_air_date) {
+            rows += '<div class="cmi-row"><b>ДАТА ВЫХОДА</b><span>' +
+                esc(movie.release_date || movie.first_air_date) + '</span></div>';
+        }
+
+        if (movie.status) {
+            rows += '<div class="cmi-row"><b>СТАТУС</b><span>' +
+                esc(movie.status) + '</span></div>';
+        }
+
+        var html =
+            '<div class="cmi-page" style="--cmi-bg:url(\'' + esc(hero) + '\')">' +
+
+                '<div class="cmi-top">' +
+                    '<div class="cmi-title">Подробнее</div>' +
+                    '<button class="cmi-close selector" type="button">×</button>' +
                 '</div>' +
 
-                '<div class="miu-hero">' +
-                    (backdrop ? '<img src="' + esc(backdrop) + '" alt="">' : '') +
-                    '<div class="miu-hero-gradient"></div>' +
-                    '<div class="miu-hero-info">' +
+                '<div class="cmi-hero">' +
+                    (hero ? '<img src="' + esc(hero) + '" alt="">' : '') +
+                    '<div class="cmi-gradient"></div>' +
+                    '<div class="cmi-info">' +
                         '<h1>' + esc(title) + '</h1>' +
-                        (original && original !== title ? '<div class="miu-original">' + esc(original) + '</div>' : '') +
-                        '<div class="miu-chips">' + chips + '</div>' +
+                        (original && original !== title ?
+                            '<div class="cmi-original">' + esc(original) + '</div>' : '') +
+                        '<div class="cmi-chips">' + chips + '</div>' +
                     '</div>' +
                 '</div>' +
 
-                (movie.tagline ? '<div class="miu-tagline">«' + esc(movie.tagline) + '»</div>' : '') +
+                '<div class="cmi-body">' +
 
-                '<div class="miu-body">' +
-                    (movie.overview ? '<div class="miu-section"><h3>ОПИСАНИЕ</h3><div class="miu-description">' + esc(movie.overview) + '</div></div>' : '') +
-                    (info ? '<div class="miu-section"><h3>ИНФОРМАЦИЯ</h3><div class="miu-info">' + info + '</div></div>' : '') +
+                    (movie.tagline ?
+                        '<div class="cmi-section">' +
+                            '<div class="cmi-description"><i>«' +
+                            esc(movie.tagline) + '»</i></div>' +
+                        '</div>' : '') +
 
-                    (galleryImages.length ? '<div class="miu-section"><h3>КАДРЫ ИЗ ФИЛЬМА <small>' + galleryImages.length + '</small></h3><div class="miu-gallery-grid">' +
-                        galleryImages.map(function (x, i) {
-                            return '<div class="miu-gallery-card selector" data-gallery-index="' + i + '">' +
-                                '<img loading="lazy" src="' + esc(x.url) + '" alt="">' +
-                                '<span>⌕</span>' +
-                            '</div>';
-                        }).join("") +
-                    '</div></div>' : '') +
+                    (movie.overview ?
+                        '<div class="cmi-section">' +
+                            '<div class="cmi-heading">ОПИСАНИЕ</div>' +
+                            '<div class="cmi-description">' +
+                            esc(movie.overview) +
+                            '</div>' +
+                        '</div>' : '') +
 
-                    renderPeople(movie) +
+                    (rows ?
+                        '<div class="cmi-section">' +
+                            '<div class="cmi-heading">ИНФОРМАЦИЯ</div>' +
+                            rows +
+                        '</div>' : '') +
 
-                    (movie.recommendations && Array.isArray(movie.recommendations.results) && movie.recommendations.results.length
-                        ? '<div class="miu-section"><h3>ПОХОЖИЕ ФИЛЬМЫ И СЕРИАЛЫ</h3><div class="miu-similar">' +
-                            movie.recommendations.results.slice(0, 12).map(function (x) {
-                                var img = imageUrl(x.poster_path, "w342");
-                                if (!img) return "";
-                                return '<div class="miu-similar-card selector" data-similar-id="' + esc(x.id) + '">' +
-                                    '<img src="' + esc(img) + '" alt=""><b>' + esc(x.title || x.name || "") + '</b>' +
-                                '</div>';
-                            }).join("") +
-                        '</div></div>' : '') +
-
-                    '<div class="miu-footer">Movie Info Ultra • TMDB' + (getFanartKey() ? ' • Fanart.tv' : '') + '</div>' +
                 '</div>' +
-            '</div>'
-        );
+            '</div>';
 
-        $(".miu-page").remove();
-        modal.on("click", ".miu-close", function (e) {
+        var modal = $(html);
+
+        modal.on('click', '.cmi-close', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            closeModal();
-        });
-
-        modal.on("click", ".miu-gallery-card", function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            openGallery(galleryImages, Number($(this).attr("data-gallery-index") || 0));
-        });
-
-        modal.on("click", ".miu-person, .miu-credit", function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            openPerson($(this).attr("data-person") || "");
-        });
-
-        modal.on("click", ".miu-similar-card", function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var sid = $(this).attr("data-similar-id");
-            if (!sid) return;
-            var base = movie;
-            var next = Object.assign({}, base, { id: Number(sid) });
-            try { closeModal(); } catch (ignore) {}
-            setTimeout(function () { openInfo(next); }, 120);
+            close();
         });
 
         Lampa.Modal.open({
-            title: "",
+            title: '',
             html: modal,
-            size: "large",
-            style: "margin-top:
+            size: 'large',
+            style: 'margin-top:10px;',
+            mask: true,
+            onBack: function () {
+                close();
+            }
+        });
+    }
+
+    function openInfo(movie) {
+        if (!movie) return;
+
+        addStyles();
+
+        Lampa.Loading.start();
+
+        var type = isTV(movie) ? 'tv' : 'movie';
+        var id = movie.id;
+
+        if (!id) {
+            Lampa.Loading.stop();
+            render(movie);
+            return;
+        }
+
+        tmdbGet(
+            type + '/' + encodeURIComponent(String(id)) +
+            '?append_to_response=images',
+            function (details) {
+                Lampa.Loading.stop();
+                render(details || movie);
+            },
+            function (error) {
+                console.error('[CinemaX Movie Info]', error);
+                Lampa.Loading.stop();
+                render(movie);
+            }
+        );
+    }
+
+    function addButton(event) {
+        if (!event || !event.data || !event.data.movie) return;
+
+        var buttons = $('.full-start-new__buttons');
+
+        if (!buttons.length) {
+            buttons = $('.full-start__buttons');
+        }
+
+        if (!buttons.length) return;
+
+        $('.button--cinemax-movie-info').remove();
+
+        var button = $(
+            '<div class="full-start__button selector button--cinemax-movie-info">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+                'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
+                '<circle cx="12" cy="12" r="9"></circle>' +
+                '<path d="M12 10v6"></path>' +
+                '<circle cx="12" cy="7" r=".8" fill="currentColor"></circle>' +
+                '</svg>' +
+                '<span>Подробнее</span>' +
+            '</div>'
+        );
+
+        buttons.append(button);
+
+        button.on('hover:enter', function () {
+            openInfo(event.data.movie);
+        });
+
+        button.on('click', function () {
+            openInfo(event.data.movie);
+        });
+    }
+
+    try {
+        addStyles();
+
+        Lampa.Listener.follow('full', function (event) {
+            if (event.type === 'complite') {
+                addButton(event);
+            }
+        });
+    } catch (e) {
+        console.error('[CinemaX Movie Info] init error:', e);
+    }
+
+})();
