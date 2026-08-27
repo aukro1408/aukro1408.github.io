@@ -1,5 +1,5 @@
 /*
- * Movie Info Ultra — Lampa
+ * Movie Info Ultra v2 — Lampa
  * Standalone movie/series information card.
  * Uses Lampa/TMDB data + optional Fanart.tv Personal API Key.
  *
@@ -81,11 +81,23 @@
 
     function tmdbGet(path) {
         return new Promise(function (resolve, reject) {
-            if (!Lampa.Api || !Lampa.Api.sources || !Lampa.Api.sources.tmdb || !Lampa.Api.sources.tmdb.get) {
-                reject(new Error("TMDB API Lampa недоступен"));
-                return;
+            try {
+                if (Lampa.Api && Lampa.Api.sources && Lampa.Api.sources.tmdb &&
+                    typeof Lampa.Api.sources.tmdb.get === "function") {
+                    Lampa.Api.sources.tmdb.get(path, {}, resolve, reject);
+                    return;
+                }
+
+                // Fallback для сборок Lampa, где источник TMDB недоступен напрямую.
+                var req = new Lampa.Reguest();
+                req.silent(
+                    "https://api.themoviedb.org/3/" + path,
+                    resolve,
+                    reject
+                );
+            } catch (e) {
+                reject(e);
             }
-            Lampa.Api.sources.tmdb.get(path, {}, resolve, reject);
         });
     }
 
@@ -105,19 +117,25 @@
             type + "/" + encodeURIComponent(String(id)) +
             "?client_key=" + encodeURIComponent(key);
 
-        return fetch(url, { method: "GET" })
-            .then(function (r) {
-                if (!r.ok) throw new Error("Fanart HTTP " + r.status);
-                return r.json();
-            })
-            .then(function (data) {
-                cacheSet(cacheKey, data);
-                return data;
-            })
-            .catch(function (e) {
-                console.warn("[Movie Info Ultra] Fanart:", e);
-                return null;
-            });
+        return new Promise(function (resolve) {
+            try {
+                var req = new Lampa.Reguest();
+                req.silent(
+                    url,
+                    function (data) {
+                        cacheSet(cacheKey, data);
+                        resolve(data);
+                    },
+                    function (err) {
+                        console.warn("[Movie Info Ultra] Fanart:", err);
+                        resolve(null);
+                    }
+                );
+            } catch (e) {
+                console.warn("[Movie Info Ultra] Fanart request:", e);
+                resolve(null);
+            }
+        });
     }
 
     function fanartImages(data) {
@@ -484,18 +502,4 @@
             title: "",
             html: modal,
             size: "large",
-            style: "margin-top:10px;",
-            mask: true,
-            onBack: function () {
-                closeModal();
-            }
-        });
-
-        var head = document.querySelector(".modal--large .modal__head");
-        if (head) {
-            head.style.position = "relative";
-            head.innerHTML = "";
-            head.appendChild($('<div class="miu-modal-caption">Movie Info</div>')[0]);
-            head.appendChild($('<button class="miu-modal-close selector" type="button">×</button>')[0]);
-            $(head).find(".miu-modal-close").on("click", function () {
-                clo
+            style: "margin-top:
