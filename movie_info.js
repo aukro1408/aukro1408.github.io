@@ -122,6 +122,22 @@
             .cmi2-person img{display:block;width:100%;height:122px;object-fit:cover;background:#151515}
             .cmi2-person-name{font-size:12px;font-weight:750;line-height:1.2;padding:7px 7px 2px;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
             .cmi2-person-role{font-size:10px;line-height:1.2;padding:2px 7px 8px;color:rgba(255,255,255,.48);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+            .cmi2-person.focus,.cmi2-media-card.focus{background:#2b2d30;transform:translateY(-2px)}
+            .cmi2-gallery{display:flex;gap:9px;overflow-x:auto;padding:3px 2px 10px;scrollbar-width:none}
+            .cmi2-gallery::-webkit-scrollbar{display:none}
+            .cmi2-shot{flex:0 0 180px;width:180px;height:105px;border-radius:12px;overflow:hidden;background:#151515;position:relative}
+            .cmi2-shot img{display:block;width:100%;height:100%;object-fit:cover}
+            .cmi2-shot:after{content:"⌕";position:absolute;right:7px;bottom:6px;width:25px;height:25px;border-radius:50%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px}
+            .cmi2-media{display:flex;gap:10px;overflow-x:auto;padding:3px 2px 10px;scrollbar-width:none}
+            .cmi2-media::-webkit-scrollbar{display:none}
+            .cmi2-media-card{flex:0 0 118px;width:118px;border-radius:13px;overflow:hidden;background:#202124;padding-bottom:7px;transition:transform .12s,background .12s}
+            .cmi2-media-card img{display:block;width:100%;height:170px;object-fit:cover;background:#151515}
+            .cmi2-media-title{font-size:12px;font-weight:750;line-height:1.2;color:#fff;padding:7px 7px 1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+            .cmi2-media-meta{font-size:10px;color:rgba(255,255,255,.48);padding:2px 7px 0}
+            .cmi2-lightbox{position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;padding:22px}
+            .cmi2-lightbox img{max-width:96vw;max-height:88vh;object-fit:contain;border-radius:10px}
+            .cmi2-lightbox-close{position:absolute;right:18px;top:12px;color:#fff;font-size:34px;line-height:1;opacity:.85}
+            .cmi2-lightbox-count{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);color:rgba(255,255,255,.7);font-size:12px}
             .cmi2-empty{padding:20px;text-align:center;color:rgba(255,255,255,.45)}
             .button--cinemax-movie-info-v2 svg{width:22px;height:22px;margin-right:7px;fill:currentColor}
             @media(max-width:600px){
@@ -148,13 +164,109 @@
         let html = '<div class="cmi2-section"><div class="cmi2-section-title">' + esc(titleText) + '</div><div class="cmi2-people">';
         people.forEach(function (p) {
             const img = image(p.profile_path, 'w185');
-            html += '<div class="cmi2-person selector" tabindex="0">' +
+            html += '<div class="cmi2-person selector" data-person-id="' + esc(p.id || '') + '" data-person-name="' + esc(p.name || '') + '" tabindex="0">' +
                 (img ? '<img loading="lazy" src="' + esc(img) + '" onerror="this.style.display=\'none\'">' : '<div style="height:122px"></div>') +
                 '<div class="cmi2-person-name">' + esc(p.name || '') + '</div>' +
                 '<div class="cmi2-person-role">' + esc(p.character || p.job || '') + '</div>' +
                 '</div>';
         });
         return html + '</div></div>';
+    }
+
+    function gallerySection(details) {
+        const shots = details && details.images && Array.isArray(details.images.backdrops) ? details.images.backdrops : [];
+        if (!shots.length) return '';
+        let html = '<div class="cmi2-section"><div class="cmi2-section-title">Кадры из фильма</div><div class="cmi2-gallery">';
+        shots.slice(0, 30).forEach(function (shot, index) {
+            if (!shot || !shot.file_path) return;
+            html += '<div class="cmi2-shot selector" data-shot-index="' + index + '" data-shot-path="' + esc(shot.file_path) + '" tabindex="0">' +
+                '<img loading="lazy" src="' + esc(image(shot.file_path, 'w780')) + '"></div>';
+        });
+        return html + '</div></div>';
+    }
+
+    function recommendationsSection(details) {
+        let list = details && details.recommendations && details.recommendations.results;
+        if (!Array.isArray(list) || !list.length) list = details && details.similar && details.similar.results;
+        if (!Array.isArray(list) || !list.length) return '';
+        list = list.filter(function (m) { return m && m.id && (m.poster_path || m.backdrop_path); }).slice(0, 20);
+        if (!list.length) return '';
+        let html = '<div class="cmi2-section"><div class="cmi2-section-title">Похожие фильмы и сериалы</div><div class="cmi2-media">';
+        list.forEach(function (m) {
+            const name = m.title || m.name || '';
+            const date = m.release_date || m.first_air_date || '';
+            const type = m.media_type === 'tv' || m.name ? 'Сериал' : 'Фильм';
+            const poster = m.poster_path || m.backdrop_path;
+            html += '<div class="cmi2-media-card selector" data-media-id="' + esc(m.id) + '" data-media-type="' + esc(m.media_type || (m.name ? 'tv' : 'movie')) + '" tabindex="0">' +
+                '<img loading="lazy" src="' + esc(image(poster, 'w342')) + '" onerror="this.style.display=\'none\'">' +
+                '<div class="cmi2-media-title">' + esc(name) + '</div>' +
+                '<div class="cmi2-media-meta">' + (m.vote_average ? '★ ' + Number(m.vote_average).toFixed(1) + '  •  ' : '') + esc(String(date).slice(0,4)) + '  •  ' + type + '</div>' +
+                '</div>';
+        });
+        return html + '</div></div>';
+    }
+
+    function openPerson(personId, personName) {
+        if (!personId || !Lampa.Activity || !Lampa.Activity.push) return;
+        try {
+            Lampa.Modal.close();
+            $('.modal--large').remove();
+        } catch (e) {}
+        try {
+            Lampa.Activity.push({
+                url: '',
+                title: personName || 'Актёр',
+                component: 'actor',
+                id: personId,
+                person_id: personId,
+                source: 'tmdb'
+            });
+        } catch (e) {
+            log('person navigation error', e);
+            try { Lampa.Noty.show('Не удалось открыть страницу персоны'); } catch (x) {}
+        }
+    }
+
+    function openMedia(id, mediaType) {
+        if (!id || !Lampa.Activity || !Lampa.Activity.push) return;
+        try {
+            Lampa.Modal.close();
+            $('.modal--large').remove();
+        } catch (e) {}
+        try {
+            Lampa.Activity.push({
+                url: '',
+                title: '',
+                component: 'full',
+                id: id,
+                method: mediaType === 'tv' ? 'tv' : 'movie',
+                source: 'tmdb'
+            });
+        } catch (e) { log('media navigation error', e); }
+    }
+
+    function openShotGallery(paths, startIndex) {
+        paths = paths || [];
+        if (!paths.length) return;
+        let index = Math.max(0, Math.min(Number(startIndex) || 0, paths.length - 1));
+        const root = $('<div class="cmi2-lightbox selector"><div class="cmi2-lightbox-close">×</div><img><div class="cmi2-lightbox-count"></div></div>');
+        const img = root.find('img');
+        const count = root.find('.cmi2-lightbox-count');
+        function draw() {
+            img.attr('src', image(paths[index], 'original'));
+            count.text((index + 1) + ' / ' + paths.length);
+        }
+        function close() { root.remove(); if (Lampa.Controller) Lampa.Controller.toggle('content'); }
+        root.on('click', function (e) { if (e.target === root[0] || e.target === root.find('.cmi2-lightbox-close')[0]) close(); });
+        root.on('hover:enter', function () { });
+        root.on('hover:left', function () { });
+        root.on('keydown', function (e) {
+            if (e.key === 'ArrowRight') { index = (index + 1) % paths.length; draw(); }
+            if (e.key === 'ArrowLeft') { index = (index - 1 + paths.length) % paths.length; draw(); }
+            if (e.key === 'Escape') close();
+        });
+        $('body').append(root);
+        draw();
     }
 
     function render(movie, details) {
@@ -214,6 +326,8 @@
         html += info('IMDb ID', details.external_ids && details.external_ids.imdb_id || '—');
         html += '</div></div>';
 
+        html += gallerySection(details);
+        html += recommendationsSection(details);
         html += peopleSection('Актёры', cast);
         html += peopleSection('Режиссёры', directors);
         html += peopleSection('Сценаристы', writers);
@@ -250,12 +364,35 @@
             return;
         }
 
-        tmdbGet(type + '/' + id + '?append_to_response=credits,external_ids,images,release_dates,content_ratings')
+        tmdbGet(type + '/' + id + '?append_to_response=credits,external_ids,images,recommendations,similar,release_dates,content_ratings')
             .then(function (details) {
                 const html = $(render(movie, details || {}));
                 loading.replaceWith(html);
-                html.find('.selector').on('hover:enter', function () { $(this).addClass('focus'); });
+                html.find('.selector').on('hover:enter', function () {
+                    const el = $(this);
+                    el.addClass('focus');
+                    if (el.hasClass('cmi2-person')) {
+                        openPerson(el.attr('data-person-id'), el.attr('data-person-name'));
+                    } else if (el.hasClass('cmi2-media-card')) {
+                        openMedia(el.attr('data-media-id'), el.attr('data-media-type'));
+                    } else if (el.hasClass('cmi2-shot')) {
+                        const paths = [];
+                        html.find('.cmi2-shot').each(function () { paths.push($(this).attr('data-shot-path')); });
+                        const idx = Number(el.attr('data-shot-index')) || 0;
+                        openShotGallery(paths, idx);
+                    }
+                });
                 html.find('.selector').on('hover:leave', function () { $(this).removeClass('focus'); });
+                html.find('.selector').on('click', function () {
+                    const el = $(this);
+                    if (el.hasClass('cmi2-person')) openPerson(el.attr('data-person-id'), el.attr('data-person-name'));
+                    else if (el.hasClass('cmi2-media-card')) openMedia(el.attr('data-media-id'), el.attr('data-media-type'));
+                    else if (el.hasClass('cmi2-shot')) {
+                        const paths = [];
+                        html.find('.cmi2-shot').each(function () { paths.push($(this).attr('data-shot-path')); });
+                        openShotGallery(paths, Number(el.attr('data-shot-index')) || 0);
+                    }
+                });
             })
             .catch(function (error) {
                 log('TMDB error', error);
