@@ -1,1251 +1,501 @@
-// RezkaComment V2 — based directly on the supplied rezkacomment.js
+/*
+ * Movie Info Ultra — Lampa
+ * Standalone movie/series information card.
+ * Uses Lampa/TMDB data + optional Fanart.tv Personal API Key.
+ *
+ * No dependency on the Rezka comments plugin.
+ */
 (function () {
-  //BDVBuriлk.github.io
-  //2025
-  ("use strict");
+    "use strict";
 
-  let year;
-  let namemovie;
-  let savedHTML = null;
+    if (window.__movie_info_ultra_loaded) return;
+    window.__movie_info_ultra_loaded = true;
 
-  function getSettings() {
-    let host = (Lampa.Storage.get('rezka_comment_v2_host', 'https://hdrezka.ag') || 'https://hdrezka.ag').trim().replace(/\/+$/, '');
-    let cookie = (Lampa.Storage.get('rezka_comment_v2_cookie', '') || '').trim();
-    let proxy = (Lampa.Storage.get('rezka_comment_v2_proxy', 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/') || 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/').trim();
-    if (proxy && !proxy.endsWith('/')) {
-      proxy += '/';
-    }
-    return { host, cookie, proxy };
-  }
+    var COMPONENT = "movie_info_ultra";
+    var KEY = "movie_info_ultra_fanart_key";
+    var CACHE_PREFIX = "movie_info_ultra_cache_";
+    var CACHE_TTL = 24 * 60 * 60 * 1000;
 
-  // Функция для поиска на сайте hdrezka
-  async function searchRezka(name, ye, silent) {
-    try {
-      let { host, cookie, proxy } = getSettings();
-      let path = host + "/search/?do=search&subaction=search&q=" + encodeURIComponent(name) + (ye ? "+" + ye : "");
-      let searchUrl = proxy;
-      if (cookie) {
-        searchUrl += "param/Cookie=" + encodeURIComponent(cookie) + "/";
-      }
-      searchUrl += path;
-
-      console.log('[RezkaComment V2] SEARCH:', name + (ye ? ' ' + ye : ''));
-
-      let fc = await fetch(searchUrl, {
-        method: "GET",
-        headers: { "Content-Type": "text/html" }
-      }).then((response) => {
-        if (!response.ok) {
-          throw new Error('HTTP status ' + response.status);
-        }
-        return response.text();
-      });
-
-      let dom = new DOMParser().parseFromString(fc, "text/html");
-
-      const item = dom.querySelector(".b-content__inline_item");
-      if (!item) {
-        console.warn('[RezkaComment V2] NO CARD:', name, ye);
-        if (fc.indexOf("Проверяем, что вы не бот") !== -1 || fc.indexOf("Anubis") !== -1) {
-          Lampa.Noty.show('Защита от ботов на Rezka. Настройте Cookie в настройках плагина.');
-          Lampa.Loading.stop();
-          return false;
-        }
-        if (!silent) Lampa.Loading.stop();
-        return false;
-      }
-
-      namemovie =
-        item.querySelector(".b-content__inline_item-link")?.innerText || "";
-      
-      let itemUrl = item.querySelector(".b-content__inline_item-link")?.getAttribute("href") || "";
-      console.log('[RezkaComment V2] FOUND ID:', item.dataset.id, 'title:', namemovie);
-      await comment_rezka(item.dataset.id, itemUrl);
-      return true;
-    } catch (e) {
-      console.error('[RezkaComment V2] searchRezka error:', e);
-      console.error('[RezkaComment V2] search error:', e);
-      if (!silent) {
-        Lampa.Noty.show('Ошибка поиска на Rezka: ' + e.message);
-        Lampa.Loading.stop();
-      }
-      return false;
-    }
-  }
-
-  // Резолвер названия V2.
-  // Английское название TMDB больше НЕ является обязательным.
-  async function resolveTitle(movie, type) {
-    try {
-      const names = [];
-
-      function addName(value) {
-        if (typeof value !== 'string') return;
-        value = value.trim();
-        if (!value) return;
-        const normalized = normalizeTitle(value);
-        if (!normalized) return;
-        if (!names.some((x) => normalizeTitle(x) === normalized)) {
-          names.push(value);
-        }
-      }
-
-      // Сначала самые надёжные поля самого Lampa.
-      addName(movie?.original_title);
-      addName(movie?.original_name);
-      addName(movie?.title);
-
-      // Затем альтернативные названия, если они уже есть в объекте.
-      const alternatives = movie?.alternative_titles?.results;
-      if (Array.isArray(alternatives)) {
-        alternatives.forEach(function (item) {
-          addName(item?.title);
-          addName(item?.name);
-        });
-      }
-
-      // TMDB English translation — только дополнительная попытка.
-      if (movie?.id && Lampa.Api?.sources?.tmdb?.get) {
-        try {
-          const tmdbType = type === 'movie' ? 'movie' : 'tv';
-          const cacheKey = tmdbType + '_' + movie.id;
-          window.__rezkaV2TranslationsCache = window.__rezkaV2TranslationsCache || {};
-
-          let translations = window.__rezkaV2TranslationsCache[cacheKey];
-
-          if (!translations) {
-            const data = await new Promise(function (resolve, reject) {
-              Lampa.Api.sources.tmdb.get(
-                tmdbType + '/' + movie.id + '?append_to_response=translations',
-                {},
-                resolve,
-                reject
-              );
-            });
-
-            translations = data?.translations?.translations || [];
-            window.__rezkaV2TranslationsCache[cacheKey] = translations;
-
-            // Keep TMDB details available for the visual movie card.
-            if (data && movie && typeof movie === 'object') {
-              Object.assign(movie, data);
-              window.__rezkaCommentCurrentMovie = movie;
-            }
-          }
-
-          const en = translations.find(function (item) {
-            return item.iso_3166_1 === 'US' || item.iso_639_1 === 'en';
-          });
-
-          addName(en?.data?.title);
-          addName(en?.data?.name);
-        } catch (tmdbError) {
-          console.warn('[RezkaComment V2] TMDB translation unavailable:', tmdbError);
-        }
-      }
-
-      console.log('[RezkaComment V2] title candidates:', names);
-
-      if (!names.length) {
-        Lampa.Noty.show('Название фильма не найдено');
-        Lampa.Loading.stop();
-        return;
-      }
-
-      // Пробуем варианты по очереди. Внутри searchRezka используется
-      // оригинальная логика rezkacomment.js: первая карточка страницы.
-      for (let i = 0; i < names.length; i++) {
-        const found = await searchRezka(names[i], year, true);
-        if (found) return;
-      }
-
-      Lampa.Noty.show('Фильм/сериал не найден на Rezka');
-      Lampa.Loading.stop();
-    } catch (e) {
-      console.error('[RezkaComment V2] resolve title error:', e);
-      Lampa.Noty.show('Ошибка подготовки поиска Rezka');
-      Lampa.Loading.stop();
-    }
-  }
-
-  // Функция для очистки заголовка от лишних символов
-  function cleanTitle(str) {
-    return str.replace(/[\s.,:;’'`!?]+/g, " ").trim();
-  }
-
-  // Функция для нормализации заголовка
-  function normalizeTitle(str) {
-    return cleanTitle(
-      str
-        .toLowerCase()
-        .replace(/[\-\u2010-\u2015\u2E3A\u2E3B\uFE58\uFE63\uFF0D]+/g, "-")
-        .replace(/ё/g, "е"),
-    );
-  }
-
-  // Создаёт один комментарий
-  function buildCommentNode(item) {
-    const q = (s) => item.querySelector(s);
-
-    const avatar = q(".ava img")?.dataset.src || q(".ava img")?.src || "";
-    const user = q(".name, .b-comment__user")?.innerText || "Без имени";
-    const date = q(".date, .b-comment__time")?.innerText || "";
-    const text = q(".message .text, .text")?.innerHTML || "";
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "message";
-
-    wrapper.innerHTML = `
-            <div class="comment-wrap">
-                <div class="avatar-column">
-                    <img src="${avatar}" class="avatar-img" alt="${user}">
-                </div>
-
-                <div class="comment-card">
-                    <div class="comment-header">
-                        <span class="name">${user}</span>
-                        <span class="date">${date}</span>
-                    </div>
-
-                    <div class="comment-text">
-                        <div class="text">${text}</div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-    return wrapper;
-  }
-
-  // Рекурсивно строит дерево
-  function buildTree(root) {
-    const fragment = document.createDocumentFragment();
-
-    for (let li of root.children) {
-      const indent = parseInt(li.dataset.indent || 0, 10);
-
-      const wrapper = document.createElement("li");
-      wrapper.className = "comments-tree-item";
-      wrapper.style.marginLeft = indent > 0 ? "20px" : "0";
-      wrapper.appendChild(buildCommentNode(li));
-
-      const childrenList = li.querySelector("ol.comments-tree-list");
-      if (childrenList) wrapper.appendChild(buildTree(childrenList));
-
-      fragment.appendChild(wrapper);
+    function esc(value) {
+        return String(value == null ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
-    return fragment;
-  }
-
-  // === Основная обработка комментариев Rezka с storage на сутки ===
-  async function comment_rezka(id, pageUrl) {
-    try {
-      let { host, cookie, proxy } = getSettings();
-      let t = Date.now();
-      let path = host + "/ajax/get_comments/?t=" + t + "&news_id=" + (id ? id : "1") + "&cstart=1&type=0&comment_id=0&skin=hdrezka";
-
-      let commentsUrl = proxy;
-      if (cookie) {
-        commentsUrl += "param/Cookie=" + encodeURIComponent(cookie) + "/";
-      }
-      if (pageUrl) {
-        commentsUrl += "param/Referer=" + encodeURIComponent(pageUrl) + "/";
-      }
-      commentsUrl += path;
-
-      console.log('[RezkaComment V2] COMMENTS:', id);
-
-      let fc = await fetch(commentsUrl, {
-        method: "GET",
-        headers: { "Content-Type": "text/plain" },
-      }).then((r) => {
-        if (!r.ok) {
-          throw new Error('HTTP status ' + r.status);
-        }
-        return r.text();
-      });
-
-      // Check if the response is actually HTML challenge instead of JSON
-      if (fc.indexOf("Проверяем, что вы не бот") !== -1 || fc.indexOf("Anubis") !== -1) {
-        Lampa.Noty.show('Защита от ботов на Rezka. Настройте Cookie в настройках плагина.');
-        Lampa.Loading.stop();
-        return;
-      }
-
-      let json = JSON.parse(fc);
-      if (!json || !json.comments) {
-        throw new Error('Пустой ответ от сервера комментариев');
-      }
-
-      let dom = new DOMParser().parseFromString(json.comments, "text/html");
-      dom
-        .querySelectorAll(".actions, i, .share-link")
-        .forEach((elem) => elem.remove());
-
-      let rootList = dom.querySelector(".comments-tree-list");
-      if (!rootList) {
-        console.warn('[RezkaComment V2] comments-tree-list not found in parsed HTML for', id);
-        Lampa.Noty.show('Комментарии к фильму/сериалу отсутствуют');
-        Lampa.Loading.stop();
-        return;
-      }
-
-      let newTree = buildTree(rootList);
-      openModal(newTree, window.__rezkaCommentCurrentMovie || {});
-    } catch (e) {
-      console.error('[RezkaComment V2] comment_rezka error:', e);
-      Lampa.Noty.show('Ошибка получения комментариев: ' + e.message);
-      Lampa.Loading.stop();
+    function imageUrl(path, size) {
+        if (!path) return "";
+        if (/^https?:\/\//i.test(path)) return path;
+        return "https://image.tmdb.org/t/p/" + (size || "w780") + path;
     }
 
-    // Rezka inserts inline onclick="ShowOrHide('...')" into spoiler links.
-    // A local function inside the plugin IIFE is not visible to inline handlers,
-    // so explicitly expose the handler on window.
-    if (typeof window.ShowOrHide !== "function") {
-      window.ShowOrHide = function (id) {
-        if (!id) return;
-
-        let target = document.getElementById(id);
-
-        if (!target) {
-          const modalTarget = document.querySelector(".rezka-comments-page #" + id);
-          target = modalTarget || null;
-        }
-
-        if (!target) return;
-
-        target.style.display = "inline";
-
-        const previous = target.previousElementSibling;
-        if (previous && previous.classList.contains("title_spoiler")) {
-          previous.remove();
-        }
-      };
+    function yearOf(movie) {
+        return String(movie.release_date || movie.first_air_date || "").slice(0, 4);
     }
 
-    function openModal(treeContent, movie) {
-      Lampa.Loading.stop();
+    function isTV(movie) {
+        return !!(movie.first_air_date || movie.number_of_seasons || movie.name);
+    }
 
-      movie = movie || {};
+    function runtimeText(minutes) {
+        minutes = Number(minutes || 0);
+        if (!minutes) return "";
+        var h = Math.floor(minutes / 60);
+        var m = minutes % 60;
+        if (h && m) return h + " ч " + m + " мин";
+        if (h) return h + " ч";
+        return m + " мин";
+    }
 
-      const title = movie.title || movie.name || namemovie || "Комментарии";
-      const originalTitle = movie.original_title || movie.original_name || "";
-      const yearMovie = (movie.release_date || movie.first_air_date || "").slice(0, 4);
-
-      let poster = movie.backdrop_path || movie.poster_path || movie.cover || movie.image || "";
-
-      if (poster && poster.indexOf("http") !== 0) {
-        poster = "https://image.tmdb.org/t/p/w780" + poster;
-      }
-
-      const rating = movie.vote_average ? Number(movie.vote_average).toFixed(1) : "";
-      const voteCount = movie.vote_count ? Number(movie.vote_count).toLocaleString("ru-RU") : "";
-
-      const nativeRatings = window.__rezkaCommentRatings || {};
-      const kpRating = nativeRatings.kp || "";
-      const imdbRating = nativeRatings.imdb || "";
-
-      // TMDB uses runtime for movies and episode_run_time for TV.
-      const runtime = movie.runtime
-        ? Math.round(Number(movie.runtime))
-        : (Array.isArray(movie.episode_run_time) && movie.episode_run_time[0]
-          ? Math.round(Number(movie.episode_run_time[0]))
-          : 0);
-
-      const budget = movie.budget ? Number(movie.budget) : 0;
-      const revenue = movie.revenue ? Number(movie.revenue) : 0;
-      const seasons = movie.number_of_seasons ? Number(movie.number_of_seasons) : 0;
-      const episodes = movie.number_of_episodes ? Number(movie.number_of_episodes) : 0;
-      const status = typeof movie.status === "string" ? movie.status : "";
-      const mediaType = (movie.first_air_date || movie.number_of_seasons) ? "Сериал" : "Фильм";
-
-      const genres = Array.isArray(movie.genres)
-        ? movie.genres.map(g => g && g.name).filter(Boolean).slice(0, 3)
-        : [];
-
-      const meta = [
-        yearMovie,
-        genres.length ? genres.join(" • ") : ""
-      ].filter(Boolean).join("  •  ");
-
-      const formatMoney = value => {
+    function money(value) {
+        value = Number(value || 0);
         if (!value) return "";
         if (value >= 1000000000) return (value / 1000000000).toFixed(1).replace(".0", "") + " млрд $";
         if (value >= 1000000) return Math.round(value / 1000000) + " млн $";
         if (value >= 1000) return Math.round(value / 1000) + " тыс. $";
         return value.toLocaleString("ru-RU") + " $";
-      };
-
-      const ratingInfo = [
-        rating ? "★ " + rating : "",
-        voteCount ? voteCount + " оценок" : ""
-      ].filter(Boolean).join("  ");
-
-      const detailChips = [
-        rating ? `<span class="rezka-info-chip rezka-rating-chip"><b>★</b><strong>${rating}</strong><small>TMDB${voteCount ? " • " + voteCount : ""}</small></span>` : "",
-        kpRating ? `<span class="rezka-info-chip rezka-rating-chip rezka-rating-kp"><b>★</b><strong>${kpRating}</strong><small>КиноПоиск</small></span>` : "",
-        imdbRating ? `<span class="rezka-info-chip rezka-rating-chip rezka-rating-imdb"><b>★</b><strong>${imdbRating}</strong><small>IMDb</small></span>` : ""
-      ].filter(Boolean).join("");
-
-      const financeInfo = [
-        budget ? "Бюджет " + formatMoney(budget) : "",
-        revenue ? "Сборы " + formatMoney(revenue) : ""
-      ].filter(Boolean).join("  •  ");
-
-      const statusInfo = "";
-      let modal = $(
-        `<div class="rezka-comments-page" style="--rezka-backdrop:${poster ? `url("${poster.replace(/"/g, "%22")}")` : "none"};">
-          <div class="rezka-film-header">
-            ${poster ? `<img class="rezka-film-backdrop" src="${poster}" alt="">` : ""}
-            <div class="rezka-film-overlay"></div>
-            <div class="rezka-film-info">
-              <div class="rezka-film-title">${title}</div>
-              ${meta ? `<div class="rezka-film-meta">${meta}</div>` : ""}
-              <div class="rezka-film-stats">${detailChips}</div>
-              ${financeInfo || statusInfo ? `<div class="rezka-film-finance">${[financeInfo, statusInfo].filter(Boolean).join("  •  ")}</div>` : ""}
-            </div>
-          </div>
-
-          <div class="broadcast__text rezka-comments-content" style="text-align:left;">
-            <div class="comment"></div>
-          </div>
-        </div>`
-      );
-
-      modal.find(".comment").append(treeContent);
-
-      // Remove inline ShowOrHide() calls from Rezka HTML and handle spoilers locally.
-      // This avoids "ShowOrHide is not defined" inside Lampa.
-      modal.find('[onclick*="ShowOrHide"]').each(function () {
-        const onclick = this.getAttribute("onclick") || "";
-        const match = onclick.match(/ShowOrHide\s*\(\s*['"]([^'"]+)['"]\s*\)/i);
-        if (match) {
-          this.setAttribute("data-rezka-spoiler-target", match[1]);
-        }
-        this.removeAttribute("onclick");
-      });
-
-      modal.off("click.rezkaSpoiler").on("click.rezkaSpoiler", '[data-rezka-spoiler-target]', function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const id = this.getAttribute("data-rezka-spoiler-target");
-        if (!id) return;
-
-        const target = document.getElementById(id);
-        if (!target) {
-          const localTarget = modal.find("#" + id)[0];
-          if (localTarget) {
-            localTarget.style.display = "inline";
-            const previous = localTarget.previousElementSibling;
-            if (previous && previous.classList.contains("title_spoiler")) {
-              previous.remove();
-            }
-          }
-          return;
-        }
-
-        target.style.display = "inline";
-
-        const previous = target.previousElementSibling;
-        if (previous && previous.classList.contains("title_spoiler")) {
-          previous.remove();
-        }
-      });
-
-      if (!document.getElementById("rezka-comment-style-v4")) {
-        const styleEl = document.createElement("style");
-        styleEl.id = "rezka-comment-style-v4";
-        styleEl.textContent = `
-
-          .rezka-comments-page{
-            position:relative;
-            margin:-10px -10px 0;
-            background:#151718;
-            color:#fff;
-            overflow:hidden;
-            box-sizing:border-box;
-          }
-
-          .rezka-comments-page::before{
-            content:"";
-            position:absolute;
-            inset:0;
-            z-index:0;
-            pointer-events:none;
-            background-image:
-              linear-gradient(
-                to bottom,
-                rgba(21,23,24,0) 0%,
-                rgba(21,23,24,.28) 28%,
-                rgba(21,23,24,.82) 58%,
-                #151718 82%
-              ),
-              var(--rezka-backdrop);
-            background-size:cover;
-            background-position:center top;
-            filter:blur(22px) saturate(1.25);
-            transform:scale(1.08);
-            opacity:.55;
-          }
-
-          .rezka-comments-page::after{
-            content:"";
-            position:absolute;
-            inset:0;
-            z-index:0;
-            pointer-events:none;
-            background:
-              radial-gradient(ellipse at 50% 8%, rgba(255,255,255,.06), transparent 52%),
-              linear-gradient(to bottom, rgba(0,0,0,.08), rgba(0,0,0,.24));
-          }
-
-          .rezka-comments-page > *{
-            position:relative;
-            z-index:1;
-          }
-
-
-          .rezka-film-header{
-            position:relative;
-            height:250px;
-            overflow:hidden;
-            background:#202223;
-          }
-
-          .rezka-film-backdrop{
-            position:absolute!important;
-            inset:0!important;
-            width:100%!important;
-            max-width:none!important;
-            height:100%!important;
-            max-height:none!important;
-            object-fit:cover!important;
-            object-position:center!important;
-            margin:0!important;
-            border:0!important;
-          }
-
-          .rezka-film-overlay{
-            position:absolute;
-            inset:0;
-            background:
-              linear-gradient(to bottom, rgba(10,12,13,.05) 0%, rgba(10,12,13,.25) 38%, #151718 100%),
-              linear-gradient(to right, rgba(0,0,0,.30), transparent 70%);
-            pointer-events:none;
-          }
-
-          .rezka-film-info{
-            position:absolute;
-            left:20px;
-            right:20px;
-            bottom:18px;
-            z-index:2;
-          }
-
-          .rezka-film-title{
-            font-size:29px;
-            line-height:1.12;
-            font-weight:800;
-            letter-spacing:-.2px;
-            text-shadow:0 2px 10px rgba(0,0,0,.75);
-          }
-
-          .rezka-film-meta{
-            margin-top:8px;
-            font-size:16px;
-            line-height:1.3;
-            font-weight:500;
-            color:rgba(255,255,255,.86);
-            text-shadow:0 1px 6px rgba(0,0,0,.75);
-          }
-          .rezka-film-stats{
-            display:flex;
-            flex-wrap:wrap;
-            gap:8px;
-            margin-top:12px;
-            align-items:center;
-          }
-          .rezka-info-chip{
-            display:inline-flex;
-            align-items:center;
-            gap:7px;
-            min-height:44px;
-            padding:7px 12px;
-            box-sizing:border-box;
-            border:1px solid rgba(255,255,255,.20);
-            border-radius:14px;
-            background:rgba(8,10,11,.42);
-            color:rgba(255,255,255,.96);
-            box-shadow:0 4px 16px rgba(0,0,0,.20);
-            backdrop-filter:blur(8px);
-            -webkit-backdrop-filter:blur(8px);
-          }
-
-          .rezka-info-chip b{
-            font-size:18px;
-            line-height:1;
-            font-weight:700;
-          }
-
-          .rezka-info-chip strong{
-            font-size:17px;
-            line-height:1.1;
-            font-weight:750;
-          }
-
-          .rezka-info-chip small{
-            font-size:11px;
-            line-height:1.1;
-            color:rgba(255,255,255,.58);
-            font-weight:500;
-          }
-
-          .rezka-rating-chip{
-            min-width:112px;
-          }
-
-          .rezka-rating-chip b{
-            color:#fff;
-          }
-
-          .rezka-rating-kp b{
-            color:#ffb000;
-          }
-
-          .rezka-rating-imdb b{
-            color:#f5c518;
-          }
-
-          .rezka-info-chip b{
-            font-size:18px;
-            font-weight:800;
-          }
-
-          .rezka-info-chip small{
-            margin-left:2px;
-            color:rgba(255,255,255,.70);
-            font-size:12px;
-            font-weight:500;
-          }
-
-          .rezka-rating-chip{
-            background:rgba(0,0,0,.72);
-          }
-
-          .rezka-film-finance{
-            margin-top:9px;
-            font-size:14px;
-            line-height:1.3;
-            color:rgba(255,255,255,.78);
-            text-shadow:0 1px 5px rgba(0,0,0,.75);
-          }
-
-                    .rezka-comments-content{
-            margin:0;
-            padding:4px 12px 18px;
-            box-sizing:border-box;
-            background:transparent!important;
-          }
-
-          .rezka-comments-page .comments-tree-list{
-            list-style:none!important;
-            margin:0!important;
-            padding:0!important;
-          }
-
-          /* Жёстко ограничиваем аватары, чтобы стили Lampa/Rezka
-             не растягивали img на весь комментарий. */
-          .rezka-comments-page .avatar-column{
-            flex:0 0 48px!important;
-            width:48px!important;
-            min-width:48px!important;
-            max-width:48px!important;
-            margin-right:10px!important;
-          }
-
-          .rezka-comments-page .avatar-img{
-            display:block!important;
-            width:48px!important;
-            height:48px!important;
-            min-width:48px!important;
-            max-width:48px!important;
-            min-height:48px!important;
-            max-height:48px!important;
-            object-fit:cover!important;
-            object-position:center!important;
-            border-radius:6px!important;
-            margin:0!important;
-          }
-
-          .rezka-comments-page .comment-wrap{
-            display:flex!important;
-            align-items:flex-start!important;
-            width:100%!important;
-            margin-bottom:5px!important;
-          }
-
-          .rezka-comments-page .comment-card{
-            min-width:0!important;
-            flex:1 1 auto!important;
-            box-sizing:border-box!important;
-          }
-
-          .rezka-comments-page .comment-text img.avatar-img{
-            width:48px!important;
-            height:48px!important;
-          }
-
-          /* Нативный spoiler Rezka теперь раскрывается нашим обработчиком. */
-          .rezka-comments-page .title_spoiler{
-            display:inline-flex!important;
-            cursor:pointer!important;
-          }
-
-
-          /* === Новый компактный стиль комментариев === */
-          .rezka-comments-page .comments-tree-item{
-            list-style:none!important;
-            margin:0!important;
-            padding:0!important;
-          }
-
-          .rezka-comments-page .comments-tree-item::before,
-          .rezka-comments-page .comments-tree-item::after{
-            display:none!important;
-            content:none!important;
-          }
-
-          .rezka-comments-page .comment-wrap{
-            display:flex!important;
-            align-items:flex-start!important;
-            gap:12px!important;
-            width:100%!important;
-            margin:0 0 18px!important;
-            padding:0!important;
-          }
-
-          .rezka-comments-page .avatar-column{
-            flex:0 0 50px!important;
-            width:50px!important;
-            min-width:50px!important;
-            max-width:50px!important;
-            margin:0!important;
-            padding:0!important;
-          }
-
-          .rezka-comments-page .avatar-img{
-            display:block!important;
-            width:50px!important;
-            height:50px!important;
-            min-width:50px!important;
-            max-width:50px!important;
-            min-height:50px!important;
-            max-height:50px!important;
-            object-fit:cover!important;
-            object-position:center!important;
-            border-radius:11px!important;
-            margin:0!important;
-            background:#202223!important;
-            box-shadow:0 2px 8px rgba(0,0,0,.22)!important;
-          }
-
-          .rezka-comments-page .comment-card{
-            min-width:0!important;
-            flex:1 1 auto!important;
-            padding:0 8px 0 0!important;
-            margin:0!important;
-            background:transparent!important;
-            border:0!important;
-            box-shadow:none!important;
-            box-sizing:border-box!important;
-          }
-
-          .rezka-comments-page .comment-header{
-            display:flex!important;
-            align-items:baseline!important;
-            flex-wrap:wrap!important;
-            gap:0!important;
-            margin:0!important;
-            padding:0!important;
-            line-height:1.25!important;
-          }
-
-          .rezka-comments-page .comment-header .name{
-            font-size:15px!important;
-            line-height:1.25!important;
-            font-weight:700!important;
-            color:#fff!important;
-          }
-
-          .rezka-comments-page .comment-header .date{
-            margin-left:7px!important;
-            font-size:12px!important;
-            line-height:1.25!important;
-            font-weight:400!important;
-            color:rgba(255,255,255,.48)!important;
-          }
-
-          .rezka-comments-page .comment-text{
-            margin:5px 0 0!important;
-            padding:0!important;
-            background:transparent!important;
-            border:0!important;
-          }
-
-          .rezka-comments-page .comment-text .text{
-            margin:0!important;
-            padding:0!important;
-            font-size:15px!important;
-            line-height:1.52!important;
-            color:rgba(255,255,255,.88)!important;
-            word-break:break-word!important;
-          }
-
-          .rezka-comments-page .comment-text .text p{
-            margin:0 0 7px!important;
-          }
-
-          .rezka-comments-page .comment-text .text p:last-child{
-            margin-bottom:0!important;
-          }
-
-          .rezka-comments-page .comment-text .text ul,
-          .rezka-comments-page .comment-text .text ol{
-            margin:5px 0!important;
-            padding-left:18px!important;
-          }
-
-          .rezka-comments-page .comment-text .text li{
-            list-style:none!important;
-            margin:0 0 4px!important;
-            padding:0!important;
-          }
-
-          .rezka-comments-page .comment-text .text li::before,
-          .rezka-comments-page .comment-text .text li::marker{
-            content:none!important;
-            display:none!important;
-          }
-
-
-          .rezka-comments,
-          .rezka-comment-list{
-            padding-right:10px!important;
-            box-sizing:border-box!important;
-          }
-
-          @media (max-width:600px){
-            .rezka-modal-caption{
-              left:18px!important;
-              right:52px!important;
-              max-width:calc(100% - 70px)!important;
-              font-size:14px!important;
-            }
-
-
-            .rezka-comments{
-              padding-right:12px!important;
-            }
-
-            .rezka-film-stats{
-              display:flex!important;
-              flex-wrap:nowrap!important;
-              gap:5px!important;
-              margin-top:10px!important;
-              width:100%!important;
-              overflow:visible!important;
-            }
-
-            .rezka-info-chip{
-              min-width:0!important;
-              flex:1 1 0!important;
-              min-height:42px!important;
-              height:42px!important;
-              padding:5px 7px!important;
-              gap:5px!important;
-              border-radius:13px!important;
-              background:rgba(8,10,11,.36)!important;
-              overflow:hidden!important;
-              white-space:nowrap!important;
-            }
-
-            .rezka-info-chip b{
-              flex:0 0 auto!important;
-              font-size:17px!important;
-            }
-
-            .rezka-info-chip strong{
-              flex:0 0 auto!important;
-              font-size:15px!important;
-            }
-
-            .rezka-info-chip small{
-              min-width:0!important;
-              overflow:hidden!important;
-              text-overflow:ellipsis!important;
-              white-space:nowrap!important;
-              font-size:9px!important;
-            }
-
-
-            .rezka-comments-page .comment-wrap{
-              gap:11px!important;
-              margin-bottom:17px!important;
-            }
-
-            .rezka-comments-page .avatar-column{
-              flex-basis:48px!important;
-              width:48px!important;
-              min-width:48px!important;
-              max-width:48px!important;
-            }
-
-            .rezka-comments-page .avatar-img{
-              width:48px!important;
-              height:48px!important;
-              min-width:48px!important;
-              max-width:48px!important;
-              min-height:48px!important;
-              max-height:48px!important;
-              border-radius:10px!important;
-            }
-
-            .rezka-comments-page .comment-header .name{
-              font-size:15px!important;
-            }
-
-            .rezka-comments-page .comment-header .date{
-              font-size:11px!important;
-              margin-left:6px!important;
-            }
-
-            .rezka-comments-page .comment-card{
-              padding-right:10px!important;
-            }
-
-            .rezka-comments-page .comment-text .text{
-              font-size:15px!important;
-              line-height:1.5!important;
-            }
-          }
-
-
-
-          .modal--large .modal__head{
-            position:relative!important;
-            min-height:48px!important;
-            height:48px!important;
-            display:block!important;
-            overflow:hidden!important;
-          }
-
-          .rezka-modal-caption{
-            position:absolute!important;
-            top:50%!important;
-            left:18px!important;
-            right:58px!important;
-            transform:translateY(-50%)!important;
-            z-index:9998!important;
-            max-width:calc(100% - 76px)!important;
-            overflow:hidden!important;
-            white-space:nowrap!important;
-            pointer-events:none!important;
-            font-size:15px!important;
-            line-height:1.2!important;
-            font-weight:700!important;
-            letter-spacing:.15px!important;
-            background:linear-gradient(110deg,
-              rgba(255,255,255,.55) 0%,
-              rgba(255,255,255,.55) 38%,
-              #fff 47%,
-              #fff 53%,
-              rgba(255,255,255,.55) 62%,
-              rgba(255,255,255,.55) 100%)!important;
-            background-size:220% 100%!important;
-            -webkit-background-clip:text!important;
-            background-clip:text!important;
-            -webkit-text-fill-color:transparent!important;
-            animation:rezkaCaptionShine 3.8s ease-in-out infinite!important;
-          }
-
-          @keyframes rezkaCaptionShine{
-            0%,20%{background-position:130% 0;}
-            55%,75%{background-position:-30% 0;}
-            100%{background-position:-30% 0;}
-          }
-
-          .modal--large .rezka-modal-close{
-            position:absolute!important;
-            top:8px!important;
-            right:8px!important;
-            z-index:9999!important;
-            width:38px!important;
-            height:38px!important;
-            min-width:38px!important;
-            min-height:38px!important;
-            padding:0!important;
-            margin:0!important;
-            display:flex!important;
-            align-items:center!important;
-            justify-content:center!important;
-            border:1px solid rgba(255,255,255,.22)!important;
-            border-radius:50%!important;
-            background:rgba(18,20,21,.72)!important;
-            color:#fff!important;
-            box-shadow:0 5px 18px rgba(0,0,0,.35)!important;
-            backdrop-filter:blur(12px)!important;
-            -webkit-backdrop-filter:blur(12px)!important;
-            cursor:pointer!important;
-            appearance:none!important;
-            -webkit-appearance:none!important;
-          }
-
-          .modal--large .rezka-modal-close span{
-            display:block!important;
-            font-size:27px!important;
-            line-height:32px!important;
-            font-weight:300!important;
-            transform:translateY(-1px)!important;
-            opacity:.92!important;
-          }
-
-          .rezka-modal-close:active{
-            transform:scale(.92)!important;
-            background:rgba(255,255,255,.16)!important;
-          }
-
-          @media (max-width:600px){
-            .rezka-modal-close{
-              top:7px!important;
-              right:7px!important;
-              width:36px!important;
-              height:36px!important;
-              min-width:36px!important;
-              min-height:36px!important;
-            }
-
-            .rezka-film-header{
-              height:230px;
-            }
-
-            .rezka-film-info{
-              left:16px;
-              right:16px;
-              bottom:16px;
-            }
-
-            .rezka-film-title{
-              font-size:26px;
-            }
-
-            .rezka-film-meta{
-              font-size:15px;
-            }
-
-            .rezka-info-chip{
-              font-size:13px;
-              min-height:30px;
-              padding:6px 9px;
-            }
-
-            .rezka-comments-content{
-              padding-left:8px;
-              padding-right:8px;
-            }
-          }
-        `;
-        document.head.appendChild(styleEl);
-      }
-
-      Lampa.Modal.open({
-        title: ``,
-        html: modal,
-        size: "large",
-        style: "margin-top:10px;",
-        mask: true,
-        onBack: function () {
-          Lampa.Modal.close();
-          $(".modal--large").remove();
-          Lampa.Controller.toggle("content");
-        },
-      });
-
-      const rezkaModalHead = document.querySelector(".modal__head");
-      if (rezkaModalHead) {
-        rezkaModalHead.style.position = "relative";
-        rezkaModalHead.innerHTML = `<div class="rezka-modal-caption">Комментарии Rezka</div><button type="button" class="rezka-modal-close selector" aria-label="Закрыть" onclick="$('.modal--large').remove()"><span>×</span></button>`;
-      }
-    }
-  }
-
-  // Функция для начала работы плагина
-  function startPlugin() {
-    window.rezka_comment_v2_plugin = true;
-
-    try {
-      // Регистрация настроек
-      Lampa.SettingsApi.addComponent({
-        component: 'rezka_comment_v2',
-        name: 'Rezka Comments V2',
-        icon: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
-      });
-
-      Lampa.SettingsApi.addParam({
-        component: 'rezka_comment_v2',
-        param: {
-          name: 'rezka_comment_v2_host',
-          type: 'input',
-          placeholder: 'https://hdrezka.ag',
-          values: Lampa.Storage.get('rezka_comment_v2_host', 'https://hdrezka.ag'),
-          default: 'https://hdrezka.ag'
-        },
-        field: {
-          name: 'Зеркало hdrezka',
-          description: 'Адрес зеркала hdrezka (например, https://hdrezka.me)'
-        },
-        onChange: function(value) {
-          Lampa.Storage.set('rezka_comment_v2_host', value);
-        }
-      });
-
-      Lampa.SettingsApi.addParam({
-        component: 'rezka_comment_v2',
-        param: {
-          name: 'rezka_comment_v2_cookie',
-          type: 'input',
-          placeholder: 'вставьте cookie',
-          values: Lampa.Storage.get('rezka_comment_v2_cookie', ''),
-          default: ''
-        },
-        field: {
-          name: 'Cookie авторизации',
-          description: 'Cookie из вашего браузера для обхода защиты (Anubis / PHPSESSID)'
-        },
-        onChange: function(value) {
-          Lampa.Storage.set('rezka_comment_v2_cookie', value);
-        }
-      });
-
-      Lampa.SettingsApi.addParam({
-        component: 'rezka_comment_v2',
-        param: {
-          name: 'rezka_comment_v2_proxy',
-          type: 'input',
-          placeholder: 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/',
-          values: Lampa.Storage.get('rezka_comment_v2_proxy', 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/'),
-          default: 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/'
-        },
-        field: {
-          name: 'CORS Прокси',
-          description: 'Ваш Cloudflare Worker прокси (обязательно с / на конце)'
-        },
-        onChange: function(value) {
-          Lampa.Storage.set('rezka_comment_v2_proxy', value);
-        }
-      });
-
-      // === Fanart.tv — Personal API Key ===
-      // Ключ хранится локально в Lampa.Storage и не зашивается в код плагина.
-      Lampa.SettingsApi.addComponent({
-        component: 'movie_info_fanart',
-        name: 'Movie Info — Fanart.tv',
-        icon: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 15l3-3 2 2 3-4 2 2"/><circle cx="8" cy="8" r="1.2"/></svg>'
-      });
-
-      Lampa.SettingsApi.addParam({
-        component: 'movie_info_fanart',
-        param: {
-          name: 'movie_info_fanart_personal_key',
-          type: 'input',
-          placeholder: 'Вставьте Personal API Key Fanart.tv',
-          values: Lampa.Storage.get('movie_info_fanart_personal_key', ''),
-          default: ''
-        },
-        field: {
-          name: 'Personal API Key Fanart.tv',
-          description: 'Ваш персональный ключ Fanart.tv. Он сохраняется только в Lampa.Storage на этом устройстве.'
-        },
-        onChange: function(value) {
-          Lampa.Storage.set('movie_info_fanart_personal_key', String(value || '').trim());
-        }
-      });
-
-      // Общий helper для будущего получения кадров/артов Fanart.tv.
-      // Использует Personal Key через client_key, как рекомендует актуальный API.
-      window.MovieInfoFanart = window.MovieInfoFanart || {};
-      window.MovieInfoFanart.getKey = function() {
-        return String(Lampa.Storage.get('movie_info_fanart_personal_key', '') || '').trim();
-      };
-      window.MovieInfoFanart.getUrl = function(type, id) {
-        var key = window.MovieInfoFanart.getKey();
-        if (!key || !id) return '';
-        var base = 'https://webservice.fanart.tv/v3.2/' + type + '/' + encodeURIComponent(String(id));
-        return base + '?client_key=' + encodeURIComponent(key);
-      };
-
-    } catch (e) {
-      console.error('[RezkaComment V2] Settings init error:', e);
     }
 
-    Lampa.Listener.follow("full", function (e) {
-      if (e.type == "complite") {
-        $(".button--rezka-comment-v2").remove();
-        $(".full-start-new__buttons").append(
-          `<div class="full-start__button selector button--rezka-comment-v2"><svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 356.484 356.484"><g><path d="M293.984 7.23H62.5C28.037 7.23 0 35.268 0 69.731v142.78c0 34.463 28.037 62.5 62.5 62.5l147.443.001 70.581 70.58a12.492 12.492 0 0 0 13.622 2.709 12.496 12.496 0 0 0 7.717-11.547v-62.237c30.759-3.885 54.621-30.211 54.621-62.006V69.731c0-34.463-28.037-62.501-62.5-62.501zm37.5 205.282c0 20.678-16.822 37.5-37.5 37.5h-4.621c-6.903 0-12.5 5.598-12.5 12.5v44.064l-52.903-52.903a12.493 12.493 0 0 0-8.839-3.661H62.5c-20.678 0-37.5-16.822-37.5-37.5V69.732c0-20.678 16.822-37.5 37.5-37.5h231.484c20.678 0 37.5 16.822 37.5 37.5v142.78z" fill="currentcolor"/></g></svg><span>${Lampa.Lang.translate(
-            "title_comments",
-          )}</span></div>`,
+    function cacheGet(key) {
+        try {
+            var raw = Lampa.Storage.get(CACHE_PREFIX + key, "");
+            if (!raw) return null;
+            var data = JSON.parse(raw);
+            if (!data || Date.now() - data.time > CACHE_TTL) return null;
+            return data.value;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function cacheSet(key, value) {
+        try {
+            Lampa.Storage.set(CACHE_PREFIX + key, JSON.stringify({
+                time: Date.now(),
+                value: value
+            }));
+        } catch (e) {}
+    }
+
+    function tmdbGet(path) {
+        return new Promise(function (resolve, reject) {
+            if (!Lampa.Api || !Lampa.Api.sources || !Lampa.Api.sources.tmdb || !Lampa.Api.sources.tmdb.get) {
+                reject(new Error("TMDB API Lampa недоступен"));
+                return;
+            }
+            Lampa.Api.sources.tmdb.get(path, {}, resolve, reject);
+        });
+    }
+
+    function getFanartKey() {
+        return String(Lampa.Storage.get(KEY, "") || "").trim();
+    }
+
+    function fanartGet(type, id) {
+        var key = getFanartKey();
+        if (!key || !id) return Promise.resolve(null);
+
+        var cacheKey = "fanart_" + type + "_" + id;
+        var cached = cacheGet(cacheKey);
+        if (cached) return Promise.resolve(cached);
+
+        var url = "https://webservice.fanart.tv/v3.2/" +
+            type + "/" + encodeURIComponent(String(id)) +
+            "?client_key=" + encodeURIComponent(key);
+
+        return fetch(url, { method: "GET" })
+            .then(function (r) {
+                if (!r.ok) throw new Error("Fanart HTTP " + r.status);
+                return r.json();
+            })
+            .then(function (data) {
+                cacheSet(cacheKey, data);
+                return data;
+            })
+            .catch(function (e) {
+                console.warn("[Movie Info Ultra] Fanart:", e);
+                return null;
+            });
+    }
+
+    function fanartImages(data) {
+        if (!data) return [];
+        var groups = [
+            "moviebackground",
+            "movieart",
+            "movieposter",
+            "moviethumb",
+            "hdmovieclearart",
+            "hdmovielogo"
+        ];
+        var result = [];
+        groups.forEach(function (group) {
+            (Array.isArray(data[group]) ? data[group] : []).forEach(function (item) {
+                if (item && item.url) result.push({
+                    url: String(item.url).replace(/^http:/, "https:"),
+                    type: group,
+                    lang: item.lang || "",
+                    likes: Number(item.likes || 0)
+                });
+            });
+        });
+        result.sort(function (a, b) {
+            return b.likes - a.likes;
+        });
+        return result;
+    }
+
+    function tmdbGallery(data) {
+        var list = data && data.images && Array.isArray(data.images.backdrops)
+            ? data.images.backdrops : [];
+        return list.map(function (x) {
+            return {
+                url: imageUrl(x.file_path, "w1280"),
+                type: "TMDB",
+                lang: x.iso_639_1 || ""
+            };
+        }).filter(function (x) { return x.url; });
+    }
+
+    function uniqueImages(list) {
+        var seen = {};
+        return list.filter(function (x) {
+            if (!x || !x.url || seen[x.url]) return false;
+            seen[x.url] = true;
+            return true;
+        });
+    }
+
+    function makeChip(label, value) {
+        if (!value) return "";
+        return '<span class="miu-chip"><b>' + esc(value) + '</b><small>' + esc(label) + '</small></span>';
+    }
+
+    function closeModal() {
+        try { Lampa.Modal.close(); } catch (e) {}
+        $(".miu-page").remove();
+        $(".miu-gallery").remove();
+        try { Lampa.Controller.toggle("content"); } catch (e) {}
+    }
+
+    function openGallery(images, start) {
+        if (!images || !images.length) return;
+
+        var index = Math.max(0, Math.min(Number(start || 0), images.length - 1));
+
+        $(".miu-gallery").remove();
+
+        var gallery = $(
+            '<div class="miu-gallery">' +
+                '<div class="miu-gallery-bg"></div>' +
+                '<button class="miu-g-close selector" type="button">×</button>' +
+                '<button class="miu-g-prev selector" type="button">‹</button>' +
+                '<img class="miu-g-image" src="" alt="">' +
+                '<button class="miu-g-next selector" type="button">›</button>' +
+                '<div class="miu-g-count"></div>' +
+            '</div>'
         );
 
-        $(".button--rezka-comment-v2").on("hover:enter", function (card) {
-          year = 0;
-          if (e.data.movie.release_date) {
-            year = e.data.movie.release_date.slice(0, 4);
-          } else if (e.data.movie.first_air_date) {
-            year = e.data.movie.first_air_date.slice(0, 4);
-          }
-          Lampa.Loading.start();
+        $("body").append(gallery);
 
-          const movie = e.data.movie || {};
-          window.__rezkaCommentCurrentMovie = movie;
+        function render() {
+            var item = images[index];
+            gallery.find(".miu-g-image").attr("src", item.url);
+            gallery.find(".miu-g-count").text((index + 1) + " / " + images.length);
+        }
 
-          // Берём уже загруженные Lampa рейтинги, если они есть.
-          // Никаких дополнительных API-ключей для этого не требуется.
-          try {
-            const render = e.object && e.object.activity && e.object.activity.render
-              ? e.object.activity.render()
-              : null;
-
-            const readNativeRating = function (selector) {
-              if (!render) return "";
-              const el = $(selector, render).find("> div").eq(0);
-              const value = el.length ? String(el.text()).trim() : "";
-              return value && value !== "0.0" ? value : "";
-            };
-
-            window.__rezkaCommentRatings = {
-              kp: readNativeRating(".rate--kp"),
-              imdb: readNativeRating(".rate--imdb")
-            };
-          } catch (ratingError) {
-            window.__rezkaCommentRatings = { kp: "", imdb: "" };
-          }
-
-          year = 0;
-
-          if (movie.release_date) {
-            year = movie.release_date.slice(0, 4);
-          } else if (movie.first_air_date) {
-            year = movie.first_air_date.slice(0, 4);
-          }
-
-          console.log('[RezkaComment V2] RESOLVE:', movie.title || movie.name || '', year);
-          resolveTitle(movie, e.object.method);
+        gallery.on("click", ".miu-g-close", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            gallery.remove();
         });
-      }
-    });
-  }
 
-  if (!window.rezka_comment_v2_plugin) startPlugin();
-})();
+        gallery.on("click", ".miu-g-prev", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            index = (index - 1 + images.length) % images.length;
+            render();
+        });
+
+        gallery.on("click", ".miu-g-next", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            index = (index + 1) % images.length;
+            render();
+        });
+
+        var touchX = 0;
+        gallery.on("touchstart", function (e) {
+            var t = e.originalEvent.touches && e.originalEvent.touches[0];
+            if (t) touchX = t.clientX;
+        });
+        gallery.on("touchend", function (e) {
+            var t = e.originalEvent.changedTouches && e.originalEvent.changedTouches[0];
+            if (!t) return;
+            var dx = t.clientX - touchX;
+            if (Math.abs(dx) > 45) {
+                index = dx < 0
+                    ? (index + 1) % images.length
+                    : (index - 1 + images.length) % images.length;
+                render();
+            }
+        });
+
+        $(document).off("keydown.miuGallery").on("keydown.miuGallery", function (e) {
+            if (!$(".miu-gallery").length) return;
+            if (e.key === "ArrowRight") {
+                index = (index + 1) % images.length;
+                render();
+            } else if (e.key === "ArrowLeft") {
+                index = (index - 1 + images.length) % images.length;
+                render();
+            } else if (e.key === "Escape") {
+                gallery.remove();
+            }
+        });
+
+        render();
+    }
+
+    function openPerson(name) {
+        // Intentionally conservative: use Lampa's search screen rather than
+        // depending on private/unstable category internals.
+        if (!name) return;
+        try {
+            Lampa.Activity.push({
+                component: "search",
+                search: name,
+                page: 1,
+                title: name
+            });
+        } catch (e) {
+            try { Lampa.Noty.show("Поиск: " + name); } catch (ignore) {}
+        }
+    }
+
+    function renderPeople(movie) {
+        var credits = movie.credits || {};
+        var cast = Array.isArray(credits.cast) ? credits.cast.slice(0, 18) : [];
+        var crew = Array.isArray(credits.crew) ? credits.crew : [];
+
+        var directors = crew.filter(function (x) { return x.job === "Director"; }).slice(0, 6);
+        var writers = crew.filter(function (x) {
+            return /Writer|Screenplay|Story/i.test(String(x.job || ""));
+        }).slice(0, 8);
+
+        var html = "";
+
+        if (directors.length) {
+            html += '<div class="miu-section"><h3>РЕЖИССЁР</h3><div class="miu-people">';
+            directors.forEach(function (p) {
+                html += '<div class="miu-person selector" data-person="' + esc(p.name) + '">' +
+                    (p.profile_path ? '<img src="' + esc(imageUrl(p.profile_path, "w185")) + '">' : '<div class="miu-person-empty">●</div>') +
+                    '<b>' + esc(p.name) + '</b><small>Режиссёр</small></div>';
+            });
+            html += "</div></div>";
+        }
+
+        if (cast.length) {
+            html += '<div class="miu-section"><h3>АКТЁРЫ</h3><div class="miu-people">';
+            cast.forEach(function (p) {
+                html += '<div class="miu-person selector" data-person="' + esc(p.name) + '">' +
+                    (p.profile_path ? '<img src="' + esc(imageUrl(p.profile_path, "w185")) + '">' : '<div class="miu-person-empty">●</div>') +
+                    '<b>' + esc(p.name) + '</b><small>' + esc(p.character || "Актёр") + '</small></div>';
+            });
+            html += "</div></div>";
+        }
+
+        if (writers.length) {
+            html += '<div class="miu-section"><h3>СЦЕНАРИЙ</h3><div class="miu-credit-list">';
+            writers.forEach(function (p) {
+                html += '<span class="miu-credit selector" data-person="' + esc(p.name) + '">' +
+                    esc(p.name) + '<small>' + esc(p.job) + '</small></span>';
+            });
+            html += "</div></div>";
+        }
+
+        return html;
+    }
+
+    function openInfo(movie) {
+        Lampa.Loading.start();
+
+        var type = isTV(movie) ? "tv" : "movie";
+        var id = movie.id;
+        var cacheKey = type + "_" + id;
+        var cached = cacheGet("details_" + cacheKey);
+
+        var detailsPromise = cached
+            ? Promise.resolve(cached)
+            : tmdbGet(type + "/" + id + "?append_to_response=credits,images,external_ids,recommendations,videos,translations");
+
+        detailsPromise.then(function (details) {
+            details = details || movie;
+            if (!cached) cacheSet("details_" + cacheKey, details);
+
+            var fanartIdPromise;
+            if (type === "movie") {
+                fanartIdPromise = Promise.resolve(String(details.id || id));
+            } else {
+                var tvdb = details.external_ids && details.external_ids.tvdb_id;
+                fanartIdPromise = Promise.resolve(tvdb ? String(tvdb) : "");
+            }
+
+            return fanartIdPromise.then(function (fanartId) {
+                return fanartGet(type === "movie" ? "movies" : "tv", fanartId).then(function (fanart) {
+                    return { details: details, fanart: fanart };
+                });
+            });
+        }).then(function (payload) {
+            Lampa.Loading.stop();
+            renderModal(payload.details, payload.fanart);
+        }).catch(function (e) {
+            Lampa.Loading.stop();
+            console.error("[Movie Info Ultra]", e);
+            renderModal(movie, null);
+        });
+    }
+
+    function renderModal(movie, fanart) {
+        var type = isTV(movie) ? "tv" : "movie";
+        var title = movie.title || movie.name || "Подробнее";
+        var original = movie.original_title || movie.original_name || "";
+        var backdrop = imageUrl(movie.backdrop_path, "w1280") ||
+            imageUrl(movie.poster_path, "w780");
+
+        var fan = fanartImages(fanart);
+        var galleryImages = uniqueImages(
+            fan.filter(function (x) {
+                return /moviebackground|movieart|moviethumb/i.test(x.type);
+            }).concat(tmdbGallery(movie))
+        );
+
+        var genres = Array.isArray(movie.genres)
+            ? movie.genres.map(function (g) { return g.name; }).filter(Boolean)
+            : [];
+
+        var runtime = movie.runtime ||
+            (Array.isArray(movie.episode_run_time) ? movie.episode_run_time[0] : 0);
+
+        var chips = "";
+        if (movie.vote_average) chips += makeChip("TMDB", Number(movie.vote_average).toFixed(1));
+        if (movie.vote_count) chips += makeChip("оценок", Number(movie.vote_count).toLocaleString("ru-RU"));
+        if (yearOf(movie)) chips += makeChip("год", yearOf(movie));
+        if (runtime) chips += makeChip("время", runtimeText(runtime));
+        if (type === "tv" && movie.number_of_seasons) chips += makeChip("сезонов", movie.number_of_seasons);
+        if (type === "tv" && movie.number_of_episodes) chips += makeChip("серий", movie.number_of_episodes);
+
+        var info = "";
+        if (genres.length) info += '<div class="miu-info-row"><b>ЖАНРЫ</b><span>' + esc(genres.join(" • ")) + '</span></div>';
+        if (movie.origin_country && movie.origin_country.length) info += '<div class="miu-info-row"><b>СТРАНЫ</b><span>' + esc(movie.origin_country.join(" • ")) + '</span></div>';
+        if (movie.release_date || movie.first_air_date) info += '<div class="miu-info-row"><b>ДАТА ВЫХОДА</b><span>' + esc(movie.release_date || movie.first_air_date) + '</span></div>';
+        if (movie.status) info += '<div class="miu-info-row"><b>СТАТУС</b><span>' + esc(movie.status) + '</span></div>';
+        if (movie.budget) info += '<div class="miu-info-row"><b>БЮДЖЕТ</b><span>' + esc(money(movie.budget)) + '</span></div>';
+        if (movie.revenue) info += '<div class="miu-info-row"><b>СБОРЫ</b><span>' + esc(money(movie.revenue)) + '</span></div>';
+        if (movie.imdb_id || (movie.external_ids && movie.external_ids.imdb_id)) {
+            info += '<div class="miu-info-row"><b>IMDb ID</b><span>' +
+                esc(movie.imdb_id || movie.external_ids.imdb_id) + '</span></div>';
+        }
+        info += '<div class="miu-info-row"><b>TMDB ID</b><span>' + esc(movie.id) + '</span></div>';
+
+        var modal = $(
+            '<div class="miu-page" style="--miu-backdrop:url(\'' + esc(backdrop) + '\')">' +
+                '<div class="miu-head">' +
+                    '<div class="miu-head-title">Подробнее</div>' +
+                    '<button class="miu-close selector" type="button">×</button>' +
+                '</div>' +
+
+                '<div class="miu-hero">' +
+                    (backdrop ? '<img src="' + esc(backdrop) + '" alt="">' : '') +
+                    '<div class="miu-hero-gradient"></div>' +
+                    '<div class="miu-hero-info">' +
+                        '<h1>' + esc(title) + '</h1>' +
+                        (original && original !== title ? '<div class="miu-original">' + esc(original) + '</div>' : '') +
+                        '<div class="miu-chips">' + chips + '</div>' +
+                    '</div>' +
+                '</div>' +
+
+                (movie.tagline ? '<div class="miu-tagline">«' + esc(movie.tagline) + '»</div>' : '') +
+
+                '<div class="miu-body">' +
+                    (movie.overview ? '<div class="miu-section"><h3>ОПИСАНИЕ</h3><div class="miu-description">' + esc(movie.overview) + '</div></div>' : '') +
+                    (info ? '<div class="miu-section"><h3>ИНФОРМАЦИЯ</h3><div class="miu-info">' + info + '</div></div>' : '') +
+
+                    (galleryImages.length ? '<div class="miu-section"><h3>КАДРЫ ИЗ ФИЛЬМА <small>' + galleryImages.length + '</small></h3><div class="miu-gallery-grid">' +
+                        galleryImages.map(function (x, i) {
+                            return '<div class="miu-gallery-card selector" data-gallery-index="' + i + '">' +
+                                '<img loading="lazy" src="' + esc(x.url) + '" alt="">' +
+                                '<span>⌕</span>' +
+                            '</div>';
+                        }).join("") +
+                    '</div></div>' : '') +
+
+                    renderPeople(movie) +
+
+                    (movie.recommendations && Array.isArray(movie.recommendations.results) && movie.recommendations.results.length
+                        ? '<div class="miu-section"><h3>ПОХОЖИЕ ФИЛЬМЫ И СЕРИАЛЫ</h3><div class="miu-similar">' +
+                            movie.recommendations.results.slice(0, 12).map(function (x) {
+                                var img = imageUrl(x.poster_path, "w342");
+                                if (!img) return "";
+                                return '<div class="miu-similar-card selector" data-similar-id="' + esc(x.id) + '">' +
+                                    '<img src="' + esc(img) + '" alt=""><b>' + esc(x.title || x.name || "") + '</b>' +
+                                '</div>';
+                            }).join("") +
+                        '</div></div>' : '') +
+
+                    '<div class="miu-footer">Movie Info Ultra • TMDB' + (getFanartKey() ? ' • Fanart.tv' : '') + '</div>' +
+                '</div>' +
+            '</div>'
+        );
+
+        $(".miu-page").remove();
+        modal.on("click", ".miu-close", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeModal();
+        });
+
+        modal.on("click", ".miu-gallery-card", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openGallery(galleryImages, Number($(this).attr("data-gallery-index") || 0));
+        });
+
+        modal.on("click", ".miu-person, .miu-credit", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openPerson($(this).attr("data-person") || "");
+        });
+
+        modal.on("click", ".miu-similar-card", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var sid = $(this).attr("data-similar-id");
+            if (!sid) return;
+            var base = movie;
+            var next = Object.assign({}, base, { id: Number(sid) });
+            try { closeModal(); } catch (ignore) {}
+            setTimeout(function () { openInfo(next); }, 120);
+        });
+
+        Lampa.Modal.open({
+            title: "",
+            html: modal,
+            size: "large",
+            style: "margin-top:10px;",
+            mask: true,
+            onBack: function () {
+                closeModal();
+            }
+        });
+
+        var head = document.querySelector(".modal--large .modal__head");
+        if (head) {
+            head.style.position = "relative";
+            head.innerHTML = "";
+            head.appendChild($('<div class="miu-modal-caption">Movie Info</div>')[0]);
+            head.appendChild($('<button class="miu-modal-close selector" type="button">×</button>')[0]);
+            $(head).find(".miu-modal-close").on("click", function () {
+                clo
