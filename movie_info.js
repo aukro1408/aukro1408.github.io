@@ -1,537 +1,1251 @@
-/* CinemaX Movie Info V3 — подробная карточка фильма/сериала
- * Полностью отдельный плагин. Логика кнопки/Modal основана на рабочем
- * Filmix Comments V11, но код не переделывает и не зависит от него.
- */
+// RezkaComment V2 — based directly on the supplied rezkacomment.js
 (function () {
-    'use strict';
+  //BDVBuriлk.github.io
+  //2025
+  ("use strict");
 
-    const PLUGIN_FLAG = 'cinemax_movie_info_v3';
-    const BUTTON_CLASS = 'button--cinemax-movie-info-v3';
-    const STYLE_ID = 'cinemax-movie-info-v3-style';
-    const LOG = '[CinemaX Movie Info V3]';
+  let year;
+  let namemovie;
+  let savedHTML = null;
 
-    if (window[PLUGIN_FLAG]) return;
-    window[PLUGIN_FLAG] = true;
-
-    function log() {
-        try { console.log.apply(console, [LOG].concat([].slice.call(arguments))); } catch (e) {}
+  function getSettings() {
+    let host = (Lampa.Storage.get('rezka_comment_v2_host', 'https://hdrezka.ag') || 'https://hdrezka.ag').trim().replace(/\/+$/, '');
+    let cookie = (Lampa.Storage.get('rezka_comment_v2_cookie', '') || '').trim();
+    let proxy = (Lampa.Storage.get('rezka_comment_v2_proxy', 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/') || 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/').trim();
+    if (proxy && !proxy.endsWith('/')) {
+      proxy += '/';
     }
+    return { host, cookie, proxy };
+  }
 
-    function esc(value) {
-        return String(value == null ? '' : value)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-    }
+  // Функция для поиска на сайте hdrezka
+  async function searchRezka(name, ye, silent) {
+    try {
+      let { host, cookie, proxy } = getSettings();
+      let path = host + "/search/?do=search&subaction=search&q=" + encodeURIComponent(name) + (ye ? "+" + ye : "");
+      let searchUrl = proxy;
+      if (cookie) {
+        searchUrl += "param/Cookie=" + encodeURIComponent(cookie) + "/";
+      }
+      searchUrl += path;
 
-    function title(movie) {
-        return String((movie && (movie.title || movie.name || movie.original_title || movie.original_name)) || 'Фильм');
-    }
+      console.log('[RezkaComment V2] SEARCH:', name + (ye ? ' ' + ye : ''));
 
-    function originalTitle(movie) {
-        return String((movie && (movie.original_title || movie.original_name)) || '');
-    }
-
-    function year(movie) {
-        const d = movie && (movie.release_date || movie.first_air_date || movie.year || '');
-        const m = String(d).match(/\b(\d{4})\b/);
-        return m ? m[1] : '';
-    }
-
-    function isTV(movie) {
-        const t = String((movie && (movie.media_type || movie.type || movie.object_type || ''))).toLowerCase();
-        return t === 'tv' || t.indexOf('serial') >= 0 || t.indexOf('series') >= 0 || t.indexOf('сериал') >= 0 || !!(movie && (movie.number_of_seasons || movie.first_air_date));
-    }
-
-    function image(path, size) {
-        if (!path) return '';
-        try {
-            return Lampa.TMDB.image('t/p/' + (size || 'w500') + path);
-        } catch (e) {
-            return 'https://image.tmdb.org/t/p/' + (size || 'w500') + path;
+      let fc = await fetch(searchUrl, {
+        method: "GET",
+        headers: { "Content-Type": "text/html" }
+      }).then((response) => {
+        if (!response.ok) {
+          throw new Error('HTTP status ' + response.status);
         }
-    }
+        return response.text();
+      });
 
-    function tmdbGet(path) {
-        return new Promise(function (resolve, reject) {
-            if (Lampa.Api && Lampa.Api.sources && Lampa.Api.sources.tmdb && typeof Lampa.Api.sources.tmdb.get === 'function') {
-                Lampa.Api.sources.tmdb.get(path, {}, resolve, reject);
-                return;
-            }
-            reject(new Error('TMDB API Lampa недоступен'));
+      let dom = new DOMParser().parseFromString(fc, "text/html");
+
+      const item = dom.querySelector(".b-content__inline_item");
+      if (!item) {
+        console.warn('[RezkaComment V2] NO CARD:', name, ye);
+        if (fc.indexOf("Проверяем, что вы не бот") !== -1 || fc.indexOf("Anubis") !== -1) {
+          Lampa.Noty.show('Защита от ботов на Rezka. Настройте Cookie в настройках плагина.');
+          Lampa.Loading.stop();
+          return false;
+        }
+        if (!silent) Lampa.Loading.stop();
+        return false;
+      }
+
+      namemovie =
+        item.querySelector(".b-content__inline_item-link")?.innerText || "";
+      
+      let itemUrl = item.querySelector(".b-content__inline_item-link")?.getAttribute("href") || "";
+      console.log('[RezkaComment V2] FOUND ID:', item.dataset.id, 'title:', namemovie);
+      await comment_rezka(item.dataset.id, itemUrl);
+      return true;
+    } catch (e) {
+      console.error('[RezkaComment V2] searchRezka error:', e);
+      console.error('[RezkaComment V2] search error:', e);
+      if (!silent) {
+        Lampa.Noty.show('Ошибка поиска на Rezka: ' + e.message);
+        Lampa.Loading.stop();
+      }
+      return false;
+    }
+  }
+
+  // Резолвер названия V2.
+  // Английское название TMDB больше НЕ является обязательным.
+  async function resolveTitle(movie, type) {
+    try {
+      const names = [];
+
+      function addName(value) {
+        if (typeof value !== 'string') return;
+        value = value.trim();
+        if (!value) return;
+        const normalized = normalizeTitle(value);
+        if (!normalized) return;
+        if (!names.some((x) => normalizeTitle(x) === normalized)) {
+          names.push(value);
+        }
+      }
+
+      // Сначала самые надёжные поля самого Lampa.
+      addName(movie?.original_title);
+      addName(movie?.original_name);
+      addName(movie?.title);
+
+      // Затем альтернативные названия, если они уже есть в объекте.
+      const alternatives = movie?.alternative_titles?.results;
+      if (Array.isArray(alternatives)) {
+        alternatives.forEach(function (item) {
+          addName(item?.title);
+          addName(item?.name);
         });
-    }
+      }
 
-    function formatMoney(value) {
-        const n = Number(value || 0);
-        if (!n) return '—';
-        try { return '$' + n.toLocaleString('en-US'); } catch (e) { return '$' + n; }
-    }
-
-    function formatRuntime(minutes) {
-        const n = Number(minutes || 0);
-        if (!n) return '—';
-        const h = Math.floor(n / 60), m = n % 60;
-        return h ? h + ' ч ' + (m ? m + ' мин' : '') : m + ' мин';
-    }
-
-    function names(list) {
-        if (!Array.isArray(list)) return '—';
-        const a = list.map(function (x) { return typeof x === 'string' ? x : (x && (x.name || x.title)); }).filter(Boolean);
-        return a.length ? a.join(' • ') : '—';
-    }
-
-    function firstCrew(crew, jobs) {
-        if (!Array.isArray(crew)) return [];
-        return crew.filter(function (p) { return p && jobs.indexOf(p.job) >= 0; });
-    }
-
-    function uniquePeople(list) {
-        const seen = {};
-        return (list || []).filter(function (p) {
-            if (!p || !p.id || seen[p.id]) return false;
-            seen[p.id] = true; return true;
-        });
-    }
-
-    function addStyles() {
-        if (document.getElementById(STYLE_ID)) return;
-        const style = document.createElement('style');
-        style.id = STYLE_ID;
-        style.textContent = `
-            /* CinemaX Movie Info V3 — visual language aligned with Interface Mod */
-            .cmi2{position:relative;width:100%;box-sizing:border-box;padding:4px 14px 34px;background:transparent;color:#fff}
-            .cmi2 *{box-sizing:border-box}
-            .cmi2-close{position:absolute;top:4px;right:4px;z-index:50;width:2.35em;height:2.35em;border:0;border-radius:.5em;background:rgba(26,42,58,.96);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.45em;line-height:1;cursor:pointer;transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
-            .cmi2-close.focus,.cmi2-close.hover{background:linear-gradient(45deg,#43cea2,#185a9d);box-shadow:0 0 .4em rgba(67,206,162,.4);transform:scale(1.03)}
-            .cmi2-hero{position:relative;width:100%;height:290px;border-radius:.9em;overflow:hidden;background:rgba(26,42,58,.98);margin-bottom:18px;border:1px solid rgba(67,206,162,.08)}
-            .cmi2-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}
-            .cmi2-hero-bg:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,20,28,.05) 18%,rgba(10,20,28,.97) 100%)}
-            .cmi2-hero-content{position:absolute;left:20px;right:20px;bottom:18px;z-index:2;padding-right:3em}
-            .cmi2-title{font-size:29px;font-weight:850;line-height:1.05;color:#fff;margin-bottom:4px}
-            .cmi2-original{font-size:14px;color:rgba(255,255,255,.58);margin-bottom:10px}
-            .cmi2-chips{display:flex;flex-wrap:wrap;gap:7px}
-            .cmi2-chip{padding:7px 10px;border-radius:.5em;background:rgba(26,42,58,.82);border:1px solid rgba(67,206,162,.08);font-size:13px;font-weight:650;color:#fff}
-            .cmi2-rating{color:#43cea2}
-            .cmi2-section{margin-top:18px}
-            .cmi2-section-title{font-size:16px;font-weight:850;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.55);margin:0 4px 9px}
-            .cmi2-description{padding:14px 15px;background:rgba(26,42,58,.98);border:1px solid rgba(67,206,162,.07);border-radius:.8em;color:#ddd;font-size:15px;line-height:1.55;white-space:pre-wrap}
-            .cmi2-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-            .cmi2-info{padding:11px 13px;background:rgba(26,42,58,.98);border:1px solid rgba(67,206,162,.06);border-radius:.7em;min-width:0;transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
-            .cmi2-label{font-size:11px;font-weight:800;text-transform:uppercase;color:rgba(255,255,255,.38);margin-bottom:4px}
-            .cmi2-value{font-size:14px;line-height:1.35;color:#eee;word-break:break-word}
-            .cmi2-people{display:flex;gap:10px;overflow-x:auto;padding:3px 2px 9px;scrollbar-width:none}
-            .cmi2-people::-webkit-scrollbar{display:none}
-            .cmi2-person{flex:0 0 104px;width:104px;min-height:164px;padding:0;border-radius:.7em;overflow:hidden;background:rgba(26,42,58,.98);border:1px solid rgba(67,206,162,.06);transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
-            .cmi2-person img{display:block;width:100%;height:122px;object-fit:cover;background:#151a20}
-            .cmi2-person-name{font-size:12px;font-weight:750;line-height:1.2;padding:7px 7px 2px;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-            .cmi2-person-role{font-size:10px;line-height:1.2;padding:2px 7px 8px;color:rgba(255,255,255,.48);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-            .cmi2-person.focus,.cmi2-person.hover,.cmi2-media-card.focus,.cmi2-media-card.hover,.cmi2-shot.focus,.cmi2-shot.hover{background:linear-gradient(45deg,#43cea2,#185a9d);box-shadow:0 0 .4em rgba(67,206,162,.35);transform:scale(1.03)}
-            .cmi2-gallery{display:flex;gap:9px;overflow-x:auto;padding:3px 2px 10px;scrollbar-width:none}
-            .cmi2-gallery::-webkit-scrollbar{display:none}
-            .cmi2-shot{flex:0 0 180px;width:180px;height:105px;border-radius:.7em;overflow:hidden;background:rgba(26,42,58,.98);position:relative;transition:transform .2s ease,box-shadow .2s ease}
-            .cmi2-shot img{display:block;width:100%;height:100%;object-fit:cover}
-            .cmi2-shot:after{content:"⌕";position:absolute;right:7px;bottom:6px;width:25px;height:25px;border-radius:50%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px}
-            .cmi2-media{display:flex;gap:10px;overflow-x:auto;padding:3px 2px 10px;scrollbar-width:none}
-            .cmi2-media::-webkit-scrollbar{display:none}
-            .cmi2-media-card{flex:0 0 118px;width:118px;border-radius:.7em;overflow:hidden;background:rgba(26,42,58,.98);border:1px solid rgba(67,206,162,.06);padding-bottom:7px;transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
-            .cmi2-media-card img{display:block;width:100%;height:170px;object-fit:cover;background:#151a20}
-            .cmi2-media-title{font-size:12px;font-weight:750;line-height:1.2;color:#fff;padding:7px 7px 1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-            .cmi2-media-meta{font-size:10px;color:rgba(255,255,255,.48);padding:2px 7px 0}
-            .cmi2-lightbox{position:fixed;inset:0;z-index:999999;background:rgba(8,14,19,.97);display:flex;align-items:center;justify-content:center;padding:22px;outline:none}
-            .cmi2-lightbox img{max-width:90vw;max-height:86vh;object-fit:contain;border-radius:.7em;box-shadow:0 0 2em rgba(0,0,0,.55)}
-            .cmi2-lightbox-close,.cmi2-lightbox-nav{position:absolute;z-index:3;border:0;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(26,42,58,.86);border-radius:.5em;transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
-            .cmi2-lightbox-close{right:18px;top:14px;width:2.5em;height:2.5em;font-size:28px}
-            .cmi2-lightbox-nav{top:50%;transform:translateY(-50%);width:3em;height:4.2em;font-size:30px}
-            .cmi2-lightbox-prev{left:16px}.cmi2-lightbox-next{right:16px}
-            .cmi2-lightbox-close.focus,.cmi2-lightbox-close.hover,.cmi2-lightbox-nav.focus,.cmi2-lightbox-nav.hover{background:linear-gradient(45deg,#43cea2,#185a9d);box-shadow:0 0 .6em rgba(67,206,162,.4);transform:translateY(-50%) scale(1.04)}
-            .cmi2-lightbox-close.focus,.cmi2-lightbox-close.hover{transform:scale(1.04)}
-            .cmi2-lightbox-count{position:absolute;left:50%;bottom:15px;transform:translateX(-50%);color:rgba(255,255,255,.72);font-size:13px;background:rgba(26,42,58,.86);padding:.35em .75em;border-radius:.5em}
-            .cmi2-empty{padding:20px;text-align:center;color:rgba(255,255,255,.55)}
-            .button--cinemax-movie-info-v3 svg{width:1.35em;height:1.35em;margin-right:.35em;fill:currentColor}
-            .button--cinemax-movie-info-v3{border-radius:.5em!important}
-            @media(max-width:600px){
-                .cmi2{padding:2px 8px 28px}
-                .cmi2-hero{height:235px;border-radius:.8em}
-                .cmi2-hero-content{left:14px;right:14px;bottom:14px}
-                .cmi2-title{font-size:25px}
-                .cmi2-grid{grid-template-columns:1fr}
-                .cmi2-person{flex-basis:92px;width:92px}
-                .cmi2-person img{height:110px}
-                .cmi2-shot{flex-basis:170px;width:170px;height:100px}
-                .cmi2-lightbox{padding:12px}
-                .cmi2-lightbox img{max-width:92vw;max-height:80vh}
-                .cmi2-lightbox-nav{width:2.7em;height:3.5em;font-size:25px}
-                .cmi2-lightbox-prev{left:7px}.cmi2-lightbox-next{right:7px}
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    function info(label, value) {
-        if (value === undefined || value === null || value === '' || value === '—') return '';
-        return '<div class="cmi2-info"><div class="cmi2-label">' + esc(label) + '</div><div class="cmi2-value">' + esc(value) + '</div></div>';
-    }
-
-    function peopleSection(titleText, people) {
-        people = uniquePeople(people).slice(0, 30);
-        if (!people.length) return '';
-        let html = '<div class="cmi2-section"><div class="cmi2-section-title">' + esc(titleText) + '</div><div class="cmi2-people">';
-        people.forEach(function (p) {
-            const img = image(p.profile_path, 'w185');
-            html += '<div class="cmi2-person selector" data-person-id="' + esc(p.id || '') + '" data-person-name="' + esc(p.name || '') + '" tabindex="0">' +
-                (img ? '<img loading="lazy" src="' + esc(img) + '" onerror="this.style.display=\'none\'">' : '<div style="height:122px"></div>') +
-                '<div class="cmi2-person-name">' + esc(p.name || '') + '</div>' +
-                '<div class="cmi2-person-role">' + esc(p.character || p.job || '') + '</div>' +
-                '</div>';
-        });
-        return html + '</div></div>';
-    }
-
-    function gallerySection(details) {
-        const shots = details && details.images && Array.isArray(details.images.backdrops) ? details.images.backdrops : [];
-        if (!shots.length) return '';
-        let html = '<div class="cmi2-section"><div class="cmi2-section-title">Кадры из фильма</div><div class="cmi2-gallery">';
-        shots.slice(0, 30).forEach(function (shot, index) {
-            if (!shot || !shot.file_path) return;
-            html += '<div class="cmi2-shot selector" data-shot-index="' + index + '" data-shot-path="' + esc(shot.file_path) + '" tabindex="0">' +
-                '<img loading="lazy" src="' + esc(image(shot.file_path, 'w780')) + '"></div>';
-        });
-        return html + '</div></div>';
-    }
-
-    function recommendationsSection(details) {
-        let list = details && details.recommendations && details.recommendations.results;
-        if (!Array.isArray(list) || !list.length) list = details && details.similar && details.similar.results;
-        if (!Array.isArray(list) || !list.length) return '';
-        list = list.filter(function (m) { return m && m.id && (m.poster_path || m.backdrop_path); }).slice(0, 20);
-        if (!list.length) return '';
-        let html = '<div class="cmi2-section"><div class="cmi2-section-title">Похожие фильмы и сериалы</div><div class="cmi2-media">';
-        list.forEach(function (m) {
-            const name = m.title || m.name || '';
-            const date = m.release_date || m.first_air_date || '';
-            const type = m.media_type === 'tv' || m.name ? 'Сериал' : 'Фильм';
-            const poster = m.poster_path || m.backdrop_path;
-            html += '<div class="cmi2-media-card selector" data-media-id="' + esc(m.id) + '" data-media-type="' + esc(m.media_type || (m.name ? 'tv' : 'movie')) + '" tabindex="0">' +
-                '<img loading="lazy" src="' + esc(image(poster, 'w342')) + '" onerror="this.style.display=\'none\'">' +
-                '<div class="cmi2-media-title">' + esc(name) + '</div>' +
-                '<div class="cmi2-media-meta">' + (m.vote_average ? '★ ' + Number(m.vote_average).toFixed(1) + '  •  ' : '') + esc(String(date).slice(0,4)) + '  •  ' + type + '</div>' +
-                '</div>';
-        });
-        return html + '</div></div>';
-    }
-
-    function openPerson(personId, personName) {
-        if (!personId || !Lampa.Activity || !Lampa.Activity.push) return;
+      // TMDB English translation — только дополнительная попытка.
+      if (movie?.id && Lampa.Api?.sources?.tmdb?.get) {
         try {
-            Lampa.Modal.close();
-            $('.modal--large').remove();
-        } catch (e) {}
-        try {
-            Lampa.Activity.push({
-                url: '',
-                title: personName || 'Актёр',
-                component: 'actor',
-                id: personId,
-                person_id: personId,
-                source: 'tmdb'
+          const tmdbType = type === 'movie' ? 'movie' : 'tv';
+          const cacheKey = tmdbType + '_' + movie.id;
+          window.__rezkaV2TranslationsCache = window.__rezkaV2TranslationsCache || {};
+
+          let translations = window.__rezkaV2TranslationsCache[cacheKey];
+
+          if (!translations) {
+            const data = await new Promise(function (resolve, reject) {
+              Lampa.Api.sources.tmdb.get(
+                tmdbType + '/' + movie.id + '?append_to_response=translations',
+                {},
+                resolve,
+                reject
+              );
             });
-        } catch (e) {
-            log('person navigation error', e);
-            try { Lampa.Noty.show('Не удалось открыть страницу персоны'); } catch (x) {}
+
+            translations = data?.translations?.translations || [];
+            window.__rezkaV2TranslationsCache[cacheKey] = translations;
+
+            // Keep TMDB details available for the visual movie card.
+            if (data && movie && typeof movie === 'object') {
+              Object.assign(movie, data);
+              window.__rezkaCommentCurrentMovie = movie;
+            }
+          }
+
+          const en = translations.find(function (item) {
+            return item.iso_3166_1 === 'US' || item.iso_639_1 === 'en';
+          });
+
+          addName(en?.data?.title);
+          addName(en?.data?.name);
+        } catch (tmdbError) {
+          console.warn('[RezkaComment V2] TMDB translation unavailable:', tmdbError);
         }
+      }
+
+      console.log('[RezkaComment V2] title candidates:', names);
+
+      if (!names.length) {
+        Lampa.Noty.show('Название фильма не найдено');
+        Lampa.Loading.stop();
+        return;
+      }
+
+      // Пробуем варианты по очереди. Внутри searchRezka используется
+      // оригинальная логика rezkacomment.js: первая карточка страницы.
+      for (let i = 0; i < names.length; i++) {
+        const found = await searchRezka(names[i], year, true);
+        if (found) return;
+      }
+
+      Lampa.Noty.show('Фильм/сериал не найден на Rezka');
+      Lampa.Loading.stop();
+    } catch (e) {
+      console.error('[RezkaComment V2] resolve title error:', e);
+      Lampa.Noty.show('Ошибка подготовки поиска Rezka');
+      Lampa.Loading.stop();
     }
+  }
 
-    function openMedia(id, mediaType) {
-        if (!id || !Lampa.Activity || !Lampa.Activity.push) return;
-        try {
-            Lampa.Modal.close();
-            $('.modal--large').remove();
-        } catch (e) {}
-        try {
-            Lampa.Activity.push({
-                url: '',
-                title: '',
-                component: 'full',
-                id: id,
-                method: mediaType === 'tv' ? 'tv' : 'movie',
-                source: 'tmdb'
-            });
-        } catch (e) { log('media navigation error', e); }
-    }
+  // Функция для очистки заголовка от лишних символов
+  function cleanTitle(str) {
+    return str.replace(/[\s.,:;’'`!?]+/g, " ").trim();
+  }
 
-    function openShotGallery(paths, startIndex) {
-        paths = (paths || []).filter(Boolean);
-        if (!paths.length) return;
+  // Функция для нормализации заголовка
+  function normalizeTitle(str) {
+    return cleanTitle(
+      str
+        .toLowerCase()
+        .replace(/[\-\u2010-\u2015\u2E3A\u2E3B\uFE58\uFE63\uFF0D]+/g, "-")
+        .replace(/ё/g, "е"),
+    );
+  }
 
-        let index = Math.max(0, Math.min(Number(startIndex) || 0, paths.length - 1));
-        let closed = false;
-        let touchStartX = 0;
-        let touchStartY = 0;
+  // Создаёт один комментарий
+  function buildCommentNode(item) {
+    const q = (s) => item.querySelector(s);
 
-        const root = $('<div class="cmi2-lightbox" tabindex="0" role="dialog" aria-label="Кадры из фильма">' +
-            '<button type="button" class="cmi2-lightbox-close selector" aria-label="Закрыть">×</button>' +
-            '<button type="button" class="cmi2-lightbox-nav cmi2-lightbox-prev selector" aria-label="Предыдущий кадр">‹</button>' +
-            '<img draggable="false" alt="Кадр из фильма">' +
-            '<button type="button" class="cmi2-lightbox-nav cmi2-lightbox-next selector" aria-label="Следующий кадр">›</button>' +
-            '<div class="cmi2-lightbox-count"></div>' +
-            '</div>');
+    const avatar = q(".ava img")?.dataset.src || q(".ava img")?.src || "";
+    const user = q(".name, .b-comment__user")?.innerText || "Без имени";
+    const date = q(".date, .b-comment__time")?.innerText || "";
+    const text = q(".message .text, .text")?.innerHTML || "";
 
-        const img = root.find('img');
-        const count = root.find('.cmi2-lightbox-count');
-        const closeBtn = root.find('.cmi2-lightbox-close');
-        const prevBtn = root.find('.cmi2-lightbox-prev');
-        const nextBtn = root.find('.cmi2-lightbox-next');
+    const wrapper = document.createElement("div");
+    wrapper.className = "message";
 
-        function draw() {
-            img.attr('src', image(paths[index], 'original'));
-            count.text((index + 1) + ' / ' + paths.length);
-        }
+    wrapper.innerHTML = `
+            <div class="comment-wrap">
+                <div class="avatar-column">
+                    <img src="${avatar}" class="avatar-img" alt="${user}">
+                </div>
 
-        function close() {
-            if (closed) return;
-            closed = true;
-            document.removeEventListener('keydown', keyHandler, true);
-            root.off('touchstart touchend');
-            root.remove();
-            if (Lampa.Controller) {
-                try { Lampa.Controller.toggle('content'); } catch (e) {}
-            }
-        }
+                <div class="comment-card">
+                    <div class="comment-header">
+                        <span class="name">${user}</span>
+                        <span class="date">${date}</span>
+                    </div>
 
-        function next() {
-            index = (index + 1) % paths.length;
-            draw();
-        }
-
-        function prev() {
-            index = (index - 1 + paths.length) % paths.length;
-            draw();
-        }
-
-        function keyHandler(e) {
-            if (closed) return;
-            const key = e.key || e.code;
-            if (key === 'ArrowRight' || key === 'Right') {
-                e.preventDefault(); e.stopPropagation(); next(); return;
-            }
-            if (key === 'ArrowLeft' || key === 'Left') {
-                e.preventDefault(); e.stopPropagation(); prev(); return;
-            }
-            if (key === 'Escape' || key === 'Esc' || key === 'Backspace') {
-                e.preventDefault(); e.stopPropagation(); close();
-            }
-        }
-
-        closeBtn.on('hover:enter click', function (e) {
-            if (e && e.stopPropagation) e.stopPropagation();
-            close();
-        });
-        prevBtn.on('hover:enter click', function (e) {
-            if (e && e.stopPropagation) e.stopPropagation();
-            prev();
-        });
-        nextBtn.on('hover:enter click', function (e) {
-            if (e && e.stopPropagation) e.stopPropagation();
-            next();
-        });
-
-        root.on('click', function (e) {
-            if (e.target === root[0]) close();
-        });
-
-        root.on('touchstart', function (e) {
-            const t = e.originalEvent && e.originalEvent.touches ? e.originalEvent.touches[0] : null;
-            if (!t) return;
-            touchStartX = t.clientX;
-            touchStartY = t.clientY;
-        });
-        root.on('touchend', function (e) {
-            const t = e.originalEvent && e.originalEvent.changedTouches ? e.originalEvent.changedTouches[0] : null;
-            if (!t) return;
-            const dx = t.clientX - touchStartX;
-            const dy = t.clientY - touchStartY;
-            if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.2) {
-                if (dx < 0) next(); else prev();
-            }
-        });
-
-        document.addEventListener('keydown', keyHandler, true);
-        $('body').append(root);
-        draw();
-        setTimeout(function () {
-            try { root[0].focus(); } catch (e) {}
-        }, 0);
-    }
-
-    function render(movie, details) {
-        const tv = isTV(movie) || !!details.number_of_seasons;
-        const backdrop = details.backdrop_path || movie.backdrop_path || details.poster_path || movie.poster_path;
-        const poster = details.poster_path || movie.poster_path;
-        const rating = Number(details.vote_average || movie.vote_average || 0);
-        const voteCount = Number(details.vote_count || movie.vote_count || 0);
-        const genres = names(details.genres);
-        const countries = names((details.production_countries || []).map(function (x) { return x.name; }));
-        const studios = names((details.production_companies || []).map(function (x) { return x.name; }));
-        const languages = names((details.spoken_languages || []).map(function (x) { return x.english_name || x.name; }));
-        const cast = details.credits && details.credits.cast || [];
-        const crew = details.credits && details.credits.crew || [];
-        const directors = firstCrew(crew, ['Director', 'Series Director']);
-        const writers = firstCrew(crew, ['Writer', 'Screenplay', 'Story', 'Teleplay', 'Creator']);
-        const cinematography = firstCrew(crew, ['Director of Photography', 'Cinematography']);
-        const editing = firstCrew(crew, ['Editor', 'Supervising Editor']);
-        const music = firstCrew(crew, ['Original Music Composer', 'Music', 'Music Supervisor']);
-        const producers = firstCrew(crew, ['Producer', 'Executive Producer', 'Co-Producer']);
-
-        let html = '<div class="cmi2">';
-        html += '<button type="button" class="cmi2-close selector" aria-label="Закрыть">×</button>';
-        html += '<div class="cmi2-hero">';
-        if (backdrop) html += '<div class="cmi2-hero-bg" style="background-image:url(\'' + esc(image(backdrop, 'w1280')) + '\')"></div>';
-        html += '<div class="cmi2-hero-content">';
-        html += '<div class="cmi2-title">' + esc(details.title || details.name || title(movie)) + '</div>';
-        if (originalTitle(details) && originalTitle(details) !== (details.title || details.name)) html += '<div class="cmi2-original">' + esc(originalTitle(details)) + '</div>';
-        html += '<div class="cmi2-chips">';
-        if (rating) html += '<div class="cmi2-chip cmi2-rating">★ ' + rating.toFixed(1) + '</div>';
-        if (voteCount) html += '<div class="cmi2-chip">' + esc(voteCount.toLocaleString('ru-RU')) + ' оценок</div>';
-        if (year(details) || year(movie)) html += '<div class="cmi2-chip">' + esc(year(details) || year(movie)) + '</div>';
-        if (tv && details.number_of_seasons) html += '<div class="cmi2-chip">' + details.number_of_seasons + ' сез.</div>';
-        if (!tv && details.runtime) html += '<div class="cmi2-chip">' + esc(formatRuntime(details.runtime)) + '</div>';
-        html += '</div></div></div>';
-
-        if (details.tagline) html += '<div class="cmi2-description" style="font-style:italic;color:rgba(255,255,255,.62);margin-bottom:10px">«' + esc(details.tagline) + '»</div>';
-        if (details.overview) html += '<div class="cmi2-section"><div class="cmi2-section-title">Описание</div><div class="cmi2-description">' + esc(details.overview) + '</div></div>';
-
-        html += '<div class="cmi2-section"><div class="cmi2-section-title">Информация</div><div class="cmi2-grid">';
-        html += info('Жанры', genres);
-        html += info('Страны', countries);
-        html += info('Дата выхода', details.release_date || details.first_air_date || '—');
-        html += info('Статус', details.status || '—');
-        if (!tv) {
-            html += info('Бюджет', formatMoney(details.budget));
-            html += info('Сборы', formatMoney(details.revenue));
-            html += info('Длительность', formatRuntime(details.runtime));
-        } else {
-            html += info('Сезонов', details.number_of_seasons || '—');
-            html += info('Эпизодов', details.number_of_episodes || '—');
-            html += info('Длительность серии', Array.isArray(details.episode_run_time) && details.episode_run_time.length ? formatRuntime(details.episode_run_time[0]) : '—');
-            html += info('Последний эфир', details.last_air_date || '—');
-        }
-        html += info('Языки', languages);
-        html += info('Студии', studios);
-        html += info('TMDB ID', details.id || movie.id || '—');
-        html += info('IMDb ID', details.external_ids && details.external_ids.imdb_id || '—');
-        html += '</div></div>';
-
-        html += gallerySection(details);
-        html += recommendationsSection(details);
-        html += peopleSection('Актёры', cast);
-        html += peopleSection('Режиссёры', directors);
-        html += peopleSection('Сценаристы', writers);
-        html += peopleSection('Операторская работа', cinematography);
-        html += peopleSection('Монтаж', editing);
-        html += peopleSection('Музыка', music);
-        html += peopleSection('Продюсеры', producers);
-
-        html += '</div>';
-        return html;
-    }
-
-    function openInfo(movie) {
-        addStyles();
-        movie = movie || {};
-        const loading = $('<div class="cmi2"><div class="cmi2-empty">Загружаем информацию о фильме…</div></div>');
-        Lampa.Modal.open({
-            title: 'Подробнее',
-            html: loading,
-            size: 'large',
-            style: 'margin-top:10px;',
-            mask: true,
-            onBack: function () {
-                Lampa.Modal.close();
-                $('.modal--large').remove();
-                if (Lampa.Controller) Lampa.Controller.toggle('content');
-            }
-        });
-
-        const type = isTV(movie) ? 'tv' : 'movie';
-        const id = movie.id;
-        if (!id) {
-            loading.html('<div class="cmi2-empty">Не найден TMDB ID фильма</div>');
-            return;
-        }
-
-        tmdbGet(type + '/' + id + '?append_to_response=credits,external_ids,images,recommendations,similar,release_dates,content_ratings')
-            .then(function (details) {
-                const html = $(render(movie, details || {}));
-                loading.replaceWith(html);
-                html.find('.cmi2-close').on('hover:enter click', function (e) {
-                    if (e && e.stopPropagation) e.stopPropagation();
-                    Lampa.Modal.close();
-                    $('.modal--large').remove();
-                    if (Lampa.Controller) Lampa.Controller.toggle('content');
-                });
-                html.find('.selector').on('hover:enter', function () {
-                    const el = $(this);
-                    el.addClass('focus');
-                    if (el.hasClass('cmi2-close')) return;
-                    if (el.hasClass('cmi2-person')) {
-                        openPerson(el.attr('data-person-id'), el.attr('data-person-name'));
-                    } else if (el.hasClass('cmi2-media-card')) {
-                        openMedia(el.attr('data-media-id'), el.attr('data-media-type'));
-                    } else if (el.hasClass('cmi2-shot')) {
-                        const paths = [];
-                        html.find('.cmi2-shot').each(function () { paths.push($(this).attr('data-shot-path')); });
-                        const idx = Number(el.attr('data-shot-index')) || 0;
-                        openShotGallery(paths, idx);
-                    }
-                });
-                html.find('.selector').on('hover:leave', function () { $(this).removeClass('focus'); });
-                html.find('.selector').on('click', function (e) {
-                    if (e && e.stopPropagation) e.stopPropagation();
-                    const el = $(this);
-                    if (el.hasClass('cmi2-close')) return;
-                    if (el.hasClass('cmi2-person')) openPerson(el.attr('data-person-id'), el.attr('data-person-name'));
-                    else if (el.hasClass('cmi2-media-card')) openMedia(el.attr('data-media-id'), el.attr('data-media-type'));
-                    else if (el.hasClass('cmi2-shot')) {
-                        const paths = [];
-                        html.find('.cmi2-shot').each(function () { paths.push($(this).attr('data-shot-path')); });
-                        openShotGallery(paths, Number(el.attr('data-shot-index')) || 0);
-                    }
-                });
-            })
-            .catch(function (error) {
-                log('TMDB error', error);
-                loading.html('<div class="cmi2-empty">Не удалось загрузить информацию<br><small>' + esc(error && error.message || '') + '</small></div>');
-            });
-    }
-
-    function addButton(movie) {
-        $('.' + BUTTON_CLASS + ', .button--cinemax-movie-info-v2').remove();
-        const button = $(`
-            <div class="full-start__button selector ${BUTTON_CLASS}">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2h11A2.5 2.5 0 0 1 20 4.5v15a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 19.5v-15Zm2.5-.5a.5.5 0 0 0-.5.5v15a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5v-15a.5.5 0 0 0-.5-.5h-11ZM9 7h6v2H9V7Zm0 4h6v2H9v-2Zm0 4h4v2H9v-2Z"/>
-                </svg>
-                <span>Подробнее</span>
+                    <div class="comment-text">
+                        <div class="text">${text}</div>
+                    </div>
+                </div>
             </div>
-        `);
-        const target = $('.full-start-new__buttons');
-        if (!target.length) return;
-        target.append(button);
-        button.on('hover:enter', function () { openInfo(movie); });
-        button.on('click', function () { openInfo(movie); });
+        `;
+
+    return wrapper;
+  }
+
+  // Рекурсивно строит дерево
+  function buildTree(root) {
+    const fragment = document.createDocumentFragment();
+
+    for (let li of root.children) {
+      const indent = parseInt(li.dataset.indent || 0, 10);
+
+      const wrapper = document.createElement("li");
+      wrapper.className = "comments-tree-item";
+      wrapper.style.marginLeft = indent > 0 ? "20px" : "0";
+      wrapper.appendChild(buildCommentNode(li));
+
+      const childrenList = li.querySelector("ol.comments-tree-list");
+      if (childrenList) wrapper.appendChild(buildTree(childrenList));
+
+      fragment.appendChild(wrapper);
     }
 
-    function start() {
-        $('#cinemax-movie-info-v2-style').remove();
-        $('.button--cinemax-movie-info-v2').remove();
-        addStyles();
-        Lampa.Listener.follow('full', function (event) {
-            if (event.type !== 'complite') return;
-            const movie = event.data && event.data.movie;
-            if (!movie) return;
-            addButton(movie);
+    return fragment;
+  }
+
+  // === Основная обработка комментариев Rezka с storage на сутки ===
+  async function comment_rezka(id, pageUrl) {
+    try {
+      let { host, cookie, proxy } = getSettings();
+      let t = Date.now();
+      let path = host + "/ajax/get_comments/?t=" + t + "&news_id=" + (id ? id : "1") + "&cstart=1&type=0&comment_id=0&skin=hdrezka";
+
+      let commentsUrl = proxy;
+      if (cookie) {
+        commentsUrl += "param/Cookie=" + encodeURIComponent(cookie) + "/";
+      }
+      if (pageUrl) {
+        commentsUrl += "param/Referer=" + encodeURIComponent(pageUrl) + "/";
+      }
+      commentsUrl += path;
+
+      console.log('[RezkaComment V2] COMMENTS:', id);
+
+      let fc = await fetch(commentsUrl, {
+        method: "GET",
+        headers: { "Content-Type": "text/plain" },
+      }).then((r) => {
+        if (!r.ok) {
+          throw new Error('HTTP status ' + r.status);
+        }
+        return r.text();
+      });
+
+      // Check if the response is actually HTML challenge instead of JSON
+      if (fc.indexOf("Проверяем, что вы не бот") !== -1 || fc.indexOf("Anubis") !== -1) {
+        Lampa.Noty.show('Защита от ботов на Rezka. Настройте Cookie в настройках плагина.');
+        Lampa.Loading.stop();
+        return;
+      }
+
+      let json = JSON.parse(fc);
+      if (!json || !json.comments) {
+        throw new Error('Пустой ответ от сервера комментариев');
+      }
+
+      let dom = new DOMParser().parseFromString(json.comments, "text/html");
+      dom
+        .querySelectorAll(".actions, i, .share-link")
+        .forEach((elem) => elem.remove());
+
+      let rootList = dom.querySelector(".comments-tree-list");
+      if (!rootList) {
+        console.warn('[RezkaComment V2] comments-tree-list not found in parsed HTML for', id);
+        Lampa.Noty.show('Комментарии к фильму/сериалу отсутствуют');
+        Lampa.Loading.stop();
+        return;
+      }
+
+      let newTree = buildTree(rootList);
+      openModal(newTree, window.__rezkaCommentCurrentMovie || {});
+    } catch (e) {
+      console.error('[RezkaComment V2] comment_rezka error:', e);
+      Lampa.Noty.show('Ошибка получения комментариев: ' + e.message);
+      Lampa.Loading.stop();
+    }
+
+    // Rezka inserts inline onclick="ShowOrHide('...')" into spoiler links.
+    // A local function inside the plugin IIFE is not visible to inline handlers,
+    // so explicitly expose the handler on window.
+    if (typeof window.ShowOrHide !== "function") {
+      window.ShowOrHide = function (id) {
+        if (!id) return;
+
+        let target = document.getElementById(id);
+
+        if (!target) {
+          const modalTarget = document.querySelector(".rezka-comments-page #" + id);
+          target = modalTarget || null;
+        }
+
+        if (!target) return;
+
+        target.style.display = "inline";
+
+        const previous = target.previousElementSibling;
+        if (previous && previous.classList.contains("title_spoiler")) {
+          previous.remove();
+        }
+      };
+    }
+
+    function openModal(treeContent, movie) {
+      Lampa.Loading.stop();
+
+      movie = movie || {};
+
+      const title = movie.title || movie.name || namemovie || "Комментарии";
+      const originalTitle = movie.original_title || movie.original_name || "";
+      const yearMovie = (movie.release_date || movie.first_air_date || "").slice(0, 4);
+
+      let poster = movie.backdrop_path || movie.poster_path || movie.cover || movie.image || "";
+
+      if (poster && poster.indexOf("http") !== 0) {
+        poster = "https://image.tmdb.org/t/p/w780" + poster;
+      }
+
+      const rating = movie.vote_average ? Number(movie.vote_average).toFixed(1) : "";
+      const voteCount = movie.vote_count ? Number(movie.vote_count).toLocaleString("ru-RU") : "";
+
+      const nativeRatings = window.__rezkaCommentRatings || {};
+      const kpRating = nativeRatings.kp || "";
+      const imdbRating = nativeRatings.imdb || "";
+
+      // TMDB uses runtime for movies and episode_run_time for TV.
+      const runtime = movie.runtime
+        ? Math.round(Number(movie.runtime))
+        : (Array.isArray(movie.episode_run_time) && movie.episode_run_time[0]
+          ? Math.round(Number(movie.episode_run_time[0]))
+          : 0);
+
+      const budget = movie.budget ? Number(movie.budget) : 0;
+      const revenue = movie.revenue ? Number(movie.revenue) : 0;
+      const seasons = movie.number_of_seasons ? Number(movie.number_of_seasons) : 0;
+      const episodes = movie.number_of_episodes ? Number(movie.number_of_episodes) : 0;
+      const status = typeof movie.status === "string" ? movie.status : "";
+      const mediaType = (movie.first_air_date || movie.number_of_seasons) ? "Сериал" : "Фильм";
+
+      const genres = Array.isArray(movie.genres)
+        ? movie.genres.map(g => g && g.name).filter(Boolean).slice(0, 3)
+        : [];
+
+      const meta = [
+        yearMovie,
+        genres.length ? genres.join(" • ") : ""
+      ].filter(Boolean).join("  •  ");
+
+      const formatMoney = value => {
+        if (!value) return "";
+        if (value >= 1000000000) return (value / 1000000000).toFixed(1).replace(".0", "") + " млрд $";
+        if (value >= 1000000) return Math.round(value / 1000000) + " млн $";
+        if (value >= 1000) return Math.round(value / 1000) + " тыс. $";
+        return value.toLocaleString("ru-RU") + " $";
+      };
+
+      const ratingInfo = [
+        rating ? "★ " + rating : "",
+        voteCount ? voteCount + " оценок" : ""
+      ].filter(Boolean).join("  ");
+
+      const detailChips = [
+        rating ? `<span class="rezka-info-chip rezka-rating-chip"><b>★</b><strong>${rating}</strong><small>TMDB${voteCount ? " • " + voteCount : ""}</small></span>` : "",
+        kpRating ? `<span class="rezka-info-chip rezka-rating-chip rezka-rating-kp"><b>★</b><strong>${kpRating}</strong><small>КиноПоиск</small></span>` : "",
+        imdbRating ? `<span class="rezka-info-chip rezka-rating-chip rezka-rating-imdb"><b>★</b><strong>${imdbRating}</strong><small>IMDb</small></span>` : ""
+      ].filter(Boolean).join("");
+
+      const financeInfo = [
+        budget ? "Бюджет " + formatMoney(budget) : "",
+        revenue ? "Сборы " + formatMoney(revenue) : ""
+      ].filter(Boolean).join("  •  ");
+
+      const statusInfo = "";
+      let modal = $(
+        `<div class="rezka-comments-page" style="--rezka-backdrop:${poster ? `url("${poster.replace(/"/g, "%22")}")` : "none"};">
+          <div class="rezka-film-header">
+            ${poster ? `<img class="rezka-film-backdrop" src="${poster}" alt="">` : ""}
+            <div class="rezka-film-overlay"></div>
+            <div class="rezka-film-info">
+              <div class="rezka-film-title">${title}</div>
+              ${meta ? `<div class="rezka-film-meta">${meta}</div>` : ""}
+              <div class="rezka-film-stats">${detailChips}</div>
+              ${financeInfo || statusInfo ? `<div class="rezka-film-finance">${[financeInfo, statusInfo].filter(Boolean).join("  •  ")}</div>` : ""}
+            </div>
+          </div>
+
+          <div class="broadcast__text rezka-comments-content" style="text-align:left;">
+            <div class="comment"></div>
+          </div>
+        </div>`
+      );
+
+      modal.find(".comment").append(treeContent);
+
+      // Remove inline ShowOrHide() calls from Rezka HTML and handle spoilers locally.
+      // This avoids "ShowOrHide is not defined" inside Lampa.
+      modal.find('[onclick*="ShowOrHide"]').each(function () {
+        const onclick = this.getAttribute("onclick") || "";
+        const match = onclick.match(/ShowOrHide\s*\(\s*['"]([^'"]+)['"]\s*\)/i);
+        if (match) {
+          this.setAttribute("data-rezka-spoiler-target", match[1]);
+        }
+        this.removeAttribute("onclick");
+      });
+
+      modal.off("click.rezkaSpoiler").on("click.rezkaSpoiler", '[data-rezka-spoiler-target]', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const id = this.getAttribute("data-rezka-spoiler-target");
+        if (!id) return;
+
+        const target = document.getElementById(id);
+        if (!target) {
+          const localTarget = modal.find("#" + id)[0];
+          if (localTarget) {
+            localTarget.style.display = "inline";
+            const previous = localTarget.previousElementSibling;
+            if (previous && previous.classList.contains("title_spoiler")) {
+              previous.remove();
+            }
+          }
+          return;
+        }
+
+        target.style.display = "inline";
+
+        const previous = target.previousElementSibling;
+        if (previous && previous.classList.contains("title_spoiler")) {
+          previous.remove();
+        }
+      });
+
+      if (!document.getElementById("rezka-comment-style-v4")) {
+        const styleEl = document.createElement("style");
+        styleEl.id = "rezka-comment-style-v4";
+        styleEl.textContent = `
+
+          .rezka-comments-page{
+            position:relative;
+            margin:-10px -10px 0;
+            background:#151718;
+            color:#fff;
+            overflow:hidden;
+            box-sizing:border-box;
+          }
+
+          .rezka-comments-page::before{
+            content:"";
+            position:absolute;
+            inset:0;
+            z-index:0;
+            pointer-events:none;
+            background-image:
+              linear-gradient(
+                to bottom,
+                rgba(21,23,24,0) 0%,
+                rgba(21,23,24,.28) 28%,
+                rgba(21,23,24,.82) 58%,
+                #151718 82%
+              ),
+              var(--rezka-backdrop);
+            background-size:cover;
+            background-position:center top;
+            filter:blur(22px) saturate(1.25);
+            transform:scale(1.08);
+            opacity:.55;
+          }
+
+          .rezka-comments-page::after{
+            content:"";
+            position:absolute;
+            inset:0;
+            z-index:0;
+            pointer-events:none;
+            background:
+              radial-gradient(ellipse at 50% 8%, rgba(255,255,255,.06), transparent 52%),
+              linear-gradient(to bottom, rgba(0,0,0,.08), rgba(0,0,0,.24));
+          }
+
+          .rezka-comments-page > *{
+            position:relative;
+            z-index:1;
+          }
+
+
+          .rezka-film-header{
+            position:relative;
+            height:250px;
+            overflow:hidden;
+            background:#202223;
+          }
+
+          .rezka-film-backdrop{
+            position:absolute!important;
+            inset:0!important;
+            width:100%!important;
+            max-width:none!important;
+            height:100%!important;
+            max-height:none!important;
+            object-fit:cover!important;
+            object-position:center!important;
+            margin:0!important;
+            border:0!important;
+          }
+
+          .rezka-film-overlay{
+            position:absolute;
+            inset:0;
+            background:
+              linear-gradient(to bottom, rgba(10,12,13,.05) 0%, rgba(10,12,13,.25) 38%, #151718 100%),
+              linear-gradient(to right, rgba(0,0,0,.30), transparent 70%);
+            pointer-events:none;
+          }
+
+          .rezka-film-info{
+            position:absolute;
+            left:20px;
+            right:20px;
+            bottom:18px;
+            z-index:2;
+          }
+
+          .rezka-film-title{
+            font-size:29px;
+            line-height:1.12;
+            font-weight:800;
+            letter-spacing:-.2px;
+            text-shadow:0 2px 10px rgba(0,0,0,.75);
+          }
+
+          .rezka-film-meta{
+            margin-top:8px;
+            font-size:16px;
+            line-height:1.3;
+            font-weight:500;
+            color:rgba(255,255,255,.86);
+            text-shadow:0 1px 6px rgba(0,0,0,.75);
+          }
+          .rezka-film-stats{
+            display:flex;
+            flex-wrap:wrap;
+            gap:8px;
+            margin-top:12px;
+            align-items:center;
+          }
+          .rezka-info-chip{
+            display:inline-flex;
+            align-items:center;
+            gap:7px;
+            min-height:44px;
+            padding:7px 12px;
+            box-sizing:border-box;
+            border:1px solid rgba(255,255,255,.20);
+            border-radius:14px;
+            background:rgba(8,10,11,.42);
+            color:rgba(255,255,255,.96);
+            box-shadow:0 4px 16px rgba(0,0,0,.20);
+            backdrop-filter:blur(8px);
+            -webkit-backdrop-filter:blur(8px);
+          }
+
+          .rezka-info-chip b{
+            font-size:18px;
+            line-height:1;
+            font-weight:700;
+          }
+
+          .rezka-info-chip strong{
+            font-size:17px;
+            line-height:1.1;
+            font-weight:750;
+          }
+
+          .rezka-info-chip small{
+            font-size:11px;
+            line-height:1.1;
+            color:rgba(255,255,255,.58);
+            font-weight:500;
+          }
+
+          .rezka-rating-chip{
+            min-width:112px;
+          }
+
+          .rezka-rating-chip b{
+            color:#fff;
+          }
+
+          .rezka-rating-kp b{
+            color:#ffb000;
+          }
+
+          .rezka-rating-imdb b{
+            color:#f5c518;
+          }
+
+          .rezka-info-chip b{
+            font-size:18px;
+            font-weight:800;
+          }
+
+          .rezka-info-chip small{
+            margin-left:2px;
+            color:rgba(255,255,255,.70);
+            font-size:12px;
+            font-weight:500;
+          }
+
+          .rezka-rating-chip{
+            background:rgba(0,0,0,.72);
+          }
+
+          .rezka-film-finance{
+            margin-top:9px;
+            font-size:14px;
+            line-height:1.3;
+            color:rgba(255,255,255,.78);
+            text-shadow:0 1px 5px rgba(0,0,0,.75);
+          }
+
+                    .rezka-comments-content{
+            margin:0;
+            padding:4px 12px 18px;
+            box-sizing:border-box;
+            background:transparent!important;
+          }
+
+          .rezka-comments-page .comments-tree-list{
+            list-style:none!important;
+            margin:0!important;
+            padding:0!important;
+          }
+
+          /* Жёстко ограничиваем аватары, чтобы стили Lampa/Rezka
+             не растягивали img на весь комментарий. */
+          .rezka-comments-page .avatar-column{
+            flex:0 0 48px!important;
+            width:48px!important;
+            min-width:48px!important;
+            max-width:48px!important;
+            margin-right:10px!important;
+          }
+
+          .rezka-comments-page .avatar-img{
+            display:block!important;
+            width:48px!important;
+            height:48px!important;
+            min-width:48px!important;
+            max-width:48px!important;
+            min-height:48px!important;
+            max-height:48px!important;
+            object-fit:cover!important;
+            object-position:center!important;
+            border-radius:6px!important;
+            margin:0!important;
+          }
+
+          .rezka-comments-page .comment-wrap{
+            display:flex!important;
+            align-items:flex-start!important;
+            width:100%!important;
+            margin-bottom:5px!important;
+          }
+
+          .rezka-comments-page .comment-card{
+            min-width:0!important;
+            flex:1 1 auto!important;
+            box-sizing:border-box!important;
+          }
+
+          .rezka-comments-page .comment-text img.avatar-img{
+            width:48px!important;
+            height:48px!important;
+          }
+
+          /* Нативный spoiler Rezka теперь раскрывается нашим обработчиком. */
+          .rezka-comments-page .title_spoiler{
+            display:inline-flex!important;
+            cursor:pointer!important;
+          }
+
+
+          /* === Новый компактный стиль комментариев === */
+          .rezka-comments-page .comments-tree-item{
+            list-style:none!important;
+            margin:0!important;
+            padding:0!important;
+          }
+
+          .rezka-comments-page .comments-tree-item::before,
+          .rezka-comments-page .comments-tree-item::after{
+            display:none!important;
+            content:none!important;
+          }
+
+          .rezka-comments-page .comment-wrap{
+            display:flex!important;
+            align-items:flex-start!important;
+            gap:12px!important;
+            width:100%!important;
+            margin:0 0 18px!important;
+            padding:0!important;
+          }
+
+          .rezka-comments-page .avatar-column{
+            flex:0 0 50px!important;
+            width:50px!important;
+            min-width:50px!important;
+            max-width:50px!important;
+            margin:0!important;
+            padding:0!important;
+          }
+
+          .rezka-comments-page .avatar-img{
+            display:block!important;
+            width:50px!important;
+            height:50px!important;
+            min-width:50px!important;
+            max-width:50px!important;
+            min-height:50px!important;
+            max-height:50px!important;
+            object-fit:cover!important;
+            object-position:center!important;
+            border-radius:11px!important;
+            margin:0!important;
+            background:#202223!important;
+            box-shadow:0 2px 8px rgba(0,0,0,.22)!important;
+          }
+
+          .rezka-comments-page .comment-card{
+            min-width:0!important;
+            flex:1 1 auto!important;
+            padding:0 8px 0 0!important;
+            margin:0!important;
+            background:transparent!important;
+            border:0!important;
+            box-shadow:none!important;
+            box-sizing:border-box!important;
+          }
+
+          .rezka-comments-page .comment-header{
+            display:flex!important;
+            align-items:baseline!important;
+            flex-wrap:wrap!important;
+            gap:0!important;
+            margin:0!important;
+            padding:0!important;
+            line-height:1.25!important;
+          }
+
+          .rezka-comments-page .comment-header .name{
+            font-size:15px!important;
+            line-height:1.25!important;
+            font-weight:700!important;
+            color:#fff!important;
+          }
+
+          .rezka-comments-page .comment-header .date{
+            margin-left:7px!important;
+            font-size:12px!important;
+            line-height:1.25!important;
+            font-weight:400!important;
+            color:rgba(255,255,255,.48)!important;
+          }
+
+          .rezka-comments-page .comment-text{
+            margin:5px 0 0!important;
+            padding:0!important;
+            background:transparent!important;
+            border:0!important;
+          }
+
+          .rezka-comments-page .comment-text .text{
+            margin:0!important;
+            padding:0!important;
+            font-size:15px!important;
+            line-height:1.52!important;
+            color:rgba(255,255,255,.88)!important;
+            word-break:break-word!important;
+          }
+
+          .rezka-comments-page .comment-text .text p{
+            margin:0 0 7px!important;
+          }
+
+          .rezka-comments-page .comment-text .text p:last-child{
+            margin-bottom:0!important;
+          }
+
+          .rezka-comments-page .comment-text .text ul,
+          .rezka-comments-page .comment-text .text ol{
+            margin:5px 0!important;
+            padding-left:18px!important;
+          }
+
+          .rezka-comments-page .comment-text .text li{
+            list-style:none!important;
+            margin:0 0 4px!important;
+            padding:0!important;
+          }
+
+          .rezka-comments-page .comment-text .text li::before,
+          .rezka-comments-page .comment-text .text li::marker{
+            content:none!important;
+            display:none!important;
+          }
+
+
+          .rezka-comments,
+          .rezka-comment-list{
+            padding-right:10px!important;
+            box-sizing:border-box!important;
+          }
+
+          @media (max-width:600px){
+            .rezka-modal-caption{
+              left:18px!important;
+              right:52px!important;
+              max-width:calc(100% - 70px)!important;
+              font-size:14px!important;
+            }
+
+
+            .rezka-comments{
+              padding-right:12px!important;
+            }
+
+            .rezka-film-stats{
+              display:flex!important;
+              flex-wrap:nowrap!important;
+              gap:5px!important;
+              margin-top:10px!important;
+              width:100%!important;
+              overflow:visible!important;
+            }
+
+            .rezka-info-chip{
+              min-width:0!important;
+              flex:1 1 0!important;
+              min-height:42px!important;
+              height:42px!important;
+              padding:5px 7px!important;
+              gap:5px!important;
+              border-radius:13px!important;
+              background:rgba(8,10,11,.36)!important;
+              overflow:hidden!important;
+              white-space:nowrap!important;
+            }
+
+            .rezka-info-chip b{
+              flex:0 0 auto!important;
+              font-size:17px!important;
+            }
+
+            .rezka-info-chip strong{
+              flex:0 0 auto!important;
+              font-size:15px!important;
+            }
+
+            .rezka-info-chip small{
+              min-width:0!important;
+              overflow:hidden!important;
+              text-overflow:ellipsis!important;
+              white-space:nowrap!important;
+              font-size:9px!important;
+            }
+
+
+            .rezka-comments-page .comment-wrap{
+              gap:11px!important;
+              margin-bottom:17px!important;
+            }
+
+            .rezka-comments-page .avatar-column{
+              flex-basis:48px!important;
+              width:48px!important;
+              min-width:48px!important;
+              max-width:48px!important;
+            }
+
+            .rezka-comments-page .avatar-img{
+              width:48px!important;
+              height:48px!important;
+              min-width:48px!important;
+              max-width:48px!important;
+              min-height:48px!important;
+              max-height:48px!important;
+              border-radius:10px!important;
+            }
+
+            .rezka-comments-page .comment-header .name{
+              font-size:15px!important;
+            }
+
+            .rezka-comments-page .comment-header .date{
+              font-size:11px!important;
+              margin-left:6px!important;
+            }
+
+            .rezka-comments-page .comment-card{
+              padding-right:10px!important;
+            }
+
+            .rezka-comments-page .comment-text .text{
+              font-size:15px!important;
+              line-height:1.5!important;
+            }
+          }
+
+
+
+          .modal--large .modal__head{
+            position:relative!important;
+            min-height:48px!important;
+            height:48px!important;
+            display:block!important;
+            overflow:hidden!important;
+          }
+
+          .rezka-modal-caption{
+            position:absolute!important;
+            top:50%!important;
+            left:18px!important;
+            right:58px!important;
+            transform:translateY(-50%)!important;
+            z-index:9998!important;
+            max-width:calc(100% - 76px)!important;
+            overflow:hidden!important;
+            white-space:nowrap!important;
+            pointer-events:none!important;
+            font-size:15px!important;
+            line-height:1.2!important;
+            font-weight:700!important;
+            letter-spacing:.15px!important;
+            background:linear-gradient(110deg,
+              rgba(255,255,255,.55) 0%,
+              rgba(255,255,255,.55) 38%,
+              #fff 47%,
+              #fff 53%,
+              rgba(255,255,255,.55) 62%,
+              rgba(255,255,255,.55) 100%)!important;
+            background-size:220% 100%!important;
+            -webkit-background-clip:text!important;
+            background-clip:text!important;
+            -webkit-text-fill-color:transparent!important;
+            animation:rezkaCaptionShine 3.8s ease-in-out infinite!important;
+          }
+
+          @keyframes rezkaCaptionShine{
+            0%,20%{background-position:130% 0;}
+            55%,75%{background-position:-30% 0;}
+            100%{background-position:-30% 0;}
+          }
+
+          .modal--large .rezka-modal-close{
+            position:absolute!important;
+            top:8px!important;
+            right:8px!important;
+            z-index:9999!important;
+            width:38px!important;
+            height:38px!important;
+            min-width:38px!important;
+            min-height:38px!important;
+            padding:0!important;
+            margin:0!important;
+            display:flex!important;
+            align-items:center!important;
+            justify-content:center!important;
+            border:1px solid rgba(255,255,255,.22)!important;
+            border-radius:50%!important;
+            background:rgba(18,20,21,.72)!important;
+            color:#fff!important;
+            box-shadow:0 5px 18px rgba(0,0,0,.35)!important;
+            backdrop-filter:blur(12px)!important;
+            -webkit-backdrop-filter:blur(12px)!important;
+            cursor:pointer!important;
+            appearance:none!important;
+            -webkit-appearance:none!important;
+          }
+
+          .modal--large .rezka-modal-close span{
+            display:block!important;
+            font-size:27px!important;
+            line-height:32px!important;
+            font-weight:300!important;
+            transform:translateY(-1px)!important;
+            opacity:.92!important;
+          }
+
+          .rezka-modal-close:active{
+            transform:scale(.92)!important;
+            background:rgba(255,255,255,.16)!important;
+          }
+
+          @media (max-width:600px){
+            .rezka-modal-close{
+              top:7px!important;
+              right:7px!important;
+              width:36px!important;
+              height:36px!important;
+              min-width:36px!important;
+              min-height:36px!important;
+            }
+
+            .rezka-film-header{
+              height:230px;
+            }
+
+            .rezka-film-info{
+              left:16px;
+              right:16px;
+              bottom:16px;
+            }
+
+            .rezka-film-title{
+              font-size:26px;
+            }
+
+            .rezka-film-meta{
+              font-size:15px;
+            }
+
+            .rezka-info-chip{
+              font-size:13px;
+              min-height:30px;
+              padding:6px 9px;
+            }
+
+            .rezka-comments-content{
+              padding-left:8px;
+              padding-right:8px;
+            }
+          }
+        `;
+        document.head.appendChild(styleEl);
+      }
+
+      Lampa.Modal.open({
+        title: ``,
+        html: modal,
+        size: "large",
+        style: "margin-top:10px;",
+        mask: true,
+        onBack: function () {
+          Lampa.Modal.close();
+          $(".modal--large").remove();
+          Lampa.Controller.toggle("content");
+        },
+      });
+
+      const rezkaModalHead = document.querySelector(".modal__head");
+      if (rezkaModalHead) {
+        rezkaModalHead.style.position = "relative";
+        rezkaModalHead.innerHTML = `<div class="rezka-modal-caption">Комментарии Rezka</div><button type="button" class="rezka-modal-close selector" aria-label="Закрыть" onclick="$('.modal--large').remove()"><span>×</span></button>`;
+      }
+    }
+  }
+
+  // Функция для начала работы плагина
+  function startPlugin() {
+    window.rezka_comment_v2_plugin = true;
+
+    try {
+      // Регистрация настроек
+      Lampa.SettingsApi.addComponent({
+        component: 'rezka_comment_v2',
+        name: 'Rezka Comments V2',
+        icon: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+      });
+
+      Lampa.SettingsApi.addParam({
+        component: 'rezka_comment_v2',
+        param: {
+          name: 'rezka_comment_v2_host',
+          type: 'input',
+          placeholder: 'https://hdrezka.ag',
+          values: Lampa.Storage.get('rezka_comment_v2_host', 'https://hdrezka.ag'),
+          default: 'https://hdrezka.ag'
+        },
+        field: {
+          name: 'Зеркало hdrezka',
+          description: 'Адрес зеркала hdrezka (например, https://hdrezka.me)'
+        },
+        onChange: function(value) {
+          Lampa.Storage.set('rezka_comment_v2_host', value);
+        }
+      });
+
+      Lampa.SettingsApi.addParam({
+        component: 'rezka_comment_v2',
+        param: {
+          name: 'rezka_comment_v2_cookie',
+          type: 'input',
+          placeholder: 'вставьте cookie',
+          values: Lampa.Storage.get('rezka_comment_v2_cookie', ''),
+          default: ''
+        },
+        field: {
+          name: 'Cookie авторизации',
+          description: 'Cookie из вашего браузера для обхода защиты (Anubis / PHPSESSID)'
+        },
+        onChange: function(value) {
+          Lampa.Storage.set('rezka_comment_v2_cookie', value);
+        }
+      });
+
+      Lampa.SettingsApi.addParam({
+        component: 'rezka_comment_v2',
+        param: {
+          name: 'rezka_comment_v2_proxy',
+          type: 'input',
+          placeholder: 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/',
+          values: Lampa.Storage.get('rezka_comment_v2_proxy', 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/'),
+          default: 'https://worker-patient-dream-26d8.bdvburik.workers.dev:8443/'
+        },
+        field: {
+          name: 'CORS Прокси',
+          description: 'Ваш Cloudflare Worker прокси (обязательно с / на конце)'
+        },
+        onChange: function(value) {
+          Lampa.Storage.set('rezka_comment_v2_proxy', value);
+        }
+      });
+
+      // === Fanart.tv — Personal API Key ===
+      // Ключ хранится локально в Lampa.Storage и не зашивается в код плагина.
+      Lampa.SettingsApi.addComponent({
+        component: 'movie_info_fanart',
+        name: 'Movie Info — Fanart.tv',
+        icon: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 15l3-3 2 2 3-4 2 2"/><circle cx="8" cy="8" r="1.2"/></svg>'
+      });
+
+      Lampa.SettingsApi.addParam({
+        component: 'movie_info_fanart',
+        param: {
+          name: 'movie_info_fanart_personal_key',
+          type: 'input',
+          placeholder: 'Вставьте Personal API Key Fanart.tv',
+          values: Lampa.Storage.get('movie_info_fanart_personal_key', ''),
+          default: ''
+        },
+        field: {
+          name: 'Personal API Key Fanart.tv',
+          description: 'Ваш персональный ключ Fanart.tv. Он сохраняется только в Lampa.Storage на этом устройстве.'
+        },
+        onChange: function(value) {
+          Lampa.Storage.set('movie_info_fanart_personal_key', String(value || '').trim());
+        }
+      });
+
+      // Общий helper для будущего получения кадров/артов Fanart.tv.
+      // Использует Personal Key через client_key, как рекомендует актуальный API.
+      window.MovieInfoFanart = window.MovieInfoFanart || {};
+      window.MovieInfoFanart.getKey = function() {
+        return String(Lampa.Storage.get('movie_info_fanart_personal_key', '') || '').trim();
+      };
+      window.MovieInfoFanart.getUrl = function(type, id) {
+        var key = window.MovieInfoFanart.getKey();
+        if (!key || !id) return '';
+        var base = 'https://webservice.fanart.tv/v3.2/' + type + '/' + encodeURIComponent(String(id));
+        return base + '?client_key=' + encodeURIComponent(key);
+      };
+
+    } catch (e) {
+      console.error('[RezkaComment V2] Settings init error:', e);
+    }
+
+    Lampa.Listener.follow("full", function (e) {
+      if (e.type == "complite") {
+        $(".button--rezka-comment-v2").remove();
+        $(".full-start-new__buttons").append(
+          `<div class="full-start__button selector button--rezka-comment-v2"><svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 356.484 356.484"><g><path d="M293.984 7.23H62.5C28.037 7.23 0 35.268 0 69.731v142.78c0 34.463 28.037 62.5 62.5 62.5l147.443.001 70.581 70.58a12.492 12.492 0 0 0 13.622 2.709 12.496 12.496 0 0 0 7.717-11.547v-62.237c30.759-3.885 54.621-30.211 54.621-62.006V69.731c0-34.463-28.037-62.501-62.5-62.501zm37.5 205.282c0 20.678-16.822 37.5-37.5 37.5h-4.621c-6.903 0-12.5 5.598-12.5 12.5v44.064l-52.903-52.903a12.493 12.493 0 0 0-8.839-3.661H62.5c-20.678 0-37.5-16.822-37.5-37.5V69.732c0-20.678 16.822-37.5 37.5-37.5h231.484c20.678 0 37.5 16.822 37.5 37.5v142.78z" fill="currentcolor"/></g></svg><span>${Lampa.Lang.translate(
+            "title_comments",
+          )}</span></div>`,
+        );
+
+        $(".button--rezka-comment-v2").on("hover:enter", function (card) {
+          year = 0;
+          if (e.data.movie.release_date) {
+            year = e.data.movie.release_date.slice(0, 4);
+          } else if (e.data.movie.first_air_date) {
+            year = e.data.movie.first_air_date.slice(0, 4);
+          }
+          Lampa.Loading.start();
+
+          const movie = e.data.movie || {};
+          window.__rezkaCommentCurrentMovie = movie;
+
+          // Берём уже загруженные Lampa рейтинги, если они есть.
+          // Никаких дополнительных API-ключей для этого не требуется.
+          try {
+            const render = e.object && e.object.activity && e.object.activity.render
+              ? e.object.activity.render()
+              : null;
+
+            const readNativeRating = function (selector) {
+              if (!render) return "";
+              const el = $(selector, render).find("> div").eq(0);
+              const value = el.length ? String(el.text()).trim() : "";
+              return value && value !== "0.0" ? value : "";
+            };
+
+            window.__rezkaCommentRatings = {
+              kp: readNativeRating(".rate--kp"),
+              imdb: readNativeRating(".rate--imdb")
+            };
+          } catch (ratingError) {
+            window.__rezkaCommentRatings = { kp: "", imdb: "" };
+          }
+
+          year = 0;
+
+          if (movie.release_date) {
+            year = movie.release_date.slice(0, 4);
+          } else if (movie.first_air_date) {
+            year = movie.first_air_date.slice(0, 4);
+          }
+
+          console.log('[RezkaComment V2] RESOLVE:', movie.title || movie.name || '', year);
+          resolveTitle(movie, e.object.method);
         });
-    }
+      }
+    });
+  }
 
-    start();
+  if (!window.rezka_comment_v2_plugin) startPlugin();
 })();
