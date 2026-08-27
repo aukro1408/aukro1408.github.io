@@ -181,9 +181,11 @@
                 '</div>' +
             '</div>';
 
+        var modalHtml = $(html);
+
         Lampa.Modal.open({
-            title: '',
-            html: html,
+            title: 'Подробнее',
+            html: modalHtml,
             size: 'large',
             style: 'margin-top:10px;',
             mask: true,
@@ -196,26 +198,12 @@
             }
         });
 
-        setTimeout(function () {
-            var head = document.querySelector('.modal__head');
-            if (head) {
-                head.style.position = 'relative';
-                head.style.minHeight = '48px';
-                head.innerHTML =
-                    '<div style="position:absolute;left:18px;right:58px;top:50%;transform:translateY(-50%);font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;">' +
-                    esc(title) +
-                    '</div>' +
-                    '<div class="cmi-close selector" aria-label="Закрыть">×</div>';
+        modalHtml.find('.cmi-close').on('hover:enter click', function () {
+            Lampa.Modal.close();
+            $('.modal--large').remove();
+            Lampa.Controller.toggle('content');
+        });
 
-                $('.cmi-close').on('hover:enter click', function () {
-                    Lampa.Modal.close();
-                    try {
-                        $('.modal--large').remove();
-                        Lampa.Controller.toggle('content');
-                    } catch (e) {}
-                });
-            }
-        }, 20);
     }
 
     function addButton(event) {
@@ -244,6 +232,10 @@
         $buttons.append($button);
 
         $button.on('hover:enter', function () {
+            openInfo(movie);
+        });
+
+        $button.on('click', function () {
             openInfo(movie);
         });
     }
