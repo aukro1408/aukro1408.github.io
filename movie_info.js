@@ -1,14 +1,14 @@
-/* CinemaX Movie Info V2 — подробная карточка фильма/сериала
+/* CinemaX Movie Info V3 — подробная карточка фильма/сериала
  * Полностью отдельный плагин. Логика кнопки/Modal основана на рабочем
  * Filmix Comments V11, но код не переделывает и не зависит от него.
  */
 (function () {
     'use strict';
 
-    const PLUGIN_FLAG = 'cinemax_movie_info_v2';
-    const BUTTON_CLASS = 'button--cinemax-movie-info-v2';
-    const STYLE_ID = 'cinemax-movie-info-v2-style';
-    const LOG = '[CinemaX Movie Info V2]';
+    const PLUGIN_FLAG = 'cinemax_movie_info_v3';
+    const BUTTON_CLASS = 'button--cinemax-movie-info-v3';
+    const STYLE_ID = 'cinemax-movie-info-v3-style';
+    const LOG = '[CinemaX Movie Info V3]';
 
     if (window[PLUGIN_FLAG]) return;
     window[PLUGIN_FLAG] = true;
@@ -98,56 +98,70 @@
         const style = document.createElement('style');
         style.id = STYLE_ID;
         style.textContent = `
-            .cmi2{width:100%;box-sizing:border-box;padding:4px 14px 34px;background:#292929;border-radius:20px;color:#eee}
+            /* CinemaX Movie Info V3 — visual language aligned with Interface Mod */
+            .cmi2{position:relative;width:100%;box-sizing:border-box;padding:4px 14px 34px;background:transparent;color:#fff}
             .cmi2 *{box-sizing:border-box}
-            .cmi2-hero{position:relative;width:100%;height:290px;border-radius:18px;overflow:hidden;background:#151515;margin-bottom:18px}
+            .cmi2-close{position:absolute;top:4px;right:4px;z-index:50;width:2.35em;height:2.35em;border:0;border-radius:.5em;background:rgba(26,42,58,.96);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.45em;line-height:1;cursor:pointer;transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
+            .cmi2-close.focus,.cmi2-close.hover{background:linear-gradient(45deg,#43cea2,#185a9d);box-shadow:0 0 .4em rgba(67,206,162,.4);transform:scale(1.03)}
+            .cmi2-hero{position:relative;width:100%;height:290px;border-radius:.9em;overflow:hidden;background:rgba(26,42,58,.98);margin-bottom:18px;border:1px solid rgba(67,206,162,.08)}
             .cmi2-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}
-            .cmi2-hero-bg:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 20%,rgba(10,10,12,.96) 100%)}
-            .cmi2-hero-content{position:absolute;left:20px;right:20px;bottom:18px;z-index:2}
+            .cmi2-hero-bg:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,20,28,.05) 18%,rgba(10,20,28,.97) 100%)}
+            .cmi2-hero-content{position:absolute;left:20px;right:20px;bottom:18px;z-index:2;padding-right:3em}
             .cmi2-title{font-size:29px;font-weight:850;line-height:1.05;color:#fff;margin-bottom:4px}
             .cmi2-original{font-size:14px;color:rgba(255,255,255,.58);margin-bottom:10px}
             .cmi2-chips{display:flex;flex-wrap:wrap;gap:7px}
-            .cmi2-chip{padding:7px 10px;border-radius:9px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.08);font-size:13px;font-weight:650}
-            .cmi2-rating{color:#7ff0c0}
+            .cmi2-chip{padding:7px 10px;border-radius:.5em;background:rgba(26,42,58,.82);border:1px solid rgba(67,206,162,.08);font-size:13px;font-weight:650;color:#fff}
+            .cmi2-rating{color:#43cea2}
             .cmi2-section{margin-top:18px}
-            .cmi2-section-title{font-size:16px;font-weight:850;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.48);margin:0 4px 9px}
-            .cmi2-description{padding:14px 15px;background:#17181b;border-radius:15px;color:#ddd;font-size:15px;line-height:1.55;white-space:pre-wrap}
+            .cmi2-section-title{font-size:16px;font-weight:850;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.55);margin:0 4px 9px}
+            .cmi2-description{padding:14px 15px;background:rgba(26,42,58,.98);border:1px solid rgba(67,206,162,.07);border-radius:.8em;color:#ddd;font-size:15px;line-height:1.55;white-space:pre-wrap}
             .cmi2-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-            .cmi2-info{padding:11px 13px;background:#202124;border-radius:13px;min-width:0}
+            .cmi2-info{padding:11px 13px;background:rgba(26,42,58,.98);border:1px solid rgba(67,206,162,.06);border-radius:.7em;min-width:0;transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
             .cmi2-label{font-size:11px;font-weight:800;text-transform:uppercase;color:rgba(255,255,255,.38);margin-bottom:4px}
             .cmi2-value{font-size:14px;line-height:1.35;color:#eee;word-break:break-word}
             .cmi2-people{display:flex;gap:10px;overflow-x:auto;padding:3px 2px 9px;scrollbar-width:none}
             .cmi2-people::-webkit-scrollbar{display:none}
-            .cmi2-person{flex:0 0 104px;width:104px;min-height:164px;padding:0;border-radius:13px;overflow:hidden;background:#202124}
-            .cmi2-person img{display:block;width:100%;height:122px;object-fit:cover;background:#151515}
+            .cmi2-person{flex:0 0 104px;width:104px;min-height:164px;padding:0;border-radius:.7em;overflow:hidden;background:rgba(26,42,58,.98);border:1px solid rgba(67,206,162,.06);transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
+            .cmi2-person img{display:block;width:100%;height:122px;object-fit:cover;background:#151a20}
             .cmi2-person-name{font-size:12px;font-weight:750;line-height:1.2;padding:7px 7px 2px;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
             .cmi2-person-role{font-size:10px;line-height:1.2;padding:2px 7px 8px;color:rgba(255,255,255,.48);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-            .cmi2-person.focus,.cmi2-media-card.focus{background:#2b2d30;transform:translateY(-2px)}
+            .cmi2-person.focus,.cmi2-person.hover,.cmi2-media-card.focus,.cmi2-media-card.hover,.cmi2-shot.focus,.cmi2-shot.hover{background:linear-gradient(45deg,#43cea2,#185a9d);box-shadow:0 0 .4em rgba(67,206,162,.35);transform:scale(1.03)}
             .cmi2-gallery{display:flex;gap:9px;overflow-x:auto;padding:3px 2px 10px;scrollbar-width:none}
             .cmi2-gallery::-webkit-scrollbar{display:none}
-            .cmi2-shot{flex:0 0 180px;width:180px;height:105px;border-radius:12px;overflow:hidden;background:#151515;position:relative}
+            .cmi2-shot{flex:0 0 180px;width:180px;height:105px;border-radius:.7em;overflow:hidden;background:rgba(26,42,58,.98);position:relative;transition:transform .2s ease,box-shadow .2s ease}
             .cmi2-shot img{display:block;width:100%;height:100%;object-fit:cover}
             .cmi2-shot:after{content:"⌕";position:absolute;right:7px;bottom:6px;width:25px;height:25px;border-radius:50%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px}
             .cmi2-media{display:flex;gap:10px;overflow-x:auto;padding:3px 2px 10px;scrollbar-width:none}
             .cmi2-media::-webkit-scrollbar{display:none}
-            .cmi2-media-card{flex:0 0 118px;width:118px;border-radius:13px;overflow:hidden;background:#202124;padding-bottom:7px;transition:transform .12s,background .12s}
-            .cmi2-media-card img{display:block;width:100%;height:170px;object-fit:cover;background:#151515}
+            .cmi2-media-card{flex:0 0 118px;width:118px;border-radius:.7em;overflow:hidden;background:rgba(26,42,58,.98);border:1px solid rgba(67,206,162,.06);padding-bottom:7px;transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
+            .cmi2-media-card img{display:block;width:100%;height:170px;object-fit:cover;background:#151a20}
             .cmi2-media-title{font-size:12px;font-weight:750;line-height:1.2;color:#fff;padding:7px 7px 1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
             .cmi2-media-meta{font-size:10px;color:rgba(255,255,255,.48);padding:2px 7px 0}
-            .cmi2-lightbox{position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;padding:22px}
-            .cmi2-lightbox img{max-width:96vw;max-height:88vh;object-fit:contain;border-radius:10px}
-            .cmi2-lightbox-close{position:absolute;right:18px;top:12px;color:#fff;font-size:34px;line-height:1;opacity:.85}
-            .cmi2-lightbox-count{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);color:rgba(255,255,255,.7);font-size:12px}
-            .cmi2-empty{padding:20px;text-align:center;color:rgba(255,255,255,.45)}
-            .button--cinemax-movie-info-v2 svg{width:22px;height:22px;margin-right:7px;fill:currentColor}
+            .cmi2-lightbox{position:fixed;inset:0;z-index:999999;background:rgba(8,14,19,.97);display:flex;align-items:center;justify-content:center;padding:22px;outline:none}
+            .cmi2-lightbox img{max-width:90vw;max-height:86vh;object-fit:contain;border-radius:.7em;box-shadow:0 0 2em rgba(0,0,0,.55)}
+            .cmi2-lightbox-close,.cmi2-lightbox-nav{position:absolute;z-index:3;border:0;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(26,42,58,.86);border-radius:.5em;transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
+            .cmi2-lightbox-close{right:18px;top:14px;width:2.5em;height:2.5em;font-size:28px}
+            .cmi2-lightbox-nav{top:50%;transform:translateY(-50%);width:3em;height:4.2em;font-size:30px}
+            .cmi2-lightbox-prev{left:16px}.cmi2-lightbox-next{right:16px}
+            .cmi2-lightbox-close.focus,.cmi2-lightbox-close.hover,.cmi2-lightbox-nav.focus,.cmi2-lightbox-nav.hover{background:linear-gradient(45deg,#43cea2,#185a9d);box-shadow:0 0 .6em rgba(67,206,162,.4);transform:translateY(-50%) scale(1.04)}
+            .cmi2-lightbox-close.focus,.cmi2-lightbox-close.hover{transform:scale(1.04)}
+            .cmi2-lightbox-count{position:absolute;left:50%;bottom:15px;transform:translateX(-50%);color:rgba(255,255,255,.72);font-size:13px;background:rgba(26,42,58,.86);padding:.35em .75em;border-radius:.5em}
+            .cmi2-empty{padding:20px;text-align:center;color:rgba(255,255,255,.55)}
+            .button--cinemax-movie-info-v3 svg{width:1.35em;height:1.35em;margin-right:.35em;fill:currentColor}
+            .button--cinemax-movie-info-v3{border-radius:.5em!important}
             @media(max-width:600px){
-                .cmi2{padding:2px 8px 28px;border-radius:18px}
-                .cmi2-hero{height:235px;border-radius:15px}
+                .cmi2{padding:2px 8px 28px}
+                .cmi2-hero{height:235px;border-radius:.8em}
                 .cmi2-hero-content{left:14px;right:14px;bottom:14px}
                 .cmi2-title{font-size:25px}
                 .cmi2-grid{grid-template-columns:1fr}
                 .cmi2-person{flex-basis:92px;width:92px}
                 .cmi2-person img{height:110px}
+                .cmi2-shot{flex-basis:170px;width:170px;height:100px}
+                .cmi2-lightbox{padding:12px}
+                .cmi2-lightbox img{max-width:92vw;max-height:80vh}
+                .cmi2-lightbox-nav{width:2.7em;height:3.5em;font-size:25px}
+                .cmi2-lightbox-prev{left:7px}.cmi2-lightbox-next{right:7px}
             }
         `;
         document.head.appendChild(style);
@@ -246,27 +260,107 @@
     }
 
     function openShotGallery(paths, startIndex) {
-        paths = paths || [];
+        paths = (paths || []).filter(Boolean);
         if (!paths.length) return;
+
         let index = Math.max(0, Math.min(Number(startIndex) || 0, paths.length - 1));
-        const root = $('<div class="cmi2-lightbox selector"><div class="cmi2-lightbox-close">×</div><img><div class="cmi2-lightbox-count"></div></div>');
+        let closed = false;
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        const root = $('<div class="cmi2-lightbox" tabindex="0" role="dialog" aria-label="Кадры из фильма">' +
+            '<button type="button" class="cmi2-lightbox-close selector" aria-label="Закрыть">×</button>' +
+            '<button type="button" class="cmi2-lightbox-nav cmi2-lightbox-prev selector" aria-label="Предыдущий кадр">‹</button>' +
+            '<img draggable="false" alt="Кадр из фильма">' +
+            '<button type="button" class="cmi2-lightbox-nav cmi2-lightbox-next selector" aria-label="Следующий кадр">›</button>' +
+            '<div class="cmi2-lightbox-count"></div>' +
+            '</div>');
+
         const img = root.find('img');
         const count = root.find('.cmi2-lightbox-count');
+        const closeBtn = root.find('.cmi2-lightbox-close');
+        const prevBtn = root.find('.cmi2-lightbox-prev');
+        const nextBtn = root.find('.cmi2-lightbox-next');
+
         function draw() {
             img.attr('src', image(paths[index], 'original'));
             count.text((index + 1) + ' / ' + paths.length);
         }
-        function close() { root.remove(); if (Lampa.Controller) Lampa.Controller.toggle('content'); }
-        root.on('click', function (e) { if (e.target === root[0] || e.target === root.find('.cmi2-lightbox-close')[0]) close(); });
-        root.on('hover:enter', function () { });
-        root.on('hover:left', function () { });
-        root.on('keydown', function (e) {
-            if (e.key === 'ArrowRight') { index = (index + 1) % paths.length; draw(); }
-            if (e.key === 'ArrowLeft') { index = (index - 1 + paths.length) % paths.length; draw(); }
-            if (e.key === 'Escape') close();
+
+        function close() {
+            if (closed) return;
+            closed = true;
+            document.removeEventListener('keydown', keyHandler, true);
+            root.off('touchstart touchend');
+            root.remove();
+            if (Lampa.Controller) {
+                try { Lampa.Controller.toggle('content'); } catch (e) {}
+            }
+        }
+
+        function next() {
+            index = (index + 1) % paths.length;
+            draw();
+        }
+
+        function prev() {
+            index = (index - 1 + paths.length) % paths.length;
+            draw();
+        }
+
+        function keyHandler(e) {
+            if (closed) return;
+            const key = e.key || e.code;
+            if (key === 'ArrowRight' || key === 'Right') {
+                e.preventDefault(); e.stopPropagation(); next(); return;
+            }
+            if (key === 'ArrowLeft' || key === 'Left') {
+                e.preventDefault(); e.stopPropagation(); prev(); return;
+            }
+            if (key === 'Escape' || key === 'Esc' || key === 'Backspace') {
+                e.preventDefault(); e.stopPropagation(); close();
+            }
+        }
+
+        closeBtn.on('hover:enter click', function (e) {
+            if (e && e.stopPropagation) e.stopPropagation();
+            close();
         });
+        prevBtn.on('hover:enter click', function (e) {
+            if (e && e.stopPropagation) e.stopPropagation();
+            prev();
+        });
+        nextBtn.on('hover:enter click', function (e) {
+            if (e && e.stopPropagation) e.stopPropagation();
+            next();
+        });
+
+        root.on('click', function (e) {
+            if (e.target === root[0]) close();
+        });
+
+        root.on('touchstart', function (e) {
+            const t = e.originalEvent && e.originalEvent.touches ? e.originalEvent.touches[0] : null;
+            if (!t) return;
+            touchStartX = t.clientX;
+            touchStartY = t.clientY;
+        });
+        root.on('touchend', function (e) {
+            const t = e.originalEvent && e.originalEvent.changedTouches ? e.originalEvent.changedTouches[0] : null;
+            if (!t) return;
+            const dx = t.clientX - touchStartX;
+            const dy = t.clientY - touchStartY;
+            if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+                if (dx < 0) next(); else prev();
+            }
+        });
+
+        document.addEventListener('keydown', keyHandler, true);
         $('body').append(root);
         draw();
+        setTimeout(function () {
+            try { root[0].focus(); } catch (e) {}
+        }, 0);
     }
 
     function render(movie, details) {
@@ -289,6 +383,7 @@
         const producers = firstCrew(crew, ['Producer', 'Executive Producer', 'Co-Producer']);
 
         let html = '<div class="cmi2">';
+        html += '<button type="button" class="cmi2-close selector" aria-label="Закрыть">×</button>';
         html += '<div class="cmi2-hero">';
         if (backdrop) html += '<div class="cmi2-hero-bg" style="background-image:url(\'' + esc(image(backdrop, 'w1280')) + '\')"></div>';
         html += '<div class="cmi2-hero-content">';
@@ -368,9 +463,16 @@
             .then(function (details) {
                 const html = $(render(movie, details || {}));
                 loading.replaceWith(html);
+                html.find('.cmi2-close').on('hover:enter click', function (e) {
+                    if (e && e.stopPropagation) e.stopPropagation();
+                    Lampa.Modal.close();
+                    $('.modal--large').remove();
+                    if (Lampa.Controller) Lampa.Controller.toggle('content');
+                });
                 html.find('.selector').on('hover:enter', function () {
                     const el = $(this);
                     el.addClass('focus');
+                    if (el.hasClass('cmi2-close')) return;
                     if (el.hasClass('cmi2-person')) {
                         openPerson(el.attr('data-person-id'), el.attr('data-person-name'));
                     } else if (el.hasClass('cmi2-media-card')) {
@@ -383,8 +485,10 @@
                     }
                 });
                 html.find('.selector').on('hover:leave', function () { $(this).removeClass('focus'); });
-                html.find('.selector').on('click', function () {
+                html.find('.selector').on('click', function (e) {
+                    if (e && e.stopPropagation) e.stopPropagation();
                     const el = $(this);
+                    if (el.hasClass('cmi2-close')) return;
                     if (el.hasClass('cmi2-person')) openPerson(el.attr('data-person-id'), el.attr('data-person-name'));
                     else if (el.hasClass('cmi2-media-card')) openMedia(el.attr('data-media-id'), el.attr('data-media-type'));
                     else if (el.hasClass('cmi2-shot')) {
@@ -401,11 +505,11 @@
     }
 
     function addButton(movie) {
-        $('.' + BUTTON_CLASS).remove();
+        $('.' + BUTTON_CLASS + ', .button--cinemax-movie-info-v2').remove();
         const button = $(`
             <div class="full-start__button selector ${BUTTON_CLASS}">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19 3H5a2 2 0 0 0-2 2v14l4-3h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm-1 9H6v-2h12v2Zm0-4H6V6h12v2Z"/>
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2h11A2.5 2.5 0 0 1 20 4.5v15a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 19.5v-15Zm2.5-.5a.5.5 0 0 0-.5.5v15a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5v-15a.5.5 0 0 0-.5-.5h-11ZM9 7h6v2H9V7Zm0 4h6v2H9v-2Zm0 4h4v2H9v-2Z"/>
                 </svg>
                 <span>Подробнее</span>
             </div>
@@ -418,6 +522,8 @@
     }
 
     function start() {
+        $('#cinemax-movie-info-v2-style').remove();
+        $('.button--cinemax-movie-info-v2').remove();
         addStyles();
         Lampa.Listener.follow('full', function (event) {
             if (event.type !== 'complite') return;
