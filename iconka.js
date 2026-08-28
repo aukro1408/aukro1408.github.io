@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var PLUGIN_ICON = '<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 8.2C4.1 5.8 5.8 3.5 8.4 3.8 9.7 1.9 12.4 2 13.7 3.8c2.6-.3 4.3 2 3.2 4.4 2.3.8 3.1 3.7 1.4 5.4 1.2 2.4-.6 4.9-3.2 4.6-1.3 2-4 2-5.3.2-2.6.3-4.4-2-3.2-4.4-2.3-.8-3.1-3.7-1.4-5.4z" stroke-width="1.45"/><path d="M9 8l6 8M15 8l-6 8" stroke-width="2.2"/><path d="M12 4.7v2M12 17.3v2M5.8 12h2M16.2 12h2" stroke-width="1.1"/><circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/></g></svg>';
+    var PLUGIN_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" aria-label="cinemaX_ai"><g fill="none" stroke="#E2E8F0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity=".85"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></g><g fill="#E2E8F0" stroke="none"><path d="M15.6 13Q15.6 16 18.6 16Q15.6 16 15.6 19Q15.6 16 12.6 16Q15.6 16 15.6 13Z"/><path d="M8.2 15.9Q8.2 17.4 9.7 17.4Q8.2 17.4 8.2 18.9Q8.2 17.4 6.7 17.4Q8.2 17.4 8.2 15.9Z"/></g></svg>';
 
     var STORAGE_KEY = 'google_native_key_v1';
     window.ai_pagination = { base_prompt: '', exclude_list: [], preloaded_results: null, preloaded_raw_list: null, is_loading: false, is_preloading: false };
