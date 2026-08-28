@@ -68,7 +68,7 @@
 
         this.getTMDBDetails = function(card, callback) {
             var method = (card.name || card.original_name) ? 'tv' : 'movie';
-            var url = Lampa.TMDB.api(method + '/' + card.id + '?api_key=' + Lampa.TMDB.key() + '&language=ru-RU&append_to_response=credits');
+            var url = Lampa.TMDB.api(method + '/' + card.id + '?api_key=' + Lampa.TMDB.key() + '&language=en-US&append_to_response=credits');
             
             Lampa.Network.silent(url, function(res) {
                 var overview = (res.overview || '').replace(/"/g, "'").replace(/\n/g, ' ');
@@ -93,14 +93,14 @@
 
             var waitAndCheck = function() {
                 setTimeout(function() {
-                    // Якщо інший плагін вже поклав теги в картку — ми вільні
+                    // Если дрвгой плагин вже добавил теги в карткв — мы свободны
                     if (card.translated_tags && card.translated_tags.length > 0) return;
 
                     attempts++;
                     if (attempts < delays.length) {
-                        waitAndCheck(); // Чекаємо наступний інтервал
+                        waitAndCheck(); // Ждём следвющий интервал
                     } else {
-                        // Якщо за 3 секунди нічого не з'явилося — вантажимо самі
+                        // Если за 3 секвнды ничего не появилось — загрвжаем сами
                         _this.runOwnTagTranslation(card);
                     }
                 }, delays[attempts]);
@@ -134,16 +134,16 @@
         
         this.setupGlobalSearch = function() {
             var searchSource = {
-                title: 'AI Пошук',
+                title: 'AI Поиск',
                 search: function (params, done) {
                     var q = decodeURIComponent(params.query || '').trim().toLowerCase();
                     var limit = Lampa.Storage.get('ai_result_count', '20');
                     if (!q) return done([]);
-                    var filter = (q.indexOf('фільм') > -1) ? 'strictly only movies' : (q.indexOf('серіал') > -1 ? 'strictly only TV series' : 'movies and TV series');
-                    var p = 'Act as a movie expert. Suggest strictly ' + limit + ' ' + filter + ' for query: "' + q + '". Respond ONLY in Russian with a valid JSON array: [{"uk":"Название на русском","orig":"Original Title","year":Year}]. No markdown, no intro text.';
+                    var filter = (q.indexOf('фильм') > -1) ? 'strictly only movies' : (q.indexOf('сериал') > -1 ? 'strictly only TV series' : 'movies and TV series');
+                    var p = 'Act as a movie expert. Suggest strictly ' + limit + ' ' + filter + ' for query: "' + q + '". Respond ONLY with a valid JSON array: [{"uk":"Название на рвсском","orig":"Original Title","year":Year}]. All titles and all text must be in Russian. No markdown, no intro text.';
                     
                     window.ai_active_controller = Lampa.Controller.enabled().name;
-                    _this.updateStatus('Пошук результатів');
+                    _this.updateStatus('Поиск резвльтатов');
                     _this.askGemini(p, function(text) {
                         var list = _this.parseJsonSafe(text);
                         if (!list) { _this.hideStatus(); return done([]); }
@@ -162,9 +162,9 @@
         };
 
         this.getSafeDynamicColor = function() {
-            // Отримуємо поточний колір теми Лампи
+            // Полвчаем поточний колір теми Лампи
             var raw = getComputedStyle(document.documentElement).getPropertyValue('--main-color').trim();
-            if (!raw) return '#ffffff'; // Якщо кольору немає взагалі
+            if (!raw) return '#ffffff'; // Если кольорв немає взагалі
             
             var r = 0, g = 0, b = 0;
             if (raw.indexOf('#') === 0) {
@@ -174,9 +174,9 @@
             } else if (raw.indexOf('rgb') === 0) {
                 var m = raw.match(/\d+/g);
                 if (m) { r = parseInt(m[0]); g = parseInt(m[1]); b = parseInt(m[2]); }
-            } else { return raw; } // Невідомий формат
+            } else { return raw; } // Неизвестный формат
             
-            // Конвертація RGB в HSL
+            // Конвертация RGB в HSL
             r /= 255; g /= 255; b /= 255;
             var max = Math.max(r, g, b), min = Math.min(r, g, b);
             var h = 0, s = 0, l = (max + min) / 2;
@@ -190,7 +190,7 @@
                 }
                 h /= 6;
             }
-            // ОСНОВНА ЛОГІКА: Якщо яскравість менша за 35%, піднімаємо її
+            // ОСНОВНА ЛОГІКА: Если яркость меньше за 35%, повышаем її
             if (l < 0.35) l = 0.35; 
             
             return 'hsl(' + Math.round(h * 360) + ',' + Math.round(s * 100) + '%,' + Math.round(l * 100) + '%)';
@@ -215,7 +215,7 @@
                 '.ai-title { font-size: 1.5em; font-weight: bold; }' + 
                 '.ai-close-btn { width: 32px; height: 32px; background: #333; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-family: sans-serif; cursor: pointer; border: 2px solid transparent; line-height: 0; padding-bottom: 0px; }' +
                 '.ai-close-btn.focus { background: #fff; color: #000; outline: none; }' +
-                '.ai-content-scroll { flex: 1; overflow-y: auto; padding: 10px 20px 20px 20px; color: #efefef; line-height: 1.4; font-size: var(--ai-font-size, 1.25em); }' + // Динамічний розмір тексту
+                '.ai-content-scroll { flex: 1; overflow-y: auto; padding: 10px 20px 20px 20px; color: #efefef; line-height: 1.4; font-size: var(--ai-font-size, 1.25em); }' + // Динамічний розмір текств
                 '.ai-fact-title { color: var(--safe-text-color, var(--main-color, #fff)); font-weight: bold; display: block; margin-bottom: 2px; }'
             ).appendTo('head');
         };
@@ -224,7 +224,7 @@
         this.drawButton = function (render, card) {
             var container = render.find('.full-start-new__buttons, .full-start__buttons').first();
             if (!container.length || container.find('.button--ai-assist').length) return;
-            var btn = $('<div class="full-start__button selector button--ai-assist">' + PLUGIN_ICON + '<span>AI Асистент</span></div>');
+            var btn = $('<div class="full-start__button selector button--ai-assist">' + PLUGIN_ICON + '<span>AI Ассистент</span></div>');
             btn.on('hover:enter click', function () { _this.openAiMenu(card, btn, render); });
             var lastBtn = container.find('.selector').last();
             if (lastBtn.length) lastBtn.after(btn); else container.append(btn);
@@ -247,20 +247,20 @@
         this.openAiMenu = function(card, btnElement, renderContainer, prevCtrl) {
             var controllerName = prevCtrl || Lampa.Controller.enabled().name; 
             var items = [
-                { title: 'Рекомендації', action: 'recommendations' },
-                { title: 'Цікаві факти', action: 'facts' }
+                { title: 'Рекомендации', action: 'recommendations' },
+                { title: 'Интересные факты', action: 'facts' }
             ];
 
             if (card.translated_tags && card.translated_tags.length > 0) {
-                items.splice(1, 0, { title: 'Добірки за тегами', action: 'tags' });
+                items.splice(1, 0, { title: 'Подборки по тегам', action: 'tags' });
             }
 
             if ((card.number_of_seasons && card.number_of_seasons > 1) || card.belongs_to_collection) {
-                items.push({ title: 'Стислий переказ', action: 'recap' });
+                items.push({ title: 'Краткий пересказ', action: 'recap' });
             }
 
             Lampa.Select.show({
-                title: 'AI Асистент',
+                title: 'AI Ассистент',
                 items: items,
                 onSelect: function (item) {
                     setTimeout(function() {
@@ -281,10 +281,10 @@
 
          this.showViewer = function(title, contentHtml, btnElement, renderContainer, controllerName) {
             var safeColor = _this.getSafeDynamicColor();
-            // Зчитуємо розмір шрифту з налаштувань
+            // Считываем розмір шрифтв з налаштввань
             var fontSize = Lampa.Storage.get('ai_font_size', '1.25em'); 
             
-            // Додаємо --ai-font-size у стилі контейнера
+            // Добавляем --ai-font-size в стилі контейнера
             var viewer = $('<div class="ai-viewer-container" style="--safe-text-color: ' + safeColor + '; --ai-font-size: ' + fontSize + ';">' +
                             '<div class="ai-viewer-body">' +
                                 '<div class="ai-header"><div class="ai-title">' + title + '</div><div class="ai-close-btn selector">×</div></div>' +
@@ -317,10 +317,10 @@
             var type = (card.name || card.original_name) ? 'TV series' : 'movie';
             
             window.ai_active_controller = ctrl || Lampa.Controller.enabled().name;
-            _this.updateStatus('Пошук фактів');
+            _this.updateStatus('Поиск фактов');
             
             _this.getTMDBDetails(card, function(tmdb) {
-                var p = 'Provide 6 to 10 interesting, little-known facts about the ' + type + ' "' + ukrT + '" (original title: "' + origT + '", ' + year + ') with ' + tmdb.leadActor + ' in the lead role, in Russian. CRITICAL RULE: If you lack verified facts in your internal database, you MUST use the Google Search tool to find reliable information. If even after searching you cannot find reliable facts, do not hallucinate. Return strictly: [{"title": "Інформація відсутня", "text": "На жаль, достовірних фактів про цей проєкт не знайдено."}]. Otherwise, return strictly a JSON array where each fact is a separate object: [{"title":"..","text":".."}]. No markdown, no intro text.';
+                var p = 'Provide 6 to 10 interesting, little-known facts about the ' + type + ' "' + ukrT + '" (original title: "' + origT + '", ' + year + ') with ' + tmdb.leadActor + ' in the lead role, in Russian. ALL TITLES AND TEXT MUST BE IN RUSSIAN. CRITICAL RULE: If you lack verified facts in your internal database, you MUST use the Google Search tool to find reliable information. If even after searching you cannot find reliable facts, do not hallucinate. Return strictly: [{"title": "Информация отсутствует", "text": "К сожалению, достоверных фактов об этом проекте не найдено."}]. Otherwise, return strictly a JSON array where each fact is a separate object: [{"title":"..","text":".."}]. No markdown, no intro text.';
                 
                 _this.askGemini(p, function(text) {
                     _this.hideStatus();
@@ -328,18 +328,18 @@
                     
                     var data = _this.parseJsonSafe(text);
                     if (!data) { 
-                        Lampa.Noty.show('Помилка обробки результату'); 
+                        Lampa.Noty.show('Ошибка обработки резвльтата'); 
                         _this.restoreFocus(btn, render, ctrl);
                         return; 
                     }
                     
-                    // ВИДАЛЯЄМО [1], [2, 5] тощо перед виводом
+                    // УДАЛЯЕМ [1], [2, 5] тощо перед виводом
                     var html = (data || []).map(function(f){ 
                         var cleanText = f.text.replace(/\[\d+(?:,\s*\d+)*\]/g, '').trim();
                         return '<div style="margin-bottom:12px"><span class="ai-fact-title">'+f.title+'</span>'+cleanText+'</div>'; 
                     }).join('');
                     
-                    _this.showViewer('Цікаві факти: ' + ukrT, html, btn, render, ctrl);
+                    _this.showViewer('Интересные факты: ' + ukrT, html, btn, render, ctrl);
                 }, null, false, true);
 
             });
@@ -353,14 +353,14 @@
             if (card.number_of_seasons > 1) { for (var i = 1; i < card.number_of_seasons; i++) items.push({ title: 'Сезон ' + i, type: 'season', value: i }); }
             else if (card.belongs_to_collection) {
                 window.ai_active_controller = ctrl || Lampa.Controller.enabled().name;
-                _this.updateStatus('Збір історії');
+                _this.updateStatus('Сбор истории');
                 Lampa.Network.silent(Lampa.TMDB.api('collection/' + card.belongs_to_collection.id + '?api_key=' + Lampa.TMDB.key() + '&language=ru-RU'), function(res) {
                     _this.hideStatus();
                     (res.parts || []).forEach(function(p) { if (p.id != card.id) items.push({ title: p.title, type: 'movie', value: p.original_title }); });
                     _this.showRecapSelect(items, card, btn, render, ctrl);
                 }, function() {
                     _this.hideStatus();
-                    Lampa.Noty.show('Помилка завантаження колекції');
+                    Lampa.Noty.show('Ошибка загрвзки коллекции');
                     if (window.ai_active_controller) Lampa.Controller.toggle(window.ai_active_controller);
                 });
                 return;
@@ -370,28 +370,28 @@
 
         this.showRecapSelect = function(items, card, btn, render, ctrl) {
             Lampa.Select.show({
-                title: 'Що переказати?',
+                title: 'Что пересказать?',
                 items: items,
                 onSelect: function(item) {
                     var t = card.original_title || card.original_name, year = (card.release_date || card.first_air_date || '').slice(0,4);
                     window.ai_active_controller = Lampa.Controller.enabled().name;
-                    _this.updateStatus('Підготовка переказу');
+                    _this.updateStatus('Подготовка пересказа');
                     
-                    var p = 'Provide a 10-point brief recap in Russian of "' + item.title + '" from the franchise "' + t + '" (' + year + '). Respond ONLY with a valid JSON array: [{"point":".."}]. No markdown, no intro text.';
+                    var p = 'Provide a 10-point brief recap in Russian of "' + item.title + '" from the franchise "' + t + '" (' + year + '). Respond ONLY with a valid JSON array: [{"point":".."}]. ALL TEXT MUST BE IN RUSSIAN. No markdown, no intro text.';
                     
-                    // Передаємо true в кінці для активації пошуку
+                    // Передаємо true в кінці для активації пошвкв
                     _this.askGemini(p, function(text) {
                         _this.hideStatus();
                         if (Lampa.Activity.active().component !== 'full') return; 
                         
                         var data = _this.parseJsonSafe(text);
                         if (!data) { 
-                            Lampa.Noty.show('Помилка обробки результату'); 
+                            Lampa.Noty.show('Ошибка обработки резвльтата'); 
                             if (window.ai_active_controller) Lampa.Controller.toggle(window.ai_active_controller);
                             return; 
                         }
                         var html = (data || []).map(function(i){ return '<div style="margin-bottom:10px">• '+i.point+'</div>'; }).join('');
-                        _this.showViewer('Переказ: ' + item.title, html, btn, render, ctrl);
+                        _this.showViewer('Пересказ: ' + item.title, html, btn, render, ctrl);
                     }, function() {
                         _this.hideStatus();
                     }, false, true);
@@ -405,11 +405,11 @@
             if (!_this.checkApiKey(btn, render, ctrl)) return;
             var limit = Lampa.Storage.get('ai_result_count', '20'), t = card.original_title || card.original_name, year = (card.release_date || card.first_air_date || '').slice(0,4);
             window.ai_active_controller = ctrl || Lampa.Controller.enabled().name;
-            _this.updateStatus('Аналіз фільму');
+            _this.updateStatus('Анализ фильма');
             
             _this.getTMDBDetails(card, function(tmdb) {
-                var p = 'Suggest strictly ' + limit + ' movies or TV series that closely match the vibe, genre, and plot of "' + t + '" (' + year + ') with ' + tmdb.leadActor + ' in the lead role and the following plot description: "' + tmdb.overview + '".';
-                _this.fetchList(p, 'Рекомендації', card, btn, render, ctrl);
+                var p = 'Suggest strictly ' + limit + ' movies or TV series that closely match the vibe, genre, and plot of "' + t + '" (' + year + ') with ' + tmdb.leadActor + ' in the lead role and the following plot description: "' + tmdb.overview + '". Return all titles in Russian and use Russian language for all text.';
+                _this.fetchList(p, 'Рекомендации', card, btn, render, ctrl);
             });
         };
 
@@ -442,9 +442,9 @@
                         tags.forEach(function(tag, index) {
                             if (translatedArray[index]) {
                                 tag.name = translatedArray[index]
-                                    .replace(/позначка до фільму[:\s]*/gi, '')
-                                    .replace(/тег до фільму[:\s]*/gi, '')
-                                    .replace(/тег фільму[:\s]*/gi, '')
+                                    .replace(/метка фильма[:\s]*/gi, '')
+                                    .replace(/тег фильма[:\s]*/gi, '')
+                                    .replace(/тег фильма[:\s]*/gi, '')
                                     .replace(/movie tag[:\s]*/gi, '')
                                     .replace(/^[:\s\-]*/, '')
                                     .trim();
@@ -463,7 +463,7 @@
             });
 
             Lampa.Select.show({
-                title: 'Оберіть тег',
+                title: 'Выберите тег',
                 items: items,
                 onSelect: function (item) {
                     var limit = Lampa.Storage.get('ai_result_count', '20');
@@ -477,7 +477,7 @@
         this.askGemini = function(p, onSuccess, onError, isSilent, useSearch) {
             var rawValue = Lampa.Storage.get(STORAGE_KEY, '');
             if (!rawValue) {
-                if (!isSilent) Lampa.Noty.show('ШІ спить 😴 Додайте API ключ у налаштуваннях, щоб розбудити його');
+                if (!isSilent) Lampa.Noty.show('AI спит 😴 Добавьте API-ключ в настройках, чтобы его разбвдить');
                 if (onError) onError();
                 return;
             }
@@ -489,34 +489,34 @@
             var fallbackList = Lampa.Storage.get('ai_fallback_list', []);
             var fallbackChecked = Lampa.Storage.get('ai_fallback_checked', []);
             
-            // Формуємо загальну ЧЕРГУ запитів
+            // Формирвем загальнв ОЧЕРЕДЬ запитів
             var requestQueue = [];
             
-            // 1. Основна модель перевіряється на ВСІХ ключах
+            // 1. Основнаяя модель проверяется на ВСІХ ключах
             keys.forEach(function(k) {
                 requestQueue.push({ model: primaryModel, key: k });
             });
             
-            // 2. Додаємо запасні моделі (якщо увімкнено)
+            // 2. Добавляем запасні моделі (если включено)
             if (fallbackMode !== 'off') {
                 var modelsToAdd = [];
                 if (fallbackMode === 'all') {
-                    // Всі (крім основної) у збереженому порядку
+                    // Все (крім основної) в збереженомв порядкв
                     fallbackList.forEach(function(mId) {
                         if (mId !== primaryModel && AI_MODELS_LIST.find(function(am){return am.id === mId})) modelsToAdd.push(mId);
                     });
-                    // Докидаємо ті, що не були в списку (нові)
+                    // Добавляем ті, що не бвли в спискв (нові)
                     AI_MODELS_LIST.forEach(function(m) {
                         if (m.id !== primaryModel && modelsToAdd.indexOf(m.id) === -1) modelsToAdd.push(m.id);
                     });
                 } else if (fallbackMode === 'custom') {
-                    // Тільки вибрані галочками
+                    // Только выбранные галочками
                     fallbackList.forEach(function(mId) {
                         if (mId !== primaryModel && fallbackChecked.indexOf(mId) !== -1) modelsToAdd.push(mId);
                     });
                 }
                 
-                // Кожна запасна модель також перевіряється на ВСІХ ключах
+                // Каждая резервная модель також проверяется на ВСІХ ключах
                 modelsToAdd.forEach(function(modelId) {
                     keys.forEach(function(k) {
                         requestQueue.push({ model: modelId, key: k });
@@ -524,12 +524,12 @@
                 });
             }
 
-            // Функція обробки черги
+            // Фвнкция обработки черги
             var attemptRequest = function(queueIndex) {
                 if (queueIndex >= requestQueue.length) {
                     if (!isSilent) {
                         _this.hideStatus();
-                        Lampa.Noty.show('Сервіс недоступний або ліміти вичерпано');
+                        Lampa.Noty.show('Сервис недоствпен или лимиты исчерпаны');
                         _this.restoreFocus(window.ai_active_controller);
                     }
                     if (onError) onError('All attempts failed');
@@ -551,7 +551,7 @@
                 }).then(function(r) {
                     return r.json().then(function(json) { return { status: r.status, ok: r.ok, data: json }; });
                 }).then(function(res) {
-                    // Якщо ліміт (429) або сервер лежить (503) — беремо НАСТУПНЕ завдання з черги
+                    // Если ліміт (429) або сервер лежить (503) — беремо НАСТУПНЕ завдання з черги
                     if (res.status === 429 || res.status === 503) {
                         if (res.status === 503) console.log('AI Assistant: Server 503, trying next from queue...');
                         return attemptRequest(queueIndex + 1);
@@ -565,7 +565,7 @@
                     } else { throw new Error('Empty response'); }
 
                 }).catch(function(e) {
-                    // Якщо мережевий збій (failed to fetch) — теж рухаємось по черзі
+                    // Если мережевий збій (failed to fetch) — теж рвхаємось по черзі
                     return attemptRequest(queueIndex + 1);
                 });
             };
@@ -577,11 +577,11 @@
         this.parseJsonSafe = function(text) {
             if (!text) return null;
             try { 
-                // Спроба 1: Прямий парсинг (найшвидший)
+                // Попытка 1: Прямой парсинг (найшвидший)
                 return JSON.parse(text); 
             } catch (e) {
-                // Спроба 2: Шукаємо перший блок [ ... ] і пробуємо його
-                // Це рятує при подвійних відповідях моделі
+                // Попытка 2: Ищем перший блок [ ... ] і пробвємо його
+                // Это спасает при подвійних відповідях моделі
                 var regex = /\[[\s\S]*?\]/g; 
                 var match;
                 while ((match = regex.exec(text)) !== null) {
@@ -590,7 +590,7 @@
                         if (Array.isArray(result) && result.length > 0) return result;
                     } catch (e3) {}
                 }
-                // Спроба 3: Чистка від Markdown backticks
+                // Попытка 3: Очистка від Markdown backticks
                 var clean = text.replace(/```json/gi, '').replace(/```/g, '').trim();
                 try { return JSON.parse(clean); } catch (e2) {}
             }
@@ -604,7 +604,7 @@
             var savedList = Lampa.Storage.get('ai_fallback_list', []);
             var savedChecked = Lampa.Storage.get('ai_fallback_checked', []);
             
-            // Фільтруємо, щоб основна модель не з'являлася в списку запасних
+            // Фильтрвем, чтобы основна модель не появлялась в спискв запасних
             var availableModels = AI_MODELS_LIST.filter(function(m) { return m.id !== primaryModel; });
             
             var workingList = [];
@@ -637,8 +637,8 @@
             function updateUIState() {
                 var isOff = mode === 'off';
                 var isAll = mode === 'all';
-                topControls.find('[data-action="off"]').html((isOff?svgRadioOn:svgRadioOff) + ' Вимкнути').css('color', isOff?'#f55':'');
-                topControls.find('[data-action="all"]').html((isAll?svgRadioOn:svgRadioOff) + ' Всі').css('color', isAll?'#4b5':'');
+                topControls.find('[data-action="off"]').html((isOff?svgRadioOn:svgRadioOff) + ' Выключить').css('color', isOff?'#f55':'');
+                topControls.find('[data-action="all"]').html((isAll?svgRadioOn:svgRadioOff) + ' Все').css('color', isAll?'#4b5':'');
                 
                 modelsContainer.find('.source-item').each(function() {
                     var id = $(this).attr('data-id');
@@ -692,7 +692,7 @@
             updateUIState();
 
             Lampa.Modal.open({ 
-                title: 'Автоперемикання моделей', html: listContainer, size: 'small', scroll_to_center: true, 
+                title: 'Автопереключение моделей', html: listContainer, size: 'small', scroll_to_center: true, 
                 onBack: function() {
                     var finalOrder = [];
                     var finalSavedChecked = [];
@@ -722,7 +722,7 @@
         this.processAiList = function(list, callback) {
             var results = [], processed = 0;
             
-            // Перевіряємо чи існує глобальний масив ID, якщо ні - створюємо
+            // Проверяем чи свществвет глобальный масив ID, если ні - создаём
             if (!window.ai_pagination.exclude_ids) window.ai_pagination.exclude_ids = [];
             
             if (!list || !list.length) return callback(results);
@@ -733,9 +733,9 @@
                     processed++;
                     if (res.results && res.results[0]) {
                         var b = res.results[0];
-                        // Перевіряємо глобальний чорний список замість локального
+                        // Проверяем глобальный чёрный список вместо локального
                         if (b.media_type !== 'person' && window.ai_pagination.exclude_ids.indexOf(b.id) === -1) { 
-                            window.ai_pagination.exclude_ids.push(b.id); // Додаємо ID назавжди для цієї добірки
+                            window.ai_pagination.exclude_ids.push(b.id); // Добавляем ID назавжди для цієї добірки
                             b.source = 'tmdb'; 
                             results.push(b); 
                         }
@@ -749,7 +749,7 @@
         this.fetchNextPageData = function(callback, isSilent) {
             var limit = Lampa.Storage.get('ai_result_count', '20');
             var exclusions = window.ai_pagination.exclude_list.slice(-50).join(', ');
-            var p = window.ai_pagination.base_prompt + ' IMPORTANT: You MUST EXCLUDE these titles from your suggestions: ' + exclusions + '. Provide strictly NEW ' + limit + ' suggestions. Respond ONLY in Russian with a valid JSON array: [{"uk":"Название на русском","orig":"Original Title","year":Year}]. No markdown, no intro text.';
+            var p = window.ai_pagination.base_prompt + ' IMPORTANT: You MUST EXCLUDE these titles from your suggestions: ' + exclusions + '. Provide strictly NEW ' + limit + ' suggestions. Respond ONLY with a valid JSON array: [{"uk":"Название на рвсском","orig":"Original Title","year":Year}]. All titles and all text must be in Russian. No markdown, no intro text.';
 
             _this.askGemini(p, function(text) {
                 var list = _this.parseJsonSafe(text);
@@ -784,7 +784,7 @@
                 _this.hideStatus();
                 
                 if (!results.length) { 
-                    Lampa.Noty.show('Більше нічого не знайдено'); 
+                    Lampa.Noty.show('Больше ничего не найдено'); 
                     if (window.ai_active_controller) Lampa.Controller.toggle(window.ai_active_controller);
                     return; 
                 }
@@ -830,7 +830,7 @@
                 renderResults(window.ai_pagination.preloaded_results, window.ai_pagination.preloaded_raw_list);
             } else if (window.ai_pagination.is_preloading) {
                 window.ai_pagination.is_loading = true;
-                _this.updateStatus('Підбір результатів...');
+                _this.updateStatus('Подбор резвльтатов...');
                 var waitInterval = setInterval(function() {
                     if (window.ai_pagination.preloaded_results) {
                         clearInterval(waitInterval);
@@ -839,19 +839,19 @@
                         clearInterval(waitInterval);
                         window.ai_pagination.is_loading = false;
                         _this.hideStatus();
-                        Lampa.Noty.show('Помилка підбору, спробуйте ще');
+                        Lampa.Noty.show('Ошибка подбора, попробвйте ещё');
                         if (window.ai_active_controller) Lampa.Controller.toggle(window.ai_active_controller);
                     }
                 }, 500);
             } else {
                 window.ai_pagination.is_loading = true;
-                _this.updateStatus('Підбір результатів...');
+                _this.updateStatus('Подбор резвльтатов...');
                 _this.fetchNextPageData(function(list, results) {
                     if(results && results.length) renderResults(results, list);
                     else { 
                         window.ai_pagination.is_loading = false; 
                         _this.hideStatus(); 
-                        Lampa.Noty.show('Нічого не знайдено'); 
+                        Lampa.Noty.show('Ничего не найдено'); 
                         if (window.ai_active_controller) Lampa.Controller.toggle(window.ai_active_controller);
                     }
                 }, false);
@@ -864,13 +864,13 @@
             window.ai_cached_results = [];
             window.ai_active_controller = ctrl || Lampa.Controller.enabled().name;
             
-            var full_prompt = base_prompt_task + ' Respond ONLY in Russian with a valid JSON array: [{"uk":"Название на русском","orig":"Original Title","year":Year}]. No markdown, no intro text.';
+            var full_prompt = base_prompt_task + ' Respond ONLY with a valid JSON array: [{"uk":"Название на рвсском","orig":"Original Title","year":Year}]. All titles and all text must be in Russian. No markdown, no intro text.';
 
-            _this.updateStatus('Підбір результатів');
+            _this.updateStatus('Подбор резвльтатов');
             _this.askGemini(full_prompt, function(text) {
                 var list = _this.parseJsonSafe(text);
                 
-                // ЗАХИСТ ВІД ПРИВИДІВ: Якщо ми вже вийшли з фільму в меню, відміняємо завантаження
+                // ЗАЩИТА ОТ ПРИЗРАКОВ: Если ми вже вышли з фильмв в меню, отменяем завантаження
                 if (Lampa.Activity.active().component !== 'full') {
                     _this.hideStatus();
                     return; 
@@ -878,7 +878,7 @@
 
                 if (!list || !list.length) { 
                     _this.hideStatus(); 
-                    Lampa.Noty.show('Нічого не знайдено або помилка парсингу'); 
+                    Lampa.Noty.show('Ничего не найдено или ошибка обработки'); 
                     if (window.ai_active_controller) Lampa.Controller.toggle(window.ai_active_controller);
                     return; 
                 }
@@ -887,11 +887,11 @@
 
                 _this.processAiList(list, function(results) {
                     _this.hideStatus();
-                    // Додаткова перевірка перед пушем нової сторінки
+                    // Дополнительная перевірка перед добавлением нової сторінки
                     if (Lampa.Activity.active().component !== 'full') return; 
 
                     if (!results.length) { 
-                        Lampa.Noty.show('Нічого не знайдено'); 
+                        Lampa.Noty.show('Ничего не найдено'); 
                         if (window.ai_active_controller) Lampa.Controller.toggle(window.ai_active_controller);
                         return; 
                     }
@@ -927,7 +927,7 @@
         this.checkApiKey = function(btn, render, ctrl) {
             var rawValue = Lampa.Storage.get(STORAGE_KEY, '');
             if (!rawValue) {
-                Lampa.Noty.show('ШІ спить 😴 Додайте API ключ у налаштуваннях, щоб розбудити його');
+                Lampa.Noty.show('AI спит 😴 Добавьте API-ключ в настройках, чтобы его разбвдить');
                 if (btn && render) _this.restoreFocus(btn, render, ctrl);
                 return false;
             }
@@ -935,13 +935,13 @@
         };
 
         this.setupSettings = function() {
-            Lampa.SettingsApi.addComponent({ component: 'ai_assistant_cfg', name: 'AI Асистент', icon: PLUGIN_ICON });
+            Lampa.SettingsApi.addComponent({ component: 'ai_assistant_cfg', name: 'cinemaX_ai', icon: PLUGIN_ICON });
             
             Lampa.SettingsApi.addParam({ 
                 component: 'ai_assistant_cfg', param: { name: 'ai_key_trigger', type: 'trigger' }, 
-                field: { name: 'Gemini API key', description: 'Отримайте ключ на aistudio.google.com/api-keys. Можна вказати кілька ключів через кому' }, 
+                field: { name: 'Gemini API key', description: 'Получите ключ на aistudio.google.com/api-keys. Можно указать несколько ключей через запятую' }, 
                 onRender: function(item) {
-                    var updateText = function() { var val = Lampa.Storage.get(STORAGE_KEY, ''); item.find('.settings-param__value').text(val ? 'Так' : 'Ні').css('color', val ? '#4b5' : '#f55'); };
+                    var updateText = function() { var val = Lampa.Storage.get(STORAGE_KEY, ''); item.find('.settings-param__value').text(val ? 'Да' : 'Нет').css('color', val ? '#4b5' : '#f55'); };
                     updateText();
                     item.on('hover:enter', function() { Lampa.Input.edit({ title: 'Gemini API key', value: Lampa.Storage.get(STORAGE_KEY, ''), free: true }, function(v) { if(v !== undefined){ Lampa.Storage.set(STORAGE_KEY, v.trim()); updateText(); } }); });
                 }
@@ -950,19 +950,19 @@
             var modelValues = {};
             AI_MODELS_LIST.forEach(function(m) { modelValues[m.id] = '\u200B' + m.name; });
 
-            // Запам'ятовуємо модель, яка була обрана ДО зміни
+            // Запоминаем модель, которая была выбрана ДО изменения
             var currentPrimaryModel = Lampa.Storage.get('ai_model', 'gemini-2.5-flash-lite');
 
             Lampa.SettingsApi.addParam({ 
                 component: 'ai_assistant_cfg', 
                 param: { name: 'ai_model', type: 'select', values: modelValues, default: 'gemini-2.5-flash-lite' }, 
-                field: { name: 'Основна модель' },
+                field: { name: 'Основнаяя модель' },
                 onChange: function(newModel) {
                     if (newModel !== currentPrimaryModel) {
                         var list = Lampa.Storage.get('ai_fallback_list', []);
                         var checked = Lampa.Storage.get('ai_fallback_checked', []);
                         
-                        // 1. Міняємо місцями в загальному списку сортування
+                        // 1. Меняем местами в загальномв спискв сортввання
                         var listIdx = list.indexOf(newModel);
                         if (listIdx !== -1) {
                             list[listIdx] = currentPrimaryModel;
@@ -970,17 +970,17 @@
                             list.push(currentPrimaryModel);
                         }
                         
-                        // 2. Якщо нова модель мала галочку, передаємо її старій моделі
+                        // 2. Если нова модель мала галочкв, передаём её старій моделі
                         var checkedIdx = checked.indexOf(newModel);
                         if (checkedIdx !== -1) {
                             checked[checkedIdx] = currentPrimaryModel;
                         }
                         
-                        // Зберігаємо зміни тихо під капотом
+                        // Сохраняем изменения тихо в фоне
                         Lampa.Storage.set('ai_fallback_list', list);
                         Lampa.Storage.set('ai_fallback_checked', checked);
                    
-                        // Оновлюємо поточну модель на випадок, якщо ти відразу зміниш її ще раз
+                        // Обновляем теквщвю модель на слвчай, если ти відразв изменишь її ещё раз
                         currentPrimaryModel = newModel;
                     }
                 }
@@ -989,11 +989,11 @@
             Lampa.SettingsApi.addParam({ 
                 component: 'ai_assistant_cfg', 
                 param: { type: 'button', name: 'ai_fallback_trigger' }, 
-                field: { name: 'Автоперемикання моделей', description: 'Резервні моделі у разі вичерпання лімітів або помилок' }, 
+                field: { name: 'Автопереключение моделей', description: 'Резервные модели при исчерпании лимитов или ошибках' }, 
                 onChange: function() { _this.showFallbackSelector(); } 
             });
 
-            Lampa.SettingsApi.addParam({ component: 'ai_assistant_cfg', param: { name: 'ai_result_count', type: 'select', values: { '10':'10','20':'20','30':'30','50':'50' }, default: '20' }, field: { name: 'Кількість результатів' } });
+            Lampa.SettingsApi.addParam({ component: 'ai_assistant_cfg', param: { name: 'ai_result_count', type: 'select', values: { '10':'10','20':'20','30':'30','50':'50' }, default: '20' }, field: { name: 'Количество резвльтатов' } });
             
             Lampa.SettingsApi.addParam({ 
                 component: 'ai_assistant_cfg', 
@@ -1003,7 +1003,7 @@
                     values: { '1.1em':'1.1em','1.2em':'1.2em','1.3em':'1.3em','1.4em':'1.4em','1.5em':'1.5em','1.6em':'1.6em' }, 
                     default: '1.2em' 
                 }, 
-                field: { name: 'Розмір тексту' } 
+                field: { name: 'Размер текста' } 
             });
         };
     }
@@ -1012,7 +1012,8 @@ var pluginManifest = {
     type: 'other',
     version: '3.4',
     name: 'cinemaX_ai',
-    description: 'Ваш персональний ШІ помічник',
+    description: 'Ваш персональный AI-помощник',
+ 
     icon: PLUGIN_ICON
 };
 
