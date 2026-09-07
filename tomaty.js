@@ -1,12 +1,21 @@
 (function () {
     'use strict';
 
-    if (window.rt_ratings_plugin_v12) return;
-    window.rt_ratings_plugin_v12 = true;
+    if (window.rt_ratings_plugin_v13) return;
+    window.rt_ratings_plugin_v13 = true;
 
     var NAME = 'RT Ratings';
-    var SETTINGS = 'rt_ratings_settings_v12';
-    var CACHE = 'rt_ratings_cache_v12';
+    var SETTINGS = 'rt_ratings_settings_v13';
+    var CACHE = 'rt_ratings_cache_v13';
+
+    /*
+     * ВАЖНО:
+     * Используем тот же рабочий endpoint, что был в v1.1:
+     * ?movie=Название Год
+     *
+     * В v1.2 был ошибочно добавлен ?imdb_id=,
+     * из-за чего API перестал отвечать.
+     */
 
     var cfg = Object.assign({
         enabled: true,
@@ -16,8 +25,20 @@
         api: 'https://rt-api-jade.vercel.app/api/rotten-tomatoes'
     }, Lampa.Storage.get(SETTINGS, {}) || {});
 
+    /*
+     * Намеренно используем НОВЫЙ ключ кэша.
+     * Это исключает старые неправильные значения.
+     */
     var cache = Lampa.Storage.get(CACHE, {}) || {};
-    var inFlight = {};
+    var requests = {};
+
+    function log() {
+        var args = Array.prototype.slice.call(arguments);
+        args.unshift('[RT Ratings v1.3]');
+        try {
+            console.log.apply(console, args);
+        } catch (e) {}
+    }
 
     function saveCfg() {
         Lampa.Storage.set(SETTINGS, cfg);
@@ -27,18 +48,34 @@
         Lampa.Storage.set(CACHE, cache);
     }
 
-    function esc(v) {
-        return String(v == null ? '' : v)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+    function title(movie) {
+        if (!movie) return '';
+
+        return String(
+            movie.original_title ||
+            movie.original_name ||
+            movie.title ||
+            movie.name ||
+            ''
+        ).trim();
     }
 
-    /*
-     * Получаем IMDb ID из объекта Lampa.
-     */
-    function getImdbId(movie) {
+    function year(movie) {
+        if (!movie) return '';
+
+        var value =
+            movie.release_date ||
+            movie.first_air_date ||
+            movie.year ||
+            '';
+
+        var match =
+            String(value).match(/\b(19|20)\d{2}\b/);
+
+        return match ? match[0] : '';
+    }
+
+    function imdb(movie) {
         if (!movie) return '';
 
         var id =
@@ -54,42 +91,24 @@
                 '';
         }
 
-        if (!id && movie.source && typeof movie.source === 'object') {
-            id =
-                movie.source.imdb_id ||
-                movie.source.imdb ||
-                movie.source.imdbId ||
-                '';
-        }
-
-        id = String(id || '').trim();
-
-        return /^tt\d{7,9}$/.test(id) ? id : '';
+        return String(id || '').trim();
     }
 
-    function getTitle(movie) {
-        return String(
-            movie.original_title ||
-            movie.original_name ||
-            movie.title ||
-            movie.name ||
-            ''
-        ).trim();
+    function describe(movie) {
+        return {
+            title: title(movie),
+            year: year(movie),
+            imdb: imdb(movie),
+            id: movie && movie.id,
+            type: movie && (
+                movie.media_type ||
+                movie.type ||
+                ''
+            )
+        };
     }
 
-    function getYear(movie) {
-        var date =
-            movie.release_date ||
-            movie.first_air_date ||
-            movie.year ||
-            '';
-
-        var match = String(date).match(/\b(19|20)\d{2}\b/);
-
-        return match ? match[0] : '';
-    }
-
-    function parseScore(value) {
+    function score(value) {
         if (
             value === null ||
             value === undefined ||
@@ -98,20 +117,25 @@
             return null;
         }
 
-        var number = parseInt(
-            String(value).replace('%', '').trim(),
-            10
-        );
+        var n =
+            parseInt(
+                String(value)
+                    .replace('%', '')
+                    .trim(),
+                10
+            );
 
-        if (isNaN(number)) return null;
-
-        return Math.max(0, Math.min(100, number));
+        return isNaN(n)
+            ? null
+            : Math.max(0, Math.min(100, n));
     }
 
     /*
-     * Универсальный разбор ответа RT API.
+     * Разбираем ВСЕ варианты структуры ответа,
+     * чтобы увидеть фактический ответ в консоли.
      */
-    function normalizeResponse(response) {
+    function normalize(response) {
+
         if (!response) return null;
 
         var data = response;
@@ -131,26 +155,22 @@
         }
 
         var critic =
-            parseScore(data.tomatometer);
+            score(data.tomatometer);
 
-        if (critic === null) {
-            critic = parseScore(data.criticScore);
-        }
+        if (critic === null)
+            critic = score(data.criticScore);
 
-        if (critic === null) {
-            critic = parseScore(data.critic_score);
-        }
+        if (critic === null)
+            critic = score(data.critic_score);
 
         var audience =
-            parseScore(data.audience_score);
+            score(data.audience_score);
 
-        if (audience === null) {
-            audience = parseScore(data.audienceScore);
-        }
+        if (audience === null)
+            audience = score(data.audienceScore);
 
-        if (audience === null) {
-            audience = parseScore(data.audience);
-        }
+        if (audience === null)
+            audience = score(data.audience);
 
         if (
             critic === null &&
@@ -173,30 +193,36 @@
     }
 
     function scoreClass(value) {
-        if (value >= 75) return 'rt-good';
-        if (value >= 60) return 'rt-mid';
+        if (value >= 75)
+            return 'rt-good';
+
+        if (value >= 60)
+            return 'rt-mid';
 
         return 'rt-bad';
     }
 
     /*
-     * Стиль НЕ меняем относительно рабочей версии.
+     * Дизайн оставлен таким же, как рабочий.
      */
     function addStyles() {
+
         if (
             document.getElementById(
-                'rt-ratings-v12-style'
+                'rt-ratings-v13-style'
             )
         ) {
             return;
         }
 
-        var style = document.createElement('style');
+        var style =
+            document.createElement('style');
 
-        style.id = 'rt-ratings-v12-style';
+        style.id =
+            'rt-ratings-v13-style';
 
         style.textContent =
-            '.rt-ratings-v12{' +
+            '.rt-ratings-v13{' +
                 'display:flex;' +
                 'align-items:center;' +
                 'gap:7px;' +
@@ -204,7 +230,7 @@
                 'flex-wrap:wrap;' +
             '}' +
 
-            '.rt-ratings-v12__badge{' +
+            '.rt-ratings-v13__badge{' +
                 'display:inline-flex;' +
                 'align-items:center;' +
                 'gap:5px;' +
@@ -219,85 +245,51 @@
                 'box-shadow:0 2px 9px rgba(0,0,0,.18);' +
             '}' +
 
-            '.rt-ratings-v12__badge.rt-good{' +
+            '.rt-ratings-v13__badge.rt-good{' +
                 'border-color:rgba(78,190,102,.65);' +
             '}' +
 
-            '.rt-ratings-v12__badge.rt-mid{' +
+            '.rt-ratings-v13__badge.rt-mid{' +
                 'border-color:rgba(220,177,66,.65);' +
             '}' +
 
-            '.rt-ratings-v12__badge.rt-bad{' +
+            '.rt-ratings-v13__badge.rt-bad{' +
                 'border-color:rgba(220,75,75,.65);' +
             '}' +
 
-            '.rt-ratings-v12__label{' +
+            '.rt-ratings-v13__label{' +
                 'opacity:.72;' +
                 'font-size:.78em;' +
                 'font-weight:500;' +
             '}' +
 
-            '.rt-ratings-v12__icon{' +
+            '.rt-ratings-v13__icon{' +
                 'font-size:1.05em;' +
-            '}' +
-
-            '.rt-ratings-card-v12{' +
-                'position:relative!important;' +
-            '}' +
-
-            '.rt-ratings-card-badge-v12{' +
-                'position:absolute;' +
-                'left:5px;' +
-                'bottom:5px;' +
-                'z-index:30;' +
-                'display:flex;' +
-                'gap:4px;' +
-                'pointer-events:none;' +
-            '}' +
-
-            '.rt-ratings-card-badge-v12 span{' +
-                'padding:3px 5px;' +
-                'border-radius:6px;' +
-                'background:rgba(8,10,12,.9);' +
-                'font:700 11px/1 Arial,sans-serif;' +
-                'color:#fff;' +
-                'border:1px solid rgba(255,255,255,.16);' +
-            '}' +
-
-            '.rt-ratings-card-badge-v12 .rt-good{' +
-                'border-color:rgba(78,190,102,.7);' +
-            '}' +
-
-            '.rt-ratings-card-badge-v12 .rt-mid{' +
-                'border-color:rgba(220,177,66,.7);' +
-            '}' +
-
-            '.rt-ratings-card-badge-v12 .rt-bad{' +
-                'border-color:rgba(220,75,75,.7);' +
             '}';
 
         document.head.appendChild(style);
     }
 
-    function makeFullBadge(data) {
+    function makeBadge(data) {
+
         if (!data) return '';
 
         var html =
-            '<div class="rt-ratings-v12">';
+            '<div class="rt-ratings-v13">';
 
         if (
             cfg.critic &&
             data.critic !== null
         ) {
             html +=
-                '<div class="rt-ratings-v12__badge ' +
+                '<div class="rt-ratings-v13__badge ' +
                 scoreClass(data.critic) +
                 '">' +
-                '<span class="rt-ratings-v12__icon">🍅</span>' +
+                '<span class="rt-ratings-v13__icon">🍅</span>' +
                 '<span>' +
                 data.critic +
                 '%</span>' +
-                '<span class="rt-ratings-v12__label">критики</span>' +
+                '<span class="rt-ratings-v13__label">критики</span>' +
                 '</div>';
         }
 
@@ -306,14 +298,14 @@
             data.audience !== null
         ) {
             html +=
-                '<div class="rt-ratings-v12__badge ' +
+                '<div class="rt-ratings-v13__badge ' +
                 scoreClass(data.audience) +
                 '">' +
-                '<span class="rt-ratings-v12__icon">🍿</span>' +
+                '<span class="rt-ratings-v13__icon">🍿</span>' +
                 '<span>' +
                 data.audience +
                 '%</span>' +
-                '<span class="rt-ratings-v12__label">зрители</span>' +
+                '<span class="rt-ratings-v13__label">зрители</span>' +
                 '</div>';
         }
 
@@ -322,115 +314,35 @@
         return html;
     }
 
-    /*
-     * Основной запрос:
-     *
-     * IMDb ID используется как ключ.
-     *
-     * Если IMDb ID присутствует, отправляем:
-     * ?imdb_id=ttXXXXXXX
-     *
-     * Это исключает ситуацию, когда разные фильмы
-     * получают один и тот же результат поиска.
-     */
-    function requestByImdb(movie, callback) {
-        if (!cfg.enabled || !movie) return;
+    function request(movie, callback) {
 
-        var imdb = getImdbId(movie);
+        if (!cfg.enabled || !movie)
+            return;
 
-        if (!imdb) {
-            /*
-             * Если Lampa не передала IMDb ID,
-             * используем резервный поиск.
-             */
-            requestByTitle(movie, callback);
+        var t = title(movie);
+
+        if (!t) {
+            log(
+                'Пропуск: у объекта нет названия',
+                describe(movie)
+            );
             return;
         }
 
-        var key = 'imdb:' + imdb;
+        var y = year(movie);
 
-        var ttl =
-            Number(cfg.cache_days || 7) *
-            86400000;
-
-        if (
-            cache[key] &&
-            cache[key].time &&
-            Date.now() - cache[key].time < ttl
-        ) {
-            callback(cache[key].data);
-            return;
-        }
-
-        if (inFlight[key]) {
-            inFlight[key].push(callback);
-            return;
-        }
-
-        inFlight[key] = [callback];
-
-        var url =
-            String(cfg.api).replace(/\/+$/, '') +
-            '?imdb_id=' +
-            encodeURIComponent(imdb);
-
-        var request = new Lampa.Reguest();
-
-        request.silent(
-            url,
-            function (response) {
-
-                var data =
-                    normalizeResponse(response);
-
-                /*
-                 * Если API вернул IMDb ID,
-                 * проверяем соответствие.
-                 */
-                if (
-                    data &&
-                    data.imdb_id &&
-                    String(data.imdb_id).toLowerCase() !==
-                    imdb.toLowerCase()
-                ) {
-                    data = null;
-                }
-
-                if (data) {
-                    cache[key] = {
-                        time: Date.now(),
-                        data: data
-                    };
-
-                    saveCache();
-                }
-
-                finish(key, data);
-            },
-            function () {
-                finish(key, null);
-            }
-        );
-    }
-
-    /*
-     * Резервный поиск.
-     *
-     * Используется только если Lampa
-     * вообще не передала IMDb ID.
-     */
-    function requestByTitle(movie, callback) {
-        var title = getTitle(movie);
-
-        if (!title) return;
-
-        var year = getYear(movie);
-
+        /*
+         * Ключ кэша:
+         * название + год.
+         *
+         * Старый v1.1 кэш НЕ используется.
+         */
         var key =
-            'title:' +
-            title.toLowerCase() +
-            ':' +
-            year;
+            (
+                t +
+                '|' +
+                y
+            ).toLowerCase();
 
         var ttl =
             Number(cfg.cache_days || 7) *
@@ -439,38 +351,77 @@
         if (
             cache[key] &&
             cache[key].time &&
-            Date.now() - cache[key].time < ttl
+            Date.now() -
+            cache[key].time <
+            ttl
         ) {
-            callback(cache[key].data);
+
+            log(
+                'CACHE',
+                describe(movie),
+                cache[key].data
+            );
+
+            callback(
+                cache[key].data
+            );
+
             return;
         }
 
-        if (inFlight[key]) {
-            inFlight[key].push(callback);
+        if (requests[key]) {
+
+            requests[key].push(
+                callback
+            );
+
             return;
         }
 
-        inFlight[key] = [callback];
+        requests[key] = [
+            callback
+        ];
 
         var query =
-            title +
-            (year ? ' ' + year : '');
+            t +
+            (y ? ' ' + y : '');
 
         var url =
-            String(cfg.api).replace(/\/+$/, '') +
+            String(cfg.api)
+                .replace(/\/+$/, '') +
             '?movie=' +
             encodeURIComponent(query);
 
-        var request = new Lampa.Reguest();
+        log(
+            'REQUEST',
+            url
+        );
+
+        var request =
+            new Lampa.Reguest();
 
         request.silent(
             url,
+
             function (response) {
 
+                log(
+                    'RAW RESPONSE',
+                    describe(movie),
+                    response
+                );
+
                 var data =
-                    normalizeResponse(response);
+                    normalize(response);
+
+                log(
+                    'NORMALIZED',
+                    describe(movie),
+                    data
+                );
 
                 if (data) {
+
                     cache[key] = {
                         time: Date.now(),
                         data: data
@@ -479,30 +430,61 @@
                     saveCache();
                 }
 
-                finish(key, data);
+                finish(
+                    key,
+                    data
+                );
             },
-            function () {
-                finish(key, null);
+
+            function (error) {
+
+                log(
+                    'API ERROR',
+                    describe(movie),
+                    error
+                );
+
+                finish(
+                    key,
+                    null
+                );
             }
         );
     }
 
     function finish(key, data) {
-        var list = inFlight[key] || [];
 
-        delete inFlight[key];
+        var list =
+            requests[key] || [];
 
-        list.forEach(function (callback) {
-            try {
-                callback(data);
-            } catch (e) {}
-        });
+        delete requests[key];
+
+        list.forEach(
+            function (callback) {
+
+                try {
+                    callback(data);
+                } catch (e) {
+                    log(
+                        'callback error',
+                        e
+                    );
+                }
+            }
+        );
     }
 
     /*
-     * Страница фильма / сериала.
+     * Полная карточка фильма.
      */
     function hookFull() {
+
+        if (
+            !Lampa.Listener ||
+            !Lampa.Listener.follow
+        ) {
+            return;
+        }
 
         Lampa.Listener.follow(
             'full',
@@ -515,43 +497,58 @@
                     return;
                 }
 
-                if (!cfg.enabled) return;
+                if (!cfg.enabled)
+                    return;
 
                 var movie =
                     event.data;
 
-                if (!movie) return;
+                if (!movie)
+                    return;
+
+                log(
+                    'FULL OBJECT',
+                    describe(movie),
+                    movie
+                );
 
                 var activity =
                     event.object &&
                     event.object.activity;
 
-                if (!activity) return;
+                if (!activity)
+                    return;
 
                 var root =
                     activity.render();
 
-                if (!root) return;
+                if (!root)
+                    return;
 
-                requestByImdb(
+                request(
                     movie,
                     function (data) {
 
-                        if (!data) return;
+                        if (!data) {
+                            log(
+                                'RT не найден:',
+                                describe(movie)
+                            );
+                            return;
+                        }
 
                         var $root =
                             $(root);
 
                         $root.find(
-                            '.rt-ratings-v12'
+                            '.rt-ratings-v13'
                         ).remove();
 
-                        var html =
-                            $(makeFullBadge(data));
+                        var badge =
+                            $(makeBadge(data));
 
-                        if (!html.length) {
+                        if (!badge.length)
                             return;
-                        }
 
                         var info =
                             $root.find(
@@ -570,7 +567,10 @@
                         if (
                             info.length
                         ) {
-                            info.after(html);
+                            info.after(
+                                badge
+                            );
+
                             return;
                         }
 
@@ -591,104 +591,10 @@
                         if (
                             buttons.length
                         ) {
-                            buttons.before(html);
-                        }
-                    }
-                );
-            }
-        );
-    }
-
-    /*
-     * Карточки каталога.
-     */
-    function hookCards() {
-
-        if (
-            !Lampa.Listener ||
-            !Lampa.Listener.follow
-        ) {
-            return;
-        }
-
-        Lampa.Listener.follow(
-            'card',
-            function (event) {
-
-                if (!cfg.enabled) return;
-
-                if (!event) return;
-
-                var movie =
-                    event.data ||
-                    event.card;
-
-                var element =
-                    event.element;
-
-                if (!movie || !element) {
-                    return;
-                }
-
-                var el =
-                    element.jquery ?
-                    element[0] :
-                    element;
-
-                if (!el) return;
-
-                requestByImdb(
-                    movie,
-                    function (data) {
-
-                        if (!data) return;
-
-                        var old =
-                            el.querySelector(
-                                '.rt-ratings-card-badge-v12'
+                            buttons.before(
+                                badge
                             );
-
-                        if (old) {
-                            old.remove();
                         }
-
-                        var html =
-                            '<div class="rt-ratings-card-badge-v12">';
-
-                        if (
-                            cfg.critic &&
-                            data.critic !== null
-                        ) {
-                            html +=
-                                '<span class="' +
-                                scoreClass(data.critic) +
-                                '">🍅 ' +
-                                data.critic +
-                                '%</span>';
-                        }
-
-                        if (
-                            cfg.audience &&
-                            data.audience !== null
-                        ) {
-                            html +=
-                                '<span class="' +
-                                scoreClass(data.audience) +
-                                '">🍿 ' +
-                                data.audience +
-                                '%</span>';
-                        }
-
-                        html += '</div>';
-
-                        el.classList.add(
-                            'rt-ratings-card-v12'
-                        );
-
-                        el.insertAdjacentHTML(
-                            'beforeend',
-                            html
-                        );
                     }
                 );
             }
@@ -697,14 +603,13 @@
 
     function setupSettings() {
 
-        if (!Lampa.SettingsApi) {
+        if (!Lampa.SettingsApi)
             return;
-        }
 
         var icon =
             '<svg xmlns="http://www.w3.org/2000/svg" ' +
-            'width="24" height="24" viewBox="0 0 24 24" ' +
-            'fill="none">' +
+            'width="24" height="24" ' +
+            'viewBox="0 0 24 24" fill="none">' +
             '<circle cx="12" cy="12" r="9" ' +
             'stroke="currentColor" stroke-width="1.7"/>' +
             '<path d="M8 8.5h8M8 12h8M8 15.5h5" ' +
@@ -714,18 +619,21 @@
 
         Lampa.SettingsApi.addComponent({
             component:
-                'rt_ratings_v12',
+                'rt_ratings_v13',
             name: NAME,
             icon: icon
         });
 
         Lampa.SettingsApi.addParam({
             component:
-                'rt_ratings_v12',
+                'rt_ratings_v13',
 
             param: {
-                name: 'rt_enabled',
-                type: 'select',
+                name:
+                    'rt_enabled',
+
+                type:
+                    'select',
 
                 values: {
                     1: 'Включено',
@@ -738,24 +646,29 @@
 
             field: {
                 name:
-                    'Показывать RT на карточках'
+                    'Показывать RT'
             },
 
-            onChange: function (value) {
-                cfg.enabled =
-                    Number(value) === 1;
+            onChange:
+                function (value) {
 
-                saveCfg();
-            }
+                    cfg.enabled =
+                        Number(value) === 1;
+
+                    saveCfg();
+                }
         });
 
         Lampa.SettingsApi.addParam({
             component:
-                'rt_ratings_v12',
+                'rt_ratings_v13',
 
             param: {
-                name: 'rt_critic',
-                type: 'select',
+                name:
+                    'rt_critic',
+
+                type:
+                    'select',
 
                 values: {
                     1: 'Да',
@@ -771,21 +684,26 @@
                     'Tomatometer 🍅'
             },
 
-            onChange: function (value) {
-                cfg.critic =
-                    Number(value) === 1;
+            onChange:
+                function (value) {
 
-                saveCfg();
-            }
+                    cfg.critic =
+                        Number(value) === 1;
+
+                    saveCfg();
+                }
         });
 
         Lampa.SettingsApi.addParam({
             component:
-                'rt_ratings_v12',
+                'rt_ratings_v13',
 
             param: {
-                name: 'rt_audience',
-                type: 'select',
+                name:
+                    'rt_audience',
+
+                type:
+                    'select',
 
                 values: {
                     1: 'Да',
@@ -801,21 +719,26 @@
                     'Popcornmeter 🍿'
             },
 
-            onChange: function (value) {
-                cfg.audience =
-                    Number(value) === 1;
+            onChange:
+                function (value) {
 
-                saveCfg();
-            }
+                    cfg.audience =
+                        Number(value) === 1;
+
+                    saveCfg();
+                }
         });
 
         Lampa.SettingsApi.addParam({
             component:
-                'rt_ratings_v12',
+                'rt_ratings_v13',
 
             param: {
-                name: 'rt_clear',
-                type: 'trigger'
+                name:
+                    'rt_clear',
+
+                type:
+                    'trigger'
             },
 
             field: {
@@ -823,21 +746,22 @@
                     'Очистить кэш',
 
                 description:
-                    'Удалить сохранённые RT-рейтинги'
+                    'Удалить все сохранённые RT-рейтинги'
             },
 
-            onChange: function () {
+            onChange:
+                function () {
 
-                cache = {};
+                    cache = {};
 
-                saveCache();
+                    saveCache();
 
-                if (Lampa.Noty) {
-                    Lampa.Noty.show(
-                        'Кэш RT очищен'
-                    );
+                    if (Lampa.Noty) {
+                        Lampa.Noty.show(
+                            'Кэш RT очищен'
+                        );
+                    }
                 }
-            }
         });
     }
 
@@ -849,10 +773,8 @@
 
         hookFull();
 
-        hookCards();
-
-        console.log(
-            '[RT Ratings] v1.2 started'
+        log(
+            'v1.3 started'
         );
     }
 
@@ -871,7 +793,9 @@
         }
 
         if (window.appready) {
+
             start();
+
             return;
         }
 
@@ -879,6 +803,7 @@
             Lampa.Listener &&
             Lampa.Listener.follow
         ) {
+
             Lampa.Listener.follow(
                 'app',
                 function (event) {
@@ -891,6 +816,7 @@
                     }
                 }
             );
+
         } else {
             start();
         }
