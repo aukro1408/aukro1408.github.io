@@ -1,54 +1,59 @@
 (function () {
     'use strict';
 
-    var PLUGIN_NAME = 'RT Ratings';
-    var STORAGE_KEY = 'rt_ratings_settings_v1';
-    var CACHE_KEY = 'rt_ratings_cache_v1';
+    if (window.rt_ratings_plugin_v11) return;
+    window.rt_ratings_plugin_v11 = true;
 
-    var DEFAULTS = {
-        api_url: 'https://rt-api-jade.vercel.app/api/rotten-tomatoes',
+    var NAME = 'RT Ratings';
+    var SETTINGS = 'rt_ratings_settings_v11';
+    var CACHE = 'rt_ratings_cache_v11';
+
+    var cfg = Object.assign({
         enabled: true,
-        show_critic: true,
-        show_audience: true,
-        cache_days: 7
-    };
+        critic: true,
+        audience: true,
+        cache_days: 7,
+        api: 'https://rt-api-jade.vercel.app/api/rotten-tomatoes'
+    }, Lampa.Storage.get(SETTINGS, {}) || {});
 
-    var settings = Object.assign({}, DEFAULTS, Lampa.Storage.get(STORAGE_KEY, {}) || {});
-    var cache = Lampa.Storage.get(CACHE_KEY, {}) || {};
-    var requests = {};
+    var cache = Lampa.Storage.get(CACHE, {}) || {};
+    var inFlight = {};
 
-    var ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">' +
-        '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/>' +
-        '<path d="M8 8.5h8M8 12h8M8 15.5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>' +
-        '</svg>';
-
-    function saveSettings() {
-        Lampa.Storage.set(STORAGE_KEY, settings);
+    function saveCfg() {
+        Lampa.Storage.set(SETTINGS, cfg);
     }
 
     function saveCache() {
-        Lampa.Storage.set(CACHE_KEY, cache);
+        Lampa.Storage.set(CACHE, cache);
     }
 
     function esc(v) {
         return String(v == null ? '' : v)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
 
-    function getTitle(card) {
-        return card.original_title || card.original_name || card.title || card.name || '';
+    function getMovie(data) {
+        if (!data) return null;
+        return data.movie || data;
     }
 
-    function getYear(card) {
-        var d = card.release_date || card.first_air_date || '';
-        return String(d).slice(0, 4);
+    function getTitle(movie) {
+        return String(
+            movie.original_title ||
+            movie.original_name ||
+            movie.title ||
+            movie.name ||
+            ''
+        ).trim();
     }
 
-    function cacheKey(card) {
-        var imdb = card.imdb_id || card.imdb || '';
-        if (imdb) return 'imdb:' + imdb;
-        return ('title:' + getTitle(card) + ':' + getYear(card)).toLowerCase();
+    function getYear(movie) {
+        var date = movie.release_date || movie.first_air_date || movie.year || '';
+        var m = String(date).match(/\b(19|20)\d{2}\b/);
+        return m ? m[0] : '';
     }
 
     function parseScore(v) {
@@ -57,104 +62,129 @@
         return isNaN(n) ? null : Math.max(0, Math.min(100, n));
     }
 
-    function scoreClass(v) {
-        if (v >= 75) return 'rt-good';
-        if (v >= 60) return 'rt-mid';
-        return 'rt-bad';
-    }
+    function normalizeResponse(res) {
+        if (!res) return null;
 
-    function addStyles() {
-        if (document.getElementById('rt-ratings-style')) return;
+        // API documentation returns:
+        // { success:true, data:{ tomatometer:"87%", audience_score:"91%" } }
+        var data = res.data && typeof res.data === 'object' ? res.data : res;
 
-        var s = document.createElement('style');
-        s.id = 'rt-ratings-style';
-        s.textContent =
-            '.rt-ratings-box{position:absolute;left:5px;bottom:5px;z-index:20;display:flex;gap:4px;pointer-events:none;}' +
-            '.rt-ratings-badge{display:flex;align-items:center;gap:3px;padding:4px 6px;border-radius:7px;' +
-            'background:rgba(12,14,18,.88);border:1px solid rgba(255,255,255,.14);' +
-            'box-shadow:0 2px 8px rgba(0,0,0,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);' +
-            'font:700 11px/1 Arial,sans-serif;color:#fff;white-space:nowrap;}' +
-            '.rt-ratings-badge.rt-good{border-color:rgba(77,190,99,.7);}' +
-            '.rt-ratings-badge.rt-mid{border-color:rgba(220,175,55,.7);}' +
-            '.rt-ratings-badge.rt-bad{border-color:rgba(220,70,70,.7);}' +
-            '.rt-ratings-badge span{font-size:11px;}' +
-            '.rt-ratings-host{position:relative!important;}';
-        document.head.appendChild(s);
-    }
-
-    function renderBadge(element, data) {
-        if (!element || !data) return;
+        if (data.data && typeof data.data === 'object') {
+            data = data.data;
+        }
 
         var critic = parseScore(data.tomatometer);
         if (critic === null) critic = parseScore(data.criticScore);
+        if (critic === null) critic = parseScore(data.critic_score);
 
         var audience = parseScore(data.audience_score);
         if (audience === null) audience = parseScore(data.audienceScore);
+        if (audience === null) audience = parseScore(data.audience);
 
-        if (!settings.show_critic) critic = null;
-        if (!settings.show_audience) audience = null;
-        if (critic === null && audience === null) return;
+        if (critic === null && audience === null) return null;
 
-        var old = element.querySelector('.rt-ratings-box');
-        if (old) old.remove();
-
-        var html = '<div class="rt-ratings-box">';
-
-        if (critic !== null) {
-            html += '<div class="rt-ratings-badge ' + scoreClass(critic) + '">' +
-                '<span>🍅</span>' + critic + '%</div>';
-        }
-
-        if (audience !== null) {
-            html += '<div class="rt-ratings-badge ' + scoreClass(audience) + '">' +
-                '<span>🍿</span>' + audience + '%</div>';
-        }
-
-        html += '</div>';
-
-        element.classList.add('rt-ratings-host');
-        element.insertAdjacentHTML('beforeend', html);
+        return {
+            critic: critic,
+            audience: audience,
+            title: data.title || '',
+            year: data.year || '',
+            url: data.url || ''
+        };
     }
 
-    function fetchRT(card, element) {
-        if (!settings.enabled) return;
+    function scoreClass(n) {
+        if (n >= 75) return 'rt-good';
+        if (n >= 60) return 'rt-mid';
+        return 'rt-bad';
+    }
 
-        var title = getTitle(card);
+    function styles() {
+        if (document.getElementById('rt-ratings-v11-style')) return;
+
+        var s = document.createElement('style');
+        s.id = 'rt-ratings-v11-style';
+        s.textContent =
+            '.rt-ratings-v11{display:flex;align-items:center;gap:7px;margin:.35em 0 .65em;flex-wrap:wrap;}' +
+            '.rt-ratings-v11__badge{display:inline-flex;align-items:center;gap:5px;padding:.42em .68em;border-radius:.55em;' +
+            'background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);color:#fff;' +
+            'font-size:1em;font-weight:600;line-height:1;box-shadow:0 2px 9px rgba(0,0,0,.18);}' +
+            '.rt-ratings-v11__badge.rt-good{border-color:rgba(78,190,102,.65);}' +
+            '.rt-ratings-v11__badge.rt-mid{border-color:rgba(220,177,66,.65);}' +
+            '.rt-ratings-v11__badge.rt-bad{border-color:rgba(220,75,75,.65);}' +
+            '.rt-ratings-v11__label{opacity:.72;font-size:.78em;font-weight:500;}' +
+            '.rt-ratings-v11__icon{font-size:1.05em;}' +
+            '.rt-ratings-card{position:relative!important;}' +
+            '.rt-ratings-card-badge{position:absolute;left:5px;bottom:5px;z-index:30;display:flex;gap:4px;pointer-events:none;}' +
+            '.rt-ratings-card-badge span{padding:3px 5px;border-radius:6px;background:rgba(8,10,12,.9);' +
+            'font:700 11px/1 Arial,sans-serif;color:#fff;border:1px solid rgba(255,255,255,.16);}' +
+            '.rt-ratings-card-badge .good{border-color:rgba(78,190,102,.7);}' +
+            '.rt-ratings-card-badge .mid{border-color:rgba(220,177,66,.7);}' +
+            '.rt-ratings-card-badge .bad{border-color:rgba(220,75,75,.7);}';
+        document.head.appendChild(s);
+    }
+
+    function badgeHtml(data) {
+        if (!data) return '';
+
+        var html = '<div class="rt-ratings-v11">';
+
+        if (cfg.critic && data.critic !== null) {
+            html += '<div class="rt-ratings-v11__badge ' + scoreClass(data.critic) + '">' +
+                '<span class="rt-ratings-v11__icon">🍅</span>' +
+                '<span>' + data.critic + '%</span>' +
+                '<span class="rt-ratings-v11__label">критики</span>' +
+                '</div>';
+        }
+
+        if (cfg.audience && data.audience !== null) {
+            html += '<div class="rt-ratings-v11__badge ' + scoreClass(data.audience) + '">' +
+                '<span class="rt-ratings-v11__icon">🍿</span>' +
+                '<span>' + data.audience + '%</span>' +
+                '<span class="rt-ratings-v11__label">зрители</span>' +
+                '</div>';
+        }
+
+        return html + '</div>';
+    }
+
+    function request(movie, callback) {
+        if (!cfg.enabled || !movie) return;
+
+        var title = getTitle(movie);
         if (!title) return;
 
-        var key = cacheKey(card);
-        var now = Date.now();
-        var ttl = Number(settings.cache_days || 7) * 86400000;
+        var year = getYear(movie);
+        var key = (title + '|' + year).toLowerCase();
+        var ttl = Number(cfg.cache_days || 7) * 86400000;
 
-        if (cache[key] && cache[key].time && now - cache[key].time < ttl) {
-            renderBadge(element, cache[key].data);
+        if (cache[key] && Date.now() - cache[key].time < ttl) {
+            callback(cache[key].data);
             return;
         }
 
-        if (requests[key]) {
-            requests[key].push(function (data) { renderBadge(element, data); });
+        if (inFlight[key]) {
+            inFlight[key].push(callback);
             return;
         }
 
-        requests[key] = [function (data) { renderBadge(element, data); }];
+        inFlight[key] = [callback];
 
-        var query = title;
-        var year = getYear(card);
-        if (year) query += ' ' + year;
+        var q = title + (year ? ' ' + year : '');
+        var url = cfg.api + '?movie=' + encodeURIComponent(q);
 
-        var url = String(settings.api_url || DEFAULTS.api_url).replace(/\/+$/, '') +
-            '?movie=' + encodeURIComponent(query);
+        var net = new Lampa.Reguest();
 
-        Lampa.Network.silent(url, function (response) {
-            var data = response && response.data ? response.data : response;
+        net.silent(url, function (res) {
+            var data = normalizeResponse(res);
 
-            if (!data) {
-                finish(key, null);
-                return;
+            if (data) {
+                cache[key] = {
+                    time: Date.now(),
+                    data: data
+                };
+                saveCache();
             }
 
-            cache[key] = { time: Date.now(), data: data };
-            saveCache();
             finish(key, data);
         }, function () {
             finish(key, null);
@@ -162,119 +192,204 @@
     }
 
     function finish(key, data) {
-        var list = requests[key] || [];
-        delete requests[key];
-        list.forEach(function (fn) {
-            try { fn(data); } catch (e) {}
+        var list = inFlight[key] || [];
+        delete inFlight[key];
+
+        list.forEach(function (cb) {
+            try { cb(data); } catch (e) {}
         });
     }
 
-    function setupCardListener() {
-        Lampa.Listener.follow('card', function (e) {
-            if (e.action !== 'render' || !e.card || !e.element) return;
-            if (e.card.is_load_more) return;
-            if (!settings.enabled) return;
+    function injectFull(root, data) {
+        if (!root || !data) return;
+        if (!cfg.critic && !cfg.audience) return;
 
-            fetchRT(e.card, e.element[0] || e.element);
+        var old = root.find ? root.find('.rt-ratings-v11') : $(root).find('.rt-ratings-v11');
+        if (old && old.length) old.remove();
+
+        var html = $(badgeHtml(data));
+        if (!html.length) return;
+
+        // New Lampa layout: put RT directly below the main metadata/status row.
+        var info =
+            root.find('.full-start-new__info') ||
+            root.find('.full-start__info');
+
+        if (info && info.length) {
+            info.after(html);
+            return;
+        }
+
+        // Fallbacks for different Lampa themes.
+        var buttons = root.find('.full-start-new__buttons');
+        if (!buttons.length) buttons = root.find('.full-start__buttons');
+
+        if (buttons.length) {
+            buttons.before(html);
+            return;
+        }
+
+        var poster = root.find('.full-start-new__poster');
+        if (!poster.length) poster = root.find('.full-start__poster');
+
+        if (poster.length) poster.after(html);
+    }
+
+    function hookFull() {
+        Lampa.Listener.follow('full', function (e) {
+            if (e.type !== 'complite') return;
+            if (!cfg.enabled) return;
+
+            var root = e.object && e.object.activity ? e.object.activity.render() : null;
+            var movie = getMovie(e.data);
+
+            if (!root || !movie) return;
+
+            request(movie, function (data) {
+                if (!data) return;
+                injectFull(root, data);
+            });
         });
     }
 
-    function setupSettings() {
+    function cardBadge(element, data) {
+        if (!element || !data) return;
+
+        var box = element.querySelector('.rt-ratings-card-badge');
+        if (box) box.remove();
+
+        var html = '<div class="rt-ratings-card-badge">';
+
+        if (cfg.critic && data.critic !== null) {
+            html += '<span class="' + scoreClass(data.critic) + '">🍅 ' + data.critic + '%</span>';
+        }
+
+        if (cfg.audience && data.audience !== null) {
+            html += '<span class="' + scoreClass(data.audience) + '">🍿 ' + data.audience + '%</span>';
+        }
+
+        html += '</div>';
+
+        element.classList.add('rt-ratings-card');
+        element.insertAdjacentHTML('beforeend', html);
+    }
+
+    function hookCards() {
+        // Some Lampa builds expose the card event directly.
+        if (Lampa.Listener && Lampa.Listener.follow) {
+            Lampa.Listener.follow('card', function (e) {
+                if (!cfg.enabled || !e) return;
+
+                var movie = e.data || e.card;
+                var element = e.element;
+
+                if (e.type && e.type !== 'render' && e.action && e.action !== 'render') return;
+                if (!movie || !element) return;
+
+                var el = element.jquery ? element[0] : element;
+                if (!el) return;
+
+                request(movie, function (data) {
+                    if (data) cardBadge(el, data);
+                });
+            });
+        }
+    }
+
+    function settings() {
         if (!Lampa.SettingsApi) return;
 
+        var icon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">' +
+            '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/>' +
+            '<path d="M8 8.5h8M8 12h8M8 15.5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>' +
+            '</svg>';
+
         Lampa.SettingsApi.addComponent({
-            component: 'rt_ratings_cfg',
-            name: PLUGIN_NAME,
-            icon: ICON
+            component: 'rt_ratings_v11',
+            name: NAME,
+            icon: icon
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_cfg',
+            component: 'rt_ratings_v11',
             param: {
-                name: 'rt_ratings_enabled',
+                name: 'rt_enabled',
                 type: 'select',
-                values: { 1: 'Включено', 0: 'Выключено' },
-                default: settings.enabled ? 1 : 0
+                values: {1: 'Включено', 0: 'Выключено'},
+                default: cfg.enabled ? 1 : 0
             },
-            field: { name: 'Показывать RT на карточках' },
+            field: {name: 'Показывать RT на карточках'},
             onChange: function (v) {
-                settings.enabled = Number(v) === 1;
-                saveSettings();
+                cfg.enabled = Number(v) === 1;
+                saveCfg();
             }
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_cfg',
+            component: 'rt_ratings_v11',
             param: {
-                name: 'rt_ratings_critic',
+                name: 'rt_critic',
                 type: 'select',
-                values: { 1: 'Да', 0: 'Нет' },
-                default: settings.show_critic ? 1 : 0
+                values: {1: 'Да', 0: 'Нет'},
+                default: cfg.critic ? 1 : 0
             },
-            field: { name: 'Tomatometer 🍅' },
+            field: {name: 'Tomatometer 🍅'},
             onChange: function (v) {
-                settings.show_critic = Number(v) === 1;
-                saveSettings();
+                cfg.critic = Number(v) === 1;
+                saveCfg();
             }
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_cfg',
+            component: 'rt_ratings_v11',
             param: {
-                name: 'rt_ratings_audience',
+                name: 'rt_audience',
                 type: 'select',
-                values: { 1: 'Да', 0: 'Нет' },
-                default: settings.show_audience ? 1 : 0
+                values: {1: 'Да', 0: 'Нет'},
+                default: cfg.audience ? 1 : 0
             },
-            field: { name: 'Popcornmeter 🍿' },
+            field: {name: 'Popcornmeter 🍿'},
             onChange: function (v) {
-                settings.show_audience = Number(v) === 1;
-                saveSettings();
+                cfg.audience = Number(v) === 1;
+                saveCfg();
             }
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_cfg',
+            component: 'rt_ratings_v11',
             param: {
-                name: 'rt_ratings_api',
+                name: 'rt_clear',
                 type: 'trigger'
             },
             field: {
-                name: 'API Rotten Tomatoes',
-                description: 'Сторонний API без ключа'
+                name: 'Очистить кэш',
+                description: 'Удалит сохранённые RT-рейтинги'
             },
-            onRender: function (item) {
-                item.find('.settings-param__value').text('Готово');
-            }
-        });
-
-        Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_cfg',
-            param: {
-                name: 'rt_ratings_cache',
-                type: 'trigger'
-            },
-            field: {
-                name: 'Очистить кэш'
-            },
-            onRender: function (item) {
-                item.on('hover:enter', function () {
-                    cache = {};
-                    saveCache();
-                    if (Lampa.Noty) Lampa.Noty.show('Кэш RT очищен');
-                });
+            onChange: function () {
+                cache = {};
+                saveCache();
+                if (Lampa.Noty) Lampa.Noty.show('Кэш RT очищен');
             }
         });
     }
 
     function start() {
-        addStyles();
-        setupSettings();
-        setupCardListener();
+        styles();
+        settings();
+        hookFull();
+        hookCards();
+        console.log('[RT Ratings] v1.1 started');
     }
 
-    if (window.Lampa) {
-        if (Lampa.Listener) {
+    function boot() {
+        if (typeof Lampa === 'undefined') {
+            setTimeout(boot, 200);
+            return;
+        }
+
+        if (window.appready) {
+            start();
+        } else if (Lampa.Listener && Lampa.Listener.follow) {
             Lampa.Listener.follow('app', function (e) {
                 if (e.type === 'ready') start();
             });
@@ -282,4 +397,6 @@
             start();
         }
     }
+
+    boot();
 })();
