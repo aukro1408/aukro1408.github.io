@@ -1,12 +1,101 @@
 (function () {
     'use strict';
 
-    function startMe() {
+    /*
+     * ================================================
+     * LAMPA — ARCTIC FOREST
+     * Arctic Live + Dark Forest
+     * ================================================
+     */
 
-        var styles = `
+    if (window.arctic_forest_themes) return;
+    window.arctic_forest_themes = true;
+
+    var NAME = 'Arctic Forest';
+    var SETTINGS = 'arctic_forest_theme_settings_v1';
+
+    var cfg = Object.assign({
+        theme: 'arctic'
+    }, Lampa.Storage.get(SETTINGS, {}) || {});
+
+
+    /* ================================================
+       SAVE SETTINGS
+       ================================================ */
+
+    function saveCfg() {
+        Lampa.Storage.set(SETTINGS, cfg);
+    }
+
+
+    /* ================================================
+       REMOVE PREVIOUS THEME
+       ================================================ */
+
+    function removeTheme() {
+
+        var oldStyle = document.getElementById(
+            'arctic-forest-theme-style'
+        );
+
+        if (oldStyle) {
+            oldStyle.remove();
+        }
+
+
+        var oldLayer = document.getElementById(
+            'arctic-forest-live-layer'
+        );
+
+        if (oldLayer) {
+            oldLayer.remove();
+        }
+    }
+
+
+    /* ================================================
+       COMMON HELPERS
+       ================================================ */
+
+    function addStyle(css) {
+
+        var style = document.createElement('style');
+
+        style.id = 'arctic-forest-theme-style';
+
+        style.type = 'text/css';
+
+        style.textContent = css;
+
+        document.head.appendChild(style);
+    }
+
+
+    function createLayer() {
+
+        var layer = document.createElement('div');
+
+        layer.id = 'arctic-forest-live-layer';
+
+        document.body.appendChild(layer);
+
+        return layer;
+    }
+
+
+    /* ================================================
+       ARCTIC
+       ================================================ */
+
+    function applyArctic() {
+
+        removeTheme();
+
+
+        var css = `
+
             /* =========================================
-               LAMPA — ARCTIC LIVE 2.0
-               Polar Night / Ice Atmosphere
+               ARCTIC
                ========================================= */
 
             body {
@@ -22,8 +111,9 @@
                 background: #060A0D;
             }
 
+
             /* =========================================
-               FOCUS — STATIC
+               FOCUS
                ========================================= */
 
             .menu__item.focus,
@@ -53,6 +143,7 @@
                 color: #071014;
             }
 
+
             /* =========================================
                SETTINGS
                ========================================= */
@@ -79,11 +170,12 @@
             }
 
             .settings-input__links {
-                background-color: rgba(255, 255, 255, 0.12);
+                background-color: rgba(255,255,255,.12);
             }
 
+
             /* =========================================
-               CARDS / BORDERS
+               CARDS
                ========================================= */
 
             .card.focus .card__view::after,
@@ -102,6 +194,7 @@
                 border-color: #8DD8EA !important;
             }
 
+
             /* =========================================
                PLAYER
                ========================================= */
@@ -112,6 +205,7 @@
 
                 background-color: #63C7DC;
             }
+
 
             /* =========================================
                EXTENSIONS
@@ -125,6 +219,7 @@
             .extensions__block-add {
                 background-color: #17242B;
             }
+
 
             /* =========================================
                TORRENTS
@@ -140,14 +235,15 @@
             }
 
             .torrent-serial {
-                background-color: rgba(216, 232, 237, 0.08);
+                background-color: rgba(216,232,237,.08);
             }
 
             .torrent-file.focus,
             .torrent-serial.focus {
 
-                background-color: rgba(141, 216, 234, 0.24);
+                background-color: rgba(141,216,234,.24);
             }
+
 
             /* =========================================
                IPTV
@@ -157,11 +253,13 @@
                 background-color: #172A32 !important;
             }
 
+
             /* =========================================
-               ARCTIC LIVE LAYER
+               LIVE LAYER
                ========================================= */
 
-            #arctic-live {
+            #arctic-forest-live-layer {
+
                 position: fixed;
 
                 inset: 0;
@@ -176,11 +274,13 @@
                 z-index: 999999;
             }
 
+
             /* =========================================
-               MOVING ARCTIC MIST
+               MIST
                ========================================= */
 
             .arctic-mist {
+
                 position: absolute;
 
                 width: 70vw;
@@ -190,17 +290,19 @@
 
                 filter: blur(80px);
 
-                opacity: 0.10;
+                opacity: .10;
 
                 background:
                     radial-gradient(
                         ellipse,
-                        rgba(90, 205, 235, 0.45),
-                        rgba(90, 205, 235, 0.12) 40%,
+                        rgba(90,205,235,.45),
+                        rgba(90,205,235,.12) 40%,
                         transparent 72%
                     );
 
-                animation: arctic-mist-move 32s ease-in-out infinite alternate;
+                animation:
+                    arctic-mist-move
+                    32s ease-in-out infinite alternate;
             }
 
             .arctic-mist.one {
@@ -209,53 +311,58 @@
             }
 
             .arctic-mist.two {
+
                 top: 35vh;
                 left: 55vw;
 
                 width: 55vw;
                 height: 40vh;
 
-                opacity: 0.07;
+                opacity: .07;
 
                 animation-duration: 42s;
-
                 animation-delay: -12s;
             }
 
             .arctic-mist.three {
+
                 bottom: -25vh;
                 left: 15vw;
 
                 width: 80vw;
                 height: 35vh;
 
-                opacity: 0.055;
+                opacity: .055;
 
                 animation-duration: 50s;
-
                 animation-delay: -22s;
             }
 
             @keyframes arctic-mist-move {
 
                 0% {
-                    transform: translate3d(-4vw, -2vh, 0);
+                    transform:
+                        translate3d(-4vw,-2vh,0);
                 }
 
                 50% {
-                    transform: translate3d(5vw, 3vh, 0);
+                    transform:
+                        translate3d(5vw,3vh,0);
                 }
 
                 100% {
-                    transform: translate3d(10vw, -3vh, 0);
+                    transform:
+                        translate3d(10vw,-3vh,0);
                 }
             }
+
 
             /* =========================================
                AURORA
                ========================================= */
 
             .arctic-aurora {
+
                 position: absolute;
 
                 top: -18vh;
@@ -264,7 +371,7 @@
                 width: 90vw;
                 height: 42vh;
 
-                opacity: 0.08;
+                opacity: .08;
 
                 filter: blur(35px);
 
@@ -272,37 +379,46 @@
                     conic-gradient(
                         from 180deg at 50% 100%,
                         transparent 0deg,
-                        rgba(65, 205, 220, 0.30) 35deg,
-                        rgba(105, 190, 255, 0.20) 70deg,
-                        rgba(110, 150, 255, 0.14) 105deg,
+                        rgba(65,205,220,.30) 35deg,
+                        rgba(105,190,255,.20) 70deg,
+                        rgba(110,150,255,.14) 105deg,
                         transparent 150deg,
                         transparent 360deg
                     );
 
                 animation:
-                    arctic-aurora-move 40s ease-in-out infinite alternate;
+                    arctic-aurora-move
+                    40s ease-in-out infinite alternate;
             }
 
             @keyframes arctic-aurora-move {
 
                 0% {
-                    transform: translateX(-8vw) rotate(-2deg);
+                    transform:
+                        translateX(-8vw)
+                        rotate(-2deg);
                 }
 
                 50% {
-                    transform: translateX(3vw) rotate(1deg);
+                    transform:
+                        translateX(3vw)
+                        rotate(1deg);
                 }
 
                 100% {
-                    transform: translateX(9vw) rotate(3deg);
+                    transform:
+                        translateX(9vw)
+                        rotate(3deg);
                 }
             }
 
+
             /* =========================================
-               FLOATING ICE PARTICLES
+               ICE PARTICLES
                ========================================= */
 
             .arctic-particle {
+
                 position: absolute;
 
                 width: 3px;
@@ -310,89 +426,95 @@
 
                 border-radius: 50%;
 
-                background: rgba(190, 240, 255, 0.78);
+                background:
+                    rgba(190,240,255,.78);
 
                 box-shadow:
-                    0 0 4px rgba(130, 220, 255, 0.65),
-                    0 0 11px rgba(80, 190, 230, 0.32);
+                    0 0 4px rgba(130,220,255,.65),
+                    0 0 11px rgba(80,190,230,.32);
 
                 animation:
                     arctic-particle-float
-                    linear
-                    infinite;
+                    linear infinite;
             }
 
             .arctic-particle.small {
+
                 width: 2px;
                 height: 2px;
 
-                opacity: 0.48;
-
-                box-shadow:
-                    0 0 4px rgba(150, 230, 255, 0.45);
+                opacity: .48;
             }
 
             .arctic-particle.large {
+
                 width: 4px;
                 height: 4px;
 
-                opacity: 0.38;
+                opacity: .38;
 
                 box-shadow:
-                    0 0 7px rgba(140, 230, 255, 0.75),
-                    0 0 15px rgba(80, 190, 230, 0.38);
+                    0 0 7px rgba(140,230,255,.75),
+                    0 0 15px rgba(80,190,230,.38);
             }
 
             @keyframes arctic-particle-float {
 
                 0% {
+
                     transform:
-                        translate3d(0, 110vh, 0)
-                        scale(0.65);
+                        translate3d(0,110vh,0)
+                        scale(.65);
 
                     opacity: 0;
                 }
 
                 12% {
-                    opacity: 0.45;
+                    opacity: .45;
                 }
 
                 30% {
+
                     transform:
-                        translate3d(35px, 75vh, 0)
+                        translate3d(35px,75vh,0)
                         scale(1);
                 }
 
                 50% {
+
                     transform:
-                        translate3d(-30px, 50vh, 0)
-                        scale(0.85);
+                        translate3d(-30px,50vh,0)
+                        scale(.85);
                 }
 
                 70% {
+
                     transform:
-                        translate3d(40px, 25vh, 0)
+                        translate3d(40px,25vh,0)
                         scale(1.05);
                 }
 
                 88% {
-                    opacity: 0.30;
+                    opacity: .30;
                 }
 
                 100% {
+
                     transform:
-                        translate3d(-25px, -15vh, 0)
-                        scale(0.7);
+                        translate3d(-25px,-15vh,0)
+                        scale(.7);
 
                     opacity: 0;
                 }
             }
 
+
             /* =========================================
-               RARE ICE SPARKS
+               RARE SPARKS
                ========================================= */
 
             .arctic-spark {
+
                 position: absolute;
 
                 width: 3px;
@@ -404,14 +526,13 @@
 
                 box-shadow:
                     0 0 5px #B9EEFF,
-                    0 0 14px rgba(100, 210, 240, 0.75);
+                    0 0 14px rgba(100,210,240,.75);
 
                 opacity: 0;
 
                 animation:
                     arctic-spark
-                    ease-in-out
-                    infinite;
+                    ease-in-out infinite;
             }
 
             @keyframes arctic-spark {
@@ -419,50 +540,52 @@
                 0%,
                 72% {
                     opacity: 0;
-                    transform: scale(0.5);
+                    transform: scale(.5);
                 }
 
                 80% {
-                    opacity: 0.9;
+                    opacity: .9;
                     transform: scale(1.3);
                 }
 
                 86% {
-                    opacity: 0.35;
-                    transform: scale(0.8);
+                    opacity: .35;
+                    transform: scale(.8);
                 }
 
                 92%,
                 100% {
                     opacity: 0;
-                    transform: scale(0.5);
+                    transform: scale(.5);
                 }
             }
 
+
             /* =========================================
-               ICE LIGHT REFLECTION
+               ICE LIGHT
                ========================================= */
 
             .arctic-light {
+
                 position: absolute;
 
                 top: 0;
-
                 left: -35vw;
 
                 width: 18vw;
                 height: 100vh;
 
-                opacity: 0.025;
+                opacity: .025;
 
                 transform: skewX(-18deg);
 
-                background: linear-gradient(
-                    90deg,
-                    transparent,
-                    rgba(220, 250, 255, 0.9),
-                    transparent
-                );
+                background:
+                    linear-gradient(
+                        90deg,
+                        transparent,
+                        rgba(220,250,255,.9),
+                        transparent
+                    );
 
                 animation:
                     arctic-light-pass
@@ -478,12 +601,12 @@
                 }
 
                 72% {
-                    opacity: 0.025;
+                    opacity: .025;
                 }
 
                 82% {
                     left: 115vw;
-                    opacity: 0.025;
+                    opacity: .025;
                 }
 
                 83%,
@@ -493,42 +616,22 @@
                 }
             }
 
-            /* =========================================
-               REDUCE MOTION
-               ========================================= */
 
             @media (prefers-reduced-motion: reduce) {
 
-                #arctic-live *,
-                #arctic-live {
+                #arctic-forest-live-layer * {
                     animation: none !important;
                 }
             }
         `;
 
-        var styleSheet = document.createElement('style');
-
-        styleSheet.type = 'text/css';
-
-        styleSheet.innerText = styles;
-
-        document.head.appendChild(styleSheet);
+        addStyle(css);
 
 
-        /* =========================================
-           CREATE LIVE LAYER
-           ========================================= */
-
-        var live = document.createElement('div');
-
-        live.id = 'arctic-live';
-
-        document.body.appendChild(live);
+        var layer = createLayer();
 
 
-        /* =========================================
-           MIST
-           ========================================= */
+        /* Mist */
 
         var mist1 = document.createElement('div');
         mist1.className = 'arctic-mist one';
@@ -539,29 +642,23 @@
         var mist3 = document.createElement('div');
         mist3.className = 'arctic-mist three';
 
-        live.appendChild(mist1);
-        live.appendChild(mist2);
-        live.appendChild(mist3);
+        layer.appendChild(mist1);
+        layer.appendChild(mist2);
+        layer.appendChild(mist3);
 
 
-        /* =========================================
-           AURORA
-           ========================================= */
+        /* Aurora */
 
         var aurora = document.createElement('div');
 
         aurora.className = 'arctic-aurora';
 
-        live.appendChild(aurora);
+        layer.appendChild(aurora);
 
 
-        /* =========================================
-           PARTICLES
-           ========================================= */
+        /* Particles */
 
-        var particleCount = 32;
-
-        for (var i = 0; i < particleCount; i++) {
+        for (var i = 0; i < 32; i++) {
 
             var particle = document.createElement('div');
 
@@ -569,11 +666,11 @@
 
             var size = Math.random();
 
-            if (size < 0.25) {
+            if (size < .25) {
                 particle.classList.add('small');
             }
 
-            if (size > 0.85) {
+            if (size > .85) {
                 particle.classList.add('large');
             }
 
@@ -589,13 +686,11 @@
             particle.style.marginLeft =
                 (Math.random() * 50 - 25) + 'px';
 
-            live.appendChild(particle);
+            layer.appendChild(particle);
         }
 
 
-        /* =========================================
-           RARE SPARKS
-           ========================================= */
+        /* Sparks */
 
         var sparkPositions = [
             [14, 28],
@@ -624,40 +719,716 @@
             spark.style.animationDelay =
                 (-Math.random() * 10) + 's';
 
-            live.appendChild(spark);
+            layer.appendChild(spark);
         }
 
 
-        /* =========================================
-           LIGHT PASS
-           ========================================= */
+        /* Light */
 
         var light = document.createElement('div');
 
         light.className = 'arctic-light';
 
-        live.appendChild(light);
+        layer.appendChild(light);
     }
 
 
-    /* =========================================
-       LAMPA READY
-       ========================================= */
+    /* ================================================
+       DARK FOREST
+       ================================================ */
 
-    if (window.appready) {
+    function applyForest() {
 
-        startMe();
+        removeTheme();
 
-    } else {
 
-        Lampa.Listener.follow('app', function (e) {
+        var css = `
 
-            if (e.type == 'ready') {
-                startMe();
+            /* =========================================
+               DARK FOREST
+               ========================================= */
+
+            body {
+                background-color: #070D0A;
             }
 
+            body,
+            .card__vote {
+                color: #E3EEE7;
+            }
+
+            body.black--style {
+                background: #040806;
+            }
+
+
+            /* =========================================
+               FOCUS
+               ========================================= */
+
+            .menu__item.focus,
+            .menu__item.traverse,
+            .menu__item.hover,
+            .settings-folder.focus,
+            .settings-param.focus,
+            .selectbox-item.focus,
+            .selectbox-item.hover,
+            .full-person.focus,
+            .full-start__button.focus,
+            .full-descr__tag.focus,
+            .simple-button.focus,
+            .iptv-list__item.focus,
+            .iptv-menu__list-item.focus,
+            .head__action.focus,
+            .head__action.hover,
+            .player-panel .button.focus,
+            .search-source.active {
+
+                background: linear-gradient(
+                    to right,
+                    #E2F8EA 1%,
+                    #65B985 100%
+                );
+
+                color: #061009;
+            }
+
+
+            /* =========================================
+               SETTINGS
+               ========================================= */
+
+            .settings-folder.focus .settings-folder__icon {
+                -webkit-filter: invert(1);
+                filter: invert(1);
+            }
+
+            .settings-param-title > span {
+                color: #FFFFFF;
+            }
+
+            .settings__content,
+            .settings-input__content,
+            .selectbox__content,
+            .modal__content {
+
+                background: linear-gradient(
+                    135deg,
+                    rgb(24,43,32) 1%,
+                    rgb(5,11,8) 100%
+                );
+            }
+
+            .settings-input__links {
+                background-color: rgba(255,255,255,.10);
+            }
+
+
+            /* =========================================
+               CARDS
+               ========================================= */
+
+            .card.focus .card__view::after,
+            .card.hover .card__view::after,
+            .extensions__item.focus:after,
+            .torrent-item.focus:after,
+            .extensions__block-add.focus:after {
+
+                border-color: #65B985;
+            }
+
+            .online-prestige.focus::after,
+            .iptv-channel.focus::before,
+            .iptv-channel.last--focus::before {
+
+                border-color: #65B985 !important;
+            }
+
+
+            /* =========================================
+               PLAYER
+               ========================================= */
+
+            .time-line > div,
+            .player-panel__position,
+            .player-panel__position > div:after {
+
+                background-color: #45A86B;
+            }
+
+
+            /* =========================================
+               EXTENSIONS
+               ========================================= */
+
+            .extensions {
+                background: #050A07;
+            }
+
+            .extensions__item,
+            .extensions__block-add {
+                background-color: #12221A;
+            }
+
+
+            /* =========================================
+               TORRENTS
+               ========================================= */
+
+            .torrent-item__size,
+            .torrent-item__exe,
+            .torrent-item__viewed,
+            .torrent-serial__size {
+
+                background-color: #D9E9DF;
+                color: #061009;
+            }
+
+            .torrent-serial {
+                background-color: rgba(217,233,223,.08);
+            }
+
+            .torrent-file.focus,
+            .torrent-serial.focus {
+
+                background-color: rgba(101,185,133,.24);
+            }
+
+
+            /* =========================================
+               IPTV
+               ========================================= */
+
+            .iptv-channel {
+                background-color: #14291F !important;
+            }
+
+
+            /* =========================================
+               FOREST LIVE LAYER
+               ========================================= */
+
+            #arctic-forest-live-layer {
+
+                position: fixed;
+
+                inset: 0;
+
+                width: 100vw;
+                height: 100vh;
+
+                overflow: hidden;
+
+                pointer-events: none;
+
+                z-index: 999999;
+            }
+
+
+            /* =========================================
+               FOREST ATMOSPHERE
+               ========================================= */
+
+            .forest-mist {
+
+                position: absolute;
+
+                width: 75vw;
+                height: 45vh;
+
+                border-radius: 50%;
+
+                filter: blur(90px);
+
+                opacity: .08;
+
+                background:
+                    radial-gradient(
+                        ellipse,
+                        rgba(55,150,100,.40),
+                        rgba(35,100,70,.10) 42%,
+                        transparent 72%
+                    );
+
+                animation:
+                    forest-mist-move
+                    38s ease-in-out infinite alternate;
+            }
+
+            .forest-mist.one {
+
+                top: -15vh;
+                left: -25vw;
+            }
+
+            .forest-mist.two {
+
+                top: 40vh;
+                left: 55vw;
+
+                width: 60vw;
+                height: 40vh;
+
+                opacity: .055;
+
+                animation-duration: 48s;
+
+                animation-delay: -15s;
+            }
+
+            .forest-mist.three {
+
+                bottom: -25vh;
+                left: 10vw;
+
+                width: 80vw;
+                height: 35vh;
+
+                opacity: .045;
+
+                animation-duration: 55s;
+
+                animation-delay: -28s;
+            }
+
+            @keyframes forest-mist-move {
+
+                0% {
+                    transform:
+                        translate3d(-5vw,-2vh,0);
+                }
+
+                50% {
+                    transform:
+                        translate3d(4vw,3vh,0);
+                }
+
+                100% {
+                    transform:
+                        translate3d(11vw,-3vh,0);
+                }
+            }
+
+
+            /* =========================================
+               FOREST PARTICLES
+               ========================================= */
+
+            .forest-particle {
+
+                position: absolute;
+
+                width: 3px;
+                height: 3px;
+
+                border-radius: 50%;
+
+                background:
+                    rgba(160,235,190,.60);
+
+                box-shadow:
+                    0 0 4px rgba(100,210,145,.55),
+                    0 0 10px rgba(60,160,105,.25);
+
+                animation:
+                    forest-particle-float
+                    linear infinite;
+            }
+
+            .forest-particle.small {
+
+                width: 2px;
+                height: 2px;
+
+                opacity: .38;
+            }
+
+            .forest-particle.large {
+
+                width: 4px;
+                height: 4px;
+
+                opacity: .30;
+
+                box-shadow:
+                    0 0 6px rgba(120,220,155,.60),
+                    0 0 14px rgba(60,160,105,.30);
+            }
+
+            @keyframes forest-particle-float {
+
+                0% {
+
+                    transform:
+                        translate3d(0,110vh,0)
+                        scale(.65);
+
+                    opacity: 0;
+                }
+
+                12% {
+                    opacity: .38;
+                }
+
+                30% {
+
+                    transform:
+                        translate3d(-30px,75vh,0)
+                        scale(1);
+                }
+
+                50% {
+
+                    transform:
+                        translate3d(35px,50vh,0)
+                        scale(.85);
+                }
+
+                70% {
+
+                    transform:
+                        translate3d(-25px,25vh,0)
+                        scale(1.05);
+                }
+
+                88% {
+                    opacity: .22;
+                }
+
+                100% {
+
+                    transform:
+                        translate3d(25px,-15vh,0)
+                        scale(.7);
+
+                    opacity: 0;
+                }
+            }
+
+
+            /* =========================================
+               FOREST SPARKS
+               ========================================= */
+
+            .forest-spark {
+
+                position: absolute;
+
+                width: 3px;
+                height: 3px;
+
+                border-radius: 50%;
+
+                background: #D9FFE7;
+
+                box-shadow:
+                    0 0 5px #A7F5C0,
+                    0 0 13px rgba(70,190,115,.65);
+
+                opacity: 0;
+
+                animation:
+                    forest-spark
+                    ease-in-out infinite;
+            }
+
+            @keyframes forest-spark {
+
+                0%,
+                72% {
+
+                    opacity: 0;
+
+                    transform: scale(.5);
+                }
+
+                80% {
+
+                    opacity: .65;
+
+                    transform: scale(1.25);
+                }
+
+                86% {
+
+                    opacity: .25;
+
+                    transform: scale(.8);
+                }
+
+                92%,
+                100% {
+
+                    opacity: 0;
+
+                    transform: scale(.5);
+                }
+            }
+
+
+            /* =========================================
+               REDUCE MOTION
+               ========================================= */
+
+            @media (prefers-reduced-motion: reduce) {
+
+                #arctic-forest-live-layer * {
+                    animation: none !important;
+                }
+            }
+        `;
+
+        addStyle(css);
+
+
+        var layer = createLayer();
+
+
+        /* Forest mist */
+
+        var mist1 = document.createElement('div');
+        mist1.className = 'forest-mist one';
+
+        var mist2 = document.createElement('div');
+        mist2.className = 'forest-mist two';
+
+        var mist3 = document.createElement('div');
+        mist3.className = 'forest-mist three';
+
+        layer.appendChild(mist1);
+        layer.appendChild(mist2);
+        layer.appendChild(mist3);
+
+
+        /* Forest particles */
+
+        for (var i = 0; i < 28; i++) {
+
+            var particle = document.createElement('div');
+
+            particle.className = 'forest-particle';
+
+            var size = Math.random();
+
+            if (size < .25) {
+                particle.classList.add('small');
+            }
+
+            if (size > .85) {
+                particle.classList.add('large');
+            }
+
+            particle.style.left =
+                Math.random() * 100 + '%';
+
+            particle.style.animationDelay =
+                (-Math.random() * 40) + 's';
+
+            particle.style.animationDuration =
+                (22 + Math.random() * 30) + 's';
+
+            particle.style.marginLeft =
+                (Math.random() * 50 - 25) + 'px';
+
+            layer.appendChild(particle);
+        }
+
+
+        /* Forest sparks */
+
+        var sparkPositions = [
+            [12, 35],
+            [28, 70],
+            [46, 25],
+            [63, 55],
+            [79, 32],
+            [92, 68]
+        ];
+
+        for (var s = 0; s < sparkPositions.length; s++) {
+
+            var spark = document.createElement('div');
+
+            spark.className = 'forest-spark';
+
+            spark.style.left =
+                sparkPositions[s][0] + '%';
+
+            spark.style.top =
+                sparkPositions[s][1] + '%';
+
+            spark.style.animationDuration =
+                (9 + Math.random() * 9) + 's';
+
+            spark.style.animationDelay =
+                (-Math.random() * 12) + 's';
+
+            layer.appendChild(spark);
+        }
+    }
+
+
+    /* ================================================
+       DEFAULT / ORIGINAL LAMPA
+       ================================================ */
+
+    function applyDefault() {
+        removeTheme();
+    }
+
+
+    /* ================================================
+       APPLY SELECTED THEME
+       ================================================ */
+
+    function applyTheme() {
+
+        if (cfg.theme === 'forest') {
+            applyForest();
+            return;
+        }
+
+        if (cfg.theme === 'default') {
+            applyDefault();
+            return;
+        }
+
+        applyArctic();
+    }
+
+
+    /* ================================================
+       SETTINGS
+       ================================================ */
+
+    function settings() {
+
+        if (!Lampa.SettingsApi) return;
+
+
+        var icon =
+            '<svg xmlns="http://www.w3.org/2000/svg" ' +
+            'width="24" height="24" viewBox="0 0 24 24" ' +
+            'fill="none">' +
+
+            '<path d="M12 3v18M3 12h18" ' +
+            'stroke="currentColor" ' +
+            'stroke-width="1.6" ' +
+            'stroke-linecap="round"/>' +
+
+            '<path d="M5.5 7.5h13M5.5 16.5h13" ' +
+            'stroke="currentColor" ' +
+            'stroke-width="1.3" ' +
+            'stroke-linecap="round" ' +
+            'opacity=".65"/>' +
+
+            '</svg>';
+
+
+        Lampa.SettingsApi.addComponent({
+
+            component: 'arctic_forest',
+
+            name: NAME,
+
+            icon: icon
         });
 
+
+        Lampa.SettingsApi.addParam({
+
+            component: 'arctic_forest',
+
+            param: {
+
+                name: 'arctic_forest_theme',
+
+                type: 'select',
+
+                values: {
+
+                    arctic: '🧊 Arctic Live',
+
+                    forest: '🌲 Dark Forest',
+
+                    default: '⚪ Стандартная'
+                },
+
+                default:
+                    cfg.theme
+            },
+
+            field: {
+
+                name: 'Тема',
+
+                description:
+                    'Выберите оформление Lampa'
+            },
+
+            onChange: function (value) {
+
+                cfg.theme = String(value);
+
+                saveCfg();
+
+                applyTheme();
+            }
+        });
     }
+
+
+    /* ================================================
+       START
+       ================================================ */
+
+    function start() {
+
+        settings();
+
+        applyTheme();
+
+        console.log(
+            '[Arctic Forest] Theme system started:',
+            cfg.theme
+        );
+    }
+
+
+    /* ================================================
+       BOOT
+       ================================================ */
+
+    function boot() {
+
+        if (typeof Lampa === 'undefined') {
+
+            setTimeout(boot, 200);
+
+            return;
+        }
+
+
+        if (window.appready) {
+
+            start();
+
+        } else {
+
+            Lampa.Listener.follow(
+                'app',
+                function (e) {
+
+                    if (e.type === 'ready') {
+                        start();
+                    }
+
+                }
+            );
+        }
+    }
+
+
+    boot();
 
 })();
