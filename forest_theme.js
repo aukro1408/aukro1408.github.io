@@ -2,14 +2,21 @@
     'use strict';
 
     /*
-     * ================================================
-     * LAMPA — ARCTIC FOREST
-     * Arctic Live + Dark Forest
-     * ================================================
+     * =====================================================
+     * LAMPA — ARCTIC FOREST THEMES
+     * =====================================================
+     *
+     * Темы:
+     *   🧊 Arctic Live
+     *   🌲 Dark Forest
+     *   ⚪ Стандартная
+     *
+     * Настройка сохраняется через Lampa.Storage
+     * =====================================================
      */
 
-    if (window.arctic_forest_themes) return;
-    window.arctic_forest_themes = true;
+    if (window.arctic_forest_themes_v1) return;
+    window.arctic_forest_themes_v1 = true;
 
     var NAME = 'Arctic Forest';
     var SETTINGS = 'arctic_forest_theme_settings_v1';
@@ -19,43 +26,43 @@
     }, Lampa.Storage.get(SETTINGS, {}) || {});
 
 
-    /* ================================================
-       SAVE SETTINGS
-       ================================================ */
+    /* =====================================================
+       SAVE
+       ===================================================== */
 
     function saveCfg() {
         Lampa.Storage.set(SETTINGS, cfg);
     }
 
 
-    /* ================================================
-       REMOVE PREVIOUS THEME
-       ================================================ */
+    /* =====================================================
+       REMOVE OUR THEME
+       ===================================================== */
 
     function removeTheme() {
 
-        var oldStyle = document.getElementById(
+        var style = document.getElementById(
             'arctic-forest-theme-style'
         );
 
-        if (oldStyle) {
-            oldStyle.remove();
+        if (style) {
+            style.remove();
         }
 
 
-        var oldLayer = document.getElementById(
+        var layer = document.getElementById(
             'arctic-forest-live-layer'
         );
 
-        if (oldLayer) {
-            oldLayer.remove();
+        if (layer) {
+            layer.remove();
         }
     }
 
 
-    /* ================================================
-       COMMON HELPERS
-       ================================================ */
+    /* =====================================================
+       ADD CSS
+       ===================================================== */
 
     function addStyle(css) {
 
@@ -71,6 +78,10 @@
     }
 
 
+    /* =====================================================
+       LIVE LAYER
+       ===================================================== */
+
     function createLayer() {
 
         var layer = document.createElement('div');
@@ -83,9 +94,9 @@
     }
 
 
-    /* ================================================
-       ARCTIC
-       ================================================ */
+    /* =====================================================
+       ARCTIC LIVE
+       ===================================================== */
 
     function applyArctic() {
 
@@ -94,9 +105,9 @@
 
         var css = `
 
-            /* =========================================
+            /* =============================================
                ARCTIC
-               ========================================= */
+               ============================================= */
 
             body {
                 background-color: #0A1014;
@@ -112,9 +123,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                FOCUS
-               ========================================= */
+               ============================================= */
 
             .menu__item.focus,
             .menu__item.traverse,
@@ -144,9 +155,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                SETTINGS
-               ========================================= */
+               ============================================= */
 
             .settings-folder.focus .settings-folder__icon {
                 -webkit-filter: invert(1);
@@ -174,9 +185,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                CARDS
-               ========================================= */
+               ============================================= */
 
             .card.focus .card__view::after,
             .card.hover .card__view::after,
@@ -195,9 +206,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                PLAYER
-               ========================================= */
+               ============================================= */
 
             .time-line > div,
             .player-panel__position,
@@ -207,9 +218,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                EXTENSIONS
-               ========================================= */
+               ============================================= */
 
             .extensions {
                 background: #080D11;
@@ -221,9 +232,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                TORRENTS
-               ========================================= */
+               ============================================= */
 
             .torrent-item__size,
             .torrent-item__exe,
@@ -245,23 +256,22 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                IPTV
-               ========================================= */
+               ============================================= */
 
             .iptv-channel {
                 background-color: #172A32 !important;
             }
 
 
-            /* =========================================
+            /* =============================================
                LIVE LAYER
-               ========================================= */
+               ============================================= */
 
             #arctic-forest-live-layer {
 
                 position: fixed;
-
                 inset: 0;
 
                 width: 100vw;
@@ -275,9 +285,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                MIST
-               ========================================= */
+               ============================================= */
 
             .arctic-mist {
 
@@ -357,9 +367,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                AURORA
-               ========================================= */
+               ============================================= */
 
             .arctic-aurora {
 
@@ -413,9 +423,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                ICE PARTICLES
-               ========================================= */
+               ============================================= */
 
             .arctic-particle {
 
@@ -509,9 +519,9 @@
             }
 
 
-            /* =========================================
-               RARE SPARKS
-               ========================================= */
+            /* =============================================
+               SPARKS
+               ============================================= */
 
             .arctic-spark {
 
@@ -561,9 +571,9 @@
             }
 
 
-            /* =========================================
-               ICE LIGHT
-               ========================================= */
+            /* =============================================
+               LIGHT PASS
+               ============================================= */
 
             .arctic-light {
 
@@ -613,14 +623,6 @@
                 100% {
                     left: 115vw;
                     opacity: 0;
-                }
-            }
-
-
-            @media (prefers-reduced-motion: reduce) {
-
-                #arctic-forest-live-layer * {
-                    animation: none !important;
                 }
             }
         `;
@@ -692,7 +694,7 @@
 
         /* Sparks */
 
-        var sparkPositions = [
+        var sparks = [
             [14, 28],
             [31, 64],
             [48, 22],
@@ -701,17 +703,17 @@
             [91, 72]
         ];
 
-        for (var s = 0; s < sparkPositions.length; s++) {
+        for (var s = 0; s < sparks.length; s++) {
 
             var spark = document.createElement('div');
 
             spark.className = 'arctic-spark';
 
             spark.style.left =
-                sparkPositions[s][0] + '%';
+                sparks[s][0] + '%';
 
             spark.style.top =
-                sparkPositions[s][1] + '%';
+                sparks[s][1] + '%';
 
             spark.style.animationDuration =
                 (8 + Math.random() * 8) + 's';
@@ -733,9 +735,9 @@
     }
 
 
-    /* ================================================
+    /* =====================================================
        DARK FOREST
-       ================================================ */
+       ===================================================== */
 
     function applyForest() {
 
@@ -744,9 +746,9 @@
 
         var css = `
 
-            /* =========================================
+            /* =============================================
                DARK FOREST
-               ========================================= */
+               ============================================= */
 
             body {
                 background-color: #070D0A;
@@ -762,9 +764,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                FOCUS
-               ========================================= */
+               ============================================= */
 
             .menu__item.focus,
             .menu__item.traverse,
@@ -794,9 +796,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                SETTINGS
-               ========================================= */
+               ============================================= */
 
             .settings-folder.focus .settings-folder__icon {
                 -webkit-filter: invert(1);
@@ -824,9 +826,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                CARDS
-               ========================================= */
+               ============================================= */
 
             .card.focus .card__view::after,
             .card.hover .card__view::after,
@@ -845,9 +847,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                PLAYER
-               ========================================= */
+               ============================================= */
 
             .time-line > div,
             .player-panel__position,
@@ -857,9 +859,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                EXTENSIONS
-               ========================================= */
+               ============================================= */
 
             .extensions {
                 background: #050A07;
@@ -871,9 +873,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                TORRENTS
-               ========================================= */
+               ============================================= */
 
             .torrent-item__size,
             .torrent-item__exe,
@@ -895,23 +897,22 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                IPTV
-               ========================================= */
+               ============================================= */
 
             .iptv-channel {
                 background-color: #14291F !important;
             }
 
 
-            /* =========================================
-               FOREST LIVE LAYER
-               ========================================= */
+            /* =============================================
+               LIVE LAYER
+               ============================================= */
 
             #arctic-forest-live-layer {
 
                 position: fixed;
-
                 inset: 0;
 
                 width: 100vw;
@@ -925,9 +926,9 @@
             }
 
 
-            /* =========================================
-               FOREST ATMOSPHERE
-               ========================================= */
+            /* =============================================
+               FOREST MIST
+               ============================================= */
 
             .forest-mist {
 
@@ -956,7 +957,6 @@
             }
 
             .forest-mist.one {
-
                 top: -15vh;
                 left: -25vw;
             }
@@ -972,7 +972,6 @@
                 opacity: .055;
 
                 animation-duration: 48s;
-
                 animation-delay: -15s;
             }
 
@@ -987,7 +986,6 @@
                 opacity: .045;
 
                 animation-duration: 55s;
-
                 animation-delay: -28s;
             }
 
@@ -1010,9 +1008,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                FOREST PARTICLES
-               ========================================= */
+               ============================================= */
 
             .forest-particle {
 
@@ -1049,10 +1047,6 @@
                 height: 4px;
 
                 opacity: .30;
-
-                box-shadow:
-                    0 0 6px rgba(120,220,155,.60),
-                    0 0 14px rgba(60,160,105,.30);
             }
 
             @keyframes forest-particle-float {
@@ -1106,9 +1100,9 @@
             }
 
 
-            /* =========================================
+            /* =============================================
                FOREST SPARKS
-               ========================================= */
+               ============================================= */
 
             .forest-spark {
 
@@ -1136,44 +1130,24 @@
 
                 0%,
                 72% {
-
                     opacity: 0;
-
                     transform: scale(.5);
                 }
 
                 80% {
-
                     opacity: .65;
-
                     transform: scale(1.25);
                 }
 
                 86% {
-
                     opacity: .25;
-
                     transform: scale(.8);
                 }
 
                 92%,
                 100% {
-
                     opacity: 0;
-
                     transform: scale(.5);
-                }
-            }
-
-
-            /* =========================================
-               REDUCE MOTION
-               ========================================= */
-
-            @media (prefers-reduced-motion: reduce) {
-
-                #arctic-forest-live-layer * {
-                    animation: none !important;
                 }
             }
         `;
@@ -1184,7 +1158,7 @@
         var layer = createLayer();
 
 
-        /* Forest mist */
+        /* Mist */
 
         var mist1 = document.createElement('div');
         mist1.className = 'forest-mist one';
@@ -1200,7 +1174,7 @@
         layer.appendChild(mist3);
 
 
-        /* Forest particles */
+        /* Particles */
 
         for (var i = 0; i < 28; i++) {
 
@@ -1234,9 +1208,9 @@
         }
 
 
-        /* Forest sparks */
+        /* Sparks */
 
-        var sparkPositions = [
+        var sparks = [
             [12, 35],
             [28, 70],
             [46, 25],
@@ -1245,17 +1219,17 @@
             [92, 68]
         ];
 
-        for (var s = 0; s < sparkPositions.length; s++) {
+        for (var s = 0; s < sparks.length; s++) {
 
             var spark = document.createElement('div');
 
             spark.className = 'forest-spark';
 
             spark.style.left =
-                sparkPositions[s][0] + '%';
+                sparks[s][0] + '%';
 
             spark.style.top =
-                sparkPositions[s][1] + '%';
+                sparks[s][1] + '%';
 
             spark.style.animationDuration =
                 (9 + Math.random() * 9) + 's';
@@ -1268,18 +1242,18 @@
     }
 
 
-    /* ================================================
-       DEFAULT / ORIGINAL LAMPA
-       ================================================ */
+    /* =====================================================
+       DEFAULT
+       ===================================================== */
 
     function applyDefault() {
         removeTheme();
     }
 
 
-    /* ================================================
-       APPLY SELECTED THEME
-       ================================================ */
+    /* =====================================================
+       APPLY
+       ===================================================== */
 
     function applyTheme() {
 
@@ -1297,107 +1271,174 @@
     }
 
 
-    /* ================================================
+    /* =====================================================
        SETTINGS
-       ================================================ */
+       ===================================================== */
 
-    function settings() {
+    function registerSettings() {
 
-        if (!Lampa.SettingsApi) return;
+        if (!Lampa.SettingsApi) {
+            return false;
+        }
 
+        if (window.arctic_forest_settings_registered) {
+            return true;
+        }
 
-        var icon =
-            '<svg xmlns="http://www.w3.org/2000/svg" ' +
-            'width="24" height="24" viewBox="0 0 24 24" ' +
-            'fill="none">' +
+        try {
 
-            '<path d="M12 3v18M3 12h18" ' +
-            'stroke="currentColor" ' +
-            'stroke-width="1.6" ' +
-            'stroke-linecap="round"/>' +
+            var icon =
+                '<svg xmlns="http://www.w3.org/2000/svg" ' +
+                'width="24" height="24" viewBox="0 0 24 24" ' +
+                'fill="none">' +
 
-            '<path d="M5.5 7.5h13M5.5 16.5h13" ' +
-            'stroke="currentColor" ' +
-            'stroke-width="1.3" ' +
-            'stroke-linecap="round" ' +
-            'opacity=".65"/>' +
+                '<circle cx="12" cy="12" r="9" ' +
+                'stroke="currentColor" ' +
+                'stroke-width="1.6"/>' +
 
-            '</svg>';
+                '<path d="M8 12h8M12 8v8" ' +
+                'stroke="currentColor" ' +
+                'stroke-width="1.6" ' +
+                'stroke-linecap="round"/>' +
 
-
-        Lampa.SettingsApi.addComponent({
-
-            component: 'arctic_forest',
-
-            name: NAME,
-
-            icon: icon
-        });
+                '</svg>';
 
 
-        Lampa.SettingsApi.addParam({
+            /*
+             * =============================================
+             * COMPONENT
+             * =============================================
+             */
 
-            component: 'arctic_forest',
+            Lampa.SettingsApi.addComponent({
 
-            param: {
+                component: 'arctic_forest',
 
-                name: 'arctic_forest_theme',
+                name: NAME,
 
-                type: 'select',
+                icon: icon
+            });
 
-                values: {
 
-                    arctic: '🧊 Arctic Live',
+            /*
+             * =============================================
+             * PARAM
+             * =============================================
+             */
 
-                    forest: '🌲 Dark Forest',
+            Lampa.SettingsApi.addParam({
 
-                    default: '⚪ Стандартная'
+                component: 'arctic_forest',
+
+                param: {
+
+                    name: 'arctic_forest_theme',
+
+                    type: 'select',
+
+                    values: {
+
+                        arctic: 'Arctic Live',
+
+                        forest: 'Dark Forest',
+
+                        default: 'Стандартная'
+                    },
+
+                    default: cfg.theme
                 },
 
-                default:
-                    cfg.theme
-            },
+                field: {
 
-            field: {
+                    name: 'Тема',
 
-                name: 'Тема',
+                    description:
+                        'Выберите оформление Lampa'
+                },
 
-                description:
-                    'Выберите оформление Lampa'
-            },
+                onChange: function (value) {
 
-            onChange: function (value) {
+                    cfg.theme = String(value);
 
-                cfg.theme = String(value);
+                    saveCfg();
 
-                saveCfg();
+                    applyTheme();
 
-                applyTheme();
-            }
-        });
+                    if (Lampa.Noty) {
+
+                        var title =
+                            cfg.theme === 'arctic'
+                                ? 'Arctic Live'
+                                : cfg.theme === 'forest'
+                                    ? 'Dark Forest'
+                                    : 'Стандартная';
+
+                        Lampa.Noty.show(
+                            'Тема изменена: ' + title
+                        );
+                    }
+                }
+            });
+
+
+            window.arctic_forest_settings_registered = true;
+
+            console.log(
+                '[Arctic Forest] Settings registered'
+            );
+
+            return true;
+
+        } catch (e) {
+
+            console.error(
+                '[Arctic Forest] Settings error:',
+                e
+            );
+
+            return false;
+        }
     }
 
 
-    /* ================================================
+    /* =====================================================
        START
-       ================================================ */
+       ===================================================== */
 
     function start() {
 
-        settings();
-
         applyTheme();
 
+        /*
+         * SettingsApi на некоторых сборках может
+         * появиться чуть позже app ready.
+         */
+        if (!registerSettings()) {
+
+            var attempts = 0;
+
+            var timer = setInterval(function () {
+
+                attempts++;
+
+                if (registerSettings() || attempts >= 20) {
+
+                    clearInterval(timer);
+                }
+
+            }, 500);
+        }
+
         console.log(
-            '[Arctic Forest] Theme system started:',
+            '[Arctic Forest] Started:',
             cfg.theme
         );
     }
 
 
-    /* ================================================
+    /* =====================================================
        BOOT
-       ================================================ */
+       ===================================================== */
 
     function boot() {
 
@@ -1413,7 +1454,10 @@
 
             start();
 
-        } else {
+        } else if (
+            Lampa.Listener &&
+            Lampa.Listener.follow
+        ) {
 
             Lampa.Listener.follow(
                 'app',
@@ -1425,6 +1469,10 @@
 
                 }
             );
+
+        } else {
+
+            setTimeout(start, 1000);
         }
     }
 
