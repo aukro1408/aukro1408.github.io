@@ -21,6 +21,202 @@
 
     var currentTheme = DEFAULT_THEME;
 
+    // Seasonal icon in the Lampa header menu button.
+    var seasonMenuObserver = null;
+    var seasonMenuTimer = null;
+
+
+    // =========================================================
+    // SEASONAL MENU ICON
+    // =========================================================
+
+    function seasonMenuSvg(theme) {
+
+        if (theme === "winter") {
+
+            // Small Santa hat
+            return `
+                <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M6 23.5C10 18.5 13.2 12.5 16 5c4.8 4.1 8.1 9.9 9.8 18.5H6Z" fill="#D94A4A"/>
+                    <path d="M5.2 23.2c4.5-1.1 13.8-1.2 21.7 0l.7 2.1c-7.6 2-16.3 1.9-22.8-.1l.4-2Z" fill="#F7F7F7"/>
+                    <circle cx="16.7" cy="4.8" r="3.1" fill="#F7F7F7"/>
+                    <path d="M7.5 22.1c4.7-.9 12.1-1 17.9.2" fill="none" stroke="#D9E8EF" stroke-width=".9" opacity=".7"/>
+                </svg>
+            `;
+        }
+
+        if (theme === "autumn") {
+
+            // Halloween pumpkin
+            return `
+                <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M15.1 6.1c.2-2.2 1.6-3.4 3.9-3.7-.2 2.2-1.2 3.8-3.6 4.4" fill="#5D7A35"/>
+                    <path d="M8.1 9.1C4.7 10.7 3.3 14.3 3.8 18.7c.5 5.7 4.1 9 8.3 9.3 1.6.1 2.8-.4 4-.9 1.2.5 2.4 1 4 .9 4.2-.3 7.8-3.6 8.3-9.3.5-4.4-.9-8-4.3-9.6-2.5-1.2-4.7-.6-6.1.5-1.4-1.1-3.6-1.7-6.1-.5Z" fill="#E57A24"/>
+                    <path d="M10.2 10.1c-2 3.1-2 11.5 1.3 16.8M16 8.8c-1.3 5.5-1.3 12.2 0 18.1M21.8 10.1c2 3.1 2 11.5-1.3 16.8" fill="none" stroke="#B95718" stroke-width="1.15" opacity=".75"/>
+                    <path d="m9 17 3.2-2.1v2.3l2.2 1.1-2.2 1.1v2.3L9 19.6l2.1-1.3L9 17Zm14 0-3.2-2.1v2.3l-2.2 1.1 2.2 1.1v2.3l3.2-2.1-2.1-1.3L23 17Z" fill="#1B120D"/>
+                    <path d="M12.7 23.1c2.1 1.2 4.5 1.2 6.6 0-1.3 2-5.3 2-6.6 0Z" fill="#1B120D"/>
+                </svg>
+            `;
+        }
+
+        if (theme === "forest") {
+            return `
+                <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M25.8 5.8C15.1 6.4 8.3 11.5 8.1 20.4c6.8 1.7 13.2-1.9 16.1-8.4 1.1-2.5 1.6-4.6 1.6-6.2Z" fill="#78A65A"/>
+                    <path d="M6 27c4.8-7.1 10.4-11.8 18.1-18.6" fill="none" stroke="#D4E8C0" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            `;
+        }
+
+        if (theme === "storm") {
+            return `
+                <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M18.6 3.5 7.7 18.2h7.2l-2 10.3 11.4-15.8h-7.4l1.7-9.2Z" fill="#DCEFFF"/>
+                </svg>
+            `;
+        }
+
+        // Arctic
+        return `
+            <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <g fill="none" stroke="#E8F8FF" stroke-width="1.5" stroke-linecap="round">
+                    <path d="M16 4v24M4 16h24M7.5 7.5l17 17M24.5 7.5l-17 17"/>
+                    <path d="m16 4-2.4 3M16 4l2.4 3M16 28l-2.4-3M16 28l2.4-3M4 16l3-2.4M4 16l3 2.4M28 16l-3-2.4M28 16l-3 2.4"/>
+                </g>
+            </svg>
+        `;
+    }
+
+
+    function findSeasonMenuTargets() {
+
+        var selectors = [
+            ".head__menu-icon",
+            ".head__menu",
+            ".head__menu-button",
+            ".head .menu__button",
+            ".head .menu-button",
+            ".head .head__button--menu",
+            ".head .menu"
+        ];
+
+        var found = [];
+
+        selectors.forEach(function (selector) {
+
+            try {
+                document.querySelectorAll(selector).forEach(function (element) {
+                    if (found.indexOf(element) === -1) {
+                        found.push(element);
+                    }
+                });
+            } catch (e) {}
+        });
+
+        return found;
+    }
+
+
+    function removeSeasonMenuIcon() {
+
+        if (seasonMenuTimer) {
+            clearTimeout(seasonMenuTimer);
+            seasonMenuTimer = null;
+        }
+
+        if (seasonMenuObserver) {
+            seasonMenuObserver.disconnect();
+            seasonMenuObserver = null;
+        }
+
+        document.querySelectorAll(".af-season-menu-icon").forEach(function (icon) {
+            icon.remove();
+        });
+
+        document.querySelectorAll(".af-season-menu-target").forEach(function (target) {
+            target.classList.remove("af-season-menu-target");
+
+            target.querySelectorAll(".af-season-menu-original-icon").forEach(function (icon) {
+                icon.classList.remove("af-season-menu-original-icon");
+            });
+        });
+    }
+
+
+    function updateSeasonMenuIcon() {
+
+        if (currentTheme === "default") {
+            removeSeasonMenuIcon();
+            return;
+        }
+
+        var targets = findSeasonMenuTargets();
+
+        targets.forEach(function (target) {
+
+            target.classList.add("af-season-menu-target");
+
+            if (!target.querySelector(".af-season-menu-icon")) {
+
+                var icon = document.createElement("span");
+                icon.className = "af-season-menu-icon";
+                icon.innerHTML = seasonMenuSvg(currentTheme);
+                icon.setAttribute("aria-hidden", "true");
+
+                target.appendChild(icon);
+            }
+
+            target.querySelectorAll("svg").forEach(function (svg) {
+
+                if (!svg.closest(".af-season-menu-icon")) {
+                    svg.classList.add("af-season-menu-original-icon");
+                }
+            });
+        });
+    }
+
+
+    function startSeasonMenuWatcher() {
+
+        if (seasonMenuObserver || typeof MutationObserver === "undefined") {
+            return;
+        }
+
+        if (!document.body) {
+            return;
+        }
+
+        seasonMenuObserver = new MutationObserver(function () {
+
+            if (seasonMenuTimer) {
+                return;
+            }
+
+            seasonMenuTimer = setTimeout(function () {
+                seasonMenuTimer = null;
+                updateSeasonMenuIcon();
+            }, 120);
+        });
+
+        seasonMenuObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    }
+
+
+    function applySeasonMenuIcon() {
+
+        removeSeasonMenuIcon();
+
+        if (currentTheme === "default") {
+            return;
+        }
+
+        updateSeasonMenuIcon();
+        startSeasonMenuWatcher();
+    }
+
 
     // =========================================================
     // STORAGE
@@ -87,6 +283,14 @@
             style.remove();
         }
 
+        var menuStyle = document.getElementById(
+            "arctic-forest-menu-style"
+        );
+
+        if (menuStyle) {
+            menuStyle.remove();
+        }
+
         var layer = document.getElementById(
             "arctic-forest-live-layer"
         );
@@ -121,6 +325,78 @@
                 "winter-theme"
             );
         }
+
+        removeSeasonMenuIcon();
+    }
+
+
+    // =========================================================
+    // SEASONAL MENU ICON STYLE
+    // =========================================================
+
+    function addSeasonMenuIconStyle() {
+
+        var css = `
+            .af-season-menu-target {
+                position: relative !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+
+            .af-season-menu-target .af-season-menu-original-icon {
+                opacity: 0 !important;
+            }
+
+            .af-season-menu-icon {
+                position: absolute !important;
+                left: 50% !important;
+                top: 50% !important;
+                width: 30px !important;
+                height: 30px !important;
+                transform: translate(-50%, -50%) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                pointer-events: none !important;
+                z-index: 20 !important;
+                line-height: 0 !important;
+            }
+
+            .af-season-menu-icon svg {
+                width: 30px !important;
+                height: 30px !important;
+                display: block !important;
+                overflow: visible !important;
+            }
+
+            body.winter-theme .af-season-menu-icon svg {
+                filter: drop-shadow(0 1px 5px rgba(150, 220, 255, .42)) !important;
+            }
+
+            body.autumn-theme .af-season-menu-icon svg {
+                filter: drop-shadow(0 1px 5px rgba(255, 125, 40, .32)) !important;
+            }
+
+            body.forest-theme .af-season-menu-icon svg {
+                filter: drop-shadow(0 1px 5px rgba(120, 180, 80, .28)) !important;
+            }
+
+            body.storm-theme .af-season-menu-icon svg {
+                filter: drop-shadow(0 1px 5px rgba(150, 210, 255, .36)) !important;
+            }
+
+            body.arctic-theme .af-season-menu-icon svg {
+                filter: drop-shadow(0 1px 5px rgba(170, 235, 255, .38)) !important;
+            }
+        `;
+
+        var old = document.getElementById("arctic-forest-menu-style");
+        if (old) old.remove();
+        var style = document.createElement("style");
+        style.id = "arctic-forest-menu-style";
+        style.textContent = css;
+        document.head.appendChild(style);
     }
 
 
@@ -2875,6 +3151,11 @@
         } else {
 
             applyDefault();
+        }
+
+        if (currentTheme !== "default") {
+            addSeasonMenuIconStyle();
+            applySeasonMenuIcon();
         }
 
 
