@@ -2850,7 +2850,10 @@
 
                 animation:
                     winterSnow
-                    linear infinite;
+                    linear infinite !important;
+
+                animation-play-state: running !important;
+                will-change: transform, opacity;
             }
 
 
@@ -2894,7 +2897,7 @@
             ================================================= */
 
             .winter-snow i:nth-child(1)
-            {left:3%;top:-10%;animation-duration:13s;animation-delay:-2s;}
+            {left:3%;top:-32%;animation-name:winterSnow;animation-duration:13s;animation-delay:-2s;animation-play-state:running;}
 
             .winter-snow i:nth-child(2)
             {left:8%;top:-25%;animation-duration:18s;animation-delay:-8s;}
@@ -3340,206 +3343,6 @@
 
 
     // =========================================================
-    // HORROR ROW — MAIN SCREEN
-    // =========================================================
-    //
-    // Unlike ContentRows.add(), this hooks the TMDB main loader itself.
-    // Lampa's native TMDB main() prepends several system rows after
-    // ContentRows.call(), so a ContentRows row cannot be guaranteed to be
-    // the first row. We load the horror row first and only then start the
-    // native TMDB main loader. This keeps the order deterministic without
-    // touching the DOM.
-
-    var HORROR_ROW_NAME = "arctic_forest_horror_row";
-    var HORROR_GENRE = "27";
-    var HORROR_PATCH_FLAG = "__arctic_forest_horror_main_patched";
-
-    function horrorToday() {
-        var d = new Date();
-        var y = d.getFullYear();
-        var m = String(d.getMonth() + 1).padStart(2, "0");
-        var day = String(d.getDate()).padStart(2, "0");
-        return y + "-" + m + "-" + day;
-    }
-
-    function horrorMoreData(data) {
-        data = data || {};
-
-        data.title = "Ужасы";
-        data.url = "movie";
-        data.genres = HORROR_GENRE;
-        data.sort_by = "primary_release_date.desc";
-        data.filter = {
-            "primary_release_date.lte": horrorToday()
-        };
-        data.source = "tmdb";
-        data.url = "movie";
-        data.langs = "ru-RU";
-        data.arctic_forest_horror = true;
-
-        if (Lampa.Maker && Lampa.Maker.module) {
-            try {
-                var Line = Lampa.Maker.module("Line");
-                if (Line && Line.toggle) {
-                    data.params = {
-                        module: Line.toggle(Line.MASK.base, "More")
-                    };
-                }
-            } catch (e) {}
-        }
-
-        return data;
-    }
-
-    function loadHorrorRow(done, fail) {
-        try {
-            var tmdb = Lampa.Api && Lampa.Api.sources && Lampa.Api.sources.tmdb;
-
-            if (!tmdb || typeof tmdb.get !== "function") {
-                if (fail) fail();
-                return;
-            }
-
-            tmdb.get(
-                "discover/movie?with_genres=" + HORROR_GENRE,
-                {
-                    sort_by: "primary_release_date.desc",
-                    filter: {
-                        "primary_release_date.lte": horrorToday()
-                    },
-                    langs: "ru-RU"
-                },
-                function (data) {
-                    done(horrorMoreData(data));
-                },
-                function () {
-                    if (fail) fail();
-                },
-                { life: 60 * 24 }
-            );
-        } catch (e) {
-            console.error("[Arctic Forest] Horror load error:", e);
-            if (fail) fail();
-        }
-    }
-
-    function patchHorrorRouter() {
-        try {
-            if (window.__arctic_forest_horror_router_patched) return true;
-
-            var router = Lampa.Router;
-            if (!router || typeof router.call !== "function" || !Lampa.Activity || typeof Lampa.Activity.push !== "function") {
-                return false;
-            }
-
-            var originalCall = router.call;
-
-            router.call = function (name, data) {
-                if (name === "category_full" && data && data.arctic_forest_horror) {
-                    var push = {};
-                    for (var key in data) push[key] = data[key];
-
-                    push.url = "movie";
-                    push.component = "category_full";
-                    push.source = "tmdb";
-                    push.page = data.page || 1;
-                    push.title = "Ужасы";
-                    push.genres = "27";
-                    push.sort_by = "primary_release_date.desc";
-                    push.langs = "ru-RU";
-                    push.filter = {
-                        "primary_release_date.lte": horrorToday()
-                    };
-
-                    Lampa.Activity.push(push);
-                    return;
-                }
-
-                return originalCall.apply(router, arguments);
-            };
-
-            window.__arctic_forest_horror_router_patched = true;
-            console.log("[Arctic Forest] Horror category route patched");
-            return true;
-        } catch (e) {
-            console.error("[Arctic Forest] Horror router patch error:", e);
-            return false;
-        }
-    }
-
-    function patchHorrorMain() {
-        try {
-            if (window[HORROR_PATCH_FLAG]) return true;
-
-            var tmdb = Lampa.Api && Lampa.Api.sources && Lampa.Api.sources.tmdb;
-
-            if (!tmdb || typeof tmdb.main !== "function") {
-                console.warn("[Arctic Forest] TMDB main() unavailable");
-                return false;
-            }
-
-            var originalMain = tmdb.main;
-
-            tmdb.main = function (params, oncomplite, onerror) {
-                var started = false;
-                var nativeLoader = null;
-
-                function startNative() {
-                    if (started) return nativeLoader;
-                    started = true;
-
-                    try {
-                        nativeLoader = originalMain.call(tmdb, params, oncomplite, onerror);
-                        return nativeLoader;
-                    } catch (e) {
-                        console.error("[Arctic Forest] Native TMDB main error:", e);
-                        if (onerror) onerror();
-                    }
-                }
-
-                // The first callback emitted here becomes the first visual
-                // row. Only after it is emitted do we start native TMDB rows.
-                loadHorrorRow(function (horror) {
-                    try {
-                        if (oncomplite) oncomplite([horror]);
-                    } finally {
-                        startNative();
-                    }
-                }, function () {
-                    // If TMDB fails for the custom row, never block Lampa's
-                    // home screen: fall back to the native loader.
-                    startNative();
-                });
-
-                // Native main() normally returns a loadPart function. We do
-                // not have that function until the native loader starts, so
-                // return a harmless loader that triggers the native fallback.
-                return function () {
-                    if (typeof nativeLoader === "function") {
-                        return nativeLoader.apply(null, arguments);
-                    }
-                };
-            };
-
-            window[HORROR_PATCH_FLAG] = true;
-            console.log("[Arctic Forest] Horror main hook installed");
-            return true;
-
-        } catch (e) {
-            console.error("[Arctic Forest] Horror main hook error:", e);
-            return false;
-        }
-    }
-
-    function registerHorrorRow() {
-        // Kept as a separate function so startup remains compatible with
-        // previous plugin versions. The actual ordering is handled by the
-        // TMDB main hook above, not by DOM manipulation or ContentRows.
-        patchHorrorRouter();
-        patchHorrorMain();
-    }
-
-    // =========================================================
     // START
     // =========================================================
 
@@ -3554,9 +3357,6 @@
 
 
         settings();
-
-
-        registerHorrorRow();
 
 
         if (
