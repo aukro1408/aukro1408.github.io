@@ -3362,7 +3362,10 @@
 
             Lampa.ContentRows.add({
                 name: HORROR_ROW_NAME,
-                index: 0,
+                // Force the row to the absolute beginning of main.
+                // Lampa later inserts its own rows at index 0, so a very negative
+                // index is normalized by Array.splice() to position 0.
+                index: -99999,
                 screen: ["main"],
                 call: function (params, screen) {
                     return function (done) {
