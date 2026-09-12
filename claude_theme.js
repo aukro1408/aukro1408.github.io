@@ -1,3008 +1,1689 @@
 (function () {
-    "use strict";
+    'use strict';
 
-    // =========================================================
-    // ARCTIC FOREST
-    // Unified Lampa theme plugin
-    //
-    // Themes:
-    //   default = Standard Lampa
-    //   arctic  = Arctic Live
-    //   forest  = Dark Forest
-    //   storm   = Буря
-    //   noir    = Film Noir
-    //   velvet  = Velvet Cinema
-    // =========================================================
+    var COMPONENT = 'arctic_forest';
+    var STORAGE_KEY = 'arctic_forest_theme';
+    var STYLE_ID = 'arctic_forest_style';
+    var LIVE_ID = 'arctic_forest_live';
 
-
-    var COMPONENT = "arctic_forest";
-    var STORAGE_KEY = "arctic_forest_theme";
-
-    var DEFAULT_THEME = "default";
-
-    var VALID_THEMES = [
-        "default",
-        "arctic",
-        "forest",
-        "storm",
-        "noir",
-        "velvet"
-    ];
-
+    var DEFAULT_THEME = 'default';
     var currentTheme = DEFAULT_THEME;
 
+    var playerCheckTimer = null;
+    var mutationObserver = null;
 
-    // =========================================================
-    // STORAGE
-    // =========================================================
-
-    function isValidTheme(value) {
-
-        return VALID_THEMES.indexOf(value) !== -1;
-    }
-
+    /* =========================================================
+       THEME
+    ========================================================= */
 
     function loadTheme() {
+        var saved = '';
 
         try {
-
-            currentTheme = Lampa.Storage.get(
-                STORAGE_KEY,
-                DEFAULT_THEME
-            );
-
+            saved = Lampa.Storage.get(STORAGE_KEY, '');
         } catch (e) {
-
-            currentTheme = DEFAULT_THEME;
+            saved = '';
         }
 
+        var allowed = [
+            'default',
+            'arctic',
+            'forest',
+            'storm',
+            'autumn',
+            'winter'
+        ];
 
-        if (!isValidTheme(currentTheme)) {
+        currentTheme = allowed.indexOf(saved) !== -1
+            ? saved
+            : DEFAULT_THEME;
+    }
 
-            currentTheme = DEFAULT_THEME;
-        }
+    function saveTheme(theme) {
+        currentTheme = theme;
+
+        try {
+            Lampa.Storage.set(STORAGE_KEY, theme);
+        } catch (e) {}
+
+        applyTheme(theme);
     }
 
 
-    function saveTheme(value) {
-
-        try {
-
-            Lampa.Storage.set(
-                STORAGE_KEY,
-                value
-            );
-
-        } catch (e) {
-
-            console.error(
-                "[Arctic Forest] Storage error:",
-                e
-            );
-        }
-    }
-
-
-    // =========================================================
-    // REMOVE OUR THEME
-    // =========================================================
+    /* =========================================================
+       REMOVE OUR STYLES ONLY
+       ========================================================= */
 
     function removeOurTheme() {
+        var oldStyle = document.getElementById(STYLE_ID);
 
-        var style = document.getElementById(
-            "arctic-forest-style"
-        );
-
-        if (style) {
-            style.remove();
+        if (oldStyle) {
+            oldStyle.remove();
         }
 
+        var oldLive = document.getElementById(LIVE_ID);
 
-        var layer = document.getElementById(
-            "arctic-forest-live-layer"
-        );
-
-        if (layer) {
-            layer.remove();
+        if (oldLive) {
+            oldLive.remove();
         }
 
-
-        document.documentElement.classList.remove(
-            "arctic-forest-active"
+        document.body.classList.remove(
+            'arctic-theme',
+            'forest-theme',
+            'storm-theme',
+            'autumn-theme',
+            'winter-theme'
         );
-
-
-        if (document.body) {
-
-            document.body.classList.remove(
-                "arctic-theme"
-            );
-
-            document.body.classList.remove(
-                "forest-theme"
-            );
-
-            document.body.classList.remove(
-                "storm-theme"
-            );
-
-            document.body.classList.remove(
-                "noir-theme"
-            );
-
-            document.body.classList.remove(
-                "velvet-theme"
-            );
-        }
     }
 
 
-    // =========================================================
-    // ADD CSS
-    // =========================================================
+    /* =========================================================
+       STYLE
+       ========================================================= */
 
     function addStyle(css) {
+        var style = document.createElement('style');
 
-        var old = document.getElementById(
-            "arctic-forest-style"
-        );
-
-        if (old) {
-            old.remove();
-        }
-
-
-        var style = document.createElement("style");
-
-        style.id = "arctic-forest-style";
-
+        style.id = STYLE_ID;
+        style.type = 'text/css';
         style.textContent = css;
 
         document.head.appendChild(style);
     }
 
 
-    // =========================================================
-    // LIVE LAYER
-    // =========================================================
+    /* =========================================================
+       COMMON CSS
+       ========================================================= */
+
+    var commonCSS = `
+
+        /* -----------------------------------------------------
+           GENERAL
+        ----------------------------------------------------- */
+
+        body.arctic-theme,
+        body.forest-theme,
+        body.storm-theme,
+        body.autumn-theme,
+        body.winter-theme {
+            background: var(--af-bg) !important;
+        }
+
+        body.arctic-theme .app,
+        body.forest-theme .app,
+        body.storm-theme .app,
+        body.autumn-theme .app,
+        body.winter-theme .app {
+            background: var(--af-bg) !important;
+        }
+
+
+        /* -----------------------------------------------------
+           BODY / MAIN BACKGROUND
+        ----------------------------------------------------- */
+
+        body.arctic-theme {
+            --af-bg: #0A1014;
+            --af-black: #060A0D;
+            --af-focus1: #E6F9FF;
+            --af-focus2: #8DD8EA;
+            --af-border: #8DD8EA;
+            --af-progress: #63C7DC;
+            --af-ext: #080D11;
+            --af-ext-focus: #17242B;
+            --af-torrent: #D8E8ED;
+            --af-torrent-focus: rgba(141,216,234,.24);
+            --af-iptv-focus: #172A32;
+            --af-settings1: rgb(27,40,48);
+            --af-settings2: rgb(7,11,14);
+        }
+
+        body.forest-theme {
+            --af-bg: #070D0A;
+            --af-black: #040806;
+            --af-focus1: #E2F8EA;
+            --af-focus2: #65B985;
+            --af-border: #65B985;
+            --af-progress: #45A86B;
+            --af-ext: #050A07;
+            --af-ext-focus: #12221A;
+            --af-torrent: #D9E9DF;
+            --af-torrent-focus: rgba(101,185,133,.24);
+            --af-iptv-focus: #14291F;
+            --af-settings1: rgb(24,43,32);
+            --af-settings2: rgb(5,11,8);
+        }
+
+        body.storm-theme {
+            --af-bg: #080B10;
+            --af-black: #05070A;
+            --af-focus1: #DDF5FF;
+            --af-focus2: #5B9FC7;
+            --af-border: #6EA7C7;
+            --af-progress: #63A9D0;
+            --af-ext: #070B10;
+            --af-ext-focus: #17212A;
+            --af-torrent: #D9E8F0;
+            --af-torrent-focus: rgba(91,159,199,.23);
+            --af-iptv-focus: #14232E;
+            --af-settings1: rgb(25,32,41);
+            --af-settings2: rgb(5,8,11);
+        }
+
+        body.autumn-theme {
+            --af-bg: #110D08;
+            --af-black: #080604;
+            --af-focus1: #FFF1D6;
+            --af-focus2: #C8783E;
+            --af-border: #C8783E;
+            --af-progress: #C98243;
+            --af-ext: #0C0805;
+            --af-ext-focus: #26180F;
+            --af-torrent: #E7D7C5;
+            --af-torrent-focus: rgba(200,120,62,.24);
+            --af-iptv-focus: #2A1B10;
+            --af-settings1: rgb(49,31,20);
+            --af-settings2: rgb(9,6,4);
+        }
+
+        body.winter-theme {
+            --af-bg: #081018;
+            --af-black: #04070A;
+            --af-focus1: #F5FCFF;
+            --af-focus2: #A8D4E8;
+            --af-border: #A8D4E8;
+            --af-progress: #7CC4DF;
+            --af-ext: #050A0E;
+            --af-ext-focus: #14222A;
+            --af-torrent: #DCECF3;
+            --af-torrent-focus: rgba(168,212,232,.24);
+            --af-iptv-focus: #10242D;
+            --af-settings1: rgb(25,38,47);
+            --af-settings2: rgb(5,9,12);
+        }
+
+
+        /* -----------------------------------------------------
+           FOCUS
+           ----------------------------------------------------- */
+
+        body.arctic-theme .selector,
+        body.forest-theme .selector,
+        body.storm-theme .selector,
+        body.autumn-theme .selector,
+        body.winter-theme .selector {
+            border-color: var(--af-border) !important;
+        }
+
+        body.arctic-theme .selector.focus,
+        body.forest-theme .selector.focus,
+        body.storm-theme .selector.focus,
+        body.autumn-theme .selector.focus,
+        body.winter-theme .selector.focus {
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--af-focus1),
+                    var(--af-focus2)
+                ) !important;
+
+            color: #071015 !important;
+            border-color: transparent !important;
+        }
+
+
+        /* -----------------------------------------------------
+           CARDS
+           ----------------------------------------------------- */
+
+        body.arctic-theme .card.focus .card__view,
+        body.forest-theme .card.focus .card__view,
+        body.storm-theme .card.focus .card__view,
+        body.autumn-theme .card.focus .card__view,
+        body.winter-theme .card.focus .card__view {
+            box-shadow:
+                0 0 0 2px var(--af-border),
+                0 8px 30px rgba(0,0,0,.35) !important;
+        }
+
+
+        /* -----------------------------------------------------
+           SETTINGS
+           ----------------------------------------------------- */
+
+        body.arctic-theme .settings-param__value,
+        body.forest-theme .settings-param__value,
+        body.storm-theme .settings-param__value,
+        body.autumn-theme .settings-param__value,
+        body.winter-theme .settings-param__value {
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--af-settings1),
+                    var(--af-settings2)
+                ) !important;
+        }
+
+
+        /* -----------------------------------------------------
+           PLAYER PROGRESS
+           ----------------------------------------------------- */
+
+        body.arctic-theme .player-panel__progress,
+        body.arctic-theme .player-panel__progress-bar,
+        body.arctic-theme .player-progress,
+        body.forest-theme .player-panel__progress,
+        body.forest-theme .player-panel__progress-bar,
+        body.forest-theme .player-progress,
+        body.storm-theme .player-panel__progress,
+        body.storm-theme .player-panel__progress-bar,
+        body.storm-theme .player-progress,
+        body.autumn-theme .player-panel__progress,
+        body.autumn-theme .player-panel__progress-bar,
+        body.autumn-theme .player-progress,
+        body.winter-theme .player-panel__progress,
+        body.winter-theme .player-panel__progress-bar,
+        body.winter-theme .player-progress {
+            background: var(--af-progress) !important;
+        }
+
+
+        /* -----------------------------------------------------
+           EXTENSIONS
+           ----------------------------------------------------- */
+
+        body.arctic-theme .extensions__item,
+        body.forest-theme .extensions__item,
+        body.storm-theme .extensions__item,
+        body.autumn-theme .extensions__item,
+        body.winter-theme .extensions__item {
+            background: var(--af-ext) !important;
+        }
+
+        body.arctic-theme .extensions__item.focus,
+        body.forest-theme .extensions__item.focus,
+        body.storm-theme .extensions__item.focus,
+        body.autumn-theme .extensions__item.focus,
+        body.winter-theme .extensions__item.focus {
+            background: var(--af-ext-focus) !important;
+        }
+
+
+        /* -----------------------------------------------------
+           TORRENTS
+           ----------------------------------------------------- */
+
+        body.arctic-theme .torrent-item__badge,
+        body.forest-theme .torrent-item__badge,
+        body.storm-theme .torrent-item__badge,
+        body.autumn-theme .torrent-item__badge,
+        body.winter-theme .torrent-item__badge {
+            color: var(--af-torrent) !important;
+        }
+
+        body.arctic-theme .torrent-item.focus,
+        body.forest-theme .torrent-item.focus,
+        body.storm-theme .torrent-item.focus,
+        body.autumn-theme .torrent-item.focus,
+        body.winter-theme .torrent-item.focus {
+            background: var(--af-torrent-focus) !important;
+        }
+
+
+        /* -----------------------------------------------------
+           IPTV
+           ----------------------------------------------------- */
+
+        body.arctic-theme .iptv-item.focus,
+        body.forest-theme .iptv-item.focus,
+        body.storm-theme .iptv-item.focus,
+        body.autumn-theme .iptv-item.focus,
+        body.winter-theme .iptv-item.focus {
+            background: var(--af-iptv-focus) !important;
+        }
+
+
+        /* -----------------------------------------------------
+           NO GLASS / NO MOVING FOCUS
+           ----------------------------------------------------- */
+
+        body.arctic-theme .selector.focus,
+        body.forest-theme .selector.focus,
+        body.storm-theme .selector.focus,
+        body.autumn-theme .selector.focus,
+        body.winter-theme .selector.focus {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            transform: none !important;
+            transition: none !important;
+        }
+
+
+        /* -----------------------------------------------------
+           LIVE LAYER
+           ----------------------------------------------------- */
+
+        #${LIVE_ID} {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+
+            pointer-events: none;
+
+            z-index: 999999;
+
+            overflow: hidden;
+
+            transition: opacity .35s ease;
+        }
+
+        #${LIVE_ID}.af-hidden {
+            display: none !important;
+        }
+
+
+        /* -----------------------------------------------------
+           COMMON MIST
+           ----------------------------------------------------- */
+
+        .af-mist {
+            position: absolute;
+            left: -15%;
+            width: 130%;
+            height: 30%;
+
+            border-radius: 50%;
+
+            filter: blur(35px);
+
+            opacity: .12;
+
+            animation:
+                af-mist-move 28s ease-in-out infinite alternate;
+        }
+
+        .af-mist.m1 {
+            top: 18%;
+        }
+
+        .af-mist.m2 {
+            top: 50%;
+            animation-duration: 38s;
+            animation-direction: alternate-reverse;
+        }
+
+        .af-mist.m3 {
+            top: 76%;
+            animation-duration: 46s;
+        }
+
+        @keyframes af-mist-move {
+            from {
+                transform: translateX(-7%);
+            }
+
+            to {
+                transform: translateX(7%);
+            }
+        }
+
+
+        /* =====================================================
+           ARCTIC LIVE
+           ===================================================== */
+
+        body.arctic-theme #${LIVE_ID} {
+            background:
+                radial-gradient(
+                    ellipse at 50% 100%,
+                    rgba(40,130,155,.08),
+                    transparent 65%
+                );
+        }
+
+        body.arctic-theme #${LIVE_ID} .af-mist {
+            background:
+                radial-gradient(
+                    ellipse,
+                    rgba(140,220,235,.45),
+                    rgba(100,180,200,.08) 45%,
+                    transparent 72%
+                );
+        }
+
+        .af-arctic-particle {
+            position: absolute;
+
+            width: 2px;
+            height: 2px;
+
+            border-radius: 50%;
+
+            background: rgba(220,250,255,.55);
+
+            box-shadow:
+                0 0 5px rgba(150,230,245,.5);
+
+            animation:
+                af-arctic-float linear infinite;
+        }
+
+        @keyframes af-arctic-float {
+            0% {
+                transform:
+                    translate3d(0,110vh,0)
+                    scale(.5);
+                opacity: 0;
+            }
+
+            12% {
+                opacity: .7;
+            }
+
+            85% {
+                opacity: .35;
+            }
+
+            100% {
+                transform:
+                    translate3d(70px,-15vh,0)
+                    scale(1.1);
+                opacity: 0;
+            }
+        }
+
+
+        /* =====================================================
+           DARK FOREST
+           ===================================================== */
+
+        body.forest-theme #${LIVE_ID} {
+            background:
+                radial-gradient(
+                    ellipse at 50% 100%,
+                    rgba(28,100,58,.08),
+                    transparent 65%
+                );
+        }
+
+        body.forest-theme #${LIVE_ID} .af-mist {
+            background:
+                radial-gradient(
+                    ellipse,
+                    rgba(75,150,100,.32),
+                    rgba(35,100,60,.05) 48%,
+                    transparent 72%
+                );
+        }
+
+        .af-forest-particle {
+            position: absolute;
+
+            width: 2px;
+            height: 2px;
+
+            border-radius: 50%;
+
+            background: rgba(100,190,125,.25);
+
+            box-shadow:
+                0 0 5px rgba(70,180,110,.25);
+
+            animation:
+                af-forest-float linear infinite;
+        }
+
+        @keyframes af-forest-float {
+            0% {
+                transform:
+                    translate3d(0,105vh,0);
+                opacity: 0;
+            }
+
+            15% {
+                opacity: .3;
+            }
+
+            85% {
+                opacity: .15;
+            }
+
+            100% {
+                transform:
+                    translate3d(-45px,-10vh,0);
+                opacity: 0;
+            }
+        }
+
+
+        /* =====================================================
+           STORM
+           ===================================================== */
+
+        body.storm-theme #${LIVE_ID} {
+            background:
+                radial-gradient(
+                    ellipse at 50% 15%,
+                    rgba(70,95,120,.14),
+                    transparent 55%
+                );
+        }
+
+        .af-storm-sky {
+            position: absolute;
+            inset: 0;
+
+            background:
+                radial-gradient(
+                    ellipse at 20% 20%,
+                    rgba(110,125,145,.13),
+                    transparent 30%
+                ),
+                radial-gradient(
+                    ellipse at 75% 25%,
+                    rgba(85,105,130,.14),
+                    transparent 34%
+                ),
+                radial-gradient(
+                    ellipse at 50% 60%,
+                    rgba(40,60,80,.10),
+                    transparent 55%
+                );
+        }
+
+        .af-storm-cloud {
+            position: absolute;
+
+            border-radius: 50%;
+
+            filter: blur(38px);
+
+            background:
+                radial-gradient(
+                    ellipse,
+                    rgba(100,115,130,.22),
+                    rgba(40,50,65,.11) 45%,
+                    transparent 72%
+                );
+
+            animation:
+                af-cloud-drift 45s ease-in-out infinite alternate;
+        }
+
+        .af-storm-cloud.c1 {
+            width: 75vw;
+            height: 30vh;
+            left: -15vw;
+            top: 3vh;
+        }
+
+        .af-storm-cloud.c2 {
+            width: 80vw;
+            height: 34vh;
+            right: -20vw;
+            top: 16vh;
+
+            animation-duration: 58s;
+            animation-direction: alternate-reverse;
+        }
+
+        .af-storm-cloud.c3 {
+            width: 100vw;
+            height: 28vh;
+            left: 10vw;
+            top: 46vh;
+
+            animation-duration: 67s;
+        }
+
+        @keyframes af-cloud-drift {
+            from {
+                transform: translateX(-4%);
+            }
+
+            to {
+                transform: translateX(4%);
+            }
+        }
+
+        .af-storm-fog {
+            position: absolute;
+
+            left: -15%;
+            width: 130%;
+            height: 24%;
+
+            border-radius: 50%;
+
+            filter: blur(30px);
+
+            background:
+                radial-gradient(
+                    ellipse,
+                    rgba(120,145,165,.12),
+                    transparent 70%
+                );
+
+            animation:
+                af-fog-drift 34s ease-in-out infinite alternate;
+        }
+
+        .af-storm-fog.f1 {
+            top: 40%;
+        }
+
+        .af-storm-fog.f2 {
+            top: 67%;
+            animation-duration: 48s;
+            animation-direction: alternate-reverse;
+        }
+
+        .af-storm-fog.f3 {
+            top: 82%;
+            animation-duration: 55s;
+        }
+
+        @keyframes af-fog-drift {
+            from {
+                transform: translateX(-6%);
+            }
+
+            to {
+                transform: translateX(6%);
+            }
+        }
+
+        .af-rain {
+            position: absolute;
+
+            width: 1px;
+            height: 28px;
+
+            border-radius: 50%;
+
+            background:
+                linear-gradient(
+                    to bottom,
+                    transparent,
+                    rgba(185,220,235,.28)
+                );
+
+            animation:
+                af-rain-fall linear infinite;
+        }
+
+        @keyframes af-rain-fall {
+            0% {
+                transform:
+                    translate3d(0,-15vh,0)
+                    rotate(12deg);
+                opacity: 0;
+            }
+
+            8% {
+                opacity: .45;
+            }
+
+            92% {
+                opacity: .3;
+            }
+
+            100% {
+                transform:
+                    translate3d(-100px,115vh,0)
+                    rotate(12deg);
+                opacity: 0;
+            }
+        }
+
+        .af-lightning {
+            position: absolute;
+            inset: 0;
+
+            background:
+                rgba(215,240,255,.10);
+
+            opacity: 0;
+
+            animation:
+                af-lightning 23s infinite;
+        }
+
+        @keyframes af-lightning {
+            0%, 91%, 100% {
+                opacity: 0;
+            }
+
+            92% {
+                opacity: .16;
+            }
+
+            92.5% {
+                opacity: 0;
+            }
+
+            93% {
+                opacity: .08;
+            }
+
+            93.5% {
+                opacity: 0;
+            }
+        }
+
+
+        /* =====================================================
+           AUTUMN
+           ===================================================== */
+
+        body.autumn-theme #${LIVE_ID} {
+            background:
+                radial-gradient(
+                    ellipse at 50% 85%,
+                    rgba(170,90,35,.08),
+                    transparent 68%
+                );
+        }
+
+        body.autumn-theme #${LIVE_ID} .af-mist {
+            background:
+                radial-gradient(
+                    ellipse,
+                    rgba(190,120,70,.28),
+                    rgba(110,65,35,.07) 45%,
+                    transparent 72%
+                );
+        }
+
+        .af-autumn-glow {
+            position: absolute;
+            width: 70vw;
+            height: 45vh;
+
+            left: 15vw;
+            top: 5vh;
+
+            border-radius: 50%;
+
+            background:
+                radial-gradient(
+                    ellipse,
+                    rgba(205,130,55,.07),
+                    transparent 70%
+                );
+
+            filter: blur(25px);
+
+            animation:
+                af-autumn-glow 18s ease-in-out infinite alternate;
+        }
+
+        @keyframes af-autumn-glow {
+            from {
+                transform: translate(-3%,0) scale(.95);
+                opacity: .55;
+            }
+
+            to {
+                transform: translate(3%,2%) scale(1.05);
+                opacity: .85;
+            }
+        }
+
+        .af-leaf {
+            position: absolute;
+
+            width: 7px;
+            height: 12px;
+
+            border-radius:
+                75% 20% 75% 20%;
+
+            background:
+                rgba(190,105,45,.52);
+
+            box-shadow:
+                0 0 5px rgba(185,105,45,.14);
+
+            animation:
+                af-leaf-fall linear infinite;
+        }
+
+        .af-leaf:nth-child(3n) {
+            width: 6px;
+            height: 10px;
+            background: rgba(215,140,60,.46);
+        }
+
+        .af-leaf:nth-child(4n) {
+            width: 8px;
+            height: 13px;
+            background: rgba(145,75,35,.42);
+        }
+
+        @keyframes af-leaf-fall {
+            0% {
+                transform:
+                    translate3d(0,-15vh,0)
+                    rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: .65;
+            }
+
+            45% {
+                transform:
+                    translate3d(65px,45vh,0)
+                    rotate(150deg);
+            }
+
+            75% {
+                transform:
+                    translate3d(-60px,80vh,0)
+                    rotate(280deg);
+            }
+
+            100% {
+                transform:
+                    translate3d(80px,115vh,0)
+                    rotate(430deg);
+                opacity: 0;
+            }
+        }
+
+
+        /* =====================================================
+           WINTER
+           ===================================================== */
+
+        body.winter-theme #${LIVE_ID} {
+            background:
+                radial-gradient(
+                    ellipse at 50% 15%,
+                    rgba(160,210,235,.08),
+                    transparent 60%
+                );
+        }
+
+        body.winter-theme #${LIVE_ID} .af-mist {
+            background:
+                radial-gradient(
+                    ellipse,
+                    rgba(175,220,235,.30),
+                    rgba(120,175,195,.06) 46%,
+                    transparent 72%
+                );
+        }
+
+        .af-winter-glow {
+            position: absolute;
+
+            width: 65vw;
+            height: 55vh;
+
+            left: 18vw;
+            top: -10vh;
+
+            border-radius: 50%;
+
+            background:
+                radial-gradient(
+                    ellipse,
+                    rgba(180,225,245,.08),
+                    transparent 68%
+                );
+
+            filter: blur(25px);
+        }
+
+        .af-snow {
+            position: absolute;
+
+            width: 4px;
+            height: 4px;
+
+            border-radius: 50%;
+
+            background:
+                rgba(235,250,255,.62);
+
+            box-shadow:
+                0 0 5px rgba(210,240,250,.38);
+
+            animation:
+                af-snow-fall linear infinite;
+        }
+
+        .af-snow.small {
+            width: 2px;
+            height: 2px;
+            opacity: .45;
+        }
+
+        .af-snow.big {
+            width: 6px;
+            height: 6px;
+            opacity: .55;
+        }
+
+        @keyframes af-snow-fall {
+            0% {
+                transform:
+                    translate3d(0,-10vh,0)
+                    rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: .7;
+            }
+
+            50% {
+                transform:
+                    translate3d(45px,50vh,0)
+                    rotate(180deg);
+            }
+
+            100% {
+                transform:
+                    translate3d(-55px,112vh,0)
+                    rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+
+        /* -----------------------------------------------------
+           MOBILE PERFORMANCE
+           ----------------------------------------------------- */
+
+        @media (max-width: 700px) {
+
+            #${LIVE_ID} .af-storm-cloud {
+                filter: blur(28px);
+            }
+
+            #${LIVE_ID} .af-mist {
+                filter: blur(26px);
+            }
+
+            #${LIVE_ID} .af-storm-fog {
+                filter: blur(25px);
+            }
+        }
+
+    `;
+
+
+    /* =========================================================
+       CREATE PARTICLES
+       ========================================================= */
+
+    function createParticles(className, count, type) {
+        var html = '';
+
+        for (var i = 0; i < count; i++) {
+            var left = Math.random() * 100;
+            var delay = Math.random() * 20;
+            var duration;
+
+            if (type === 'storm') {
+                duration = 1.8 + Math.random() * 2.5;
+            } else if (type === 'snow') {
+                duration = 8 + Math.random() * 12;
+            } else if (type === 'leaf') {
+                duration = 8 + Math.random() * 14;
+            } else if (type === 'forest') {
+                duration = 12 + Math.random() * 16;
+            } else {
+                duration = 10 + Math.random() * 18;
+            }
+
+            var top = Math.random() * 100;
+
+            html +=
+                '<i class="' + className + '"' +
+                ' style="' +
+                'left:' + left + '%;' +
+                'top:' + top + '%;' +
+                'animation-delay:-' + delay + 's;' +
+                'animation-duration:' + duration + 's;' +
+                '"></i>';
+        }
+
+        return html;
+    }
+
+
+    /* =========================================================
+       LIVE LAYER
+       ========================================================= */
 
     function createLiveLayer(theme) {
 
-        var old = document.getElementById(
-            "arctic-forest-live-layer"
-        );
-
-        if (old) {
-            old.remove();
+        if (theme === 'default') {
+            return;
         }
 
+        var layer = document.createElement('div');
 
-        var layer = document.createElement("div");
+        layer.id = LIVE_ID;
 
-        layer.id = "arctic-forest-live-layer";
+        var html = '';
 
+        if (theme === 'arctic') {
 
-        // =====================================================
-        // ARCTIC
-        // =====================================================
+            html += '<div class="af-mist m1"></div>';
+            html += '<div class="af-mist m2"></div>';
+            html += '<div class="af-mist m3"></div>';
 
-        if (theme === "arctic") {
+            html += createParticles(
+                'af-arctic-particle',
+                32,
+                'arctic'
+            );
 
-            layer.innerHTML = `
+        } else if (theme === 'forest') {
 
-                <div class="af-mist af-mist-1"></div>
-                <div class="af-mist af-mist-2"></div>
-                <div class="af-mist af-mist-3"></div>
+            html += '<div class="af-mist m1"></div>';
+            html += '<div class="af-mist m2"></div>';
+            html += '<div class="af-mist m3"></div>';
 
-                <div class="af-aurora"></div>
+            html += createParticles(
+                'af-forest-particle',
+                15,
+                'forest'
+            );
 
-                <div class="af-particles">
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
+        } else if (theme === 'storm') {
 
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                </div>
+            html += '<div class="af-storm-sky"></div>';
 
-                <div class="af-sparks">
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                </div>
-            `;
+            html +=
+                '<div class="af-storm-cloud c1"></div>' +
+                '<div class="af-storm-cloud c2"></div>' +
+                '<div class="af-storm-cloud c3"></div>';
+
+            html +=
+                '<div class="af-storm-fog f1"></div>' +
+                '<div class="af-storm-fog f2"></div>' +
+                '<div class="af-storm-fog f3"></div>';
+
+            html += createParticles(
+                'af-rain',
+                32,
+                'storm'
+            );
+
+            html += '<div class="af-lightning"></div>';
+
+        } else if (theme === 'autumn') {
+
+            html += '<div class="af-mist m1"></div>';
+            html += '<div class="af-mist m2"></div>';
+            html += '<div class="af-mist m3"></div>';
+
+            html += '<div class="af-autumn-glow"></div>';
+
+            html += createParticles(
+                'af-leaf',
+                28,
+                'leaf'
+            );
+
+        } else if (theme === 'winter') {
+
+            html += '<div class="af-mist m1"></div>';
+            html += '<div class="af-mist m2"></div>';
+            html += '<div class="af-mist m3"></div>';
+
+            html += '<div class="af-winter-glow"></div>';
+
+            html += createParticles(
+                'af-snow',
+                36,
+                'snow'
+            );
+
         }
 
-
-        // =====================================================
-        // FOREST
-        // =====================================================
-
-        if (theme === "forest") {
-
-            layer.innerHTML = `
-
-                <div class="df-mist df-mist-1"></div>
-                <div class="df-mist df-mist-2"></div>
-                <div class="df-mist df-mist-3"></div>
-
-                <div class="df-particles">
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                </div>
-            `;
-        }
-
-
-        // =====================================================
-        // STORM
-        // =====================================================
-
-        if (theme === "storm") {
-
-            layer.innerHTML = `
-
-                <div class="storm-sky"></div>
-
-                <div class="storm-cloud storm-cloud-1"></div>
-                <div class="storm-cloud storm-cloud-2"></div>
-                <div class="storm-cloud storm-cloud-3"></div>
-
-                <div class="storm-mist storm-mist-1"></div>
-                <div class="storm-mist storm-mist-2"></div>
-                <div class="storm-mist storm-mist-3"></div>
-
-                <div class="storm-rain">
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                </div>
-
-                <div class="storm-flash storm-flash-1"></div>
-                <div class="storm-flash storm-flash-2"></div>
-
-            `;
-        }
-
-
-        // =====================================================
-        // NOIR
-        // =====================================================
-
-        if (theme === "noir") {
-
-            layer.innerHTML = `
-
-                <div class="nr-vignette"></div>
-
-                <div class="nr-grain"></div>
-
-                <div class="nr-beam"></div>
-
-                <div class="nr-scratches">
-                    <i></i><i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i><i></i>
-                </div>
-
-                <div class="nr-dust">
-                    <i></i><i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i><i></i>
-                </div>
-
-                <div class="nr-flicker"></div>
-            `;
-        }
-
-
-        // =====================================================
-        // VELVET
-        // =====================================================
-
-        if (theme === "velvet") {
-
-            layer.innerHTML = `
-
-                <div class="vl-vignette"></div>
-
-                <div class="vl-glow vl-glow-1"></div>
-                <div class="vl-glow vl-glow-2"></div>
-
-                <div class="vl-beam"></div>
-
-                <div class="vl-dust">
-                    <i></i><i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i><i></i>
-                </div>
-
-                <div class="vl-sparks">
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                </div>
-            `;
-        }
-
+        layer.innerHTML = html;
 
         document.body.appendChild(layer);
+
+        return layer;
     }
 
 
-    // =========================================================
-    // ARCTIC LIVE
-    // =========================================================
-
-    function applyArctic() {
-
-        addStyle(`
-
-            /* =================================================
-               ARCTIC
-            ================================================= */
-
-            body,
-            body .main,
-            body .wrap,
-            body .content,
-            body .activity {
-
-                background:#0A1014 !important;
-            }
-
-
-            body {
-                color:#ffffff !important;
-            }
-
-
-            body .background,
-            body .modal,
-            body .modal__content,
-            body .settings,
-            body .menu {
-
-                background:#060A0D !important;
-            }
-
-
-            body .selector.focus {
-
-                outline:none !important;
-
-                background:
-                    linear-gradient(
-                        135deg,
-                        #E6F9FF 0%,
-                        #8DD8EA 100%
-                    ) !important;
-
-                color:#071015 !important;
-            }
-
-
-            body .card.focus {
-
-                box-shadow:
-                    0 0 0 2px #8DD8EA !important;
-            }
-
-
-            body .settings__content,
-            body .settings__body {
-
-                background:
-                    linear-gradient(
-                        135deg,
-                        rgb(27,40,48),
-                        rgb(7,11,14)
-                    ) !important;
-            }
-
-
-            body .player-panel__progress,
-            body .player-panel__progress-line {
-
-                background:#63C7DC !important;
-            }
-
-
-            body .extensions,
-            body .extensions__item {
-
-                background:#080D11 !important;
-            }
-
-
-            body .extensions__item.focus {
-
-                background:#17242B !important;
-            }
-
-
-            body .torrent-item__badge,
-            body .torrent-item__quality {
-
-                color:#D8E8ED !important;
-            }
-
-
-            body .torrent-item.focus {
-
-                background:
-                    rgba(141,216,234,.24) !important;
-            }
-
-
-            body .iptv__item.focus {
-
-                background:#172A32 !important;
-            }
-
-
-            /* =================================================
-               LIVE LAYER
-            ================================================= */
-
-            #arctic-forest-live-layer {
-
-                position:fixed;
-                inset:0;
-
-                pointer-events:none;
-
-                z-index:999999;
-
-                overflow:hidden;
-            }
-
-
-            /* =================================================
-               MIST
-            ================================================= */
-
-            .af-mist {
-
-                position:absolute;
-
-                width:55vw;
-                height:55vw;
-
-                border-radius:50%;
-
-                filter:blur(90px);
-
-                opacity:.10;
-            }
-
-
-            .af-mist-1 {
-
-                left:-15vw;
-                top:15vh;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(90,190,220,.45),
-                        transparent 70%
-                    );
-
-                animation:
-                    afMist1 28s ease-in-out infinite alternate;
-            }
-
-
-            .af-mist-2 {
-
-                right:-15vw;
-                top:45vh;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(65,150,180,.35),
-                        transparent 70%
-                    );
-
-                animation:
-                    afMist2 35s ease-in-out infinite alternate;
-            }
-
-
-            .af-mist-3 {
-
-                left:25vw;
-                bottom:-30vw;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(130,220,240,.22),
-                        transparent 70%
-                    );
-
-                animation:
-                    afMist3 42s ease-in-out infinite alternate;
-            }
-
-
-            @keyframes afMist1 {
-
-                from {
-                    transform:
-                        translate3d(-5vw,0,0)
-                        scale(1);
-                }
-
-                to {
-                    transform:
-                        translate3d(15vw,8vh,0)
-                        scale(1.15);
-                }
-            }
-
-
-            @keyframes afMist2 {
-
-                from {
-                    transform:
-                        translate3d(5vw,-5vh,0)
-                        scale(1);
-                }
-
-                to {
-                    transform:
-                        translate3d(-15vw,10vh,0)
-                        scale(1.20);
-                }
-            }
-
-
-            @keyframes afMist3 {
-
-                from {
-                    transform:
-                        translate3d(0,0,0)
-                        scale(1);
-                }
-
-                to {
-                    transform:
-                        translate3d(8vw,-12vh,0)
-                        scale(1.18);
-                }
-            }
-
-
-            /* =================================================
-               AURORA
-            ================================================= */
-
-            .af-aurora {
-
-                position:absolute;
-
-                left:-20%;
-                top:-20%;
-
-                width:140%;
-                height:70%;
-
-                background:
-                    radial-gradient(
-                        ellipse at center,
-                        rgba(100,210,235,.08),
-                        transparent 65%
-                    );
-
-                filter:blur(45px);
-
-                animation:
-                    afAurora 38s ease-in-out infinite alternate;
-            }
-
-
-            @keyframes afAurora {
-
-                from {
-                    transform:
-                        translateX(-5%)
-                        rotate(-2deg);
-                }
-
-                to {
-                    transform:
-                        translateX(8%)
-                        rotate(3deg);
-                }
-            }
-
-
-            /* =================================================
-               PARTICLES
-            ================================================= */
-
-            .af-particles i {
-
-                position:absolute;
-
-                width:3px;
-                height:3px;
-
-                border-radius:50%;
-
-                background:
-                    rgba(180,235,245,.65);
-
-                box-shadow:
-                    0 0 8px
-                    rgba(120,220,240,.45);
-
-                animation:
-                    afParticle linear infinite;
-            }
-
-
-            .af-particles i:nth-child(1)
-            {left:8%;top:90%;animation-duration:24s;animation-delay:-5s;}
-
-            .af-particles i:nth-child(2)
-            {left:15%;top:75%;animation-duration:31s;animation-delay:-12s;}
-
-            .af-particles i:nth-child(3)
-            {left:22%;top:95%;animation-duration:27s;animation-delay:-8s;}
-
-            .af-particles i:nth-child(4)
-            {left:29%;top:82%;animation-duration:35s;animation-delay:-17s;}
-
-            .af-particles i:nth-child(5)
-            {left:35%;top:68%;animation-duration:29s;animation-delay:-3s;}
-
-            .af-particles i:nth-child(6)
-            {left:42%;top:88%;animation-duration:38s;animation-delay:-20s;}
-
-            .af-particles i:nth-child(7)
-            {left:49%;top:73%;animation-duration:26s;animation-delay:-10s;}
-
-            .af-particles i:nth-child(8)
-            {left:56%;top:92%;animation-duration:33s;animation-delay:-14s;}
-
-            .af-particles i:nth-child(9)
-            {left:63%;top:80%;animation-duration:30s;animation-delay:-6s;}
-
-            .af-particles i:nth-child(10)
-            {left:70%;top:95%;animation-duration:37s;animation-delay:-21s;}
-
-            .af-particles i:nth-child(11)
-            {left:77%;top:70%;animation-duration:28s;animation-delay:-9s;}
-
-            .af-particles i:nth-child(12)
-            {left:84%;top:86%;animation-duration:34s;animation-delay:-16s;}
-
-            .af-particles i:nth-child(13)
-            {left:91%;top:76%;animation-duration:25s;animation-delay:-4s;}
-
-            .af-particles i:nth-child(14)
-            {left:12%;top:55%;animation-duration:32s;animation-delay:-11s;}
-
-            .af-particles i:nth-child(15)
-            {left:26%;top:48%;animation-duration:36s;animation-delay:-19s;}
-
-            .af-particles i:nth-child(16)
-            {left:39%;top:60%;animation-duration:29s;animation-delay:-7s;}
-
-            .af-particles i:nth-child(17)
-            {left:53%;top:52%;animation-duration:39s;animation-delay:-23s;}
-
-            .af-particles i:nth-child(18)
-            {left:67%;top:45%;animation-duration:27s;animation-delay:-13s;}
-
-            .af-particles i:nth-child(19)
-            {left:80%;top:58%;animation-duration:33s;animation-delay:-18s;}
-
-            .af-particles i:nth-child(20)
-            {left:94%;top:50%;animation-duration:30s;animation-delay:-2s;}
-
-            .af-particles i:nth-child(21)
-            {left:5%;top:35%;animation-duration:41s;animation-delay:-26s;}
-
-            .af-particles i:nth-child(22)
-            {left:19%;top:28%;animation-duration:34s;animation-delay:-15s;}
-
-            .af-particles i:nth-child(23)
-            {left:33%;top:38%;animation-duration:28s;animation-delay:-5s;}
-
-            .af-particles i:nth-child(24)
-            {left:47%;top:25%;animation-duration:36s;animation-delay:-22s;}
-
-            .af-particles i:nth-child(25)
-            {left:61%;top:33%;animation-duration:31s;animation-delay:-8s;}
-
-            .af-particles i:nth-child(26)
-            {left:75%;top:24%;animation-duration:39s;animation-delay:-17s;}
-
-            .af-particles i:nth-child(27)
-            {left:88%;top:31%;animation-duration:27s;animation-delay:-12s;}
-
-            .af-particles i:nth-child(28)
-            {left:96%;top:18%;animation-duration:35s;animation-delay:-25s;}
-
-            .af-particles i:nth-child(29)
-            {left:17%;top:15%;animation-duration:40s;animation-delay:-30s;}
-
-            .af-particles i:nth-child(30)
-            {left:44%;top:12%;animation-duration:32s;animation-delay:-18s;}
-
-            .af-particles i:nth-child(31)
-            {left:69%;top:10%;animation-duration:37s;animation-delay:-27s;}
-
-            .af-particles i:nth-child(32)
-            {left:82%;top:16%;animation-duration:29s;animation-delay:-9s;}
-
-
-            @keyframes afParticle {
-
-                from {
-
-                    transform:
-                        translate3d(0,20vh,0);
-
-                    opacity:0;
-                }
-
-                15% {
-                    opacity:.55;
-                }
-
-                75% {
-                    opacity:.35;
-                }
-
-                to {
-
-                    transform:
-                        translate3d(8vw,-120vh,0);
-
-                    opacity:0;
-                }
-            }
-
-
-            /* =================================================
-               RARE SPARKS
-            ================================================= */
-
-            .af-sparks i {
-
-                position:absolute;
-
-                width:2px;
-                height:2px;
-
-                border-radius:50%;
-
-                background:#DDF9FF;
-
-                box-shadow:
-                    0 0 12px
-                    rgba(150,235,255,.9);
-
-                animation:
-                    afSpark 8s ease-in-out infinite;
-
-                opacity:0;
-            }
-
-
-            .af-sparks i:nth-child(1)
-            {left:17%;top:28%;animation-delay:1s;}
-
-            .af-sparks i:nth-child(2)
-            {left:37%;top:63%;animation-delay:4s;}
-
-            .af-sparks i:nth-child(3)
-            {left:58%;top:20%;animation-delay:7s;}
-
-            .af-sparks i:nth-child(4)
-            {left:72%;top:48%;animation-delay:2s;}
-
-            .af-sparks i:nth-child(5)
-            {left:83%;top:70%;animation-delay:5s;}
-
-            .af-sparks i:nth-child(6)
-            {left:46%;top:37%;animation-delay:9s;}
-
-
-            @keyframes afSpark {
-
-                0%,65%,100% {
-
-                    opacity:0;
-
-                    transform:scale(.5);
-                }
-
-                72% {
-
-                    opacity:.8;
-
-                    transform:scale(1.5);
-                }
-
-                78% {
-
-                    opacity:.15;
-
-                    transform:scale(.8);
-                }
-            }
-
-        `);
-
-
-        document.documentElement.classList.add(
-            "arctic-forest-active"
-        );
-
-        document.body.classList.add(
-            "arctic-theme"
-        );
-
-
-        createLiveLayer("arctic");
-    }
-
-
-    // =========================================================
-    // DARK FOREST
-    // =========================================================
-
-    function applyForest() {
-
-        addStyle(`
-
-            /* =================================================
-               DARK FOREST
-            ================================================= */
-
-            body,
-            body .main,
-            body .wrap,
-            body .content,
-            body .activity {
-
-                background:#070D0A !important;
-            }
-
-
-            body {
-                color:#ffffff !important;
-            }
-
-
-            body .background,
-            body .modal,
-            body .modal__content,
-            body .settings,
-            body .menu {
-
-                background:#040806 !important;
-            }
-
-
-            body .selector.focus {
-
-                outline:none !important;
-
-                background:
-                    linear-gradient(
-                        135deg,
-                        #E2F8EA 0%,
-                        #65B985 100%
-                    ) !important;
-
-                color:#07100B !important;
-            }
-
-
-            body .card.focus {
-
-                box-shadow:
-                    0 0 0 2px #65B985 !important;
-            }
-
-
-            body .settings__content,
-            body .settings__body {
-
-                background:
-                    linear-gradient(
-                        135deg,
-                        rgb(24,43,32),
-                        rgb(5,11,8)
-                    ) !important;
-            }
-
-
-            body .player-panel__progress,
-            body .player-panel__progress-line {
-
-                background:#45A86B !important;
-            }
-
-
-            body .extensions,
-            body .extensions__item {
-
-                background:#050A07 !important;
-            }
-
-
-            body .extensions__item.focus {
-
-                background:#12221A !important;
-            }
-
-
-            body .torrent-item__badge,
-            body .torrent-item__quality {
-
-                color:#D9E9DF !important;
-            }
-
-
-            body .torrent-item.focus {
-
-                background:
-                    rgba(101,185,133,.24) !important;
-            }
-
-
-            body .iptv__item.focus {
-
-                background:#14291F !important;
-            }
-
-
-            /* =================================================
-               LIVE
-            ================================================= */
-
-            #arctic-forest-live-layer {
-
-                position:fixed;
-                inset:0;
-
-                pointer-events:none;
-
-                z-index:999999;
-
-                overflow:hidden;
-            }
-
-
-            .df-mist {
-
-                position:absolute;
-
-                width:60vw;
-                height:60vw;
-
-                border-radius:50%;
-
-                filter:blur(100px);
-
-                opacity:.075;
-            }
-
-
-            .df-mist-1 {
-
-                left:-20vw;
-                top:10vh;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(65,150,95,.42),
-                        transparent 70%
-                    );
-
-                animation:
-                    dfMist1 35s ease-in-out infinite alternate;
-            }
-
-
-            .df-mist-2 {
-
-                right:-20vw;
-                top:45vh;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(45,125,75,.35),
-                        transparent 70%
-                    );
-
-                animation:
-                    dfMist2 42s ease-in-out infinite alternate;
-            }
-
-
-            .df-mist-3 {
-
-                left:20vw;
-                bottom:-35vw;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(90,170,110,.20),
-                        transparent 70%
-                    );
-
-                animation:
-                    dfMist3 48s ease-in-out infinite alternate;
-            }
-
-
-            @keyframes dfMist1 {
-
-                from {
-                    transform:
-                        translate3d(0,0,0)
-                        scale(1);
-                }
-
-                to {
-                    transform:
-                        translate3d(16vw,8vh,0)
-                        scale(1.18);
-                }
-            }
-
-
-            @keyframes dfMist2 {
-
-                from {
-                    transform:
-                        translate3d(0,0,0)
-                        scale(1);
-                }
-
-                to {
-                    transform:
-                        translate3d(-14vw,-5vh,0)
-                        scale(1.20);
-                }
-            }
-
-
-            @keyframes dfMist3 {
-
-                from {
-                    transform:
-                        translate3d(0,0,0)
-                        scale(1);
-                }
-
-                to {
-                    transform:
-                        translate3d(8vw,-15vh,0)
-                        scale(1.15);
-                }
-            }
-
-
-            .df-particles i {
-
-                position:absolute;
-
-                width:2px;
-                height:2px;
-
-                border-radius:50%;
-
-                background:
-                    rgba(130,205,155,.38);
-
-                box-shadow:
-                    0 0 7px
-                    rgba(90,180,120,.25);
-
-                animation:
-                    dfParticle linear infinite;
-            }
-
-
-            .df-particles i:nth-child(1)
-            {left:7%;top:90%;animation-duration:30s;animation-delay:-8s;}
-
-            .df-particles i:nth-child(2)
-            {left:16%;top:70%;animation-duration:38s;animation-delay:-17s;}
-
-            .df-particles i:nth-child(3)
-            {left:25%;top:82%;animation-duration:34s;animation-delay:-11s;}
-
-            .df-particles i:nth-child(4)
-            {left:34%;top:60%;animation-duration:42s;animation-delay:-24s;}
-
-            .df-particles i:nth-child(5)
-            {left:43%;top:75%;animation-duration:36s;animation-delay:-14s;}
-
-            .df-particles i:nth-child(6)
-            {left:52%;top:88%;animation-duration:45s;animation-delay:-31s;}
-
-            .df-particles i:nth-child(7)
-            {left:61%;top:67%;animation-duration:33s;animation-delay:-19s;}
-
-            .df-particles i:nth-child(8)
-            {left:70%;top:80%;animation-duration:40s;animation-delay:-7s;}
-
-            .df-particles i:nth-child(9)
-            {left:79%;top:58%;animation-duration:37s;animation-delay:-22s;}
-
-            .df-particles i:nth-child(10)
-            {left:88%;top:72%;animation-duration:44s;animation-delay:-16s;}
-
-            .df-particles i:nth-child(11)
-            {left:12%;top:45%;animation-duration:39s;animation-delay:-28s;}
-
-            .df-particles i:nth-child(12)
-            {left:29%;top:40%;animation-duration:35s;animation-delay:-13s;}
-
-            .df-particles i:nth-child(13)
-            {left:48%;top:50%;animation-duration:43s;animation-delay:-26s;}
-
-            .df-particles i:nth-child(14)
-            {left:68%;top:35%;animation-duration:41s;animation-delay:-21s;}
-
-            .df-particles i:nth-child(15)
-            {left:91%;top:42%;animation-duration:36s;animation-delay:-9s;}
-
-
-            @keyframes dfParticle {
-
-                from {
-
-                    transform:
-                        translate3d(0,15vh,0);
-
-                    opacity:0;
-                }
-
-                18% {
-
-                    opacity:.35;
-                }
-
-                75% {
-
-                    opacity:.20;
-                }
-
-                to {
-
-                    transform:
-                        translate3d(-5vw,-110vh,0);
-
-                    opacity:0;
-                }
-            }
-
-        `);
-
-
-        document.documentElement.classList.add(
-            "arctic-forest-active"
-        );
-
-        document.body.classList.add(
-            "forest-theme"
-        );
-
-
-        createLiveLayer("forest");
-    }
-
-
-    // =========================================================
-    // STORM
-    // =========================================================
-
-    function applyStorm() {
-
-        addStyle(`
-
-            /* =================================================
-               STORM
-            ================================================= */
-
-
-            body,
-            body .main,
-            body .wrap,
-            body .content,
-            body .activity {
-
-                background:#080B10 !important;
-            }
-
-
-            body {
-
-                color:#ffffff !important;
-            }
-
-
-            /* -------------------------------------------------
-               DARK AREAS
-            ------------------------------------------------- */
-
-            body .background,
-            body .modal,
-            body .modal__content,
-            body .settings,
-            body .menu {
-
-                background:#05070A !important;
-            }
-
-
-            /* -------------------------------------------------
-               FOCUS
-            ------------------------------------------------- */
-
-            body .selector.focus {
-
-                outline:none !important;
-
-                background:
-                    linear-gradient(
-                        135deg,
-                        #DDF5FF 0%,
-                        #5B9FC7 100%
-                    ) !important;
-
-                color:#071016 !important;
-            }
-
-
-            body .card.focus {
-
-                box-shadow:
-                    0 0 0 2px #6EA7C7 !important;
-            }
-
-
-            /* -------------------------------------------------
-               SETTINGS
-            ------------------------------------------------- */
-
-            body .settings__content,
-            body .settings__body {
-
-                background:
-                    linear-gradient(
-                        135deg,
-                        rgb(25,32,41),
-                        rgb(5,8,11)
-                    ) !important;
-            }
-
-
-            /* -------------------------------------------------
-               PLAYER
-            ------------------------------------------------- */
-
-            body .player-panel__progress,
-            body .player-panel__progress-line {
-
-                background:#63A9D0 !important;
-            }
-
-
-            /* -------------------------------------------------
-               EXTENSIONS
-            ------------------------------------------------- */
-
-            body .extensions,
-            body .extensions__item {
-
-                background:#070B10 !important;
-            }
-
-
-            body .extensions__item.focus {
-
-                background:#17212A !important;
-            }
-
-
-            /* -------------------------------------------------
-               TORRENTS
-            ------------------------------------------------- */
-
-            body .torrent-item__badge,
-            body .torrent-item__quality {
-
-                color:#D9E8F0 !important;
-            }
-
-
-            body .torrent-item.focus {
-
-                background:
-                    rgba(91,159,199,.23) !important;
-            }
-
-
-            /* -------------------------------------------------
-               IPTV
-            ------------------------------------------------- */
-
-            body .iptv__item.focus {
-
-                background:#14232E !important;
-            }
-
-
-            /* =================================================
-               LIVE STORM
-            ================================================= */
-
-            #arctic-forest-live-layer {
-
-                position:fixed;
-
-                inset:0;
-
-                pointer-events:none;
-
-                z-index:999999;
-
-                overflow:hidden;
-            }
-
-
-            /* =================================================
-               STORM SKY
-            ================================================= */
-
-            .storm-sky {
-
-                position:absolute;
-
-                inset:0;
-
-                background:
-                    radial-gradient(
-                        ellipse at 50% -15%,
-                        rgba(85,110,135,.16),
-                        transparent 55%
-                    ),
-
-                    linear-gradient(
-                        to bottom,
-                        rgba(20,28,38,.30),
-                        rgba(3,6,9,.08) 45%,
-                        rgba(2,4,6,.38)
-                    );
-
-                opacity:.85;
-            }
-
-
-            /* =================================================
-               CLOUDS
-            ================================================= */
-
-            .storm-cloud {
-
-                position:absolute;
-
-                border-radius:50%;
-
-                filter:blur(55px);
-
-                opacity:.20;
-
-                background:
-                    radial-gradient(
-                        ellipse,
-                        rgba(70,82,96,.85) 0%,
-                        rgba(35,44,54,.55) 38%,
-                        transparent 72%
-                    );
-            }
-
-
-            .storm-cloud-1 {
-
-                width:75vw;
-                height:35vw;
-
-                left:-20vw;
-                top:-8vw;
-
-                animation:
-                    stormCloud1 48s ease-in-out infinite alternate;
-            }
-
-
-            .storm-cloud-2 {
-
-                width:85vw;
-                height:40vw;
-
-                right:-35vw;
-                top:15vh;
-
-                opacity:.15;
-
-                animation:
-                    stormCloud2 62s ease-in-out infinite alternate;
-            }
-
-
-            .storm-cloud-3 {
-
-                width:90vw;
-                height:42vw;
-
-                left:10vw;
-                bottom:-30vw;
-
-                opacity:.13;
-
-                animation:
-                    stormCloud3 55s ease-in-out infinite alternate;
-            }
-
-
-            @keyframes stormCloud1 {
-
-                from {
-
-                    transform:
-                        translate3d(-5vw,0,0)
-                        scale(1);
-                }
-
-                to {
-
-                    transform:
-                        translate3d(15vw,8vh,0)
-                        scale(1.18);
-                }
-            }
-
-
-            @keyframes stormCloud2 {
-
-                from {
-
-                    transform:
-                        translate3d(8vw,-4vh,0)
-                        scale(1);
-                }
-
-                to {
-
-                    transform:
-                        translate3d(-18vw,10vh,0)
-                        scale(1.20);
-                }
-            }
-
-
-            @keyframes stormCloud3 {
-
-                from {
-
-                    transform:
-                        translate3d(0,5vh,0)
-                        scale(1);
-                }
-
-                to {
-
-                    transform:
-                        translate3d(12vw,-8vh,0)
-                        scale(1.16);
-                }
-            }
-
-
-            /* =================================================
-               FOG
-            ================================================= */
-
-            .storm-mist {
-
-                position:absolute;
-
-                border-radius:50%;
-
-                filter:blur(80px);
-
-                opacity:.14;
-
-                background:
-                    radial-gradient(
-                        ellipse,
-                        rgba(105,125,142,.40),
-                        transparent 70%
-                    );
-            }
-
-
-            .storm-mist-1 {
-
-                width:70vw;
-                height:28vw;
-
-                left:-25vw;
-                top:30vh;
-
-                animation:
-                    stormMist1 32s ease-in-out infinite alternate;
-            }
-
-
-            .storm-mist-2 {
-
-                width:80vw;
-                height:30vw;
-
-                right:-30vw;
-                top:50vh;
-
-                opacity:.10;
-
-                animation:
-                    stormMist2 40s ease-in-out infinite alternate;
-            }
-
-
-            .storm-mist-3 {
-
-                width:100vw;
-                height:35vw;
-
-                left:0;
-                bottom:-15vw;
-
-                opacity:.11;
-
-                animation:
-                    stormMist3 46s ease-in-out infinite alternate;
-            }
-
-
-            @keyframes stormMist1 {
-
-                from {
-
-                    transform:
-                        translate3d(-8vw,0,0)
-                        scale(1);
-                }
-
-                to {
-
-                    transform:
-                        translate3d(20vw,3vh,0)
-                        scale(1.15);
-                }
-            }
-
-
-            @keyframes stormMist2 {
-
-                from {
-
-                    transform:
-                        translate3d(8vw,0,0)
-                        scale(1);
-                }
-
-                to {
-
-                    transform:
-                        translate3d(-18vw,-5vh,0)
-                        scale(1.20);
-                }
-            }
-
-
-            @keyframes stormMist3 {
-
-                from {
-
-                    transform:
-                        translate3d(0,3vh,0)
-                        scale(1);
-                }
-
-                to {
-
-                    transform:
-                        translate3d(10vw,-8vh,0)
-                        scale(1.12);
-                }
-            }
-
-
-            /* =================================================
-               RAIN / MOISTURE PARTICLES
-            ================================================= */
-
-            .storm-rain i {
-
-                position:absolute;
-
-                width:1px;
-                height:7px;
-
-                border-radius:50%;
-
-                background:
-                    rgba(180,205,220,.20);
-
-                opacity:0;
-
-                transform:rotate(18deg);
-
-                animation:
-                    stormRain linear infinite;
-            }
-
-
-            .storm-rain i:nth-child(1)
-            {left:3%;top:-10%;animation-duration:4.8s;animation-delay:-1s;}
-
-            .storm-rain i:nth-child(2)
-            {left:7%;top:-20%;animation-duration:5.7s;animation-delay:-3s;}
-
-            .storm-rain i:nth-child(3)
-            {left:11%;top:-5%;animation-duration:4.3s;animation-delay:-2s;}
-
-            .storm-rain i:nth-child(4)
-            {left:15%;top:-15%;animation-duration:6.2s;animation-delay:-5s;}
-
-            .storm-rain i:nth-child(5)
-            {left:19%;top:-25%;animation-duration:5.1s;animation-delay:-1s;}
-
-            .storm-rain i:nth-child(6)
-            {left:23%;top:-8%;animation-duration:4.9s;animation-delay:-4s;}
-
-            .storm-rain i:nth-child(7)
-            {left:27%;top:-18%;animation-duration:6.4s;animation-delay:-2s;}
-
-            .storm-rain i:nth-child(8)
-            {left:31%;top:-30%;animation-duration:5.5s;animation-delay:-6s;}
-
-            .storm-rain i:nth-child(9)
-            {left:35%;top:-12%;animation-duration:4.7s;animation-delay:-3s;}
-
-            .storm-rain i:nth-child(10)
-            {left:39%;top:-22%;animation-duration:5.9s;animation-delay:-1s;}
-
-            .storm-rain i:nth-child(11)
-            {left:43%;top:-5%;animation-duration:4.6s;animation-delay:-4s;}
-
-            .storm-rain i:nth-child(12)
-            {left:47%;top:-17%;animation-duration:6.1s;animation-delay:-5s;}
-
-            .storm-rain i:nth-child(13)
-            {left:51%;top:-28%;animation-duration:5.2s;animation-delay:-2s;}
-
-            .storm-rain i:nth-child(14)
-            {left:55%;top:-9%;animation-duration:4.8s;animation-delay:-6s;}
-
-            .storm-rain i:nth-child(15)
-            {left:59%;top:-20%;animation-duration:5.8s;animation-delay:-3s;}
-
-            .storm-rain i:nth-child(16)
-            {left:63%;top:-7%;animation-duration:4.5s;animation-delay:-1s;}
-
-            .storm-rain i:nth-child(17)
-            {left:67%;top:-25%;animation-duration:6.3s;animation-delay:-4s;}
-
-            .storm-rain i:nth-child(18)
-            {left:71%;top:-14%;animation-duration:5.0s;animation-delay:-2s;}
-
-            .storm-rain i:nth-child(19)
-            {left:75%;top:-30%;animation-duration:5.6s;animation-delay:-5s;}
-
-            .storm-rain i:nth-child(20)
-            {left:79%;top:-10%;animation-duration:4.9s;animation-delay:-3s;}
-
-            .storm-rain i:nth-child(21)
-            {left:83%;top:-21%;animation-duration:6.0s;animation-delay:-1s;}
-
-            .storm-rain i:nth-child(22)
-            {left:87%;top:-4%;animation-duration:4.4s;animation-delay:-4s;}
-
-            .storm-rain i:nth-child(23)
-            {left:91%;top:-16%;animation-duration:5.4s;animation-delay:-2s;}
-
-            .storm-rain i:nth-child(24)
-            {left:95%;top:-26%;animation-duration:6.2s;animation-delay:-6s;}
-
-            .storm-rain i:nth-child(25)
-            {left:5%;top:15%;animation-duration:5.3s;animation-delay:-2s;}
-
-            .storm-rain i:nth-child(26)
-            {left:18%;top:25%;animation-duration:6.0s;animation-delay:-5s;}
-
-            .storm-rain i:nth-child(27)
-            {left:32%;top:10%;animation-duration:4.8s;animation-delay:-3s;}
-
-            .storm-rain i:nth-child(28)
-            {left:46%;top:20%;animation-duration:5.7s;animation-delay:-1s;}
-
-            .storm-rain i:nth-child(29)
-            {left:60%;top:12%;animation-duration:6.1s;animation-delay:-4s;}
-
-            .storm-rain i:nth-child(30)
-            {left:74%;top:28%;animation-duration:5.1s;animation-delay:-2s;}
-
-            .storm-rain i:nth-child(31)
-            {left:88%;top:18%;animation-duration:5.9s;animation-delay:-5s;}
-
-            .storm-rain i:nth-child(32)
-            {left:97%;top:35%;animation-duration:4.7s;animation-delay:-3s;}
-
-
-            @keyframes stormRain {
-
-                0% {
-
-                    transform:
-                        translate3d(0,-10vh,0)
-                        rotate(18deg);
-
-                    opacity:0;
-                }
-
-                10% {
-
-                    opacity:.22;
-                }
-
-                85% {
-
-                    opacity:.12;
-                }
-
-                100% {
-
-                    transform:
-                        translate3d(-12vw,120vh,0)
-                        rotate(18deg);
-
-                    opacity:0;
-                }
-            }
-
-
-            /* =================================================
-               LIGHTNING
-            ================================================= */
-
-            .storm-flash {
-
-                position:absolute;
-
-                inset:0;
-
-                opacity:0;
-
-                background:
-                    radial-gradient(
-                        ellipse at 50% 15%,
-                        rgba(220,240,255,.22),
-                        transparent 60%
-                    );
-            }
-
-
-            .storm-flash-1 {
-
-                animation:
-                    stormLightning1 31s linear infinite;
-            }
-
-
-            .storm-flash-2 {
-
-                animation:
-                    stormLightning2 47s linear infinite;
-            }
-
-
-            @keyframes stormLightning1 {
-
-                0%,89%,91%,93%,100% {
-
-                    opacity:0;
-                }
-
-                90% {
-
-                    opacity:.20;
-                }
-
-                90.4% {
-
-                    opacity:0;
-                }
-
-                90.9% {
-
-                    opacity:.32;
-                }
-
-                91.3% {
-
-                    opacity:0;
-                }
-            }
-
-
-            @keyframes stormLightning2 {
-
-                0%,94%,96%,100% {
-
-                    opacity:0;
-                }
-
-                95% {
-
-                    opacity:.14;
-                }
-
-                95.3% {
-
-                    opacity:0;
-                }
-
-                95.8% {
-
-                    opacity:.25;
-                }
-
-                96.1% {
-
-                    opacity:0;
-                }
-            }
-
-        `);
-
-
-        document.documentElement.classList.add(
-            "arctic-forest-active"
-        );
-
-        document.body.classList.add(
-            "storm-theme"
-        );
-
-
-        createLiveLayer("storm");
-    }
-
-
-    // =========================================================
-    // FILM NOIR
-    // Black & white cinema: grain, vignette, projector beam,
-    // scratches, and an occasional film flicker.
-    // =========================================================
-
-    function applyNoir() {
-
-        addStyle(`
-
-            /* =================================================
-               FILM NOIR
-            ================================================= */
-
-            body,
-            body .main,
-            body .wrap,
-            body .content,
-            body .activity {
-
-                background:#08080A !important;
-            }
-
-
-            body {
-
-                color:#EDEDED !important;
-
-                filter:
-                    grayscale(.55)
-                    contrast(1.08);
-            }
-
-
-            body .background,
-            body .modal,
-            body .modal__content,
-            body .settings,
-            body .menu {
-
-                background:#050505 !important;
-            }
-
-
-            body .selector.focus {
-
-                outline:none !important;
-
-                background:
-                    linear-gradient(
-                        135deg,
-                        #F4F4F2 0%,
-                        #A6A6A0 100%
-                    ) !important;
-
-                color:#0A0A0A !important;
-            }
-
-
-            body .card.focus {
-
-                box-shadow:
-                    0 0 0 2px #C9C9C2 !important;
-            }
-
-
-            body .settings__content,
-            body .settings__body {
-
-                background:
-                    linear-gradient(
-                        135deg,
-                        rgb(30,30,30),
-                        rgb(6,6,6)
-                    ) !important;
-            }
-
-
-            body .player-panel__progress,
-            body .player-panel__progress-line {
-
-                background:#BDBDB6 !important;
-            }
-
-
-            body .extensions,
-            body .extensions__item {
-
-                background:#070707 !important;
-            }
-
-
-            body .extensions__item.focus {
-
-                background:#1C1C1C !important;
-            }
-
-
-            body .torrent-item__badge,
-            body .torrent-item__quality {
-
-                color:#DEDEDA !important;
-            }
-
-
-            body .torrent-item.focus {
-
-                background:
-                    rgba(200,200,195,.18) !important;
-            }
-
-
-            body .iptv__item.focus {
-
-                background:#212121 !important;
-            }
-
-
-            /* =================================================
-               LIVE LAYER
-            ================================================= */
-
-            #arctic-forest-live-layer {
-
-                position:fixed;
-                inset:0;
-
-                pointer-events:none;
-
-                z-index:999999;
-
-                overflow:hidden;
-            }
-
-
-            /* =================================================
-               VIGNETTE
-            ================================================= */
-
-            .nr-vignette {
-
-                position:absolute;
-
-                inset:0;
-
-                background:
-                    radial-gradient(
-                        ellipse at center,
-                        transparent 42%,
-                        rgba(0,0,0,.55) 100%
-                    );
-            }
-
-
-            /* =================================================
-               PROJECTOR BEAM
-            ================================================= */
-
-            .nr-beam {
-
-                position:absolute;
-
-                left:50%;
-                top:-10%;
-
-                width:60vw;
-                height:130vh;
-
-                background:
-                    linear-gradient(
-                        180deg,
-                        rgba(255,255,255,.05),
-                        transparent 65%
-                    );
-
-                transform:
-                    translateX(-50%)
-                    rotate(1deg);
-
-                opacity:.5;
-
-                animation:
-                    nrBeamDrift 22s ease-in-out infinite alternate;
-            }
-
-
-            @keyframes nrBeamDrift {
-
-                from {
-
-                    transform:
-                        translateX(-52%)
-                        rotate(.5deg);
-                }
-
-                to {
-
-                    transform:
-                        translateX(-48%)
-                        rotate(1.5deg);
-                }
-            }
-
-
-            /* =================================================
-               GRAIN
-            ================================================= */
-
-            .nr-grain {
-
-                position:absolute;
-
-                inset:-10%;
-
-                width:120%;
-                height:120%;
-
-                background-image:
-                    radial-gradient(
-                        rgba(255,255,255,.9) 1px,
-                        transparent 1px
-                    );
-
-                background-size:3px 3px;
-
-                opacity:.05;
-
-                mix-blend-mode:overlay;
-
-                animation:
-                    nrGrain .5s steps(2) infinite;
-            }
-
-
-            @keyframes nrGrain {
-
-                0% {
-                    transform:
-                        translate3d(0,0,0);
-                }
-
-                50% {
-                    transform:
-                        translate3d(-1%,1%,0);
-                }
-
-                100% {
-                    transform:
-                        translate3d(1%,-1%,0);
-                }
-            }
-
-
-            /* =================================================
-               SCRATCHES
-            ================================================= */
-
-            .nr-scratches i {
-
-                position:absolute;
-
-                top:-10%;
-
-                width:1px;
-                height:120%;
-
-                background:
-                    rgba(255,255,255,.10);
-
-                opacity:0;
-
-                animation:
-                    nrScratch linear infinite;
-            }
-
-
-            .nr-scratches i:nth-child(1)
-            {left:12%;animation-duration:9s;animation-delay:-1s;}
-
-            .nr-scratches i:nth-child(2)
-            {left:27%;animation-duration:13s;animation-delay:-4s;}
-
-            .nr-scratches i:nth-child(3)
-            {left:44%;animation-duration:7s;animation-delay:-2s;}
-
-            .nr-scratches i:nth-child(4)
-            {left:61%;animation-duration:15s;animation-delay:-6s;}
-
-            .nr-scratches i:nth-child(5)
-            {left:73%;animation-duration:10s;animation-delay:-3s;}
-
-            .nr-scratches i:nth-child(6)
-            {left:85%;animation-duration:12s;animation-delay:-5s;}
-
-            .nr-scratches i:nth-child(7)
-            {left:6%;animation-duration:16s;animation-delay:-8s;}
-
-            .nr-scratches i:nth-child(8)
-            {left:53%;animation-duration:8s;animation-delay:-2s;}
-
-            .nr-scratches i:nth-child(9)
-            {left:38%;animation-duration:14s;animation-delay:-7s;}
-
-            .nr-scratches i:nth-child(10)
-            {left:94%;animation-duration:11s;animation-delay:-4s;}
-
-
-            @keyframes nrScratch {
-
-                0%,96%,100% {
-                    opacity:0;
-                }
-
-                97% {
-                    opacity:.5;
-                }
-
-                98% {
-                    opacity:.15;
-                }
-
-                99% {
-                    opacity:.4;
-                }
-            }
-
-
-            /* =================================================
-               FLOATING DUST
-            ================================================= */
-
-            .nr-dust i {
-
-                position:absolute;
-
-                width:2px;
-                height:2px;
-
-                border-radius:50%;
-
-                background:
-                    rgba(230,230,225,.5);
-
-                animation:
-                    nrDust linear infinite;
-            }
-
-
-            .nr-dust i:nth-child(1)
-            {left:10%;top:90%;animation-duration:26s;animation-delay:-4s;}
-
-            .nr-dust i:nth-child(2)
-            {left:22%;top:78%;animation-duration:31s;animation-delay:-9s;}
-
-            .nr-dust i:nth-child(3)
-            {left:34%;top:88%;animation-duration:28s;animation-delay:-13s;}
-
-            .nr-dust i:nth-child(4)
-            {left:46%;top:70%;animation-duration:33s;animation-delay:-6s;}
-
-            .nr-dust i:nth-child(5)
-            {left:58%;top:84%;animation-duration:25s;animation-delay:-16s;}
-
-            .nr-dust i:nth-child(6)
-            {left:70%;top:74%;animation-duration:35s;animation-delay:-3s;}
-
-            .nr-dust i:nth-child(7)
-            {left:82%;top:92%;animation-duration:29s;animation-delay:-11s;}
-
-            .nr-dust i:nth-child(8)
-            {left:15%;top:55%;animation-duration:32s;animation-delay:-18s;}
-
-            .nr-dust i:nth-child(9)
-            {left:40%;top:48%;animation-duration:27s;animation-delay:-8s;}
-
-            .nr-dust i:nth-child(10)
-            {left:65%;top:52%;animation-duration:34s;animation-delay:-20s;}
-
-            .nr-dust i:nth-child(11)
-            {left:88%;top:44%;animation-duration:24s;animation-delay:-5s;}
-
-            .nr-dust i:nth-child(12)
-            {left:28%;top:30%;animation-duration:30s;animation-delay:-14s;}
-
-            .nr-dust i:nth-child(13)
-            {left:52%;top:22%;animation-duration:36s;animation-delay:-22s;}
-
-            .nr-dust i:nth-child(14)
-            {left:76%;top:26%;animation-duration:26s;animation-delay:-10s;}
-
-            .nr-dust i:nth-child(15)
-            {left:6%;top:18%;animation-duration:33s;animation-delay:-17s;}
-
-            .nr-dust i:nth-child(16)
-            {left:93%;top:14%;animation-duration:29s;animation-delay:-7s;}
-
-            .nr-dust i:nth-child(17)
-            {left:19%;top:8%;animation-duration:31s;animation-delay:-19s;}
-
-            .nr-dust i:nth-child(18)
-            {left:48%;top:10%;animation-duration:27s;animation-delay:-12s;}
-
-            .nr-dust i:nth-child(19)
-            {left:63%;top:6%;animation-duration:35s;animation-delay:-24s;}
-
-            .nr-dust i:nth-child(20)
-            {left:80%;top:12%;animation-duration:28s;animation-delay:-15s;}
-
-
-            @keyframes nrDust {
-
-                from {
-
-                    transform:
-                        translate3d(0,10vh,0);
-
-                    opacity:0;
-                }
-
-                12% {
-                    opacity:.4;
-                }
-
-                80% {
-                    opacity:.2;
-                }
-
-                to {
-
-                    transform:
-                        translate3d(4vw,-100vh,0);
-
-                    opacity:0;
-                }
-            }
-
-
-            /* =================================================
-               FILM FLICKER
-            ================================================= */
-
-            .nr-flicker {
-
-                position:absolute;
-
-                inset:0;
-
-                background:#fff;
-
-                opacity:0;
-
-                animation:
-                    nrFlicker 6.5s steps(1) infinite;
-            }
-
-
-            @keyframes nrFlicker {
-
-                0%,91%,93%,95%,97%,100% {
-                    opacity:0;
-                }
-
-                92% {
-                    opacity:.025;
-                }
-
-                94% {
-                    opacity:.01;
-                }
-
-                96% {
-                    opacity:.035;
-                }
-            }
-
-        `);
-
-
-        document.documentElement.classList.add(
-            "arctic-forest-active"
-        );
-
-        document.body.classList.add(
-            "noir-theme"
-        );
-
-
-        createLiveLayer("noir");
-    }
-
-
-    // =========================================================
-    // VELVET CINEMA
-    // Deep burgundy screening-room theme with warm amber
-    // highlights, a soft projector glow and drifting dust.
-    // =========================================================
-
-    function applyVelvet() {
-
-        addStyle(`
-
-            /* =================================================
-               VELVET CINEMA
-            ================================================= */
-
-            body,
-            body .main,
-            body .wrap,
-            body .content,
-            body .activity {
-
-                background:#160A10 !important;
-            }
-
-
-            body {
-                color:#F5E9DE !important;
-            }
-
-
-            body .background,
-            body .modal,
-            body .modal__content,
-            body .settings,
-            body .menu {
-
-                background:#0E060B !important;
-            }
-
-
-            body .selector.focus {
-
-                outline:none !important;
-
-                background:
-                    linear-gradient(
-                        135deg,
-                        #FBE3B8 0%,
-                        #C98A4B 100%
-                    ) !important;
-
-                color:#1A0C08 !important;
-            }
-
-
-            body .card.focus {
-
-                box-shadow:
-                    0 0 0 2px #D79A5A !important;
-            }
-
-
-            body .settings__content,
-            body .settings__body {
-
-                background:
-                    linear-gradient(
-                        135deg,
-                        rgb(48,22,32),
-                        rgb(12,6,10)
-                    ) !important;
-            }
-
-
-            body .player-panel__progress,
-            body .player-panel__progress-line {
-
-                background:#D6924F !important;
-            }
-
-
-            body .extensions,
-            body .extensions__item {
-
-                background:#100810 !important;
-            }
-
-
-            body .extensions__item.focus {
-
-                background:#2C1520 !important;
-            }
-
-
-            body .torrent-item__badge,
-            body .torrent-item__quality {
-
-                color:#F0DFCF !important;
-            }
-
-
-            body .torrent-item.focus {
-
-                background:
-                    rgba(215,154,90,.22) !important;
-            }
-
-
-            body .iptv__item.focus {
-
-                background:#2A1420 !important;
-            }
-
-
-            /* =================================================
-               LIVE LAYER
-            ================================================= */
-
-            #arctic-forest-live-layer {
-
-                position:fixed;
-                inset:0;
-
-                pointer-events:none;
-
-                z-index:999999;
-
-                overflow:hidden;
-            }
-
-
-            /* =================================================
-               VIGNETTE
-            ================================================= */
-
-            .vl-vignette {
-
-                position:absolute;
-
-                inset:0;
-
-                background:
-                    radial-gradient(
-                        ellipse at 50% 40%,
-                        transparent 40%,
-                        rgba(6,2,4,.60) 100%
-                    );
-            }
-
-
-            /* =================================================
-               WARM GLOW
-            ================================================= */
-
-            .vl-glow {
-
-                position:absolute;
-
-                border-radius:50%;
-
-                filter:blur(95px);
-
-                opacity:.14;
-            }
-
-
-            .vl-glow-1 {
-
-                left:-18vw;
-                top:10vh;
-
-                width:60vw;
-                height:60vw;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(214,146,79,.55),
-                        transparent 70%
-                    );
-
-                animation:
-                    vlGlow1 34s ease-in-out infinite alternate;
-            }
-
-
-            .vl-glow-2 {
-
-                right:-20vw;
-                bottom:-15vw;
-
-                width:65vw;
-                height:65vw;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(150,45,70,.45),
-                        transparent 70%
-                    );
-
-                animation:
-                    vlGlow2 40s ease-in-out infinite alternate;
-            }
-
-
-            @keyframes vlGlow1 {
-
-                from {
-                    transform:
-                        translate3d(0,0,0)
-                        scale(1);
-                }
-
-                to {
-                    transform:
-                        translate3d(10vw,6vh,0)
-                        scale(1.15);
-                }
-            }
-
-
-            @keyframes vlGlow2 {
-
-                from {
-                    transform:
-                        translate3d(0,0,0)
-                        scale(1);
-                }
-
-                to {
-                    transform:
-                        translate3d(-10vw,-8vh,0)
-                        scale(1.18);
-                }
-            }
-
-
-            /* =================================================
-               PROJECTOR BEAM
-            ================================================= */
-
-            .vl-beam {
-
-                position:absolute;
-
-                left:50%;
-                top:-8%;
-
-                width:45vw;
-                height:120vh;
-
-                background:
-                    linear-gradient(
-                        180deg,
-                        rgba(255,214,160,.06),
-                        transparent 60%
-                    );
-
-                transform:
-                    translateX(-50%)
-                    rotate(-1deg);
-
-                animation:
-                    vlBeamDrift 26s ease-in-out infinite alternate;
-            }
-
-
-            @keyframes vlBeamDrift {
-
-                from {
-
-                    transform:
-                        translateX(-53%)
-                        rotate(-1.5deg);
-                }
-
-                to {
-
-                    transform:
-                        translateX(-47%)
-                        rotate(.5deg);
-                }
-            }
-
-
-            /* =================================================
-               DUST MOTES
-            ================================================= */
-
-            .vl-dust i {
-
-                position:absolute;
-
-                width:2px;
-                height:2px;
-
-                border-radius:50%;
-
-                background:
-                    rgba(250,222,180,.55);
-
-                box-shadow:
-                    0 0 6px
-                    rgba(240,190,120,.35);
-
-                animation:
-                    vlDust linear infinite;
-            }
-
-
-            .vl-dust i:nth-child(1)
-            {left:9%;top:92%;animation-duration:30s;animation-delay:-6s;}
-
-            .vl-dust i:nth-child(2)
-            {left:20%;top:80%;animation-duration:36s;animation-delay:-14s;}
-
-            .vl-dust i:nth-child(3)
-            {left:33%;top:88%;animation-duration:32s;animation-delay:-9s;}
-
-            .vl-dust i:nth-child(4)
-            {left:47%;top:72%;animation-duration:40s;animation-delay:-20s;}
-
-            .vl-dust i:nth-child(5)
-            {left:60%;top:86%;animation-duration:28s;animation-delay:-4s;}
-
-            .vl-dust i:nth-child(6)
-            {left:73%;top:76%;animation-duration:38s;animation-delay:-17s;}
-
-            .vl-dust i:nth-child(7)
-            {left:86%;top:90%;animation-duration:34s;animation-delay:-11s;}
-
-            .vl-dust i:nth-child(8)
-            {left:14%;top:58%;animation-duration:42s;animation-delay:-23s;}
-
-            .vl-dust i:nth-child(9)
-            {left:40%;top:50%;animation-duration:31s;animation-delay:-8s;}
-
-            .vl-dust i:nth-child(10)
-            {left:66%;top:54%;animation-duration:37s;animation-delay:-19s;}
-
-            .vl-dust i:nth-child(11)
-            {left:90%;top:46%;animation-duration:29s;animation-delay:-5s;}
-
-            .vl-dust i:nth-child(12)
-            {left:27%;top:32%;animation-duration:35s;animation-delay:-15s;}
-
-            .vl-dust i:nth-child(13)
-            {left:53%;top:24%;animation-duration:41s;animation-delay:-25s;}
-
-            .vl-dust i:nth-child(14)
-            {left:78%;top:28%;animation-duration:30s;animation-delay:-10s;}
-
-            .vl-dust i:nth-child(15)
-            {left:5%;top:20%;animation-duration:39s;animation-delay:-21s;}
-
-            .vl-dust i:nth-child(16)
-            {left:95%;top:16%;animation-duration:33s;animation-delay:-7s;}
-
-            .vl-dust i:nth-child(17)
-            {left:18%;top:10%;animation-duration:36s;animation-delay:-18s;}
-
-            .vl-dust i:nth-child(18)
-            {left:49%;top:8%;animation-duration:28s;animation-delay:-3s;}
-
-            .vl-dust i:nth-child(19)
-            {left:64%;top:12%;animation-duration:40s;animation-delay:-27s;}
-
-            .vl-dust i:nth-child(20)
-            {left:82%;top:6%;animation-duration:32s;animation-delay:-13s;}
-
-
-            @keyframes vlDust {
-
-                from {
-
-                    transform:
-                        translate3d(0,12vh,0);
-
-                    opacity:0;
-                }
-
-                14% {
-                    opacity:.45;
-                }
-
-                78% {
-                    opacity:.25;
-                }
-
-                to {
-
-                    transform:
-                        translate3d(5vw,-105vh,0);
-
-                    opacity:0;
-                }
-            }
-
-
-            /* =================================================
-               RARE GOLD SPARKS
-            ================================================= */
-
-            .vl-sparks i {
-
-                position:absolute;
-
-                width:2px;
-                height:2px;
-
-                border-radius:50%;
-
-                background:#FCE7C4;
-
-                box-shadow:
-                    0 0 12px
-                    rgba(250,200,130,.9);
-
-                animation:
-                    vlSpark 9s ease-in-out infinite;
-
-                opacity:0;
-            }
-
-
-            .vl-sparks i:nth-child(1)
-            {left:24%;top:33%;animation-delay:2s;}
-
-            .vl-sparks i:nth-child(2)
-            {left:52%;top:66%;animation-delay:5s;}
-
-            .vl-sparks i:nth-child(3)
-            {left:70%;top:24%;animation-delay:8s;}
-
-            .vl-sparks i:nth-child(4)
-            {left:85%;top:58%;animation-delay:3s;}
-
-
-            @keyframes vlSpark {
-
-                0%,65%,100% {
-
-                    opacity:0;
-
-                    transform:scale(.5);
-                }
-
-                72% {
-
-                    opacity:.75;
-
-                    transform:scale(1.4);
-                }
-
-                78% {
-
-                    opacity:.15;
-
-                    transform:scale(.8);
-                }
-            }
-
-        `);
-
-
-        document.documentElement.classList.add(
-            "arctic-forest-active"
-        );
-
-        document.body.classList.add(
-            "velvet-theme"
-        );
-
-
-        createLiveLayer("velvet");
-    }
-
-
-    // =========================================================
-    // STANDARD LAMPA
-    // =========================================================
-
-    function applyDefault() {
-
-        removeOurTheme();
-
-        console.log(
-            "[Arctic Forest] Standard Lampa"
+    /* =========================================================
+       PLAYER DETECTION
+       ========================================================= */
+
+    function isVisibleElement(el) {
+
+        if (!el) {
+            return false;
+        }
+
+        if (el === document.body ||
+            el === document.documentElement) {
+            return false;
+        }
+
+        var style;
+
+        try {
+            style = window.getComputedStyle(el);
+        } catch (e) {
+            return false;
+        }
+
+        if (!style) {
+            return false;
+        }
+
+        if (style.display === 'none') {
+            return false;
+        }
+
+        if (style.visibility === 'hidden') {
+            return false;
+        }
+
+        if (parseFloat(style.opacity || '1') <= 0.01) {
+            return false;
+        }
+
+        if (
+            el.classList &&
+            (
+                el.classList.contains('hide') ||
+                el.classList.contains('hidden') ||
+                el.classList.contains('player--hidden')
+            )
+        ) {
+            return false;
+        }
+
+        var rect = el.getBoundingClientRect();
+
+        if (!rect) {
+            return false;
+        }
+
+        return (
+            rect.width > 100 &&
+            rect.height > 100
         );
     }
 
 
-    // =========================================================
-    // APPLY THEME
-    // =========================================================
+    function isPlayerOpen() {
 
-    function applyTheme() {
+        var selectors = [
+            '.player',
+            '.player-screen',
+            '.player__screen',
+            '.player__body',
+            '.player-video',
+            '.player__video',
+            '.video-container',
+            '.player-panel'
+        ];
 
-        removeOurTheme();
+        for (var i = 0; i < selectors.length; i++) {
+
+            var elements;
+
+            try {
+                elements = document.querySelectorAll(
+                    selectors[i]
+                );
+            } catch (e) {
+                continue;
+            }
+
+            for (var j = 0; j < elements.length; j++) {
+
+                var el = elements[j];
+
+                if (!isVisibleElement(el)) {
+                    continue;
+                }
+
+                /*
+                 * Don't let our own live layer count as a player.
+                 */
+                if (
+                    el.id === LIVE_ID ||
+                    el.closest('#' + LIVE_ID)
+                ) {
+                    continue;
+                }
+
+                /*
+                 * player-panel alone may remain in DOM.
+                 * It is only considered a player if a video
+                 * element is actually present/visible.
+                 */
+                if (
+                    selectors[i] === '.player-panel'
+                ) {
+                    var panelVideo =
+                        el.querySelector('video');
+
+                    if (
+                        panelVideo &&
+                        isVisibleElement(panelVideo)
+                    ) {
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                return true;
+            }
+        }
 
 
-        if (currentTheme === "arctic") {
+        /*
+         * Additional fallback:
+         * visible video element.
+         */
 
-            applyArctic();
+        var videos = document.querySelectorAll('video');
 
-        } else if (currentTheme === "forest") {
+        for (var v = 0; v < videos.length; v++) {
 
-            applyForest();
+            var video = videos[v];
 
-        } else if (currentTheme === "storm") {
+            if (!isVisibleElement(video)) {
+                continue;
+            }
 
-            applyStorm();
+            var rect = video.getBoundingClientRect();
 
-        } else if (currentTheme === "noir") {
+            if (
+                rect.width > 150 &&
+                rect.height > 100
+            ) {
+                return true;
+            }
+        }
 
-            applyNoir();
+        return false;
+    }
 
-        } else if (currentTheme === "velvet") {
 
-            applyVelvet();
+    /* =========================================================
+       SHOW / HIDE LIVE LAYER
+       ========================================================= */
+
+    function updateLiveVisibility() {
+
+        var layer =
+            document.getElementById(LIVE_ID);
+
+        if (!layer) {
+            return;
+        }
+
+        /*
+         * Main protection against effects over video.
+         */
+
+        if (isPlayerOpen()) {
+
+            if (!layer.classList.contains('af-hidden')) {
+                layer.classList.add('af-hidden');
+            }
 
         } else {
 
-            applyDefault();
+            if (layer.classList.contains('af-hidden')) {
+                layer.classList.remove('af-hidden');
+            }
         }
-
-
-        console.log(
-            "[Arctic Forest] Theme:",
-            currentTheme
-        );
     }
 
 
-    // =========================================================
-    // SETTINGS
-    // Логика регистрации аналогична RezkaComment V2
-    // =========================================================
+    /* =========================================================
+       PLAYER MONITOR
+       ========================================================= */
 
-    function settings() {
+    function startPlayerMonitor() {
+
+        stopPlayerMonitor();
+
+        /*
+         * Fast initial check.
+         */
+
+        updateLiveVisibility();
+
+        /*
+         * MutationObserver reacts quickly when Lampa opens
+         * or closes the player.
+         */
+
+        if (window.MutationObserver) {
+
+            mutationObserver =
+                new MutationObserver(function () {
+
+                    clearTimeout(playerCheckTimer);
+
+                    playerCheckTimer =
+                        setTimeout(
+                            updateLiveVisibility,
+                            80
+                        );
+                });
+
+            try {
+
+                mutationObserver.observe(
+                    document.body,
+                    {
+                        subtree: true,
+                        childList: true,
+                        attributes: true,
+                        attributeFilter: [
+                            'class',
+                            'style'
+                        ]
+                    }
+                );
+
+            } catch (e) {}
+        }
+
+
+        /*
+         * Fallback check.
+         * It also catches player implementations which do not
+         * change the DOM in a way MutationObserver can detect.
+         */
+
+        playerCheckTimer =
+            setInterval(
+                updateLiveVisibility,
+                700
+            );
+    }
+
+
+    function stopPlayerMonitor() {
+
+        if (mutationObserver) {
+
+            try {
+                mutationObserver.disconnect();
+            } catch (e) {}
+
+            mutationObserver = null;
+        }
+
+        if (playerCheckTimer) {
+
+            clearInterval(playerCheckTimer);
+            clearTimeout(playerCheckTimer);
+
+            playerCheckTimer = null;
+        }
+    }
+
+
+    /* =========================================================
+       LAMPA PLAYER EVENTS
+       ========================================================= */
+
+    function setupPlayerEvents() {
+
+        if (
+            typeof Lampa === 'undefined' ||
+            !Lampa.Listener ||
+            !Lampa.Listener.follow
+        ) {
+            return;
+        }
 
         try {
 
-            if (!Lampa.SettingsApi) {
+            Lampa.Listener.follow(
+                'player',
+                function (event) {
 
-                console.error(
-                    "[Arctic Forest] SettingsApi unavailable"
-                );
+                    var type =
+                        String(
+                            event &&
+                            event.type
+                                ? event.type
+                                : ''
+                        ).toLowerCase();
 
-                return;
-            }
+
+                    /*
+                     * Immediately hide when player starts.
+                     */
+
+                    if (
+                        type.indexOf('start') !== -1 ||
+                        type.indexOf('open') !== -1 ||
+                        type.indexOf('ready') !== -1 ||
+                        type.indexOf('play') !== -1
+                    ) {
+
+                        var layer =
+                            document.getElementById(LIVE_ID);
+
+                        if (layer) {
+                            layer.classList.add(
+                                'af-hidden'
+                            );
+                        }
+
+                        return;
+                    }
 
 
-            // -------------------------------------------------
-            // COMPONENT
-            // -------------------------------------------------
+                    /*
+                     * After player closes, wait a little for
+                     * Lampa to remove its player DOM.
+                     */
+
+                    if (
+                        type.indexOf('close') !== -1 ||
+                        type.indexOf('destroy') !== -1 ||
+                        type.indexOf('stop') !== -1 ||
+                        type.indexOf('end') !== -1 ||
+                        type.indexOf('exit') !== -1 ||
+                        type.indexOf('back') !== -1 ||
+                        type.indexOf('complite') !== -1
+                    ) {
+
+                        setTimeout(
+                            updateLiveVisibility,
+                            150
+                        );
+
+                        setTimeout(
+                            updateLiveVisibility,
+                            500
+                        );
+                    }
+                }
+            );
+
+        } catch (e) {}
+    }
+
+
+    /* =========================================================
+       APPLY THEMES
+       ========================================================= */
+
+    function applyArctic() {
+
+        document.body.classList.add(
+            'arctic-theme'
+        );
+
+        addStyle(commonCSS);
+
+        createLiveLayer('arctic');
+
+        startPlayerMonitor();
+    }
+
+
+    function applyForest() {
+
+        document.body.classList.add(
+            'forest-theme'
+        );
+
+        addStyle(commonCSS);
+
+        createLiveLayer('forest');
+
+        startPlayerMonitor();
+    }
+
+
+    function applyStorm() {
+
+        document.body.classList.add(
+            'storm-theme'
+        );
+
+        addStyle(commonCSS);
+
+        createLiveLayer('storm');
+
+        startPlayerMonitor();
+    }
+
+
+    function applyAutumn() {
+
+        document.body.classList.add(
+            'autumn-theme'
+        );
+
+        addStyle(commonCSS);
+
+        createLiveLayer('autumn');
+
+        startPlayerMonitor();
+    }
+
+
+    function applyWinter() {
+
+        document.body.classList.add(
+            'winter-theme'
+        );
+
+        addStyle(commonCSS);
+
+        createLiveLayer('winter');
+
+        startPlayerMonitor();
+    }
+
+
+    function applyDefault() {
+
+        stopPlayerMonitor();
+
+        removeOurTheme();
+
+        /*
+         * IMPORTANT:
+         *
+         * We don't set any Lampa styles here.
+         * Standard mode simply removes everything added
+         * by this plugin.
+         *
+         * Native Lampa appearance remains untouched.
+         */
+    }
+
+
+    function applyTheme(theme) {
+
+        removeOurTheme();
+
+        if (theme === 'default') {
+            applyDefault();
+            return;
+        }
+
+        if (theme === 'arctic') {
+            applyArctic();
+            return;
+        }
+
+        if (theme === 'forest') {
+            applyForest();
+            return;
+        }
+
+        if (theme === 'storm') {
+            applyStorm();
+            return;
+        }
+
+        if (theme === 'autumn') {
+            applyAutumn();
+            return;
+        }
+
+        if (theme === 'winter') {
+            applyWinter();
+            return;
+        }
+
+        applyDefault();
+    }
+
+
+    /* =========================================================
+       SETTINGS
+       ========================================================= */
+
+    function settings() {
+
+        if (
+            typeof Lampa === 'undefined' ||
+            !Lampa.SettingsApi
+        ) {
+            return;
+        }
+
+
+        try {
 
             Lampa.SettingsApi.addComponent({
 
                 component: COMPONENT,
 
-                name: "Arctic Forest",
+                name: 'Arctic Forest',
 
                 icon:
-                    '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-
-                    '<path d="M12 2v20" ' +
-                    'stroke="currentColor" ' +
-                    'stroke-width="1.8" ' +
-                    'stroke-linecap="round"/>' +
-
-                    '<path d="M2 12h20" ' +
-                    'stroke="currentColor" ' +
-                    'stroke-width="1.8" ' +
-                    'stroke-linecap="round"/>' +
-
-                    '<path d="M4.93 4.93l14.14 14.14" ' +
-                    'stroke="currentColor" ' +
-                    'stroke-width="1.8" ' +
-                    'stroke-linecap="round"/>' +
-
-                    '<path d="M19.07 4.93L4.93 19.07" ' +
-                    'stroke="currentColor" ' +
-                    'stroke-width="1.8" ' +
-                    'stroke-linecap="round"/>' +
-
+                    '<svg xmlns="http://www.w3.org/2000/svg" ' +
+                    'viewBox="0 0 24 24">' +
+                    '<path fill="currentColor" d="' +
+                    'M12 2 9.5 7H5l3.7 3.2L7 15l5-2.9L17 15l-1.7-4.8L19 7h-4.5L12 2zm0 5.8L13 10h2l-1.6 1.2.6 1.8-2-1.2-2 1.2.6-1.8L9 10h2l1-2.2z"/>' +
                     '</svg>'
             });
 
-
-            // -------------------------------------------------
-            // THEME SELECT
-            // -------------------------------------------------
 
             Lampa.SettingsApi.addParam({
 
@@ -3010,201 +1691,159 @@
 
                 param: {
 
-                    name: STORAGE_KEY,
+                    name: 'theme',
 
-                    type: "select",
+                    type: 'select',
 
                     values: {
 
-                        default:
-                            "Стандартная",
+                        default: 'Стандартная',
 
-                        arctic:
-                            "Arctic Live",
+                        arctic: 'Arctic Live',
 
-                        forest:
-                            "Dark Forest",
+                        forest: 'Dark Forest',
 
-                        storm:
-                            "🌩️ Буря",
+                        storm: '🌩️ Буря',
 
-                        noir:
-                            "🎞️ Film Noir",
+                        autumn: '🍂 Осень',
 
-                        velvet:
-                            "🎭 Velvet Cinema"
+                        winter: '❄️ Зима'
                     },
 
-                    default:
-                        Lampa.Storage.get(
-                            STORAGE_KEY,
-                            DEFAULT_THEME
-                        )
+                    default: DEFAULT_THEME
                 },
 
                 field: {
 
-                    name:
-                        "Тема",
+                    name: 'Тема',
 
                     description:
-                        "Выберите оформление Lampa"
+                        'Выберите оформление Arctic Forest'
                 },
 
-                onChange:
-                    function (value) {
+                onChange: function (value) {
 
-                        currentTheme =
-                            String(value);
+                    saveTheme(value);
 
+                    try {
 
-                        if (!isValidTheme(currentTheme)) {
+                        if (typeof Lampa !== 'undefined' &&
+                            Lampa.Noty) {
 
-                            currentTheme =
-                                DEFAULT_THEME;
-                        }
-
-
-                        saveTheme(
-                            currentTheme
-                        );
-
-
-                        applyTheme();
-
-
-                        if (
-                            Lampa.Noty
-                        ) {
-
-                            var titles = {
-
-                                arctic:
-                                    "Arctic Live",
-
-                                forest:
-                                    "Dark Forest",
-
-                                storm:
-                                    "Буря",
-
-                                noir:
-                                    "Film Noir",
-
-                                velvet:
-                                    "Velvet Cinema",
+                            var names = {
 
                                 default:
-                                    "Стандартная"
+                                    'Стандартная тема',
+
+                                arctic:
+                                    'Arctic Live включена',
+
+                                forest:
+                                    'Dark Forest включена',
+
+                                storm:
+                                    '🌩️ Буря включена',
+
+                                autumn:
+                                    '🍂 Осень включена',
+
+                                winter:
+                                    '❄️ Зима включена'
                             };
 
-
-                            var title =
-                                titles[currentTheme] ||
-                                "Стандартная";
-
-
                             Lampa.Noty.show(
-                                "Тема изменена: " +
-                                title
+                                names[value] ||
+                                'Тема изменена'
                             );
                         }
-                    }
+
+                    } catch (e) {}
+                }
             });
-
-
-            console.log(
-                "[Arctic Forest] Settings registered"
-            );
 
         } catch (e) {
 
-            console.error(
-                "[Arctic Forest] Settings init error:",
+            console.log(
+                '[Arctic Forest] Settings error:',
                 e
             );
         }
     }
 
 
-    // =========================================================
-    // START
-    // =========================================================
+    /* =========================================================
+       START
+       ========================================================= */
 
     function startPlugin() {
 
-        console.log(
-            "[Arctic Forest] Starting..."
-        );
-
-
-        // -----------------------------------------------------
-        // Загружаем сохранённую настройку
-        // -----------------------------------------------------
+        /*
+         * First load saved value.
+         */
 
         loadTheme();
 
 
-        // -----------------------------------------------------
-        // Регистрируем настройки
-        // -----------------------------------------------------
+        /*
+         * Settings are always available.
+         */
 
         settings();
 
 
-        // -----------------------------------------------------
-        // ВАЖНО:
-        //
-        // При default вообще ничего не применяем.
-        // -----------------------------------------------------
+        /*
+         * IMPORTANT:
+         *
+         * If there is no saved custom theme,
+         * plugin does absolutely nothing.
+         *
+         * Standard Lampa remains exactly as it was.
+         */
 
-        if (
-            currentTheme !== "default"
-        ) {
-
-            applyTheme();
-
-        } else {
+        if (currentTheme === DEFAULT_THEME) {
 
             console.log(
-                "[Arctic Forest] Standard mode — no changes"
+                '[Arctic Forest] Standard Lampa mode'
             );
+
+            return;
         }
+
+
+        /*
+         * If user previously selected a theme,
+         * restore it.
+         */
+
+        applyTheme(currentTheme);
+
+
+        /*
+         * Player events are installed only when
+         * custom live effects are active.
+         */
+
+        setupPlayerEvents();
+
+
+        console.log(
+            '[Arctic Forest] Theme:',
+            currentTheme
+        );
     }
 
 
-    // =========================================================
-    // BOOT
-    // =========================================================
+    /* =========================================================
+       BOOT
+       ========================================================= */
 
-    if (
-        typeof Lampa === "undefined"
-    ) {
+    if (typeof Lampa === 'undefined') {
 
-        setTimeout(
-            function waitLampa() {
-
-                if (
-                    typeof Lampa !== "undefined"
-                ) {
-
-                    startPlugin();
-
-                } else {
-
-                    setTimeout(
-                        waitLampa,
-                        500
-                    );
-                }
-
-            },
-            500
+        console.log(
+            '[Arctic Forest] Lampa not found'
         );
 
-    } else if (
-        window.appready
-    ) {
+    } else if (window.appready) {
 
         startPlugin();
 
@@ -3214,13 +1853,13 @@
     ) {
 
         Lampa.Listener.follow(
-            "app",
-            function (e) {
+            'app',
+            function (event) {
 
                 if (
-                    e.type === "ready"
+                    event &&
+                    event.type === 'ready'
                 ) {
-
                     startPlugin();
                 }
             }
