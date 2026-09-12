@@ -2,13 +2,15 @@
     'use strict';
 
     // =========================================================
-    // LAMPA DISCOVERY v4
-    // Native Lampa Main + native Lampa Card.
-    // Genre cards are real Lampa cards in a horizontal row.
+    // LAMPA DISCOVERY v5
+    // Native Lampa Main -> Line -> Card architecture.
+    // Genre row is horizontal and uses the real Lampa Card.
+    // TMDB: Russian localization + high rating + minimum votes.
     // =========================================================
 
     var COMPONENT = 'lampa_discovery_genres';
     var MENU_ADDED = false;
+    var MIN_VOTES = 500;
 
     var GENRES = [
         { id: 27,  title: 'Ужасы' },
@@ -21,7 +23,7 @@
         { id: 12,  title: 'Приключения' }
     ];
 
-    function tmdb() {
+    function getTMDB() {
         return Lampa.Api && Lampa.Api.sources && Lampa.Api.sources.tmdb;
     }
 
@@ -29,57 +31,73 @@
         return new Date().toISOString().slice(0, 10);
     }
 
-    // Берём для каждой категории реальный фильм TMDB с высоким рейтингом.
-    // Его poster_path используется стандартной карточкой Lampa.
-    function loadGenre(genre, callback) {
-        var source = tmdb();
+    // Получаем один реальный TMDB фильм для изображения жанровой карточки.
+    // Саму карточку создаёт Lampa.Maker.make('Card'), поэтому внешний вид
+    // остаётся полностью штатным для Lampa.
+    function loadGenreCard(genre, callback) {
+        var source = getTMDB();
 
         if (!source || typeof source.get !== 'function') {
-            callback({ id: genre.id, title: genre.title });
+            callback({
+                id: genre.id,
+                title: genre.title,
+                type: 'movie',
+                source: 'tmdb'
+            });
             return;
         }
 
-        source.get(
-            'discover/movie?with_genres=' + genre.id,
-            {
-                page: 1,
-                sort_by: 'vote_average.desc',
-                'vote_count.gte': 200,
-                'primary_release_date.lte': today(),
-                langs: 'ru-RU'
-            },
-            function (data) {
-                var item = data && data.results && data.results.length ? data.results[0] : null;
+        var url = 'discover/movie?with_genres=' + genre.id +
+            '&sort_by=vote_average.desc' +
+            '&vote_count.gte=' + MIN_VOTES +
+            '&primary_release_date.lte=' + today();
 
-                callback({
-                    id: genre.id,
-                    title: genre.title,
-                    poster_path: item && item.poster_path ? item.poster_path : null,
-                    backdrop_path: item && item.backdrop_path ? item.backdrop_path : null,
-                    vote_average: item && item.vote_average ? item.vote_average : 0
-                });
-            },
-            function () {
-                callback({ id: genre.id, title: genre.title });
-            }
-        );
-    }
+        source.get(url, {
+            page: 1,
+            langs: 'ru-RU'
+        }, function (json) {
+            var results = json && Array.isArray(json.results) ? json.results : [];
+            var item = results.length ? results[0] : null;
 
-    function loadGenres(done) {
-        var result = [];
-        var left = GENRES.length;
-
-        GENRES.forEach(function (genre, index) {
-            loadGenre(genre, function (data) {
-                result[index] = data;
-                left--;
-                if (!left) done(result);
+            callback({
+                id: genre.id,
+                title: genre.title,
+                type: 'movie',
+                source: 'tmdb',
+                poster_path: item && item.poster_path ? item.poster_path : null,
+                backdrop_path: item && item.backdrop_path ? item.backdrop_path : null,
+                vote_average: item && item.vote_average ? item.vote_average : 0,
+                vote_count: item && item.vote_count ? item.vote_count : 0,
+                params: {
+                    // Важно: не меняем стиль карточки. Используется штатный Card.
+                }
+            });
+        }, function () {
+            callback({
+                id: genre.id,
+                title: genre.title,
+                type: 'movie',
+                source: 'tmdb'
             });
         });
     }
 
-    // Открываем обычную Lampa category_full напрямую, чтобы не терять
-    // sort_by/filter на этапе Router.category_full.
+    function loadGenres(callback) {
+        var result = new Array(GENRES.length);
+        var left = GENRES.length;
+
+        GENRES.forEach(function (genre, index) {
+            loadGenreCard(genre, function (data) {
+                result[index] = data;
+                left--;
+                if (left === 0) callback(result);
+            });
+        });
+    }
+
+    // Открываем стандартную Lampa category_full напрямую.
+    // Не используем Router.category_full, потому что он может выбросить
+    // sort_by/url при нормализации параметров.
     function openGenre(data) {
         if (!Lampa.Activity || typeof Lampa.Activity.push !== 'function') return;
 
@@ -93,72 +111,54 @@
             sort_by: 'vote_average.desc',
             langs: 'ru-RU',
             filter: {
-                'vote_count.gte': 200,
+                'vote_count.gte': MIN_VOTES,
                 'primary_release_date.lte': today()
             }
         });
     }
 
     // =========================================================
-    // Native Main
+    // Native Lampa Main
     // =========================================================
 
     function component(object) {
-        // В Lampa 3.x Main создаётся через Maker.
-        if (Lampa.Maker && typeof Lampa.Maker.make === 'function') {
-            var main = Lampa.Maker.make('Main', object);
-
-            main.use({
-                onCreate: function () {
-                    var self = this;
-                    loadGenres(function (genres) {
-                        self.build([
-                            {
-                                title: 'Жанры',
-                                results: genres
-                            }
-                        ]);
-                    });
-                },
-
-                onInstance: function (line, rowData) {
-                    line.use({
-                        onInstance: function (card, cardData) {
-                            card.use({
-                                onEnter: function () {
-                                    openGenre(cardData);
-                                }
-                            });
-                        }
-                    });
-                }
-            });
-
-            return main;
+        if (!Lampa.Maker || typeof Lampa.Maker.make !== 'function') {
+            return null;
         }
 
-        // Fallback для старых сборок Lampa.
-        var legacy = new Lampa.InteractionMain(object);
+        var main = Lampa.Maker.make('Main', object);
 
-        legacy.create = function () {
-            var self = this;
-            loadGenres(function (genres) {
-                self.build({
-                    title: 'Жанры',
-                    results: genres
+        main.use({
+            onCreate: function () {
+                var self = this;
+
+                loadGenres(function (genres) {
+                    // Именно массив строк для Main -> Line.
+                    // Никаких своих grid/flex/overflow-контейнеров.
+                    self.build([
+                        {
+                            title: 'Жанры',
+                            results: genres
+                        }
+                    ]);
                 });
-            });
-            return this.render();
-        };
+            },
 
-        legacy.cardRender = function (object, element, card) {
-            card.onMenu = false;
-            element.addEventListener('hover:enter', function () {
-                openGenre(object);
-            });
-        };
+            // Main -> Line -> Card. Это штатная модульная цепочка Lampa.
+            onInstance: function (line) {
+                line.use({
+                    onInstance: function (card, cardData) {
+                        card.use({
+                            onlyEnter: function () {
+                                openGenre(cardData);
+                            }
+                        });
+                    }
+                });
+            }
+        });
 
-        return legacy;
+        return main;
     }
 
     // =========================================================
@@ -172,22 +172,24 @@
         '</svg>';
     }
 
+    function openDiscovery() {
+        Lampa.Activity.push({
+            url: '',
+            title: 'Discovery',
+            component: COMPONENT,
+            page: 1
+        });
+    }
+
     function addMenu() {
         if (MENU_ADDED || !window.appready) return;
 
-        // Используем родной Lampa.Menu в новых версиях.
+        // Современный Lampa API.
         if (Lampa.Menu && typeof Lampa.Menu.addButton === 'function') {
             var button = Lampa.Menu.addButton(
                 discoveryIcon(),
                 'Discovery',
-                function () {
-                    Lampa.Activity.push({
-                        url: '',
-                        title: 'Discovery',
-                        component: COMPONENT,
-                        page: 1
-                    });
-                }
+                openDiscovery
             );
 
             if (button && button.addClass) button.addClass('ldg-menu-item');
@@ -195,7 +197,7 @@
             return;
         }
 
-        // Fallback для старого API.
+        // Совместимость со старыми сборками.
         var list = $('.menu .menu__list').eq(0);
         if (!list.length) return;
         if (list.find('.ldg-menu-item').length) {
@@ -210,33 +212,31 @@
             '</li>'
         );
 
-        fallback.on('hover:enter', function () {
-            Lampa.Activity.push({
-                url: '',
-                title: 'Discovery',
-                component: COMPONENT,
-                page: 1
-            });
-        });
-
+        fallback.on('hover:enter', openDiscovery);
         list.append(fallback);
         MENU_ADDED = true;
     }
 
     function startPlugin() {
-        if (window.__lampa_discovery_native_ready) return;
-        window.__lampa_discovery_native_ready = true;
+        if (window.__lampa_discovery_v5_ready) return;
+        window.__lampa_discovery_v5_ready = true;
+
+        if (!Lampa.Component || typeof Lampa.Component.add !== 'function') {
+            console.error('[Lampa Discovery v5] Component API unavailable');
+            return;
+        }
 
         Lampa.Component.add(COMPONENT, component);
 
-        var observer = new MutationObserver(function () {
-            addMenu();
-        });
+        if (typeof MutationObserver !== 'undefined' && document.body) {
+            var observer = new MutationObserver(function () {
+                addMenu();
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        }
 
-        observer.observe(document.body, { childList: true, subtree: true });
         addMenu();
-
-        console.log('[Lampa Discovery] Native Main/Card ready');
+        console.log('[Lampa Discovery v5] Native Main -> Line -> Card ready');
     }
 
     if (typeof Lampa === 'undefined') {
