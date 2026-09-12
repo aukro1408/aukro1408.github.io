@@ -131,7 +131,9 @@
             page: 1,
             title: data.title,
             genres: String(data.id),
-            sort_by: 'primary_release_date.desc',
+            sort_by: 'vote_average.desc',
+            'vote_count.gte': 200,
+            'primary_release_date.lte': new Date().toISOString().slice(0, 10),
             langs: 'ru-RU'
         });
     }
@@ -172,6 +174,7 @@
 
             loadGenres(function (data) {
                 self.build({
+                    title: 'Discovery',
                     results: data,
                     total_pages: 1,
                     page: 1,
@@ -181,7 +184,7 @@
                 });
 
                 try {
-                    comp.render().find('.category-full').addClass('mapping--grid cols--4');
+                    comp.render().find('.category-full').addClass('mapping--grid');
                 } catch (e) {}
 
                 self.activity.loader(false);
@@ -218,19 +221,18 @@
             '<li class="menu__item selector ldg-menu-item">' +
                 '<div class="menu__ico">' +
                     '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-                        '<path d="M4 5.5C4 4.67 4.67 4 5.5 4h13C19.33 4 20 4.67 20 5.5v13c0 .83-.67 1.5-1.5 1.5h-13C4.67 20 4 19.33 4 18.5v-13Z" stroke="currentColor" stroke-width="1.7"/>' +
-                        '<path d="m7.5 16 3.1-4 2.4 2.8 1.8-2.2 2.7 3.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>' +
-                        '<circle cx="9" cy="8.5" r="1.2" fill="currentColor"/>' +
+                        '<circle cx="12" cy="12" r="8.25" stroke="currentColor" stroke-width="1.7"/>' +
+                        '<path d="m15.7 8.3-2.2 4.1-4.1 2.2 2.2-4.1 4.1-2.2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>' +
                     '</svg>' +
                 '</div>' +
-                '<div class="menu__text">Жанры</div>' +
+                '<div class="menu__text">Discovery</div>' +
             '</li>'
         );
 
         button.on('hover:enter', function () {
             Lampa.Activity.push({
                 url: '',
-                title: 'Жанры',
+                title: 'Discovery',
                 component: COMPONENT,
                 page: 1
             });
@@ -250,18 +252,22 @@
         var style = document.createElement('style');
         style.id = 'lampa-discovery-genres-style';
         style.textContent = `
+            /* Только стандартная геометрия карточки Lampa. Без собственного скролла,
+               градиентов, теней и touch-обработчиков. */
             .ldg-card {
                 position:relative;
-                overflow:hidden;
-                border-radius:1em;
-                background:#111 !important;
-                box-shadow:0 0.35em 1.4em rgba(0,0,0,.28);
+                overflow:visible;
+                background:transparent !important;
+                box-shadow:none !important;
+                border-radius:0;
             }
 
             .ldg-card .card__view {
                 position:relative;
                 overflow:hidden;
-                border-radius:inherit;
+                border-radius:.35em;
+                aspect-ratio:2 / 3;
+                background:#111;
             }
 
             .ldg-card__img {
@@ -270,48 +276,38 @@
                 height:100%;
                 object-fit:cover;
                 background:#101010;
-                transition:transform .35s ease, filter .35s ease;
-            }
-
-            .ldg-card::after {
-                content:'';
-                position:absolute;
-                left:0;
-                right:0;
-                bottom:0;
-                height:58%;
-                pointer-events:none;
-                background:linear-gradient(to top, rgba(0,0,0,.82), rgba(0,0,0,0));
+                transition:none;
             }
 
             .ldg-card__title {
-                position:absolute;
-                left:.75em;
-                right:.75em;
-                bottom:.7em;
-                z-index:3;
-                color:#fff;
-                font-size:1.05em;
-                font-weight:600;
-                line-height:1.15;
-                text-shadow:0 2px 7px rgba(0,0,0,.8);
+                position:static;
+                display:block;
+                margin-top:.45em;
+                color:inherit;
+                font-size:1em;
+                font-weight:400;
+                line-height:1.2;
+                text-align:left;
+                text-shadow:none;
+                overflow:hidden;
+                text-overflow:ellipsis;
+                white-space:nowrap;
             }
 
-            .ldg-card.selector.focus,
-            .ldg-card:hover {
-                outline:none !important;
-                box-shadow:0 0 0 .16em rgba(255,255,255,.82), 0 .5em 1.6em rgba(0,0,0,.42) !important;
+            .ldg-card.selector.focus .card__view {
+                box-shadow:0 0 0 .16em rgba(255,255,255,.82);
             }
 
-            .ldg-card.selector.focus .ldg-card__img,
+            .ldg-card.selector.focus .ldg-card__img {
+                transform:none;
+                filter:none;
+            }
+
             .ldg-card:hover .ldg-card__img {
-                transform:scale(1.045);
-                filter:saturate(1.08) brightness(1.05);
+                transform:none;
+                filter:none;
             }
 
-            @media screen and (max-width:767px) {
-                .category-full .ldg-card { width:50%; }
-            }
         `;
         document.head.appendChild(style);
     }
@@ -330,8 +326,8 @@
             '<div class="card selector ldg-card layer--visible layer--render">' +
                 '<div class="card__view">' +
                     '<img class="ldg-card__img" src="./img/img_load.svg">' +
-                    '<div class="ldg-card__title"></div>' +
                 '</div>' +
+                '<div class="card__title ldg-card__title"></div>' +
             '</div>'
         );
 
