@@ -2,10 +2,10 @@
     'use strict';
 
     // =========================================================
-    // LAMPA DISCOVERY v5
-    // Native Lampa Main -> Line -> Card architecture.
-    // Genre row is horizontal and uses the real Lampa Card.
-    // TMDB: Russian localization + high rating + minimum votes.
+    // LAMPA DISCOVERY v6
+    // Native Lampa Main -> Line -> Card.
+    // Несколько горизонтальных рядов как на главной Lampa.
+    // TMDB: русская локализация + нормальные фильтры рейтинга.
     // =========================================================
 
     var COMPONENT = 'lampa_discovery_genres';
@@ -20,7 +20,9 @@
         { id: 18,  title: 'Драмы' },
         { id: 28,  title: 'Боевики' },
         { id: 14,  title: 'Фэнтези' },
-        { id: 12,  title: 'Приключения' }
+        { id: 12,  title: 'Приключения' },
+        { id: 9648, title: 'Детективы' },
+        { id: 16,  title: 'Мультфильмы' }
     ];
 
     function getTMDB() {
@@ -31,63 +33,130 @@
         return new Date().toISOString().slice(0, 10);
     }
 
-    // Получаем один реальный TMDB фильм для изображения жанровой карточки.
-    // Саму карточку создаёт Lampa.Maker.make('Card'), поэтому внешний вид
-    // остаётся полностью штатным для Lampa.
-    function loadGenreCard(genre, callback) {
-        var source = getTMDB();
+    function cleanResults(json) {
+        var results = json && Array.isArray(json.results) ? json.results : [];
+        return results.filter(function (item) {
+            return item && (item.poster_path || item.backdrop_path) &&
+                (item.title || item.name);
+        });
+    }
 
+    function tmdbGet(url, callback) {
+        var source = getTMDB();
         if (!source || typeof source.get !== 'function') {
-            callback({
-                id: genre.id,
-                title: genre.title,
-                type: 'movie',
-                source: 'tmdb'
-            });
+            callback([]);
             return;
         }
-
-        var url = 'discover/movie?with_genres=' + genre.id +
-            '&sort_by=vote_average.desc' +
-            '&vote_count.gte=' + MIN_VOTES +
-            '&primary_release_date.lte=' + today();
 
         source.get(url, {
             page: 1,
             langs: 'ru-RU'
         }, function (json) {
-            var results = json && Array.isArray(json.results) ? json.results : [];
-            var item = results.length ? results[0] : null;
+            callback(cleanResults(json));
+        }, function () {
+            callback([]);
+        });
+    }
+
+    // ---------------------------------------------------------
+    // Обычные горизонтальные ряды фильмов.
+    // ---------------------------------------------------------
+
+    var ROWS = [
+        {
+            title: 'Для тебя',
+            url: 'trending/movie/week'
+        },
+        {
+            title: 'Новинки',
+            url: 'discover/movie?sort_by=primary_release_date.desc&vote_count.gte=' + MIN_VOTES +
+                '&primary_release_date.lte=' + today()
+        },
+        {
+            title: 'Высокий рейтинг',
+            url: 'discover/movie?sort_by=vote_average.desc&vote_count.gte=' + MIN_VOTES +
+                '&primary_release_date.lte=' + today()
+        },
+        {
+            title: 'Сейчас смотрят',
+            url: 'discover/movie?sort_by=popularity.desc&vote_count.gte=100&primary_release_date.lte=' + today()
+        },
+        {
+            title: 'Фильмы 2026',
+            url: 'discover/movie?primary_release_year=2026&sort_by=popularity.desc&vote_count.gte=50'
+        }
+    ];
+
+    function loadMovieRows(callback) {
+        var rows = new Array(ROWS.length);
+        var left = ROWS.length;
+
+        ROWS.forEach(function (row, index) {
+            tmdbGet(row.url, function (results) {
+                rows[index] = {
+                    title: row.title,
+                    results: results
+                };
+
+                left--;
+                if (left === 0) callback(rows);
+            });
+        });
+    }
+
+    // ---------------------------------------------------------
+    // Жанры.
+    // Для каждого жанра берём отдельный постер TMDB.
+    // Выбираем первый постер, который ещё не использовался,
+    // поэтому все карточки жанров визуально разные.
+    // ---------------------------------------------------------
+
+    function loadGenreCard(genre, usedPosters, callback) {
+        var url = 'discover/movie?with_genres=' + genre.id +
+            '&sort_by=vote_average.desc' +
+            '&vote_count.gte=' + MIN_VOTES +
+            '&primary_release_date.lte=' + today();
+
+        tmdbGet(url, function (results) {
+            var item = null;
+
+            for (var i = 0; i < results.length; i++) {
+                var poster = results[i].poster_path;
+                if (poster && !usedPosters[poster]) {
+                    item = results[i];
+                    usedPosters[poster] = true;
+                    break;
+                }
+            }
+
+            // Если весь первый набор уже занят, всё равно берём первый
+            // результат, чтобы жанр не пропал из ряда.
+            if (!item && results.length) item = results[0];
 
             callback({
                 id: genre.id,
                 title: genre.title,
+                original_title: genre.title,
                 type: 'movie',
                 source: 'tmdb',
-                poster_path: item && item.poster_path ? item.poster_path : null,
-                backdrop_path: item && item.backdrop_path ? item.backdrop_path : null,
+                poster_path: item ? item.poster_path : null,
+                backdrop_path: item ? item.backdrop_path : null,
                 vote_average: item && item.vote_average ? item.vote_average : 0,
                 vote_count: item && item.vote_count ? item.vote_count : 0,
-                params: {
-                    // Важно: не меняем стиль карточки. Используется штатный Card.
-                }
-            });
-        }, function () {
-            callback({
-                id: genre.id,
-                title: genre.title,
-                type: 'movie',
-                source: 'tmdb'
+                discovery_genre: true,
+                discovery_genre_id: genre.id,
+                discovery_genre_title: genre.title
             });
         });
     }
 
     function loadGenres(callback) {
         var result = new Array(GENRES.length);
+        var usedPosters = {};
         var left = GENRES.length;
 
         GENRES.forEach(function (genre, index) {
-            loadGenreCard(genre, function (data) {
+            loadGenreCard(genre, usedPosters, function (data) {
                 result[index] = data;
                 left--;
                 if (left === 0) callback(result);
@@ -95,9 +164,6 @@
         });
     }
 
-    // Открываем стандартную Lampa category_full напрямую.
-    // Не используем Router.category_full, потому что он может выбросить
-    // sort_by/url при нормализации параметров.
     function openGenre(data) {
         if (!Lampa.Activity || typeof Lampa.Activity.push !== 'function') return;
 
@@ -106,8 +172,8 @@
             component: 'category_full',
             source: 'tmdb',
             page: 1,
-            title: data.title,
-            genres: String(data.id),
+            title: data.discovery_genre_title || data.title,
+            genres: String(data.discovery_genre_id || data.id),
             sort_by: 'vote_average.desc',
             langs: 'ru-RU',
             filter: {
@@ -117,14 +183,15 @@
         });
     }
 
-    // =========================================================
-    // Native Lampa Main
-    // =========================================================
+    // ---------------------------------------------------------
+    // Native Main.
+    // Каждый объект Main строит штатный Lampa Line,
+    // а Line создаёт штатные Lampa Card.
+    // Никакого собственного grid/flex/scroll.
+    // ---------------------------------------------------------
 
     function component(object) {
-        if (!Lampa.Maker || typeof Lampa.Maker.make !== 'function') {
-            return null;
-        }
+        if (!Lampa.Maker || typeof Lampa.Maker.make !== 'function') return null;
 
         var main = Lampa.Maker.make('Main', object);
 
@@ -132,27 +199,34 @@
             onCreate: function () {
                 var self = this;
 
-                loadGenres(function (genres) {
-                    // Именно массив строк для Main -> Line.
-                    // Никаких своих grid/flex/overflow-контейнеров.
-                    self.build([
-                        {
+                loadMovieRows(function (movieRows) {
+                    loadGenres(function (genres) {
+                        // Жанры располагаются после основных рядов,
+                        // как в референсе.
+                        movieRows.push({
                             title: 'Жанры',
                             results: genres
-                        }
-                    ]);
+                        });
+
+                        self.build(movieRows.filter(function (row) {
+                            return row && row.results && row.results.length;
+                        }));
+                    });
                 });
             },
 
-            // Main -> Line -> Card. Это штатная модульная цепочка Lampa.
             onInstance: function (line) {
                 line.use({
                     onInstance: function (card, cardData) {
-                        card.use({
-                            onlyEnter: function () {
-                                openGenre(cardData);
-                            }
-                        });
+                        // Только для жанровых карточек меняем действие Enter.
+                        // Сама карточка остаётся штатной Lampa Card.
+                        if (cardData && cardData.discovery_genre) {
+                            card.use({
+                                onlyEnter: function () {
+                                    openGenre(cardData);
+                                }
+                            });
+                        }
                     }
                 });
             }
@@ -161,9 +235,9 @@
         return main;
     }
 
-    // =========================================================
+    // ---------------------------------------------------------
     // Menu
-    // =========================================================
+    // ---------------------------------------------------------
 
     function discoveryIcon() {
         return '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
@@ -184,7 +258,6 @@
     function addMenu() {
         if (MENU_ADDED || !window.appready) return;
 
-        // Современный Lampa API.
         if (Lampa.Menu && typeof Lampa.Menu.addButton === 'function') {
             var button = Lampa.Menu.addButton(
                 discoveryIcon(),
@@ -197,7 +270,6 @@
             return;
         }
 
-        // Совместимость со старыми сборками.
         var list = $('.menu .menu__list').eq(0);
         if (!list.length) return;
         if (list.find('.ldg-menu-item').length) {
@@ -218,11 +290,11 @@
     }
 
     function startPlugin() {
-        if (window.__lampa_discovery_v5_ready) return;
-        window.__lampa_discovery_v5_ready = true;
+        if (window.__lampa_discovery_v6_ready) return;
+        window.__lampa_discovery_v6_ready = true;
 
         if (!Lampa.Component || typeof Lampa.Component.add !== 'function') {
-            console.error('[Lampa Discovery v5] Component API unavailable');
+            console.error('[Lampa Discovery v6] Component API unavailable');
             return;
         }
 
@@ -236,7 +308,7 @@
         }
 
         addMenu();
-        console.log('[Lampa Discovery v5] Native Main -> Line -> Card ready');
+        console.log('[Lampa Discovery v6] Discovery rows ready');
     }
 
     if (typeof Lampa === 'undefined') {
