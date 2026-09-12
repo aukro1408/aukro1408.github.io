@@ -3340,6 +3340,98 @@
 
 
     // =========================================================
+    // HORROR ROW — MAIN SCREEN
+    // =========================================================
+
+    var HORROR_ROW_NAME = "arctic_forest_horror_row";
+
+    function registerHorrorRow() {
+
+        try {
+            if (!Lampa.ContentRows || typeof Lampa.ContentRows.add !== "function") {
+                console.warn("[Arctic Forest] ContentRows unavailable");
+                return;
+            }
+
+            // Do not register the same row twice if the plugin is reloaded.
+            if (window.__arctic_forest_horror_row_registered) {
+                return;
+            }
+
+            window.__arctic_forest_horror_row_registered = true;
+
+            Lampa.ContentRows.add({
+                name: HORROR_ROW_NAME,
+                index: 0,
+                screen: ["main"],
+                call: function (params, screen) {
+                    return function (done) {
+
+                        try {
+                            if (!Lampa.Api || !Lampa.Api.sources || !Lampa.Api.sources.tmdb) {
+                                done();
+                                return;
+                            }
+
+                            var tmdb = Lampa.Api.sources.tmdb;
+                            var today = new Date().toISOString().slice(0, 10);
+
+                            tmdb.get(
+                                "discover/movie?with_genres=27",
+                                {
+                                    sort_by: "primary_release_date.desc",
+                                    filter: {
+                                        "primary_release_date.lte": today,
+                                        "vote_count.gte": 5
+                                    }
+                                },
+                                function (data) {
+
+                                    data = data || {};
+                                    data.title = "Ужасы";
+
+                                    // The More button opens a full category page with
+                                    // the complete horror collection sorted by release date.
+                                    data.url = "movie";
+                                    data.genres = "27";
+                                    data.sort_by = "primary_release_date.desc";
+                                    data.filter = {
+                                        "primary_release_date.lte": today,
+                                        "vote_count.gte": 5
+                                    };
+                                    data.source = "tmdb";
+
+                                    data.params = {
+                                        module: Lampa.Maker && Lampa.Maker.module
+                                            ? Lampa.Maker.module("Line").toggle(Lampa.Maker.module("Line").MASK.base, "More")
+                                            : undefined
+                                    };
+
+                                    done(data);
+                                },
+                                function () {
+                                    done();
+                                },
+                                { life: 60 * 24 }
+                            );
+
+                        } catch (e) {
+                            console.error("[Arctic Forest] Horror row error:", e);
+                            done();
+                        }
+                    };
+                }
+            });
+
+            console.log("[Arctic Forest] Horror row registered");
+
+        } catch (e) {
+            console.error("[Arctic Forest] Horror row init error:", e);
+        }
+    }
+
+
+    // =========================================================
     // START
     // =========================================================
 
@@ -3354,6 +3446,9 @@
 
 
         settings();
+
+
+        registerHorrorRow();
 
 
         if (
