@@ -9,18 +9,20 @@
     var DEFAULT_THEME = 'default';
     var currentTheme = DEFAULT_THEME;
 
-    var playerCheckTimer = null;
-    var mutationObserver = null;
 
     /* =========================================================
-       THEME
+       LOAD / SAVE
     ========================================================= */
 
     function loadTheme() {
+
         var saved = '';
 
         try {
-            saved = Lampa.Storage.get(STORAGE_KEY, '');
+            saved = Lampa.Storage.get(
+                STORAGE_KEY,
+                ''
+            );
         } catch (e) {
             saved = '';
         }
@@ -34,16 +36,22 @@
             'winter'
         ];
 
-        currentTheme = allowed.indexOf(saved) !== -1
-            ? saved
-            : DEFAULT_THEME;
+        currentTheme =
+            allowed.indexOf(saved) !== -1
+                ? saved
+                : DEFAULT_THEME;
     }
 
+
     function saveTheme(theme) {
+
         currentTheme = theme;
 
         try {
-            Lampa.Storage.set(STORAGE_KEY, theme);
+            Lampa.Storage.set(
+                STORAGE_KEY,
+                theme
+            );
         } catch (e) {}
 
         applyTheme(theme);
@@ -51,20 +59,23 @@
 
 
     /* =========================================================
-       REMOVE OUR STYLES ONLY
-       ========================================================= */
+       REMOVE ONLY OUR THEME
+    ========================================================= */
 
     function removeOurTheme() {
-        var oldStyle = document.getElementById(STYLE_ID);
 
-        if (oldStyle) {
-            oldStyle.remove();
+        var style =
+            document.getElementById(STYLE_ID);
+
+        if (style) {
+            style.remove();
         }
 
-        var oldLive = document.getElementById(LIVE_ID);
+        var live =
+            document.getElementById(LIVE_ID);
 
-        if (oldLive) {
-            oldLive.remove();
+        if (live) {
+            live.remove();
         }
 
         document.body.classList.remove(
@@ -78,11 +89,13 @@
 
 
     /* =========================================================
-       STYLE
-       ========================================================= */
+       ADD STYLE
+    ========================================================= */
 
     function addStyle(css) {
-        var style = document.createElement('style');
+
+        var style =
+            document.createElement('style');
 
         style.id = STYLE_ID;
         style.type = 'text/css';
@@ -93,35 +106,14 @@
 
 
     /* =========================================================
-       COMMON CSS
-       ========================================================= */
+       MAIN CSS
+    ========================================================= */
 
     var commonCSS = `
 
-        /* -----------------------------------------------------
-           GENERAL
-        ----------------------------------------------------- */
-
-        body.arctic-theme,
-        body.forest-theme,
-        body.storm-theme,
-        body.autumn-theme,
-        body.winter-theme {
-            background: var(--af-bg) !important;
-        }
-
-        body.arctic-theme .app,
-        body.forest-theme .app,
-        body.storm-theme .app,
-        body.autumn-theme .app,
-        body.winter-theme .app {
-            background: var(--af-bg) !important;
-        }
-
-
-        /* -----------------------------------------------------
-           BODY / MAIN BACKGROUND
-        ----------------------------------------------------- */
+        /* =====================================================
+           THEME VARIABLES
+        ===================================================== */
 
         body.arctic-theme {
             --af-bg: #0A1014;
@@ -130,14 +122,19 @@
             --af-focus2: #8DD8EA;
             --af-border: #8DD8EA;
             --af-progress: #63C7DC;
+
             --af-ext: #080D11;
             --af-ext-focus: #17242B;
+
             --af-torrent: #D8E8ED;
             --af-torrent-focus: rgba(141,216,234,.24);
+
             --af-iptv-focus: #172A32;
+
             --af-settings1: rgb(27,40,48);
             --af-settings2: rgb(7,11,14);
         }
+
 
         body.forest-theme {
             --af-bg: #070D0A;
@@ -146,14 +143,19 @@
             --af-focus2: #65B985;
             --af-border: #65B985;
             --af-progress: #45A86B;
+
             --af-ext: #050A07;
             --af-ext-focus: #12221A;
+
             --af-torrent: #D9E9DF;
             --af-torrent-focus: rgba(101,185,133,.24);
+
             --af-iptv-focus: #14291F;
+
             --af-settings1: rgb(24,43,32);
             --af-settings2: rgb(5,11,8);
         }
+
 
         body.storm-theme {
             --af-bg: #080B10;
@@ -162,65 +164,196 @@
             --af-focus2: #5B9FC7;
             --af-border: #6EA7C7;
             --af-progress: #63A9D0;
+
             --af-ext: #070B10;
             --af-ext-focus: #17212A;
+
             --af-torrent: #D9E8F0;
             --af-torrent-focus: rgba(91,159,199,.23);
+
             --af-iptv-focus: #14232E;
+
             --af-settings1: rgb(25,32,41);
             --af-settings2: rgb(5,8,11);
         }
 
+
+        /* =====================================================
+           AUTUMN
+        ===================================================== */
+
         body.autumn-theme {
-            --af-bg: #110D08;
-            --af-black: #080604;
-            --af-focus1: #FFF1D6;
-            --af-focus2: #C8783E;
-            --af-border: #C8783E;
-            --af-progress: #C98243;
-            --af-ext: #0C0805;
-            --af-ext-focus: #26180F;
-            --af-torrent: #E7D7C5;
-            --af-torrent-focus: rgba(200,120,62,.24);
-            --af-iptv-focus: #2A1B10;
-            --af-settings1: rgb(49,31,20);
-            --af-settings2: rgb(9,6,4);
+            --af-bg: #21150D;
+            --af-black: #0D0805;
+
+            --af-focus1: #FFF0D2;
+            --af-focus2: #C66E32;
+
+            --af-border: #D08343;
+            --af-progress: #D08442;
+
+            --af-ext: #100A06;
+            --af-ext-focus: #2B1A0E;
+
+            --af-torrent: #EAD9C5;
+            --af-torrent-focus: rgba(208,132,66,.28);
+
+            --af-iptv-focus: #302010;
+
+            --af-settings1: rgb(65,40,23);
+            --af-settings2: rgb(13,8,5);
         }
+
+
+        /* =====================================================
+           WINTER
+        ===================================================== */
 
         body.winter-theme {
-            --af-bg: #081018;
-            --af-black: #04070A;
-            --af-focus1: #F5FCFF;
-            --af-focus2: #A8D4E8;
-            --af-border: #A8D4E8;
-            --af-progress: #7CC4DF;
-            --af-ext: #050A0E;
-            --af-ext-focus: #14222A;
-            --af-torrent: #DCECF3;
-            --af-torrent-focus: rgba(168,212,232,.24);
-            --af-iptv-focus: #10242D;
-            --af-settings1: rgb(25,38,47);
-            --af-settings2: rgb(5,9,12);
+            --af-bg: #081724;
+            --af-black: #04090E;
+
+            --af-focus1: #F7FDFF;
+            --af-focus2: #91C9E5;
+
+            --af-border: #A7D9EF;
+            --af-progress: #74C5E5;
+
+            --af-ext: #050B11;
+            --af-ext-focus: #142733;
+
+            --af-torrent: #E1F1F8;
+            --af-torrent-focus: rgba(145,201,229,.28);
+
+            --af-iptv-focus: #112A36;
+
+            --af-settings1: rgb(26,47,60);
+            --af-settings2: rgb(5,10,15);
         }
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
+           STRONG BACKGROUND OVERRIDE
+           ===================================================== */
+
+        body.arctic-theme,
+        body.arctic-theme .app,
+        body.arctic-theme .wrap,
+        body.arctic-theme .main,
+        body.arctic-theme .content {
+
+            background-color:
+                #0A1014 !important;
+        }
+
+
+        body.forest-theme,
+        body.forest-theme .app,
+        body.forest-theme .wrap,
+        body.forest-theme .main,
+        body.forest-theme .content {
+
+            background-color:
+                #070D0A !important;
+        }
+
+
+        body.storm-theme,
+        body.storm-theme .app,
+        body.storm-theme .wrap,
+        body.storm-theme .main,
+        body.storm-theme .content {
+
+            background-color:
+                #080B10 !important;
+        }
+
+
+        /* =====================================================
+           AUTUMN BACKGROUND
+        ===================================================== */
+
+        body.autumn-theme {
+
+            background:
+                radial-gradient(
+                    ellipse at 50% 0%,
+                    rgba(173,91,35,.18),
+                    transparent 55%
+                ),
+                linear-gradient(
+                    180deg,
+                    #21150D 0%,
+                    #160E09 48%,
+                    #0D0805 100%
+                ) !important;
+        }
+
+
+        body.autumn-theme .app,
+        body.autumn-theme .wrap,
+        body.autumn-theme .main,
+        body.autumn-theme .content {
+
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(33,21,13,.96),
+                    rgba(13,8,5,.98)
+                ) !important;
+        }
+
+
+        /* =====================================================
+           WINTER BACKGROUND
+        ===================================================== */
+
+        body.winter-theme {
+
+            background:
+                radial-gradient(
+                    ellipse at 50% 0%,
+                    rgba(130,205,235,.18),
+                    transparent 52%
+                ),
+                radial-gradient(
+                    ellipse at 15% 55%,
+                    rgba(60,135,170,.08),
+                    transparent 45%
+                ),
+                linear-gradient(
+                    180deg,
+                    #081724 0%,
+                    #07131F 48%,
+                    #040A11 100%
+                ) !important;
+        }
+
+
+        body.winter-theme .app,
+        body.winter-theme .wrap,
+        body.winter-theme .main,
+        body.winter-theme .content {
+
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(8,23,36,.96),
+                    rgba(4,10,17,.98)
+                ) !important;
+        }
+
+
+        /* =====================================================
            FOCUS
-           ----------------------------------------------------- */
-
-        body.arctic-theme .selector,
-        body.forest-theme .selector,
-        body.storm-theme .selector,
-        body.autumn-theme .selector,
-        body.winter-theme .selector {
-            border-color: var(--af-border) !important;
-        }
+        ===================================================== */
 
         body.arctic-theme .selector.focus,
         body.forest-theme .selector.focus,
         body.storm-theme .selector.focus,
         body.autumn-theme .selector.focus,
         body.winter-theme .selector.focus {
+
             background:
                 linear-gradient(
                     135deg,
@@ -229,34 +362,48 @@
                 ) !important;
 
             color: #071015 !important;
-            border-color: transparent !important;
+
+            border-color:
+                transparent !important;
+
+            transform: none !important;
+
+            transition: none !important;
+
+            backdrop-filter: none !important;
+
+            -webkit-backdrop-filter:
+                none !important;
         }
 
 
-        /* -----------------------------------------------------
-           CARDS
-           ----------------------------------------------------- */
+        /* =====================================================
+           CARD FOCUS
+        ===================================================== */
 
         body.arctic-theme .card.focus .card__view,
         body.forest-theme .card.focus .card__view,
         body.storm-theme .card.focus .card__view,
         body.autumn-theme .card.focus .card__view,
         body.winter-theme .card.focus .card__view {
+
             box-shadow:
                 0 0 0 2px var(--af-border),
-                0 8px 30px rgba(0,0,0,.35) !important;
+                0 8px 30px rgba(0,0,0,.38)
+                !important;
         }
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            SETTINGS
-           ----------------------------------------------------- */
+        ===================================================== */
 
         body.arctic-theme .settings-param__value,
         body.forest-theme .settings-param__value,
         body.storm-theme .settings-param__value,
         body.autumn-theme .settings-param__value,
         body.winter-theme .settings-param__value {
+
             background:
                 linear-gradient(
                     135deg,
@@ -266,107 +413,115 @@
         }
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            PLAYER PROGRESS
-           ----------------------------------------------------- */
+        ===================================================== */
 
         body.arctic-theme .player-panel__progress,
         body.arctic-theme .player-panel__progress-bar,
         body.arctic-theme .player-progress,
+
         body.forest-theme .player-panel__progress,
         body.forest-theme .player-panel__progress-bar,
         body.forest-theme .player-progress,
+
         body.storm-theme .player-panel__progress,
         body.storm-theme .player-panel__progress-bar,
         body.storm-theme .player-progress,
+
         body.autumn-theme .player-panel__progress,
         body.autumn-theme .player-panel__progress-bar,
         body.autumn-theme .player-progress,
+
         body.winter-theme .player-panel__progress,
         body.winter-theme .player-panel__progress-bar,
         body.winter-theme .player-progress {
-            background: var(--af-progress) !important;
+
+            background:
+                var(--af-progress) !important;
         }
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            EXTENSIONS
-           ----------------------------------------------------- */
+        ===================================================== */
 
         body.arctic-theme .extensions__item,
         body.forest-theme .extensions__item,
         body.storm-theme .extensions__item,
         body.autumn-theme .extensions__item,
         body.winter-theme .extensions__item {
-            background: var(--af-ext) !important;
+
+            background:
+                var(--af-ext) !important;
         }
+
 
         body.arctic-theme .extensions__item.focus,
         body.forest-theme .extensions__item.focus,
         body.storm-theme .extensions__item.focus,
         body.autumn-theme .extensions__item.focus,
         body.winter-theme .extensions__item.focus {
-            background: var(--af-ext-focus) !important;
+
+            background:
+                var(--af-ext-focus) !important;
         }
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            TORRENTS
-           ----------------------------------------------------- */
+        ===================================================== */
 
         body.arctic-theme .torrent-item__badge,
         body.forest-theme .torrent-item__badge,
         body.storm-theme .torrent-item__badge,
         body.autumn-theme .torrent-item__badge,
         body.winter-theme .torrent-item__badge {
-            color: var(--af-torrent) !important;
+
+            color:
+                var(--af-torrent) !important;
         }
+
 
         body.arctic-theme .torrent-item.focus,
         body.forest-theme .torrent-item.focus,
         body.storm-theme .torrent-item.focus,
         body.autumn-theme .torrent-item.focus,
         body.winter-theme .torrent-item.focus {
-            background: var(--af-torrent-focus) !important;
+
+            background:
+                var(--af-torrent-focus) !important;
         }
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            IPTV
-           ----------------------------------------------------- */
+        ===================================================== */
 
         body.arctic-theme .iptv-item.focus,
         body.forest-theme .iptv-item.focus,
         body.storm-theme .iptv-item.focus,
         body.autumn-theme .iptv-item.focus,
         body.winter-theme .iptv-item.focus {
-            background: var(--af-iptv-focus) !important;
+
+            background:
+                var(--af-iptv-focus) !important;
         }
 
 
-        /* -----------------------------------------------------
-           NO GLASS / NO MOVING FOCUS
-           ----------------------------------------------------- */
-
-        body.arctic-theme .selector.focus,
-        body.forest-theme .selector.focus,
-        body.storm-theme .selector.focus,
-        body.autumn-theme .selector.focus,
-        body.winter-theme .selector.focus {
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            transform: none !important;
-            transition: none !important;
-        }
-
-
-        /* -----------------------------------------------------
+        /* =====================================================
            LIVE LAYER
-           ----------------------------------------------------- */
+        ===================================================== */
 
         #${LIVE_ID} {
+
             position: fixed;
-            inset: 0;
+
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+
             width: 100vw;
             height: 100vh;
 
@@ -375,22 +530,19 @@
             z-index: 999999;
 
             overflow: hidden;
-
-            transition: opacity .35s ease;
-        }
-
-        #${LIVE_ID}.af-hidden {
-            display: none !important;
         }
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            COMMON MIST
-           ----------------------------------------------------- */
+        ===================================================== */
 
         .af-mist {
+
             position: absolute;
+
             left: -15%;
+
             width: 130%;
             height: 30%;
 
@@ -398,62 +550,82 @@
 
             filter: blur(35px);
 
-            opacity: .12;
+            opacity: .13;
 
             animation:
-                af-mist-move 28s ease-in-out infinite alternate;
+                af-mist-move
+                28s ease-in-out infinite alternate;
         }
+
 
         .af-mist.m1 {
             top: 18%;
         }
 
+
         .af-mist.m2 {
+
             top: 50%;
+
             animation-duration: 38s;
-            animation-direction: alternate-reverse;
+
+            animation-direction:
+                alternate-reverse;
         }
 
+
         .af-mist.m3 {
+
             top: 76%;
+
             animation-duration: 46s;
         }
 
+
         @keyframes af-mist-move {
+
             from {
-                transform: translateX(-7%);
+                transform:
+                    translateX(-7%);
             }
 
             to {
-                transform: translateX(7%);
+                transform:
+                    translateX(7%);
             }
         }
 
 
         /* =====================================================
-           ARCTIC LIVE
-           ===================================================== */
+           ARCTIC
+        ===================================================== */
 
         body.arctic-theme #${LIVE_ID} {
+
             background:
                 radial-gradient(
                     ellipse at 50% 100%,
-                    rgba(40,130,155,.08),
+                    rgba(40,130,155,.10),
                     transparent 65%
                 );
         }
 
-        body.arctic-theme #${LIVE_ID} .af-mist {
+
+        body.arctic-theme #${LIVE_ID}
+        .af-mist {
+
             background:
                 radial-gradient(
                     ellipse,
-                    rgba(140,220,235,.45),
+                    rgba(140,220,235,.48),
                     rgba(100,180,200,.08) 45%,
                     transparent 72%
                 );
         }
 
+
         .af-arctic-particle {
+
             position: absolute;
 
             width: 2px;
@@ -461,20 +633,26 @@
 
             border-radius: 50%;
 
-            background: rgba(220,250,255,.55);
+            background:
+                rgba(220,250,255,.58);
 
             box-shadow:
-                0 0 5px rgba(150,230,245,.5);
+                0 0 5px
+                rgba(150,230,245,.5);
 
             animation:
-                af-arctic-float linear infinite;
+                af-arctic-float
+                linear infinite;
         }
 
+
         @keyframes af-arctic-float {
+
             0% {
                 transform:
                     translate3d(0,110vh,0)
                     scale(.5);
+
                 opacity: 0;
             }
 
@@ -490,35 +668,42 @@
                 transform:
                     translate3d(70px,-15vh,0)
                     scale(1.1);
+
                 opacity: 0;
             }
         }
 
 
         /* =====================================================
-           DARK FOREST
-           ===================================================== */
+           FOREST
+        ===================================================== */
 
         body.forest-theme #${LIVE_ID} {
+
             background:
                 radial-gradient(
                     ellipse at 50% 100%,
-                    rgba(28,100,58,.08),
+                    rgba(28,100,58,.10),
                     transparent 65%
                 );
         }
 
-        body.forest-theme #${LIVE_ID} .af-mist {
+
+        body.forest-theme #${LIVE_ID}
+        .af-mist {
+
             background:
                 radial-gradient(
                     ellipse,
-                    rgba(75,150,100,.32),
+                    rgba(75,150,100,.35),
                     rgba(35,100,60,.05) 48%,
                     transparent 72%
                 );
         }
 
+
         .af-forest-particle {
+
             position: absolute;
 
             width: 2px;
@@ -526,19 +711,25 @@
 
             border-radius: 50%;
 
-            background: rgba(100,190,125,.25);
+            background:
+                rgba(100,190,125,.28);
 
             box-shadow:
-                0 0 5px rgba(70,180,110,.25);
+                0 0 5px
+                rgba(70,180,110,.25);
 
             animation:
-                af-forest-float linear infinite;
+                af-forest-float
+                linear infinite;
         }
 
+
         @keyframes af-forest-float {
+
             0% {
                 transform:
                     translate3d(0,105vh,0);
+
                 opacity: 0;
             }
 
@@ -553,6 +744,7 @@
             100% {
                 transform:
                     translate3d(-45px,-10vh,0);
+
                 opacity: 0;
             }
         }
@@ -560,40 +752,48 @@
 
         /* =====================================================
            STORM
-           ===================================================== */
+        ===================================================== */
 
         body.storm-theme #${LIVE_ID} {
+
             background:
                 radial-gradient(
                     ellipse at 50% 15%,
-                    rgba(70,95,120,.14),
+                    rgba(70,95,120,.16),
                     transparent 55%
                 );
         }
 
+
         .af-storm-sky {
+
             position: absolute;
+
             inset: 0;
 
             background:
                 radial-gradient(
                     ellipse at 20% 20%,
-                    rgba(110,125,145,.13),
+                    rgba(110,125,145,.15),
                     transparent 30%
                 ),
+
                 radial-gradient(
                     ellipse at 75% 25%,
-                    rgba(85,105,130,.14),
+                    rgba(85,105,130,.16),
                     transparent 34%
                 ),
+
                 radial-gradient(
                     ellipse at 50% 60%,
-                    rgba(40,60,80,.10),
+                    rgba(40,60,80,.12),
                     transparent 55%
                 );
         }
 
+
         .af-storm-cloud {
+
             position: absolute;
 
             border-radius: 50%;
@@ -603,55 +803,74 @@
             background:
                 radial-gradient(
                     ellipse,
-                    rgba(100,115,130,.22),
-                    rgba(40,50,65,.11) 45%,
+                    rgba(100,115,130,.25),
+                    rgba(40,50,65,.12) 45%,
                     transparent 72%
                 );
 
             animation:
-                af-cloud-drift 45s ease-in-out infinite alternate;
+                af-cloud-drift
+                45s ease-in-out infinite alternate;
         }
 
+
         .af-storm-cloud.c1 {
+
             width: 75vw;
             height: 30vh;
+
             left: -15vw;
             top: 3vh;
         }
 
+
         .af-storm-cloud.c2 {
+
             width: 80vw;
             height: 34vh;
+
             right: -20vw;
             top: 16vh;
 
             animation-duration: 58s;
-            animation-direction: alternate-reverse;
+
+            animation-direction:
+                alternate-reverse;
         }
 
+
         .af-storm-cloud.c3 {
+
             width: 100vw;
             height: 28vh;
+
             left: 10vw;
             top: 46vh;
 
             animation-duration: 67s;
         }
 
+
         @keyframes af-cloud-drift {
+
             from {
-                transform: translateX(-4%);
+                transform:
+                    translateX(-4%);
             }
 
             to {
-                transform: translateX(4%);
+                transform:
+                    translateX(4%);
             }
         }
 
+
         .af-storm-fog {
+
             position: absolute;
 
             left: -15%;
+
             width: 130%;
             height: 24%;
 
@@ -662,40 +881,56 @@
             background:
                 radial-gradient(
                     ellipse,
-                    rgba(120,145,165,.12),
+                    rgba(120,145,165,.14),
                     transparent 70%
                 );
 
             animation:
-                af-fog-drift 34s ease-in-out infinite alternate;
+                af-fog-drift
+                34s ease-in-out infinite alternate;
         }
+
 
         .af-storm-fog.f1 {
             top: 40%;
         }
 
+
         .af-storm-fog.f2 {
+
             top: 67%;
+
             animation-duration: 48s;
-            animation-direction: alternate-reverse;
+
+            animation-direction:
+                alternate-reverse;
         }
 
+
         .af-storm-fog.f3 {
+
             top: 82%;
+
             animation-duration: 55s;
         }
 
+
         @keyframes af-fog-drift {
+
             from {
-                transform: translateX(-6%);
+                transform:
+                    translateX(-6%);
             }
 
             to {
-                transform: translateX(6%);
+                transform:
+                    translateX(6%);
             }
         }
 
+
         .af-rain {
+
             position: absolute;
 
             width: 1px;
@@ -707,18 +942,23 @@
                 linear-gradient(
                     to bottom,
                     transparent,
-                    rgba(185,220,235,.28)
+                    rgba(185,220,235,.30)
                 );
 
             animation:
-                af-rain-fall linear infinite;
+                af-rain-fall
+                linear infinite;
         }
 
+
         @keyframes af-rain-fall {
+
             0% {
+
                 transform:
                     translate3d(0,-15vh,0)
                     rotate(12deg);
+
                 opacity: 0;
             }
 
@@ -727,37 +967,45 @@
             }
 
             92% {
-                opacity: .3;
+                opacity: .30;
             }
 
             100% {
+
                 transform:
                     translate3d(-100px,115vh,0)
                     rotate(12deg);
+
                 opacity: 0;
             }
         }
 
+
         .af-lightning {
+
             position: absolute;
+
             inset: 0;
 
             background:
-                rgba(215,240,255,.10);
+                rgba(215,240,255,.11);
 
             opacity: 0;
 
             animation:
-                af-lightning 23s infinite;
+                af-lightning
+                23s infinite;
         }
 
+
         @keyframes af-lightning {
+
             0%, 91%, 100% {
                 opacity: 0;
             }
 
             92% {
-                opacity: .16;
+                opacity: .18;
             }
 
             92.5% {
@@ -765,7 +1013,7 @@
             }
 
             93% {
-                opacity: .08;
+                opacity: .09;
             }
 
             93.5% {
@@ -776,121 +1024,179 @@
 
         /* =====================================================
            AUTUMN
-           ===================================================== */
+        ===================================================== */
 
         body.autumn-theme #${LIVE_ID} {
+
             background:
                 radial-gradient(
-                    ellipse at 50% 85%,
-                    rgba(170,90,35,.08),
-                    transparent 68%
+                    ellipse at 50% 25%,
+                    rgba(205,120,45,.09),
+                    transparent 55%
+                ),
+
+                radial-gradient(
+                    ellipse at 50% 100%,
+                    rgba(150,70,25,.10),
+                    transparent 65%
                 );
         }
 
-        body.autumn-theme #${LIVE_ID} .af-mist {
+
+        body.autumn-theme #${LIVE_ID}
+        .af-mist {
+
             background:
                 radial-gradient(
                     ellipse,
-                    rgba(190,120,70,.28),
-                    rgba(110,65,35,.07) 45%,
+                    rgba(200,125,65,.34),
+                    rgba(110,60,30,.08) 46%,
                     transparent 72%
                 );
         }
 
-        .af-autumn-glow {
-            position: absolute;
-            width: 70vw;
-            height: 45vh;
 
-            left: 15vw;
-            top: 5vh;
+        .af-autumn-glow {
+
+            position: absolute;
+
+            width: 75vw;
+            height: 50vh;
+
+            left: 12vw;
+            top: 2vh;
 
             border-radius: 50%;
 
             background:
                 radial-gradient(
                     ellipse,
-                    rgba(205,130,55,.07),
+                    rgba(215,135,55,.10),
                     transparent 70%
                 );
 
             filter: blur(25px);
 
             animation:
-                af-autumn-glow 18s ease-in-out infinite alternate;
+                af-autumn-glow
+                18s ease-in-out infinite alternate;
         }
 
+
         @keyframes af-autumn-glow {
+
             from {
-                transform: translate(-3%,0) scale(.95);
+
+                transform:
+                    translate(-3%,0)
+                    scale(.95);
+
                 opacity: .55;
             }
 
             to {
-                transform: translate(3%,2%) scale(1.05);
-                opacity: .85;
+
+                transform:
+                    translate(3%,2%)
+                    scale(1.05);
+
+                opacity: .90;
             }
         }
 
+
+        /* =====================================================
+           AUTUMN LEAVES
+        ===================================================== */
+
         .af-leaf {
+
             position: absolute;
 
-            width: 7px;
-            height: 12px;
+            width: 9px;
+            height: 14px;
 
             border-radius:
                 75% 20% 75% 20%;
 
             background:
-                rgba(190,105,45,.52);
+                rgba(196,104,42,.70);
 
             box-shadow:
-                0 0 5px rgba(185,105,45,.14);
+                0 0 6px
+                rgba(185,95,35,.20);
 
             animation:
-                af-leaf-fall linear infinite;
+                af-leaf-fall
+                linear infinite;
         }
+
 
         .af-leaf:nth-child(3n) {
-            width: 6px;
-            height: 10px;
-            background: rgba(215,140,60,.46);
+
+            width: 7px;
+            height: 11px;
+
+            background:
+                rgba(225,145,55,.62);
         }
+
 
         .af-leaf:nth-child(4n) {
-            width: 8px;
-            height: 13px;
-            background: rgba(145,75,35,.42);
+
+            width: 10px;
+            height: 15px;
+
+            background:
+                rgba(145,72,30,.60);
         }
 
+
+        .af-leaf:nth-child(5n) {
+
+            width: 6px;
+            height: 9px;
+
+            background:
+                rgba(236,165,70,.58);
+        }
+
+
         @keyframes af-leaf-fall {
+
             0% {
+
                 transform:
                     translate3d(0,-15vh,0)
                     rotate(0deg);
+
                 opacity: 0;
             }
 
             10% {
-                opacity: .65;
+                opacity: .78;
             }
 
             45% {
+
                 transform:
-                    translate3d(65px,45vh,0)
+                    translate3d(75px,45vh,0)
                     rotate(150deg);
             }
 
             75% {
+
                 transform:
-                    translate3d(-60px,80vh,0)
-                    rotate(280deg);
+                    translate3d(-65px,80vh,0)
+                    rotate(290deg);
             }
 
             100% {
+
                 transform:
-                    translate3d(80px,115vh,0)
-                    rotate(430deg);
+                    translate3d(90px,115vh,0)
+                    rotate(440deg);
+
                 opacity: 0;
             }
         }
@@ -898,34 +1204,46 @@
 
         /* =====================================================
            WINTER
-           ===================================================== */
+        ===================================================== */
 
         body.winter-theme #${LIVE_ID} {
+
             background:
                 radial-gradient(
-                    ellipse at 50% 15%,
-                    rgba(160,210,235,.08),
-                    transparent 60%
+                    ellipse at 50% 10%,
+                    rgba(170,225,250,.11),
+                    transparent 58%
+                ),
+
+                radial-gradient(
+                    ellipse at 50% 100%,
+                    rgba(90,170,205,.08),
+                    transparent 65%
                 );
         }
 
-        body.winter-theme #${LIVE_ID} .af-mist {
+
+        body.winter-theme #${LIVE_ID}
+        .af-mist {
+
             background:
                 radial-gradient(
                     ellipse,
-                    rgba(175,220,235,.30),
-                    rgba(120,175,195,.06) 46%,
+                    rgba(180,225,245,.34),
+                    rgba(120,180,205,.07) 46%,
                     transparent 72%
                 );
         }
 
+
         .af-winter-glow {
+
             position: absolute;
 
-            width: 65vw;
+            width: 75vw;
             height: 55vh;
 
-            left: 18vw;
+            left: 12vw;
             top: -10vh;
 
             border-radius: 50%;
@@ -933,86 +1251,171 @@
             background:
                 radial-gradient(
                     ellipse,
-                    rgba(180,225,245,.08),
+                    rgba(190,235,250,.12),
                     transparent 68%
                 );
 
             filter: blur(25px);
-        }
-
-        .af-snow {
-            position: absolute;
-
-            width: 4px;
-            height: 4px;
-
-            border-radius: 50%;
-
-            background:
-                rgba(235,250,255,.62);
-
-            box-shadow:
-                0 0 5px rgba(210,240,250,.38);
 
             animation:
-                af-snow-fall linear infinite;
+                af-winter-glow
+                20s ease-in-out infinite alternate;
         }
+
+
+        @keyframes af-winter-glow {
+
+            from {
+                transform:
+                    scale(.96);
+                opacity: .50;
+            }
+
+            to {
+                transform:
+                    scale(1.05);
+                opacity: .90;
+            }
+        }
+
+
+        /* =====================================================
+           REAL SNOWFLAKES
+        ===================================================== */
+
+        .af-snow {
+
+            position: absolute;
+
+            width: auto;
+            height: auto;
+
+            background: none !important;
+
+            border: none;
+
+            color:
+                rgba(240,252,255,.82);
+
+            font-family:
+                Arial,
+                sans-serif;
+
+            font-size: 13px;
+
+            line-height: 1;
+
+            text-shadow:
+                0 0 5px
+                rgba(190,235,255,.65),
+
+                0 0 10px
+                rgba(150,220,245,.30);
+
+            animation:
+                af-snow-fall
+                linear infinite;
+        }
+
 
         .af-snow.small {
-            width: 2px;
-            height: 2px;
-            opacity: .45;
+
+            font-size: 8px;
+
+            opacity: .60;
         }
+
+
+        .af-snow.medium {
+
+            font-size: 13px;
+
+            opacity: .80;
+        }
+
 
         .af-snow.big {
-            width: 6px;
-            height: 6px;
-            opacity: .55;
+
+            font-size: 19px;
+
+            opacity: .90;
+
+            text-shadow:
+                0 0 7px
+                rgba(210,245,255,.75),
+
+                0 0 13px
+                rgba(150,220,245,.40);
         }
 
+
         @keyframes af-snow-fall {
+
             0% {
+
                 transform:
-                    translate3d(0,-10vh,0)
+                    translate3d(0,-12vh,0)
                     rotate(0deg);
+
                 opacity: 0;
             }
 
-            10% {
-                opacity: .7;
+            8% {
+                opacity: .85;
             }
 
-            50% {
+            30% {
+
                 transform:
-                    translate3d(45px,50vh,0)
-                    rotate(180deg);
+                    translate3d(45px,30vh,0)
+                    rotate(75deg);
+            }
+
+            55% {
+
+                transform:
+                    translate3d(-35px,58vh,0)
+                    rotate(170deg);
+            }
+
+            78% {
+
+                transform:
+                    translate3d(60px,82vh,0)
+                    rotate(270deg);
             }
 
             100% {
+
                 transform:
-                    translate3d(-55px,112vh,0)
-                    rotate(360deg);
+                    translate3d(-55px,115vh,0)
+                    rotate(380deg);
+
                 opacity: 0;
             }
         }
 
 
-        /* -----------------------------------------------------
-           MOBILE PERFORMANCE
-           ----------------------------------------------------- */
+        /* =====================================================
+           MOBILE
+        ===================================================== */
 
         @media (max-width: 700px) {
 
-            #${LIVE_ID} .af-storm-cloud {
-                filter: blur(28px);
+            #${LIVE_ID} .af-mist {
+                filter: blur(27px);
             }
 
-            #${LIVE_ID} .af-mist {
-                filter: blur(26px);
+            #${LIVE_ID} .af-storm-cloud {
+                filter: blur(29px);
             }
 
             #${LIVE_ID} .af-storm-fog {
                 filter: blur(25px);
+            }
+
+            #${LIVE_ID} .af-leaf {
+                transform-origin: center;
             }
         }
 
@@ -1020,39 +1423,135 @@
 
 
     /* =========================================================
-       CREATE PARTICLES
-       ========================================================= */
+       PARTICLES
+    ========================================================= */
 
-    function createParticles(className, count, type) {
+    function createParticles(
+        className,
+        count,
+        type
+    ) {
+
         var html = '';
 
+        var snowChars = [
+            '❄',
+            '❅',
+            '❆'
+        ];
+
         for (var i = 0; i < count; i++) {
-            var left = Math.random() * 100;
-            var delay = Math.random() * 20;
+
+            var left =
+                Math.random() * 100;
+
+            var top =
+                Math.random() * 100;
+
+            var delay =
+                Math.random() * 20;
+
             var duration;
 
             if (type === 'storm') {
-                duration = 1.8 + Math.random() * 2.5;
+
+                duration =
+                    1.8 +
+                    Math.random() * 2.5;
+
             } else if (type === 'snow') {
-                duration = 8 + Math.random() * 12;
+
+                duration =
+                    8 +
+                    Math.random() * 12;
+
             } else if (type === 'leaf') {
-                duration = 8 + Math.random() * 14;
+
+                duration =
+                    8 +
+                    Math.random() * 14;
+
             } else if (type === 'forest') {
-                duration = 12 + Math.random() * 16;
+
+                duration =
+                    12 +
+                    Math.random() * 16;
+
             } else {
-                duration = 10 + Math.random() * 18;
+
+                duration =
+                    10 +
+                    Math.random() * 18;
             }
 
-            var top = Math.random() * 100;
 
-            html +=
-                '<i class="' + className + '"' +
-                ' style="' +
-                'left:' + left + '%;' +
-                'top:' + top + '%;' +
-                'animation-delay:-' + delay + 's;' +
-                'animation-duration:' + duration + 's;' +
-                '"></i>';
+            /* -------------------------------------------------
+               SNOWFLAKES
+            ------------------------------------------------- */
+
+            if (type === 'snow') {
+
+                var snow =
+                    snowChars[
+                        Math.floor(
+                            Math.random() *
+                            snowChars.length
+                        )
+                    ];
+
+                var sizeClass;
+
+                var r =
+                    Math.random();
+
+                if (r < .28) {
+                    sizeClass = 'small';
+                } else if (r < .82) {
+                    sizeClass = 'medium';
+                } else {
+                    sizeClass = 'big';
+                }
+
+                html +=
+                    '<i class="' +
+                    className +
+                    ' ' +
+                    sizeClass +
+                    '"' +
+
+                    ' style="' +
+                    'left:' + left + '%;' +
+                    'top:' + top + '%;' +
+                    'animation-delay:-' +
+                    delay +
+                    's;' +
+                    'animation-duration:' +
+                    duration +
+                    's;' +
+                    '">' +
+
+                    snow +
+
+                    '</i>';
+
+            } else {
+
+                html +=
+                    '<i class="' +
+                    className +
+                    '"' +
+
+                    ' style="' +
+                    'left:' + left + '%;' +
+                    'top:' + top + '%;' +
+                    'animation-delay:-' +
+                    delay +
+                    's;' +
+                    'animation-duration:' +
+                    duration +
+                    's;' +
+                    '"></i>';
+            }
         }
 
         return html;
@@ -1061,7 +1560,7 @@
 
     /* =========================================================
        LIVE LAYER
-       ========================================================= */
+    ========================================================= */
 
     function createLiveLayer(theme) {
 
@@ -1069,48 +1568,85 @@
             return;
         }
 
-        var layer = document.createElement('div');
+        var layer =
+            document.createElement('div');
 
         layer.id = LIVE_ID;
 
         var html = '';
 
+
+        /* -----------------------------------------------------
+           ARCTIC
+        ----------------------------------------------------- */
+
         if (theme === 'arctic') {
 
-            html += '<div class="af-mist m1"></div>';
-            html += '<div class="af-mist m2"></div>';
-            html += '<div class="af-mist m3"></div>';
+            html +=
+                '<div class="af-mist m1"></div>';
+
+            html +=
+                '<div class="af-mist m2"></div>';
+
+            html +=
+                '<div class="af-mist m3"></div>';
 
             html += createParticles(
                 'af-arctic-particle',
                 32,
                 'arctic'
             );
+        }
 
-        } else if (theme === 'forest') {
 
-            html += '<div class="af-mist m1"></div>';
-            html += '<div class="af-mist m2"></div>';
-            html += '<div class="af-mist m3"></div>';
+        /* -----------------------------------------------------
+           FOREST
+        ----------------------------------------------------- */
+
+        else if (theme === 'forest') {
+
+            html +=
+                '<div class="af-mist m1"></div>';
+
+            html +=
+                '<div class="af-mist m2"></div>';
+
+            html +=
+                '<div class="af-mist m3"></div>';
 
             html += createParticles(
                 'af-forest-particle',
                 15,
                 'forest'
             );
+        }
 
-        } else if (theme === 'storm') {
 
-            html += '<div class="af-storm-sky"></div>';
+        /* -----------------------------------------------------
+           STORM
+        ----------------------------------------------------- */
+
+        else if (theme === 'storm') {
 
             html +=
-                '<div class="af-storm-cloud c1"></div>' +
-                '<div class="af-storm-cloud c2"></div>' +
+                '<div class="af-storm-sky"></div>';
+
+            html +=
+                '<div class="af-storm-cloud c1"></div>';
+
+            html +=
+                '<div class="af-storm-cloud c2"></div>';
+
+            html +=
                 '<div class="af-storm-cloud c3"></div>';
 
             html +=
-                '<div class="af-storm-fog f1"></div>' +
-                '<div class="af-storm-fog f2"></div>' +
+                '<div class="af-storm-fog f1"></div>';
+
+            html +=
+                '<div class="af-storm-fog f2"></div>';
+
+            html +=
                 '<div class="af-storm-fog f3"></div>';
 
             html += createParticles(
@@ -1119,37 +1655,62 @@
                 'storm'
             );
 
-            html += '<div class="af-lightning"></div>';
+            html +=
+                '<div class="af-lightning"></div>';
+        }
 
-        } else if (theme === 'autumn') {
 
-            html += '<div class="af-mist m1"></div>';
-            html += '<div class="af-mist m2"></div>';
-            html += '<div class="af-mist m3"></div>';
+        /* -----------------------------------------------------
+           AUTUMN
+        ----------------------------------------------------- */
 
-            html += '<div class="af-autumn-glow"></div>';
+        else if (theme === 'autumn') {
+
+            html +=
+                '<div class="af-mist m1"></div>';
+
+            html +=
+                '<div class="af-mist m2"></div>';
+
+            html +=
+                '<div class="af-mist m3"></div>';
+
+            html +=
+                '<div class="af-autumn-glow"></div>';
 
             html += createParticles(
                 'af-leaf',
-                28,
+                30,
                 'leaf'
             );
+        }
 
-        } else if (theme === 'winter') {
 
-            html += '<div class="af-mist m1"></div>';
-            html += '<div class="af-mist m2"></div>';
-            html += '<div class="af-mist m3"></div>';
+        /* -----------------------------------------------------
+           WINTER
+        ----------------------------------------------------- */
 
-            html += '<div class="af-winter-glow"></div>';
+        else if (theme === 'winter') {
+
+            html +=
+                '<div class="af-mist m1"></div>';
+
+            html +=
+                '<div class="af-mist m2"></div>';
+
+            html +=
+                '<div class="af-mist m3"></div>';
+
+            html +=
+                '<div class="af-winter-glow"></div>';
 
             html += createParticles(
                 'af-snow',
-                36,
+                42,
                 'snow'
             );
-
         }
+
 
         layer.innerHTML = html;
 
@@ -1160,373 +1721,8 @@
 
 
     /* =========================================================
-       PLAYER DETECTION
-       ========================================================= */
-
-    function isVisibleElement(el) {
-
-        if (!el) {
-            return false;
-        }
-
-        if (el === document.body ||
-            el === document.documentElement) {
-            return false;
-        }
-
-        var style;
-
-        try {
-            style = window.getComputedStyle(el);
-        } catch (e) {
-            return false;
-        }
-
-        if (!style) {
-            return false;
-        }
-
-        if (style.display === 'none') {
-            return false;
-        }
-
-        if (style.visibility === 'hidden') {
-            return false;
-        }
-
-        if (parseFloat(style.opacity || '1') <= 0.01) {
-            return false;
-        }
-
-        if (
-            el.classList &&
-            (
-                el.classList.contains('hide') ||
-                el.classList.contains('hidden') ||
-                el.classList.contains('player--hidden')
-            )
-        ) {
-            return false;
-        }
-
-        var rect = el.getBoundingClientRect();
-
-        if (!rect) {
-            return false;
-        }
-
-        return (
-            rect.width > 100 &&
-            rect.height > 100
-        );
-    }
-
-
-    function isPlayerOpen() {
-
-        var selectors = [
-            '.player',
-            '.player-screen',
-            '.player__screen',
-            '.player__body',
-            '.player-video',
-            '.player__video',
-            '.video-container',
-            '.player-panel'
-        ];
-
-        for (var i = 0; i < selectors.length; i++) {
-
-            var elements;
-
-            try {
-                elements = document.querySelectorAll(
-                    selectors[i]
-                );
-            } catch (e) {
-                continue;
-            }
-
-            for (var j = 0; j < elements.length; j++) {
-
-                var el = elements[j];
-
-                if (!isVisibleElement(el)) {
-                    continue;
-                }
-
-                /*
-                 * Don't let our own live layer count as a player.
-                 */
-                if (
-                    el.id === LIVE_ID ||
-                    el.closest('#' + LIVE_ID)
-                ) {
-                    continue;
-                }
-
-                /*
-                 * player-panel alone may remain in DOM.
-                 * It is only considered a player if a video
-                 * element is actually present/visible.
-                 */
-                if (
-                    selectors[i] === '.player-panel'
-                ) {
-                    var panelVideo =
-                        el.querySelector('video');
-
-                    if (
-                        panelVideo &&
-                        isVisibleElement(panelVideo)
-                    ) {
-                        return true;
-                    }
-
-                    continue;
-                }
-
-                return true;
-            }
-        }
-
-
-        /*
-         * Additional fallback:
-         * visible video element.
-         */
-
-        var videos = document.querySelectorAll('video');
-
-        for (var v = 0; v < videos.length; v++) {
-
-            var video = videos[v];
-
-            if (!isVisibleElement(video)) {
-                continue;
-            }
-
-            var rect = video.getBoundingClientRect();
-
-            if (
-                rect.width > 150 &&
-                rect.height > 100
-            ) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-
-    /* =========================================================
-       SHOW / HIDE LIVE LAYER
-       ========================================================= */
-
-    function updateLiveVisibility() {
-
-        var layer =
-            document.getElementById(LIVE_ID);
-
-        if (!layer) {
-            return;
-        }
-
-        /*
-         * Main protection against effects over video.
-         */
-
-        if (isPlayerOpen()) {
-
-            if (!layer.classList.contains('af-hidden')) {
-                layer.classList.add('af-hidden');
-            }
-
-        } else {
-
-            if (layer.classList.contains('af-hidden')) {
-                layer.classList.remove('af-hidden');
-            }
-        }
-    }
-
-
-    /* =========================================================
-       PLAYER MONITOR
-       ========================================================= */
-
-    function startPlayerMonitor() {
-
-        stopPlayerMonitor();
-
-        /*
-         * Fast initial check.
-         */
-
-        updateLiveVisibility();
-
-        /*
-         * MutationObserver reacts quickly when Lampa opens
-         * or closes the player.
-         */
-
-        if (window.MutationObserver) {
-
-            mutationObserver =
-                new MutationObserver(function () {
-
-                    clearTimeout(playerCheckTimer);
-
-                    playerCheckTimer =
-                        setTimeout(
-                            updateLiveVisibility,
-                            80
-                        );
-                });
-
-            try {
-
-                mutationObserver.observe(
-                    document.body,
-                    {
-                        subtree: true,
-                        childList: true,
-                        attributes: true,
-                        attributeFilter: [
-                            'class',
-                            'style'
-                        ]
-                    }
-                );
-
-            } catch (e) {}
-        }
-
-
-        /*
-         * Fallback check.
-         * It also catches player implementations which do not
-         * change the DOM in a way MutationObserver can detect.
-         */
-
-        playerCheckTimer =
-            setInterval(
-                updateLiveVisibility,
-                700
-            );
-    }
-
-
-    function stopPlayerMonitor() {
-
-        if (mutationObserver) {
-
-            try {
-                mutationObserver.disconnect();
-            } catch (e) {}
-
-            mutationObserver = null;
-        }
-
-        if (playerCheckTimer) {
-
-            clearInterval(playerCheckTimer);
-            clearTimeout(playerCheckTimer);
-
-            playerCheckTimer = null;
-        }
-    }
-
-
-    /* =========================================================
-       LAMPA PLAYER EVENTS
-       ========================================================= */
-
-    function setupPlayerEvents() {
-
-        if (
-            typeof Lampa === 'undefined' ||
-            !Lampa.Listener ||
-            !Lampa.Listener.follow
-        ) {
-            return;
-        }
-
-        try {
-
-            Lampa.Listener.follow(
-                'player',
-                function (event) {
-
-                    var type =
-                        String(
-                            event &&
-                            event.type
-                                ? event.type
-                                : ''
-                        ).toLowerCase();
-
-
-                    /*
-                     * Immediately hide when player starts.
-                     */
-
-                    if (
-                        type.indexOf('start') !== -1 ||
-                        type.indexOf('open') !== -1 ||
-                        type.indexOf('ready') !== -1 ||
-                        type.indexOf('play') !== -1
-                    ) {
-
-                        var layer =
-                            document.getElementById(LIVE_ID);
-
-                        if (layer) {
-                            layer.classList.add(
-                                'af-hidden'
-                            );
-                        }
-
-                        return;
-                    }
-
-
-                    /*
-                     * After player closes, wait a little for
-                     * Lampa to remove its player DOM.
-                     */
-
-                    if (
-                        type.indexOf('close') !== -1 ||
-                        type.indexOf('destroy') !== -1 ||
-                        type.indexOf('stop') !== -1 ||
-                        type.indexOf('end') !== -1 ||
-                        type.indexOf('exit') !== -1 ||
-                        type.indexOf('back') !== -1 ||
-                        type.indexOf('complite') !== -1
-                    ) {
-
-                        setTimeout(
-                            updateLiveVisibility,
-                            150
-                        );
-
-                        setTimeout(
-                            updateLiveVisibility,
-                            500
-                        );
-                    }
-                }
-            );
-
-        } catch (e) {}
-    }
-
-
-    /* =========================================================
-       APPLY THEMES
-       ========================================================= */
+       APPLY
+    ========================================================= */
 
     function applyArctic() {
 
@@ -1537,8 +1733,6 @@
         addStyle(commonCSS);
 
         createLiveLayer('arctic');
-
-        startPlayerMonitor();
     }
 
 
@@ -1551,8 +1745,6 @@
         addStyle(commonCSS);
 
         createLiveLayer('forest');
-
-        startPlayerMonitor();
     }
 
 
@@ -1565,8 +1757,6 @@
         addStyle(commonCSS);
 
         createLiveLayer('storm');
-
-        startPlayerMonitor();
     }
 
 
@@ -1579,8 +1769,6 @@
         addStyle(commonCSS);
 
         createLiveLayer('autumn');
-
-        startPlayerMonitor();
     }
 
 
@@ -1593,26 +1781,18 @@
         addStyle(commonCSS);
 
         createLiveLayer('winter');
-
-        startPlayerMonitor();
     }
 
 
     function applyDefault() {
 
-        stopPlayerMonitor();
+        /*
+         * ONLY remove our own elements.
+         *
+         * Lampa itself is not modified here.
+         */
 
         removeOurTheme();
-
-        /*
-         * IMPORTANT:
-         *
-         * We don't set any Lampa styles here.
-         * Standard mode simply removes everything added
-         * by this plugin.
-         *
-         * Native Lampa appearance remains untouched.
-         */
     }
 
 
@@ -1621,34 +1801,52 @@
         removeOurTheme();
 
         if (theme === 'default') {
+
             applyDefault();
+
             return;
         }
+
 
         if (theme === 'arctic') {
+
             applyArctic();
+
             return;
         }
+
 
         if (theme === 'forest') {
+
             applyForest();
+
             return;
         }
+
 
         if (theme === 'storm') {
+
             applyStorm();
+
             return;
         }
+
 
         if (theme === 'autumn') {
+
             applyAutumn();
+
             return;
         }
 
+
         if (theme === 'winter') {
+
             applyWinter();
+
             return;
         }
+
 
         applyDefault();
     }
@@ -1656,7 +1854,7 @@
 
     /* =========================================================
        SETTINGS
-       ========================================================= */
+    ========================================================= */
 
     function settings() {
 
@@ -1679,8 +1877,11 @@
                 icon:
                     '<svg xmlns="http://www.w3.org/2000/svg" ' +
                     'viewBox="0 0 24 24">' +
+
                     '<path fill="currentColor" d="' +
+
                     'M12 2 9.5 7H5l3.7 3.2L7 15l5-2.9L17 15l-1.7-4.8L19 7h-4.5L12 2zm0 5.8L13 10h2l-1.6 1.2.6 1.8-2-1.2-2 1.2.6-1.8L9 10h2l1-2.2z"/>' +
+
                     '</svg>'
             });
 
@@ -1697,20 +1898,27 @@
 
                     values: {
 
-                        default: 'Стандартная',
+                        default:
+                            'Стандартная',
 
-                        arctic: 'Arctic Live',
+                        arctic:
+                            'Arctic Live',
 
-                        forest: 'Dark Forest',
+                        forest:
+                            'Dark Forest',
 
-                        storm: '🌩️ Буря',
+                        storm:
+                            '🌩️ Буря',
 
-                        autumn: '🍂 Осень',
+                        autumn:
+                            '🍂 Осень',
 
-                        winter: '❄️ Зима'
+                        winter:
+                            '❄️ Зима'
                     },
 
-                    default: DEFAULT_THEME
+                    default:
+                        DEFAULT_THEME
                 },
 
                 field: {
@@ -1721,44 +1929,50 @@
                         'Выберите оформление Arctic Forest'
                 },
 
-                onChange: function (value) {
+                onChange:
+                    function (value) {
 
-                    saveTheme(value);
+                        saveTheme(value);
 
-                    try {
+                        try {
 
-                        if (typeof Lampa !== 'undefined' &&
-                            Lampa.Noty) {
+                            if (
+                                typeof Lampa !==
+                                'undefined' &&
 
-                            var names = {
+                                Lampa.Noty
+                            ) {
 
-                                default:
-                                    'Стандартная тема',
+                                var names = {
 
-                                arctic:
-                                    'Arctic Live включена',
+                                    default:
+                                        'Стандартная тема',
 
-                                forest:
-                                    'Dark Forest включена',
+                                    arctic:
+                                        'Arctic Live включена',
 
-                                storm:
-                                    '🌩️ Буря включена',
+                                    forest:
+                                        'Dark Forest включена',
 
-                                autumn:
-                                    '🍂 Осень включена',
+                                    storm:
+                                        '🌩️ Буря включена',
 
-                                winter:
-                                    '❄️ Зима включена'
-                            };
+                                    autumn:
+                                        '🍂 Осень включена',
 
-                            Lampa.Noty.show(
-                                names[value] ||
-                                'Тема изменена'
-                            );
-                        }
+                                    winter:
+                                        '❄️ Зима включена'
+                                };
 
-                    } catch (e) {}
-                }
+
+                                Lampa.Noty.show(
+                                    names[value] ||
+                                    'Тема изменена'
+                                );
+                            }
+
+                        } catch (e) {}
+                    }
             });
 
         } catch (e) {
@@ -1773,34 +1987,24 @@
 
     /* =========================================================
        START
-       ========================================================= */
+    ========================================================= */
 
     function startPlugin() {
 
-        /*
-         * First load saved value.
-         */
-
         loadTheme();
-
-
-        /*
-         * Settings are always available.
-         */
 
         settings();
 
 
         /*
-         * IMPORTANT:
-         *
-         * If there is no saved custom theme,
-         * plugin does absolutely nothing.
-         *
-         * Standard Lampa remains exactly as it was.
+         * No saved theme:
+         * do absolutely nothing.
          */
 
-        if (currentTheme === DEFAULT_THEME) {
+        if (
+            currentTheme ===
+            DEFAULT_THEME
+        ) {
 
             console.log(
                 '[Arctic Forest] Standard Lampa mode'
@@ -1811,19 +2015,12 @@
 
 
         /*
-         * If user previously selected a theme,
-         * restore it.
+         * Restore previously selected theme.
          */
 
-        applyTheme(currentTheme);
-
-
-        /*
-         * Player events are installed only when
-         * custom live effects are active.
-         */
-
-        setupPlayerEvents();
+        applyTheme(
+            currentTheme
+        );
 
 
         console.log(
@@ -1835,15 +2032,20 @@
 
     /* =========================================================
        BOOT
-       ========================================================= */
+    ========================================================= */
 
-    if (typeof Lampa === 'undefined') {
+    if (
+        typeof Lampa ===
+        'undefined'
+    ) {
 
         console.log(
             '[Arctic Forest] Lampa not found'
         );
 
-    } else if (window.appready) {
+    } else if (
+        window.appready
+    ) {
 
         startPlugin();
 
@@ -1858,8 +2060,10 @@
 
                 if (
                     event &&
-                    event.type === 'ready'
+                    event.type ===
+                    'ready'
                 ) {
+
                     startPlugin();
                 }
             }
