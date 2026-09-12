@@ -1,1886 +1,2936 @@
 (function () {
-    'use strict';
+    "use strict";
 
-    var COMPONENT = 'arctic_forest';
-    var STORAGE_KEY = 'arctic_forest_theme';
-    var STYLE_ID = 'arctic_forest_style';
-    var LIVE_ID = 'arctic_forest_live';
+    // =========================================================
+    // ARCTIC FOREST
+    // Unified Lampa theme plugin
+    //
+    // Themes:
+    //   default = Standard Lampa
+    //   arctic  = Arctic Live
+    //   forest  = Dark Forest
+    //   storm   = Буря
+    //   autumn  = Осень
+    //   winter  = Зима
+    // =========================================================
 
-    var DEFAULT_THEME = 'default';
+    var COMPONENT = "arctic_forest";
+    var STORAGE_KEY = "arctic_forest_theme";
+
+    var DEFAULT_THEME = "default";
+
     var currentTheme = DEFAULT_THEME;
 
 
-    /* =========================================================
-       LOAD / SAVE
-    ========================================================= */
+    // =========================================================
+    // STORAGE
+    // =========================================================
 
     function loadTheme() {
 
-        var saved = '';
-
         try {
-            saved = Lampa.Storage.get(
+
+            currentTheme = Lampa.Storage.get(
                 STORAGE_KEY,
-                ''
+                DEFAULT_THEME
             );
+
         } catch (e) {
-            saved = '';
+
+            currentTheme = DEFAULT_THEME;
         }
 
-        var allowed = [
-            'default',
-            'arctic',
-            'forest',
-            'storm',
-            'autumn',
-            'winter'
-        ];
+        if (
+            currentTheme !== "arctic" &&
+            currentTheme !== "forest" &&
+            currentTheme !== "storm" &&
+            currentTheme !== "autumn" &&
+            currentTheme !== "winter" &&
+            currentTheme !== "default"
+        ) {
 
-        currentTheme =
-            allowed.indexOf(saved) !== -1
-                ? saved
-                : DEFAULT_THEME;
+            currentTheme = DEFAULT_THEME;
+        }
     }
 
 
-    function saveTheme(theme) {
-
-        currentTheme = theme;
+    function saveTheme(value) {
 
         try {
+
             Lampa.Storage.set(
                 STORAGE_KEY,
-                theme
+                value
             );
-        } catch (e) {}
 
-        applyTheme(theme);
+        } catch (e) {
+
+            console.error(
+                "[Arctic Forest] Storage error:",
+                e
+            );
+        }
     }
 
 
-    /* =========================================================
-       REMOVE ONLY OUR THEME
-    ========================================================= */
+    // =========================================================
+    // REMOVE OUR THEME
+    // =========================================================
 
     function removeOurTheme() {
 
-        var style =
-            document.getElementById(STYLE_ID);
+        var style = document.getElementById(
+            "arctic-forest-style"
+        );
 
         if (style) {
             style.remove();
         }
 
-        var live =
-            document.getElementById(LIVE_ID);
+        var layer = document.getElementById(
+            "arctic-forest-live-layer"
+        );
 
-        if (live) {
-            live.remove();
+        if (layer) {
+            layer.remove();
         }
 
-        document.body.classList.remove(
-            'arctic-theme',
-            'forest-theme',
-            'storm-theme',
-            'autumn-theme',
-            'winter-theme'
+        document.documentElement.classList.remove(
+            "arctic-forest-active"
         );
+
+        if (document.body) {
+
+            document.body.classList.remove(
+                "arctic-theme"
+            );
+
+            document.body.classList.remove(
+                "forest-theme"
+            );
+
+            document.body.classList.remove(
+                "storm-theme"
+            );
+
+            document.body.classList.remove(
+                "autumn-theme"
+            );
+
+            document.body.classList.remove(
+                "winter-theme"
+            );
+        }
     }
 
 
-    /* =========================================================
-       ADD STYLE
-    ========================================================= */
+    // =========================================================
+    // ADD CSS
+    // =========================================================
 
     function addStyle(css) {
 
-        var style =
-            document.createElement('style');
+        var old = document.getElementById(
+            "arctic-forest-style"
+        );
 
-        style.id = STYLE_ID;
-        style.type = 'text/css';
+        if (old) {
+            old.remove();
+        }
+
+        var style = document.createElement("style");
+
+        style.id = "arctic-forest-style";
+
         style.textContent = css;
 
         document.head.appendChild(style);
     }
 
 
-    /* =========================================================
-       MAIN CSS
-    ========================================================= */
-
-    var commonCSS = `
-
-        /* =====================================================
-           THEME VARIABLES
-        ===================================================== */
-
-        body.arctic-theme {
-            --af-bg: #0A1014;
-            --af-black: #060A0D;
-            --af-focus1: #E6F9FF;
-            --af-focus2: #8DD8EA;
-            --af-border: #8DD8EA;
-            --af-progress: #63C7DC;
-
-            --af-ext: #080D11;
-            --af-ext-focus: #17242B;
-
-            --af-torrent: #D8E8ED;
-            --af-torrent-focus: rgba(141,216,234,.24);
-
-            --af-iptv-focus: #172A32;
-
-            --af-settings1: rgb(27,40,48);
-            --af-settings2: rgb(7,11,14);
-        }
-
-
-        body.forest-theme {
-            --af-bg: #070D0A;
-            --af-black: #040806;
-            --af-focus1: #E2F8EA;
-            --af-focus2: #65B985;
-            --af-border: #65B985;
-            --af-progress: #45A86B;
-
-            --af-ext: #050A07;
-            --af-ext-focus: #12221A;
-
-            --af-torrent: #D9E9DF;
-            --af-torrent-focus: rgba(101,185,133,.24);
-
-            --af-iptv-focus: #14291F;
-
-            --af-settings1: rgb(24,43,32);
-            --af-settings2: rgb(5,11,8);
-        }
-
-
-        body.storm-theme {
-            --af-bg: #080B10;
-            --af-black: #05070A;
-            --af-focus1: #DDF5FF;
-            --af-focus2: #5B9FC7;
-            --af-border: #6EA7C7;
-            --af-progress: #63A9D0;
-
-            --af-ext: #070B10;
-            --af-ext-focus: #17212A;
-
-            --af-torrent: #D9E8F0;
-            --af-torrent-focus: rgba(91,159,199,.23);
-
-            --af-iptv-focus: #14232E;
-
-            --af-settings1: rgb(25,32,41);
-            --af-settings2: rgb(5,8,11);
-        }
-
-
-        /* =====================================================
-           AUTUMN
-        ===================================================== */
-
-        body.autumn-theme {
-            --af-bg: #21150D;
-            --af-black: #0D0805;
-
-            --af-focus1: #FFF0D2;
-            --af-focus2: #C66E32;
-
-            --af-border: #D08343;
-            --af-progress: #D08442;
-
-            --af-ext: #100A06;
-            --af-ext-focus: #2B1A0E;
-
-            --af-torrent: #EAD9C5;
-            --af-torrent-focus: rgba(208,132,66,.28);
-
-            --af-iptv-focus: #302010;
-
-            --af-settings1: rgb(65,40,23);
-            --af-settings2: rgb(13,8,5);
-        }
-
-
-        /* =====================================================
-           WINTER
-        ===================================================== */
-
-        body.winter-theme {
-            --af-bg: #081724;
-            --af-black: #04090E;
-
-            --af-focus1: #F7FDFF;
-            --af-focus2: #91C9E5;
-
-            --af-border: #A7D9EF;
-            --af-progress: #74C5E5;
-
-            --af-ext: #050B11;
-            --af-ext-focus: #142733;
-
-            --af-torrent: #E1F1F8;
-            --af-torrent-focus: rgba(145,201,229,.28);
-
-            --af-iptv-focus: #112A36;
-
-            --af-settings1: rgb(26,47,60);
-            --af-settings2: rgb(5,10,15);
-        }
-
-
-        /* =====================================================
-           STRONG BACKGROUND OVERRIDE
-           ===================================================== */
-
-        body.arctic-theme,
-        body.arctic-theme .app,
-        body.arctic-theme .wrap,
-        body.arctic-theme .main,
-        body.arctic-theme .content {
-
-            background-color:
-                #0A1014 !important;
-        }
-
-
-        body.forest-theme,
-        body.forest-theme .app,
-        body.forest-theme .wrap,
-        body.forest-theme .main,
-        body.forest-theme .content {
-
-            background-color:
-                #070D0A !important;
-        }
-
-
-        body.storm-theme,
-        body.storm-theme .app,
-        body.storm-theme .wrap,
-        body.storm-theme .main,
-        body.storm-theme .content {
-
-            background-color:
-                #080B10 !important;
-        }
-
-
-        /* =====================================================
-           AUTUMN BACKGROUND
-        ===================================================== */
-
-        body.autumn-theme {
-
-            background:
-                radial-gradient(
-                    ellipse at 50% 0%,
-                    rgba(173,91,35,.18),
-                    transparent 55%
-                ),
-                linear-gradient(
-                    180deg,
-                    #21150D 0%,
-                    #160E09 48%,
-                    #0D0805 100%
-                ) !important;
-        }
-
-
-        body.autumn-theme .app,
-        body.autumn-theme .wrap,
-        body.autumn-theme .main,
-        body.autumn-theme .content {
-
-            background:
-                linear-gradient(
-                    180deg,
-                    rgba(33,21,13,.96),
-                    rgba(13,8,5,.98)
-                ) !important;
-        }
-
-
-        /* =====================================================
-           WINTER BACKGROUND
-        ===================================================== */
-
-        body.winter-theme {
-
-            background:
-                radial-gradient(
-                    ellipse at 50% 0%,
-                    rgba(130,205,235,.18),
-                    transparent 52%
-                ),
-                radial-gradient(
-                    ellipse at 15% 55%,
-                    rgba(60,135,170,.08),
-                    transparent 45%
-                ),
-                linear-gradient(
-                    180deg,
-                    #081724 0%,
-                    #07131F 48%,
-                    #040A11 100%
-                ) !important;
-        }
-
-
-        body.winter-theme .app,
-        body.winter-theme .wrap,
-        body.winter-theme .main,
-        body.winter-theme .content {
-
-            background:
-                linear-gradient(
-                    180deg,
-                    rgba(8,23,36,.96),
-                    rgba(4,10,17,.98)
-                ) !important;
-        }
-
-
-        /* =====================================================
-           FOCUS
-        ===================================================== */
-
-        body.arctic-theme .selector.focus,
-        body.forest-theme .selector.focus,
-        body.storm-theme .selector.focus,
-        body.autumn-theme .selector.focus,
-        body.winter-theme .selector.focus {
-
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--af-focus1),
-                    var(--af-focus2)
-                ) !important;
-
-            color: #071015 !important;
-
-            border-color:
-                transparent !important;
-
-            transform: none !important;
-
-            transition: none !important;
-
-            backdrop-filter: none !important;
-
-            -webkit-backdrop-filter:
-                none !important;
-        }
-
-
-        /* =====================================================
-           CARD FOCUS
-        ===================================================== */
-
-        body.arctic-theme .card.focus .card__view,
-        body.forest-theme .card.focus .card__view,
-        body.storm-theme .card.focus .card__view,
-        body.autumn-theme .card.focus .card__view,
-        body.winter-theme .card.focus .card__view {
-
-            box-shadow:
-                0 0 0 2px var(--af-border),
-                0 8px 30px rgba(0,0,0,.38)
-                !important;
-        }
-
-
-        /* =====================================================
-           SETTINGS
-        ===================================================== */
-
-        body.arctic-theme .settings-param__value,
-        body.forest-theme .settings-param__value,
-        body.storm-theme .settings-param__value,
-        body.autumn-theme .settings-param__value,
-        body.winter-theme .settings-param__value {
-
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--af-settings1),
-                    var(--af-settings2)
-                ) !important;
-        }
-
-
-        /* =====================================================
-           PLAYER PROGRESS
-        ===================================================== */
-
-        body.arctic-theme .player-panel__progress,
-        body.arctic-theme .player-panel__progress-bar,
-        body.arctic-theme .player-progress,
-
-        body.forest-theme .player-panel__progress,
-        body.forest-theme .player-panel__progress-bar,
-        body.forest-theme .player-progress,
-
-        body.storm-theme .player-panel__progress,
-        body.storm-theme .player-panel__progress-bar,
-        body.storm-theme .player-progress,
-
-        body.autumn-theme .player-panel__progress,
-        body.autumn-theme .player-panel__progress-bar,
-        body.autumn-theme .player-progress,
-
-        body.winter-theme .player-panel__progress,
-        body.winter-theme .player-panel__progress-bar,
-        body.winter-theme .player-progress {
-
-            background:
-                var(--af-progress) !important;
-        }
-
-
-        /* =====================================================
-           EXTENSIONS
-        ===================================================== */
-
-        body.arctic-theme .extensions__item,
-        body.forest-theme .extensions__item,
-        body.storm-theme .extensions__item,
-        body.autumn-theme .extensions__item,
-        body.winter-theme .extensions__item {
-
-            background:
-                var(--af-ext) !important;
-        }
-
-
-        body.arctic-theme .extensions__item.focus,
-        body.forest-theme .extensions__item.focus,
-        body.storm-theme .extensions__item.focus,
-        body.autumn-theme .extensions__item.focus,
-        body.winter-theme .extensions__item.focus {
-
-            background:
-                var(--af-ext-focus) !important;
-        }
-
-
-        /* =====================================================
-           TORRENTS
-        ===================================================== */
-
-        body.arctic-theme .torrent-item__badge,
-        body.forest-theme .torrent-item__badge,
-        body.storm-theme .torrent-item__badge,
-        body.autumn-theme .torrent-item__badge,
-        body.winter-theme .torrent-item__badge {
-
-            color:
-                var(--af-torrent) !important;
-        }
-
-
-        body.arctic-theme .torrent-item.focus,
-        body.forest-theme .torrent-item.focus,
-        body.storm-theme .torrent-item.focus,
-        body.autumn-theme .torrent-item.focus,
-        body.winter-theme .torrent-item.focus {
-
-            background:
-                var(--af-torrent-focus) !important;
-        }
-
-
-        /* =====================================================
-           IPTV
-        ===================================================== */
-
-        body.arctic-theme .iptv-item.focus,
-        body.forest-theme .iptv-item.focus,
-        body.storm-theme .iptv-item.focus,
-        body.autumn-theme .iptv-item.focus,
-        body.winter-theme .iptv-item.focus {
-
-            background:
-                var(--af-iptv-focus) !important;
-        }
-
-
-        /* =====================================================
-           LIVE LAYER
-        ===================================================== */
-
-        #${LIVE_ID} {
-
-            position: fixed;
-
-            left: 0;
-            top: 0;
-            right: 0;
-            bottom: 0;
-
-            width: 100vw;
-            height: 100vh;
-
-            pointer-events: none;
-
-            z-index: 999999;
-
-            overflow: hidden;
-        }
-
-
-        /* =====================================================
-           COMMON MIST
-        ===================================================== */
-
-        .af-mist {
-
-            position: absolute;
-
-            left: -15%;
-
-            width: 130%;
-            height: 30%;
-
-            border-radius: 50%;
-
-            filter: blur(35px);
-
-            opacity: .13;
-
-            animation:
-                af-mist-move
-                28s ease-in-out infinite alternate;
-        }
-
-
-        .af-mist.m1 {
-            top: 18%;
-        }
-
-
-        .af-mist.m2 {
-
-            top: 50%;
-
-            animation-duration: 38s;
-
-            animation-direction:
-                alternate-reverse;
-        }
-
-
-        .af-mist.m3 {
-
-            top: 76%;
-
-            animation-duration: 46s;
-        }
-
-
-        @keyframes af-mist-move {
-
-            from {
-                transform:
-                    translateX(-7%);
-            }
-
-            to {
-                transform:
-                    translateX(7%);
-            }
-        }
-
-
-        /* =====================================================
-           ARCTIC
-        ===================================================== */
-
-        body.arctic-theme #${LIVE_ID} {
-
-            background:
-                radial-gradient(
-                    ellipse at 50% 100%,
-                    rgba(40,130,155,.10),
-                    transparent 65%
-                );
-        }
-
-
-        body.arctic-theme #${LIVE_ID}
-        .af-mist {
-
-            background:
-                radial-gradient(
-                    ellipse,
-                    rgba(140,220,235,.48),
-                    rgba(100,180,200,.08) 45%,
-                    transparent 72%
-                );
-        }
-
-
-        .af-arctic-particle {
-
-            position: absolute;
-
-            width: 2px;
-            height: 2px;
-
-            border-radius: 50%;
-
-            background:
-                rgba(220,250,255,.58);
-
-            box-shadow:
-                0 0 5px
-                rgba(150,230,245,.5);
-
-            animation:
-                af-arctic-float
-                linear infinite;
-        }
-
-
-        @keyframes af-arctic-float {
-
-            0% {
-                transform:
-                    translate3d(0,110vh,0)
-                    scale(.5);
-
-                opacity: 0;
-            }
-
-            12% {
-                opacity: .7;
-            }
-
-            85% {
-                opacity: .35;
-            }
-
-            100% {
-                transform:
-                    translate3d(70px,-15vh,0)
-                    scale(1.1);
-
-                opacity: 0;
-            }
-        }
-
-
-        /* =====================================================
-           FOREST
-        ===================================================== */
-
-        body.forest-theme #${LIVE_ID} {
-
-            background:
-                radial-gradient(
-                    ellipse at 50% 100%,
-                    rgba(28,100,58,.10),
-                    transparent 65%
-                );
-        }
-
-
-        body.forest-theme #${LIVE_ID}
-        .af-mist {
-
-            background:
-                radial-gradient(
-                    ellipse,
-                    rgba(75,150,100,.35),
-                    rgba(35,100,60,.05) 48%,
-                    transparent 72%
-                );
-        }
-
-
-        .af-forest-particle {
-
-            position: absolute;
-
-            width: 2px;
-            height: 2px;
-
-            border-radius: 50%;
-
-            background:
-                rgba(100,190,125,.28);
-
-            box-shadow:
-                0 0 5px
-                rgba(70,180,110,.25);
-
-            animation:
-                af-forest-float
-                linear infinite;
-        }
-
-
-        @keyframes af-forest-float {
-
-            0% {
-                transform:
-                    translate3d(0,105vh,0);
-
-                opacity: 0;
-            }
-
-            15% {
-                opacity: .3;
-            }
-
-            85% {
-                opacity: .15;
-            }
-
-            100% {
-                transform:
-                    translate3d(-45px,-10vh,0);
-
-                opacity: 0;
-            }
-        }
-
-
-        /* =====================================================
-           STORM
-        ===================================================== */
-
-        body.storm-theme #${LIVE_ID} {
-
-            background:
-                radial-gradient(
-                    ellipse at 50% 15%,
-                    rgba(70,95,120,.16),
-                    transparent 55%
-                );
-        }
-
-
-        .af-storm-sky {
-
-            position: absolute;
-
-            inset: 0;
-
-            background:
-                radial-gradient(
-                    ellipse at 20% 20%,
-                    rgba(110,125,145,.15),
-                    transparent 30%
-                ),
-
-                radial-gradient(
-                    ellipse at 75% 25%,
-                    rgba(85,105,130,.16),
-                    transparent 34%
-                ),
-
-                radial-gradient(
-                    ellipse at 50% 60%,
-                    rgba(40,60,80,.12),
-                    transparent 55%
-                );
-        }
-
-
-        .af-storm-cloud {
-
-            position: absolute;
-
-            border-radius: 50%;
-
-            filter: blur(38px);
-
-            background:
-                radial-gradient(
-                    ellipse,
-                    rgba(100,115,130,.25),
-                    rgba(40,50,65,.12) 45%,
-                    transparent 72%
-                );
-
-            animation:
-                af-cloud-drift
-                45s ease-in-out infinite alternate;
-        }
-
-
-        .af-storm-cloud.c1 {
-
-            width: 75vw;
-            height: 30vh;
-
-            left: -15vw;
-            top: 3vh;
-        }
-
-
-        .af-storm-cloud.c2 {
-
-            width: 80vw;
-            height: 34vh;
-
-            right: -20vw;
-            top: 16vh;
-
-            animation-duration: 58s;
-
-            animation-direction:
-                alternate-reverse;
-        }
-
-
-        .af-storm-cloud.c3 {
-
-            width: 100vw;
-            height: 28vh;
-
-            left: 10vw;
-            top: 46vh;
-
-            animation-duration: 67s;
-        }
-
-
-        @keyframes af-cloud-drift {
-
-            from {
-                transform:
-                    translateX(-4%);
-            }
-
-            to {
-                transform:
-                    translateX(4%);
-            }
-        }
-
-
-        .af-storm-fog {
-
-            position: absolute;
-
-            left: -15%;
-
-            width: 130%;
-            height: 24%;
-
-            border-radius: 50%;
-
-            filter: blur(30px);
-
-            background:
-                radial-gradient(
-                    ellipse,
-                    rgba(120,145,165,.14),
-                    transparent 70%
-                );
-
-            animation:
-                af-fog-drift
-                34s ease-in-out infinite alternate;
-        }
-
-
-        .af-storm-fog.f1 {
-            top: 40%;
-        }
-
-
-        .af-storm-fog.f2 {
-
-            top: 67%;
-
-            animation-duration: 48s;
-
-            animation-direction:
-                alternate-reverse;
-        }
-
-
-        .af-storm-fog.f3 {
-
-            top: 82%;
-
-            animation-duration: 55s;
-        }
-
-
-        @keyframes af-fog-drift {
-
-            from {
-                transform:
-                    translateX(-6%);
-            }
-
-            to {
-                transform:
-                    translateX(6%);
-            }
-        }
-
-
-        .af-rain {
-
-            position: absolute;
-
-            width: 1px;
-            height: 28px;
-
-            border-radius: 50%;
-
-            background:
-                linear-gradient(
-                    to bottom,
-                    transparent,
-                    rgba(185,220,235,.30)
-                );
-
-            animation:
-                af-rain-fall
-                linear infinite;
-        }
-
-
-        @keyframes af-rain-fall {
-
-            0% {
-
-                transform:
-                    translate3d(0,-15vh,0)
-                    rotate(12deg);
-
-                opacity: 0;
-            }
-
-            8% {
-                opacity: .45;
-            }
-
-            92% {
-                opacity: .30;
-            }
-
-            100% {
-
-                transform:
-                    translate3d(-100px,115vh,0)
-                    rotate(12deg);
-
-                opacity: 0;
-            }
-        }
-
-
-        .af-lightning {
-
-            position: absolute;
-
-            inset: 0;
-
-            background:
-                rgba(215,240,255,.11);
-
-            opacity: 0;
-
-            animation:
-                af-lightning
-                23s infinite;
-        }
-
-
-        @keyframes af-lightning {
-
-            0%, 91%, 100% {
-                opacity: 0;
-            }
-
-            92% {
-                opacity: .18;
-            }
-
-            92.5% {
-                opacity: 0;
-            }
-
-            93% {
-                opacity: .09;
-            }
-
-            93.5% {
-                opacity: 0;
-            }
-        }
-
-
-        /* =====================================================
-           AUTUMN
-        ===================================================== */
-
-        body.autumn-theme #${LIVE_ID} {
-
-            background:
-                radial-gradient(
-                    ellipse at 50% 25%,
-                    rgba(205,120,45,.09),
-                    transparent 55%
-                ),
-
-                radial-gradient(
-                    ellipse at 50% 100%,
-                    rgba(150,70,25,.10),
-                    transparent 65%
-                );
-        }
-
-
-        body.autumn-theme #${LIVE_ID}
-        .af-mist {
-
-            background:
-                radial-gradient(
-                    ellipse,
-                    rgba(200,125,65,.34),
-                    rgba(110,60,30,.08) 46%,
-                    transparent 72%
-                );
-        }
-
-
-        .af-autumn-glow {
-
-            position: absolute;
-
-            width: 75vw;
-            height: 50vh;
-
-            left: 12vw;
-            top: 2vh;
-
-            border-radius: 50%;
-
-            background:
-                radial-gradient(
-                    ellipse,
-                    rgba(215,135,55,.10),
-                    transparent 70%
-                );
-
-            filter: blur(25px);
-
-            animation:
-                af-autumn-glow
-                18s ease-in-out infinite alternate;
-        }
-
-
-        @keyframes af-autumn-glow {
-
-            from {
-
-                transform:
-                    translate(-3%,0)
-                    scale(.95);
-
-                opacity: .55;
-            }
-
-            to {
-
-                transform:
-                    translate(3%,2%)
-                    scale(1.05);
-
-                opacity: .90;
-            }
-        }
-
-
-        /* =====================================================
-           AUTUMN LEAVES
-        ===================================================== */
-
-        .af-leaf {
-
-            position: absolute;
-
-            width: 9px;
-            height: 14px;
-
-            border-radius:
-                75% 20% 75% 20%;
-
-            background:
-                rgba(196,104,42,.70);
-
-            box-shadow:
-                0 0 6px
-                rgba(185,95,35,.20);
-
-            animation:
-                af-leaf-fall
-                linear infinite;
-        }
-
-
-        .af-leaf:nth-child(3n) {
-
-            width: 7px;
-            height: 11px;
-
-            background:
-                rgba(225,145,55,.62);
-        }
-
-
-        .af-leaf:nth-child(4n) {
-
-            width: 10px;
-            height: 15px;
-
-            background:
-                rgba(145,72,30,.60);
-        }
-
-
-        .af-leaf:nth-child(5n) {
-
-            width: 6px;
-            height: 9px;
-
-            background:
-                rgba(236,165,70,.58);
-        }
-
-
-        @keyframes af-leaf-fall {
-
-            0% {
-
-                transform:
-                    translate3d(0,-15vh,0)
-                    rotate(0deg);
-
-                opacity: 0;
-            }
-
-            10% {
-                opacity: .78;
-            }
-
-            45% {
-
-                transform:
-                    translate3d(75px,45vh,0)
-                    rotate(150deg);
-            }
-
-            75% {
-
-                transform:
-                    translate3d(-65px,80vh,0)
-                    rotate(290deg);
-            }
-
-            100% {
-
-                transform:
-                    translate3d(90px,115vh,0)
-                    rotate(440deg);
-
-                opacity: 0;
-            }
-        }
-
-
-        /* =====================================================
-           WINTER
-        ===================================================== */
-
-        body.winter-theme #${LIVE_ID} {
-
-            background:
-                radial-gradient(
-                    ellipse at 50% 10%,
-                    rgba(170,225,250,.11),
-                    transparent 58%
-                ),
-
-                radial-gradient(
-                    ellipse at 50% 100%,
-                    rgba(90,170,205,.08),
-                    transparent 65%
-                );
-        }
-
-
-        body.winter-theme #${LIVE_ID}
-        .af-mist {
-
-            background:
-                radial-gradient(
-                    ellipse,
-                    rgba(180,225,245,.34),
-                    rgba(120,180,205,.07) 46%,
-                    transparent 72%
-                );
-        }
-
-
-        .af-winter-glow {
-
-            position: absolute;
-
-            width: 75vw;
-            height: 55vh;
-
-            left: 12vw;
-            top: -10vh;
-
-            border-radius: 50%;
-
-            background:
-                radial-gradient(
-                    ellipse,
-                    rgba(190,235,250,.12),
-                    transparent 68%
-                );
-
-            filter: blur(25px);
-
-            animation:
-                af-winter-glow
-                20s ease-in-out infinite alternate;
-        }
-
-
-        @keyframes af-winter-glow {
-
-            from {
-                transform:
-                    scale(.96);
-                opacity: .50;
-            }
-
-            to {
-                transform:
-                    scale(1.05);
-                opacity: .90;
-            }
-        }
-
-
-        /* =====================================================
-           REAL SNOWFLAKES
-        ===================================================== */
-
-        .af-snow {
-
-            position: absolute;
-
-            width: auto;
-            height: auto;
-
-            background: none !important;
-
-            border: none;
-
-            color:
-                rgba(240,252,255,.82);
-
-            font-family:
-                Arial,
-                sans-serif;
-
-            font-size: 13px;
-
-            line-height: 1;
-
-            text-shadow:
-                0 0 5px
-                rgba(190,235,255,.65),
-
-                0 0 10px
-                rgba(150,220,245,.30);
-
-            animation:
-                af-snow-fall
-                linear infinite;
-        }
-
-
-        .af-snow.small {
-
-            font-size: 8px;
-
-            opacity: .60;
-        }
-
-
-        .af-snow.medium {
-
-            font-size: 13px;
-
-            opacity: .80;
-        }
-
-
-        .af-snow.big {
-
-            font-size: 19px;
-
-            opacity: .90;
-
-            text-shadow:
-                0 0 7px
-                rgba(210,245,255,.75),
-
-                0 0 13px
-                rgba(150,220,245,.40);
-        }
-
-
-        @keyframes af-snow-fall {
-
-            0% {
-
-                transform:
-                    translate3d(0,-12vh,0)
-                    rotate(0deg);
-
-                opacity: 0;
-            }
-
-            8% {
-                opacity: .85;
-            }
-
-            30% {
-
-                transform:
-                    translate3d(45px,30vh,0)
-                    rotate(75deg);
-            }
-
-            55% {
-
-                transform:
-                    translate3d(-35px,58vh,0)
-                    rotate(170deg);
-            }
-
-            78% {
-
-                transform:
-                    translate3d(60px,82vh,0)
-                    rotate(270deg);
-            }
-
-            100% {
-
-                transform:
-                    translate3d(-55px,115vh,0)
-                    rotate(380deg);
-
-                opacity: 0;
-            }
-        }
-
-
-        /* =====================================================
-           MOBILE
-        ===================================================== */
-
-        @media (max-width: 700px) {
-
-            #${LIVE_ID} .af-mist {
-                filter: blur(27px);
-            }
-
-            #${LIVE_ID} .af-storm-cloud {
-                filter: blur(29px);
-            }
-
-            #${LIVE_ID} .af-storm-fog {
-                filter: blur(25px);
-            }
-
-            #${LIVE_ID} .af-leaf {
-                transform-origin: center;
-            }
-        }
-
-    `;
-
-
-    /* =========================================================
-       PARTICLES
-    ========================================================= */
-
-    function createParticles(
-        className,
-        count,
-        type
-    ) {
-
-        var html = '';
-
-        var snowChars = [
-            '❄',
-            '❅',
-            '❆'
-        ];
-
-        for (var i = 0; i < count; i++) {
-
-            var left =
-                Math.random() * 100;
-
-            var top =
-                Math.random() * 100;
-
-            var delay =
-                Math.random() * 20;
-
-            var duration;
-
-            if (type === 'storm') {
-
-                duration =
-                    1.8 +
-                    Math.random() * 2.5;
-
-            } else if (type === 'snow') {
-
-                duration =
-                    8 +
-                    Math.random() * 12;
-
-            } else if (type === 'leaf') {
-
-                duration =
-                    8 +
-                    Math.random() * 14;
-
-            } else if (type === 'forest') {
-
-                duration =
-                    12 +
-                    Math.random() * 16;
-
-            } else {
-
-                duration =
-                    10 +
-                    Math.random() * 18;
-            }
-
-
-            /* -------------------------------------------------
-               SNOWFLAKES
-            ------------------------------------------------- */
-
-            if (type === 'snow') {
-
-                var snow =
-                    snowChars[
-                        Math.floor(
-                            Math.random() *
-                            snowChars.length
-                        )
-                    ];
-
-                var sizeClass;
-
-                var r =
-                    Math.random();
-
-                if (r < .28) {
-                    sizeClass = 'small';
-                } else if (r < .82) {
-                    sizeClass = 'medium';
-                } else {
-                    sizeClass = 'big';
-                }
-
-                html +=
-                    '<i class="' +
-                    className +
-                    ' ' +
-                    sizeClass +
-                    '"' +
-
-                    ' style="' +
-                    'left:' + left + '%;' +
-                    'top:' + top + '%;' +
-                    'animation-delay:-' +
-                    delay +
-                    's;' +
-                    'animation-duration:' +
-                    duration +
-                    's;' +
-                    '">' +
-
-                    snow +
-
-                    '</i>';
-
-            } else {
-
-                html +=
-                    '<i class="' +
-                    className +
-                    '"' +
-
-                    ' style="' +
-                    'left:' + left + '%;' +
-                    'top:' + top + '%;' +
-                    'animation-delay:-' +
-                    delay +
-                    's;' +
-                    'animation-duration:' +
-                    duration +
-                    's;' +
-                    '"></i>';
-            }
-        }
-
-        return html;
-    }
-
-
-    /* =========================================================
-       LIVE LAYER
-    ========================================================= */
+    // =========================================================
+    // LIVE LAYER
+    // =========================================================
 
     function createLiveLayer(theme) {
 
-        if (theme === 'default') {
-            return;
+        var old = document.getElementById(
+            "arctic-forest-live-layer"
+        );
+
+        if (old) {
+            old.remove();
         }
 
-        var layer =
-            document.createElement('div');
+        var layer = document.createElement("div");
 
-        layer.id = LIVE_ID;
-
-        var html = '';
+        layer.id = "arctic-forest-live-layer";
 
 
-        /* -----------------------------------------------------
-           ARCTIC
-        ----------------------------------------------------- */
+        // =====================================================
+        // ARCTIC
+        // =====================================================
 
-        if (theme === 'arctic') {
+        if (theme === "arctic") {
 
-            html +=
-                '<div class="af-mist m1"></div>';
+            layer.innerHTML = `
 
-            html +=
-                '<div class="af-mist m2"></div>';
+                <div class="af-mist af-mist-1"></div>
+                <div class="af-mist af-mist-2"></div>
+                <div class="af-mist af-mist-3"></div>
 
-            html +=
-                '<div class="af-mist m3"></div>';
+                <div class="af-aurora"></div>
 
-            html += createParticles(
-                'af-arctic-particle',
-                32,
-                'arctic'
-            );
-        }
+                <div class="af-particles">
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
 
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                </div>
 
-        /* -----------------------------------------------------
-           FOREST
-        ----------------------------------------------------- */
-
-        else if (theme === 'forest') {
-
-            html +=
-                '<div class="af-mist m1"></div>';
-
-            html +=
-                '<div class="af-mist m2"></div>';
-
-            html +=
-                '<div class="af-mist m3"></div>';
-
-            html += createParticles(
-                'af-forest-particle',
-                15,
-                'forest'
-            );
+                <div class="af-sparks">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+            `;
         }
 
 
-        /* -----------------------------------------------------
-           STORM
-        ----------------------------------------------------- */
+        // =====================================================
+        // FOREST
+        // =====================================================
 
-        else if (theme === 'storm') {
+        if (theme === "forest") {
 
-            html +=
-                '<div class="af-storm-sky"></div>';
+            layer.innerHTML = `
 
-            html +=
-                '<div class="af-storm-cloud c1"></div>';
+                <div class="df-mist df-mist-1"></div>
+                <div class="df-mist df-mist-2"></div>
+                <div class="df-mist df-mist-3"></div>
 
-            html +=
-                '<div class="af-storm-cloud c2"></div>';
-
-            html +=
-                '<div class="af-storm-cloud c3"></div>';
-
-            html +=
-                '<div class="af-storm-fog f1"></div>';
-
-            html +=
-                '<div class="af-storm-fog f2"></div>';
-
-            html +=
-                '<div class="af-storm-fog f3"></div>';
-
-            html += createParticles(
-                'af-rain',
-                32,
-                'storm'
-            );
-
-            html +=
-                '<div class="af-lightning"></div>';
+                <div class="df-particles">
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                </div>
+            `;
         }
 
 
-        /* -----------------------------------------------------
-           AUTUMN
-        ----------------------------------------------------- */
+        // =====================================================
+        // STORM
+        // =====================================================
 
-        else if (theme === 'autumn') {
+        if (theme === "storm") {
 
-            html +=
-                '<div class="af-mist m1"></div>';
+            layer.innerHTML = `
 
-            html +=
-                '<div class="af-mist m2"></div>';
+                <div class="storm-sky"></div>
 
-            html +=
-                '<div class="af-mist m3"></div>';
+                <div class="storm-cloud storm-cloud-1"></div>
+                <div class="storm-cloud storm-cloud-2"></div>
+                <div class="storm-cloud storm-cloud-3"></div>
 
-            html +=
-                '<div class="af-autumn-glow"></div>';
+                <div class="storm-mist storm-mist-1"></div>
+                <div class="storm-mist storm-mist-2"></div>
+                <div class="storm-mist storm-mist-3"></div>
 
-            html += createParticles(
-                'af-leaf',
-                30,
-                'leaf'
-            );
+                <div class="storm-rain">
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i>
+                </div>
+
+                <div class="storm-flash storm-flash-1"></div>
+                <div class="storm-flash storm-flash-2"></div>
+
+            `;
         }
 
 
-        /* -----------------------------------------------------
-           WINTER
-        ----------------------------------------------------- */
+        // =====================================================
+        // AUTUMN
+        // =====================================================
 
-        else if (theme === 'winter') {
+        if (theme === "autumn") {
 
-            html +=
-                '<div class="af-mist m1"></div>';
+            layer.innerHTML = `
 
-            html +=
-                '<div class="af-mist m2"></div>';
+                <div class="autumn-glow"></div>
 
-            html +=
-                '<div class="af-mist m3"></div>';
+                <div class="autumn-mist autumn-mist-1"></div>
+                <div class="autumn-mist autumn-mist-2"></div>
+                <div class="autumn-mist autumn-mist-3"></div>
 
-            html +=
-                '<div class="af-winter-glow"></div>';
-
-            html += createParticles(
-                'af-snow',
-                42,
-                'snow'
-            );
+                <div class="autumn-leaves">
+                    <i></i><i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i><i></i>
+                </div>
+            `;
         }
 
 
-        layer.innerHTML = html;
+        // =====================================================
+        // WINTER
+        // =====================================================
+
+        if (theme === "winter") {
+
+            layer.innerHTML = `
+
+                <div class="winter-glow"></div>
+
+                <div class="winter-mist winter-mist-1"></div>
+                <div class="winter-mist winter-mist-2"></div>
+                <div class="winter-mist winter-mist-3"></div>
+
+                <div class="winter-snow">
+                    <i>❄</i><i>❅</i><i>❆</i><i>❄</i>
+                    <i>❅</i><i>❆</i><i>❄</i><i>❅</i>
+                    <i>❆</i><i>❄</i><i>❅</i><i>❆</i>
+                    <i>❄</i><i>❅</i><i>❆</i><i>❄</i>
+                    <i>❅</i><i>❆</i><i>❄</i><i>❅</i>
+                    <i>❆</i><i>❄</i><i>❅</i><i>❆</i>
+                    <i>❄</i><i>❅</i><i>❆</i><i>❄</i>
+                    <i>❅</i><i>❆</i><i>❄</i><i>❅</i>
+                    <i>❆</i><i>❄</i><i>❅</i><i>❆</i>
+                    <i>❄</i><i>❅</i><i>❆</i><i>❄</i>
+                    <i>❅</i><i>❆</i><i>❄</i><i>❅</i>
+                    <i>❆</i><i>❄</i><i>❅</i><i>❆</i>
+                </div>
+            `;
+        }
+
 
         document.body.appendChild(layer);
-
-        return layer;
     }
 
 
-    /* =========================================================
-       APPLY
-    ========================================================= */
+    // =========================================================
+    // ARCTIC LIVE
+    // =========================================================
 
     function applyArctic() {
 
-        document.body.classList.add(
-            'arctic-theme'
+        addStyle(`
+
+            body,
+            body .main,
+            body .wrap,
+            body .content,
+            body .activity {
+
+                background:#0A1014 !important;
+            }
+
+            body {
+                color:#ffffff !important;
+            }
+
+            body .background,
+            body .modal,
+            body .modal__content,
+            body .settings,
+            body .menu {
+
+                background:#060A0D !important;
+            }
+
+            body .selector.focus {
+
+                outline:none !important;
+
+                background:
+                    linear-gradient(
+                        135deg,
+                        #E6F9FF 0%,
+                        #8DD8EA 100%
+                    ) !important;
+
+                color:#071015 !important;
+            }
+
+            body .card.focus {
+
+                box-shadow:
+                    0 0 0 2px #8DD8EA !important;
+            }
+
+            body .settings__content,
+            body .settings__body {
+
+                background:
+                    linear-gradient(
+                        135deg,
+                        rgb(27,40,48),
+                        rgb(7,11,14)
+                    ) !important;
+            }
+
+            body .player-panel__progress,
+            body .player-panel__progress-line {
+
+                background:#63C7DC !important;
+            }
+
+            body .extensions,
+            body .extensions__item {
+
+                background:#080D11 !important;
+            }
+
+            body .extensions__item.focus {
+
+                background:#17242B !important;
+            }
+
+            body .torrent-item__badge,
+            body .torrent-item__quality {
+
+                color:#D8E8ED !important;
+            }
+
+            body .torrent-item.focus {
+
+                background:
+                    rgba(141,216,234,.24) !important;
+            }
+
+            body .iptv__item.focus {
+
+                background:#172A32 !important;
+            }
+
+
+            #arctic-forest-live-layer {
+
+                position:fixed;
+                inset:0;
+
+                pointer-events:none;
+
+                z-index:999999;
+
+                overflow:hidden;
+            }
+
+
+            .af-mist {
+
+                position:absolute;
+
+                width:55vw;
+                height:55vw;
+
+                border-radius:50%;
+
+                filter:blur(90px);
+
+                opacity:.10;
+            }
+
+
+            .af-mist-1 {
+
+                left:-15vw;
+                top:15vh;
+
+                background:
+                    radial-gradient(
+                        circle,
+                        rgba(90,190,220,.45),
+                        transparent 70%
+                    );
+
+                animation:
+                    afMist1 28s ease-in-out infinite alternate;
+            }
+
+
+            .af-mist-2 {
+
+                right:-15vw;
+                top:45vh;
+
+                background:
+                    radial-gradient(
+                        circle,
+                        rgba(65,150,180,.35),
+                        transparent 70%
+                    );
+
+                animation:
+                    afMist2 35s ease-in-out infinite alternate;
+            }
+
+
+            .af-mist-3 {
+
+                left:25vw;
+                bottom:-30vw;
+
+                background:
+                    radial-gradient(
+                        circle,
+                        rgba(130,220,240,.22),
+                        transparent 70%
+                    );
+
+                animation:
+                    afMist3 42s ease-in-out infinite alternate;
+            }
+
+
+            @keyframes afMist1 {
+
+                from {
+                    transform:
+                        translate3d(-5vw,0,0)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translate3d(15vw,8vh,0)
+                        scale(1.15);
+                }
+            }
+
+
+            @keyframes afMist2 {
+
+                from {
+                    transform:
+                        translate3d(5vw,-5vh,0)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translate3d(-15vw,10vh,0)
+                        scale(1.20);
+                }
+            }
+
+
+            @keyframes afMist3 {
+
+                from {
+                    transform:
+                        translate3d(0,0,0)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translate3d(8vw,-12vh,0)
+                        scale(1.18);
+                }
+            }
+
+
+            .af-aurora {
+
+                position:absolute;
+
+                left:-20%;
+                top:-20%;
+
+                width:140%;
+                height:70%;
+
+                background:
+                    radial-gradient(
+                        ellipse at center,
+                        rgba(100,210,235,.08),
+                        transparent 65%
+                    );
+
+                filter:blur(45px);
+
+                animation:
+                    afAurora 38s ease-in-out infinite alternate;
+            }
+
+
+            @keyframes afAurora {
+
+                from {
+                    transform:
+                        translateX(-5%)
+                        rotate(-2deg);
+                }
+
+                to {
+                    transform:
+                        translateX(8%)
+                        rotate(3deg);
+                }
+            }
+
+
+            .af-particles i {
+
+                position:absolute;
+
+                width:3px;
+                height:3px;
+
+                border-radius:50%;
+
+                background:
+                    rgba(180,235,245,.65);
+
+                box-shadow:
+                    0 0 8px
+                    rgba(120,220,240,.45);
+
+                animation:
+                    afParticle linear infinite;
+            }
+
+
+            .af-particles i:nth-child(1)
+            {left:8%;top:90%;animation-duration:24s;animation-delay:-5s;}
+
+            .af-particles i:nth-child(2)
+            {left:15%;top:75%;animation-duration:31s;animation-delay:-12s;}
+
+            .af-particles i:nth-child(3)
+            {left:22%;top:95%;animation-duration:27s;animation-delay:-8s;}
+
+            .af-particles i:nth-child(4)
+            {left:29%;top:82%;animation-duration:35s;animation-delay:-17s;}
+
+            .af-particles i:nth-child(5)
+            {left:35%;top:68%;animation-duration:29s;animation-delay:-3s;}
+
+            .af-particles i:nth-child(6)
+            {left:42%;top:88%;animation-duration:38s;animation-delay:-20s;}
+
+            .af-particles i:nth-child(7)
+            {left:49%;top:73%;animation-duration:26s;animation-delay:-10s;}
+
+            .af-particles i:nth-child(8)
+            {left:56%;top:92%;animation-duration:33s;animation-delay:-14s;}
+
+            .af-particles i:nth-child(9)
+            {left:63%;top:80%;animation-duration:30s;animation-delay:-6s;}
+
+            .af-particles i:nth-child(10)
+            {left:70%;top:95%;animation-duration:37s;animation-delay:-21s;}
+
+            .af-particles i:nth-child(11)
+            {left:77%;top:70%;animation-duration:28s;animation-delay:-9s;}
+
+            .af-particles i:nth-child(12)
+            {left:84%;top:86%;animation-duration:34s;animation-delay:-16s;}
+
+            .af-particles i:nth-child(13)
+            {left:91%;top:76%;animation-duration:25s;animation-delay:-4s;}
+
+            .af-particles i:nth-child(14)
+            {left:12%;top:55%;animation-duration:32s;animation-delay:-11s;}
+
+            .af-particles i:nth-child(15)
+            {left:26%;top:48%;animation-duration:36s;animation-delay:-19s;}
+
+            .af-particles i:nth-child(16)
+            {left:39%;top:60%;animation-duration:29s;animation-delay:-7s;}
+
+            .af-particles i:nth-child(17)
+            {left:53%;top:52%;animation-duration:39s;animation-delay:-23s;}
+
+            .af-particles i:nth-child(18)
+            {left:67%;top:45%;animation-duration:27s;animation-delay:-13s;}
+
+            .af-particles i:nth-child(19)
+            {left:80%;top:58%;animation-duration:33s;animation-delay:-18s;}
+
+            .af-particles i:nth-child(20)
+            {left:94%;top:50%;animation-duration:30s;animation-delay:-2s;}
+
+            .af-particles i:nth-child(21)
+            {left:5%;top:35%;animation-duration:41s;animation-delay:-26s;}
+
+            .af-particles i:nth-child(22)
+            {left:19%;top:28%;animation-duration:34s;animation-delay:-15s;}
+
+            .af-particles i:nth-child(23)
+            {left:33%;top:38%;animation-duration:28s;animation-delay:-5s;}
+
+            .af-particles i:nth-child(24)
+            {left:47%;top:25%;animation-duration:36s;animation-delay:-22s;}
+
+            .af-particles i:nth-child(25)
+            {left:61%;top:33%;animation-duration:31s;animation-delay:-8s;}
+
+            .af-particles i:nth-child(26)
+            {left:75%;top:24%;animation-duration:39s;animation-delay:-17s;}
+
+            .af-particles i:nth-child(27)
+            {left:88%;top:31%;animation-duration:27s;animation-delay:-12s;}
+
+            .af-particles i:nth-child(28)
+            {left:96%;top:18%;animation-duration:35s;animation-delay:-25s;}
+
+            .af-particles i:nth-child(29)
+            {left:17%;top:15%;animation-duration:40s;animation-delay:-30s;}
+
+            .af-particles i:nth-child(30)
+            {left:44%;top:12%;animation-duration:32s;animation-delay:-18s;}
+
+            .af-particles i:nth-child(31)
+            {left:69%;top:10%;animation-duration:37s;animation-delay:-27s;}
+
+            .af-particles i:nth-child(32)
+            {left:82%;top:16%;animation-duration:29s;animation-delay:-9s;}
+
+
+            @keyframes afParticle {
+
+                from {
+                    transform:
+                        translate3d(0,20vh,0);
+                    opacity:0;
+                }
+
+                15% {
+                    opacity:.55;
+                }
+
+                75% {
+                    opacity:.35;
+                }
+
+                to {
+                    transform:
+                        translate3d(8vw,-120vh,0);
+                    opacity:0;
+                }
+            }
+
+
+            .af-sparks i {
+
+                position:absolute;
+
+                width:2px;
+                height:2px;
+
+                border-radius:50%;
+
+                background:#DDF9FF;
+
+                box-shadow:
+                    0 0 12px
+                    rgba(150,235,255,.9);
+
+                animation:
+                    afSpark 8s ease-in-out infinite;
+
+                opacity:0;
+            }
+
+
+            .af-sparks i:nth-child(1)
+            {left:17%;top:28%;animation-delay:1s;}
+
+            .af-sparks i:nth-child(2)
+            {left:37%;top:63%;animation-delay:4s;}
+
+            .af-sparks i:nth-child(3)
+            {left:58%;top:20%;animation-delay:7s;}
+
+            .af-sparks i:nth-child(4)
+            {left:72%;top:48%;animation-delay:2s;}
+
+            .af-sparks i:nth-child(5)
+            {left:83%;top:70%;animation-delay:5s;}
+
+            .af-sparks i:nth-child(6)
+            {left:46%;top:37%;animation-delay:9s;}
+
+
+            @keyframes afSpark {
+
+                0%,65%,100% {
+                    opacity:0;
+                    transform:scale(.5);
+                }
+
+                72% {
+                    opacity:.8;
+                    transform:scale(1.5);
+                }
+
+                78% {
+                    opacity:.15;
+                    transform:scale(.8);
+                }
+            }
+
+        `);
+
+
+        document.documentElement.classList.add(
+            "arctic-forest-active"
         );
 
-        addStyle(commonCSS);
+        document.body.classList.add(
+            "arctic-theme"
+        );
 
-        createLiveLayer('arctic');
+        createLiveLayer("arctic");
     }
 
+
+    // =========================================================
+    // DARK FOREST
+    // =========================================================
 
     function applyForest() {
 
-        document.body.classList.add(
-            'forest-theme'
+        addStyle(`
+
+            body,
+            body .main,
+            body .wrap,
+            body .content,
+            body .activity {
+
+                background:#070D0A !important;
+            }
+
+            body {
+                color:#ffffff !important;
+            }
+
+            body .background,
+            body .modal,
+            body .modal__content,
+            body .settings,
+            body .menu {
+
+                background:#040806 !important;
+            }
+
+            body .selector.focus {
+
+                outline:none !important;
+
+                background:
+                    linear-gradient(
+                        135deg,
+                        #E2F8EA 0%,
+                        #65B985 100%
+                    ) !important;
+
+                color:#07100B !important;
+            }
+
+            body .card.focus {
+
+                box-shadow:
+                    0 0 0 2px #65B985 !important;
+            }
+
+            body .settings__content,
+            body .settings__body {
+
+                background:
+                    linear-gradient(
+                        135deg,
+                        rgb(24,43,32),
+                        rgb(5,11,8)
+                    ) !important;
+            }
+
+            body .player-panel__progress,
+            body .player-panel__progress-line {
+
+                background:#45A86B !important;
+            }
+
+            body .extensions,
+            body .extensions__item {
+
+                background:#050A07 !important;
+            }
+
+            body .extensions__item.focus {
+
+                background:#12221A !important;
+            }
+
+            body .torrent-item__badge,
+            body .torrent-item__quality {
+
+                color:#D9E9DF !important;
+            }
+
+            body .torrent-item.focus {
+
+                background:
+                    rgba(101,185,133,.24) !important;
+            }
+
+            body .iptv__item.focus {
+
+                background:#14291F !important;
+            }
+
+
+            #arctic-forest-live-layer {
+
+                position:fixed;
+                inset:0;
+
+                pointer-events:none;
+
+                z-index:999999;
+
+                overflow:hidden;
+            }
+
+
+            .df-mist {
+
+                position:absolute;
+
+                width:60vw;
+                height:60vw;
+
+                border-radius:50%;
+
+                filter:blur(100px);
+
+                opacity:.075;
+            }
+
+
+            .df-mist-1 {
+
+                left:-20vw;
+                top:10vh;
+
+                background:
+                    radial-gradient(
+                        circle,
+                        rgba(65,150,95,.42),
+                        transparent 70%
+                    );
+
+                animation:
+                    dfMist1 35s ease-in-out infinite alternate;
+            }
+
+
+            .df-mist-2 {
+
+                right:-20vw;
+                top:45vh;
+
+                background:
+                    radial-gradient(
+                        circle,
+                        rgba(45,125,75,.35),
+                        transparent 70%
+                    );
+
+                animation:
+                    dfMist2 42s ease-in-out infinite alternate;
+            }
+
+
+            .df-mist-3 {
+
+                left:20vw;
+                bottom:-35vw;
+
+                background:
+                    radial-gradient(
+                        circle,
+                        rgba(90,170,110,.20),
+                        transparent 70%
+                    );
+
+                animation:
+                    dfMist3 48s ease-in-out infinite alternate;
+            }
+
+
+            @keyframes dfMist1 {
+
+                from {
+                    transform:
+                        translate3d(0,0,0)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translate3d(16vw,8vh,0)
+                        scale(1.18);
+                }
+            }
+
+
+            @keyframes dfMist2 {
+
+                from {
+                    transform:
+                        translate3d(0,0,0)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translate3d(-14vw,-5vh,0)
+                        scale(1.20);
+                }
+            }
+
+
+            @keyframes dfMist3 {
+
+                from {
+                    transform:
+                        translate3d(0,0,0)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translate3d(8vw,-15vh,0)
+                        scale(1.15);
+                }
+            }
+
+
+            .df-particles i {
+
+                position:absolute;
+
+                width:2px;
+                height:2px;
+
+                border-radius:50%;
+
+                background:
+                    rgba(130,205,155,.38);
+
+                box-shadow:
+                    0 0 7px
+                    rgba(90,180,120,.25);
+
+                animation:
+                    dfParticle linear infinite;
+            }
+
+
+            .df-particles i:nth-child(1)
+            {left:7%;top:90%;animation-duration:30s;animation-delay:-8s;}
+
+            .df-particles i:nth-child(2)
+            {left:16%;top:70%;animation-duration:38s;animation-delay:-17s;}
+
+            .df-particles i:nth-child(3)
+            {left:25%;top:82%;animation-duration:34s;animation-delay:-11s;}
+
+            .df-particles i:nth-child(4)
+            {left:34%;top:60%;animation-duration:42s;animation-delay:-24s;}
+
+            .df-particles i:nth-child(5)
+            {left:43%;top:75%;animation-duration:36s;animation-delay:-14s;}
+
+            .df-particles i:nth-child(6)
+            {left:52%;top:88%;animation-duration:45s;animation-delay:-31s;}
+
+            .df-particles i:nth-child(7)
+            {left:61%;top:67%;animation-duration:33s;animation-delay:-19s;}
+
+            .df-particles i:nth-child(8)
+            {left:70%;top:80%;animation-duration:40s;animation-delay:-7s;}
+
+            .df-particles i:nth-child(9)
+            {left:79%;top:58%;animation-duration:37s;animation-delay:-22s;}
+
+            .df-particles i:nth-child(10)
+            {left:88%;top:72%;animation-duration:44s;animation-delay:-16s;}
+
+            .df-particles i:nth-child(11)
+            {left:12%;top:45%;animation-duration:39s;animation-delay:-28s;}
+
+            .df-particles i:nth-child(12)
+            {left:29%;top:40%;animation-duration:35s;animation-delay:-13s;}
+
+            .df-particles i:nth-child(13)
+            {left:48%;top:50%;animation-duration:43s;animation-delay:-26s;}
+
+            .df-particles i:nth-child(14)
+            {left:68%;top:35%;animation-duration:41s;animation-delay:-21s;}
+
+            .df-particles i:nth-child(15)
+            {left:91%;top:42%;animation-duration:36s;animation-delay:-9s;}
+
+
+            @keyframes dfParticle {
+
+                from {
+                    transform:
+                        translate3d(0,15vh,0);
+                    opacity:0;
+                }
+
+                18% {
+                    opacity:.35;
+                }
+
+                75% {
+                    opacity:.20;
+                }
+
+                to {
+                    transform:
+                        translate3d(-5vw,-110vh,0);
+                    opacity:0;
+                }
+            }
+
+        `);
+
+
+        document.documentElement.classList.add(
+            "arctic-forest-active"
         );
 
-        addStyle(commonCSS);
+        document.body.classList.add(
+            "forest-theme"
+        );
 
-        createLiveLayer('forest');
+        createLiveLayer("forest");
     }
 
+
+    // =========================================================
+    // STORM
+    // =========================================================
 
     function applyStorm() {
 
-        document.body.classList.add(
-            'storm-theme'
+        addStyle(`
+
+            body,
+            body .main,
+            body .wrap,
+            body .content,
+            body .activity {
+
+                background:#080B10 !important;
+            }
+
+            body {
+                color:#ffffff !important;
+            }
+
+            body .background,
+            body .modal,
+            body .modal__content,
+            body .settings,
+            body .menu {
+
+                background:#05070A !important;
+            }
+
+            body .selector.focus {
+
+                outline:none !important;
+
+                background:
+                    linear-gradient(
+                        135deg,
+                        #DDF5FF 0%,
+                        #5B9FC7 100%
+                    ) !important;
+
+                color:#071016 !important;
+            }
+
+            body .card.focus {
+
+                box-shadow:
+                    0 0 0 2px #6EA7C7 !important;
+            }
+
+            body .settings__content,
+            body .settings__body {
+
+                background:
+                    linear-gradient(
+                        135deg,
+                        rgb(25,32,41),
+                        rgb(5,8,11)
+                    ) !important;
+            }
+
+            body .player-panel__progress,
+            body .player-panel__progress-line {
+
+                background:#63A9D0 !important;
+            }
+
+            body .extensions,
+            body .extensions__item {
+
+                background:#070B10 !important;
+            }
+
+            body .extensions__item.focus {
+
+                background:#17212A !important;
+            }
+
+            body .torrent-item__badge,
+            body .torrent-item__quality {
+
+                color:#D9E8F0 !important;
+            }
+
+            body .torrent-item.focus {
+
+                background:
+                    rgba(91,159,199,.23) !important;
+            }
+
+            body .iptv__item.focus {
+
+                background:#14232E !important;
+            }
+
+
+            #arctic-forest-live-layer {
+
+                position:fixed;
+                inset:0;
+
+                pointer-events:none;
+
+                z-index:999999;
+
+                overflow:hidden;
+            }
+
+
+            .storm-sky {
+
+                position:absolute;
+
+                inset:0;
+
+                background:
+                    radial-gradient(
+                        ellipse at 50% -15%,
+                        rgba(85,110,135,.16),
+                        transparent 55%
+                    ),
+
+                    linear-gradient(
+                        to bottom,
+                        rgba(20,28,38,.30),
+                        rgba(3,6,9,.08) 45%,
+                        rgba(2,4,6,.38)
+                    );
+
+                opacity:.85;
+            }
+
+
+            .storm-cloud {
+
+                position:absolute;
+
+                border-radius:50%;
+
+                filter:blur(55px);
+
+                opacity:.20;
+
+                background:
+                    radial-gradient(
+                        ellipse,
+                        rgba(70,82,96,.85) 0%,
+                        rgba(35,44,54,.55) 38%,
+                        transparent 72%
+                    );
+            }
+
+
+            .storm-cloud-1 {
+
+                width:75vw;
+                height:35vw;
+
+                left:-20vw;
+                top:-8vw;
+
+                animation:
+                    stormCloud1 48s ease-in-out infinite alternate;
+            }
+
+
+            .storm-cloud-2 {
+
+                width:85vw;
+                height:40vw;
+
+                right:-35vw;
+                top:15vh;
+
+                opacity:.15;
+
+                animation:
+                    stormCloud2 62s ease-in-out infinite alternate;
+            }
+
+
+            .storm-cloud-3 {
+
+                width:90vw;
+                height:42vw;
+
+                left:10vw;
+                bottom:-30vw;
+
+                opacity:.13;
+
+                animation:
+                    stormCloud3 55s ease-in-out infinite alternate;
+            }
+
+
+            @keyframes stormCloud1 {
+
+                from {
+                    transform:
+                        translate3d(-5vw,0,0)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translate3d(15vw,8vh,0)
+                        scale(1.18);
+                }
+            }
+
+
+            @keyframes stormCloud2 {
+
+                from {
+                    transform:
+                        translate3d(8vw,-4vh,0)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translate3d(-18vw,10vh,0)
+                        scale(1.20);
+                }
+            }
+
+
+            @keyframes stormCloud3 {
+
+                from {
+                    transform:
+                        translate3d(0,5vh,0)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translate3d(12vw,-8vh,0)
+                        scale(1.16);
+                }
+            }
+
+
+            .storm-mist {
+
+                position:absolute;
+
+                border-radius:50%;
+
+                filter:blur(80px);
+
+                opacity:.14;
+
+                background:
+                    radial-gradient(
+                        ellipse,
+                        rgba(105,125,142,.40),
+                        transparent 70%
+                    );
+            }
+
+
+            .storm-mist-1 {
+
+                width:70vw;
+                height:28vw;
+
+                left:-25vw;
+                top:30vh;
+
+                animation:
+                    stormMist1 32s ease-in-out infinite alternate;
+            }
+
+
+            .storm-mist-2 {
+
+                width:80vw;
+                height:30vw;
+
+                right:-30vw;
+                top:50vh;
+
+                opacity:.10;
+
+                animation:
+                    stormMist2 40s ease-in-out infinite alternate;
+            }
+
+
+            .storm-mist-3 {
+
+                width:100vw;
+                height:35vw;
+
+                left:0;
+                bottom:-15vw;
+
+                opacity:.11;
+
+                animation:
+                    stormMist3 46s ease-in-out infinite alternate;
+            }
+
+
+            @keyframes stormMist1 {
+
+                from {
+                    transform:
+                        translate3d(-8vw,0,0)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translate3d(20vw,3vh,0)
+                        scale(1.15);
+                }
+            }
+
+
+            @keyframes stormMist2 {
+
+                from {
+                    transform:
+                        translate3d(8vw,0,0)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translate3d(-18vw,-5vh,0)
+                        scale(1.20);
+                }
+            }
+
+
+            @keyframes stormMist3 {
+
+                from {
+                    transform:
+                        translate3d(0,3vh,0)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translate3d(10vw,-8vh,0)
+                        scale(1.12);
+                }
+            }
+
+
+            .storm-rain i {
+
+                position:absolute;
+
+                width:1px;
+                height:7px;
+
+                border-radius:50%;
+
+                background:
+                    rgba(180,205,220,.20);
+
+                opacity:0;
+
+                transform:rotate(18deg);
+
+                animation:
+                    stormRain linear infinite;
+            }
+
+
+            .storm-rain i:nth-child(1)
+            {left:3%;top:-10%;animation-duration:4.8s;animation-delay:-1s;}
+
+            .storm-rain i:nth-child(2)
+            {left:7%;top:-20%;animation-duration:5.7s;animation-delay:-3s;}
+
+            .storm-rain i:nth-child(3)
+            {left:11%;top:-5%;animation-duration:4.3s;animation-delay:-2s;}
+
+            .storm-rain i:nth-child(4)
+            {left:15%;top:-15%;animation-duration:6.2s;animation-delay:-5s;}
+
+            .storm-rain i:nth-child(5)
+            {left:19%;top:-25%;animation-duration:5.1s;animation-delay:-1s;}
+
+            .storm-rain i:nth-child(6)
+            {left:23%;top:-8%;animation-duration:4.9s;animation-delay:-4s;}
+
+            .storm-rain i:nth-child(7)
+            {left:27%;top:-18%;animation-duration:6.4s;animation-delay:-2s;}
+
+            .storm-rain i:nth-child(8)
+            {left:31%;top:-30%;animation-duration:5.5s;animation-delay:-6s;}
+
+            .storm-rain i:nth-child(9)
+            {left:35%;top:-12%;animation-duration:4.7s;animation-delay:-3s;}
+
+            .storm-rain i:nth-child(10)
+            {left:39%;top:-22%;animation-duration:5.9s;animation-delay:-1s;}
+
+            .storm-rain i:nth-child(11)
+            {left:43%;top:-5%;animation-duration:4.6s;animation-delay:-4s;}
+
+            .storm-rain i:nth-child(12)
+            {left:47%;top:-17%;animation-duration:6.1s;animation-delay:-5s;}
+
+            .storm-rain i:nth-child(13)
+            {left:51%;top:-28%;animation-duration:5.2s;animation-delay:-2s;}
+
+            .storm-rain i:nth-child(14)
+            {left:55%;top:-9%;animation-duration:4.8s;animation-delay:-6s;}
+
+            .storm-rain i:nth-child(15)
+            {left:59%;top:-20%;animation-duration:5.8s;animation-delay:-3s;}
+
+            .storm-rain i:nth-child(16)
+            {left:63%;top:-7%;animation-duration:4.5s;animation-delay:-1s;}
+
+            .storm-rain i:nth-child(17)
+            {left:67%;top:-25%;animation-duration:6.3s;animation-delay:-4s;}
+
+            .storm-rain i:nth-child(18)
+            {left:71%;top:-14%;animation-duration:5.0s;animation-delay:-2s;}
+
+            .storm-rain i:nth-child(19)
+            {left:75%;top:-30%;animation-duration:5.6s;animation-delay:-5s;}
+
+            .storm-rain i:nth-child(20)
+            {left:79%;top:-10%;animation-duration:4.9s;animation-delay:-3s;}
+
+            .storm-rain i:nth-child(21)
+            {left:83%;top:-21%;animation-duration:6.0s;animation-delay:-1s;}
+
+            .storm-rain i:nth-child(22)
+            {left:87%;top:-4%;animation-duration:4.4s;animation-delay:-4s;}
+
+            .storm-rain i:nth-child(23)
+            {left:91%;top:-16%;animation-duration:5.4s;animation-delay:-2s;}
+
+            .storm-rain i:nth-child(24)
+            {left:95%;top:-26%;animation-duration:6.2s;animation-delay:-6s;}
+
+            .storm-rain i:nth-child(25)
+            {left:5%;top:15%;animation-duration:5.3s;animation-delay:-2s;}
+
+            .storm-rain i:nth-child(26)
+            {left:18%;top:25%;animation-duration:6.0s;animation-delay:-5s;}
+
+            .storm-rain i:nth-child(27)
+            {left:32%;top:10%;animation-duration:4.8s;animation-delay:-3s;}
+
+            .storm-rain i:nth-child(28)
+            {left:46%;top:20%;animation-duration:5.7s;animation-delay:-1s;}
+
+            .storm-rain i:nth-child(29)
+            {left:60%;top:12%;animation-duration:6.1s;animation-delay:-4s;}
+
+            .storm-rain i:nth-child(30)
+            {left:74%;top:28%;animation-duration:5.1s;animation-delay:-2s;}
+
+            .storm-rain i:nth-child(31)
+            {left:88%;top:18%;animation-duration:5.9s;animation-delay:-5s;}
+
+            .storm-rain i:nth-child(32)
+            {left:97%;top:35%;animation-duration:4.7s;animation-delay:-3s;}
+
+
+            @keyframes stormRain {
+
+                0% {
+                    transform:
+                        translate3d(0,-10vh,0)
+                        rotate(18deg);
+                    opacity:0;
+                }
+
+                10% {
+                    opacity:.22;
+                }
+
+                85% {
+                    opacity:.12;
+                }
+
+                100% {
+                    transform:
+                        translate3d(-12vw,120vh,0)
+                        rotate(18deg);
+                    opacity:0;
+                }
+            }
+
+
+            .storm-flash {
+
+                position:absolute;
+
+                inset:0;
+
+                opacity:0;
+
+                background:
+                    radial-gradient(
+                        ellipse at 50% 15%,
+                        rgba(220,240,255,.22),
+                        transparent 60%
+                    );
+            }
+
+
+            .storm-flash-1 {
+                animation:
+                    stormLightning1 31s linear infinite;
+            }
+
+
+            .storm-flash-2 {
+                animation:
+                    stormLightning2 47s linear infinite;
+            }
+
+
+            @keyframes stormLightning1 {
+
+                0%,89%,91%,93%,100% {
+                    opacity:0;
+                }
+
+                90% {
+                    opacity:.20;
+                }
+
+                90.4% {
+                    opacity:0;
+                }
+
+                90.9% {
+                    opacity:.32;
+                }
+
+                91.3% {
+                    opacity:0;
+                }
+            }
+
+
+            @keyframes stormLightning2 {
+
+                0%,94%,96%,100% {
+                    opacity:0;
+                }
+
+                95% {
+                    opacity:.14;
+                }
+
+                95.3% {
+                    opacity:0;
+                }
+
+                95.8% {
+                    opacity:.25;
+                }
+
+                96.1% {
+                    opacity:0;
+                }
+            }
+
+        `);
+
+
+        document.documentElement.classList.add(
+            "arctic-forest-active"
         );
 
-        addStyle(commonCSS);
+        document.body.classList.add(
+            "storm-theme"
+        );
 
-        createLiveLayer('storm');
+        createLiveLayer("storm");
     }
 
+
+    // =========================================================
+    // AUTUMN
+    // =========================================================
 
     function applyAutumn() {
 
-        document.body.classList.add(
-            'autumn-theme'
+        addStyle(`
+
+            /* =================================================
+               AUTUMN
+            ================================================= */
+
+            body,
+            body .main,
+            body .wrap,
+            body .content,
+            body .activity {
+
+                background:
+                    linear-gradient(
+                        180deg,
+                        #24170E 0%,
+                        #1A1009 50%,
+                        #0D0805 100%
+                    ) !important;
+            }
+
+
+            body {
+
+                color:#ffffff !important;
+            }
+
+
+            body .background,
+            body .modal,
+            body .modal__content,
+            body .settings,
+            body .menu {
+
+                background:#0D0805 !important;
+            }
+
+
+            body .selector.focus {
+
+                outline:none !important;
+
+                background:
+                    linear-gradient(
+                        135deg,
+                        #FFF0D4 0%,
+                        #C87536 100%
+                    ) !important;
+
+                color:#160D07 !important;
+            }
+
+
+            body .card.focus {
+
+                box-shadow:
+                    0 0 0 2px #D08343 !important;
+            }
+
+
+            body .settings__content,
+            body .settings__body {
+
+                background:
+                    linear-gradient(
+                        135deg,
+                        rgb(61,38,22),
+                        rgb(12,7,4)
+                    ) !important;
+            }
+
+
+            body .player-panel__progress,
+            body .player-panel__progress-line {
+
+                background:#D08442 !important;
+            }
+
+
+            body .extensions,
+            body .extensions__item {
+
+                background:#100A06 !important;
+            }
+
+
+            body .extensions__item.focus {
+
+                background:#2B1A0E !important;
+            }
+
+
+            body .torrent-item__badge,
+            body .torrent-item__quality {
+
+                color:#EAD9C5 !important;
+            }
+
+
+            body .torrent-item.focus {
+
+                background:
+                    rgba(208,132,66,.28) !important;
+            }
+
+
+            body .iptv__item.focus {
+
+                background:#302010 !important;
+            }
+
+
+            /* =================================================
+               LIVE
+            ================================================= */
+
+            #arctic-forest-live-layer {
+
+                position:fixed;
+                inset:0;
+
+                pointer-events:none;
+
+                z-index:999999;
+
+                overflow:hidden;
+            }
+
+
+            .autumn-glow {
+
+                position:absolute;
+
+                width:100vw;
+                height:75vh;
+
+                left:0;
+                top:-15vh;
+
+                background:
+                    radial-gradient(
+                        ellipse at 50% 20%,
+                        rgba(220,135,55,.13),
+                        transparent 68%
+                    );
+
+                filter:blur(35px);
+
+                animation:
+                    autumnGlow 20s ease-in-out infinite alternate;
+            }
+
+
+            @keyframes autumnGlow {
+
+                from {
+                    transform:
+                        scale(.96)
+                        translateX(-2vw);
+
+                    opacity:.55;
+                }
+
+                to {
+                    transform:
+                        scale(1.06)
+                        translateX(2vw);
+
+                    opacity:.90;
+                }
+            }
+
+
+            .autumn-mist {
+
+                position:absolute;
+
+                width:75vw;
+                height:32vw;
+
+                border-radius:50%;
+
+                filter:blur(75px);
+
+                opacity:.14;
+
+                background:
+                    radial-gradient(
+                        ellipse,
+                        rgba(190,115,55,.38),
+                        transparent 70%
+                    );
+            }
+
+
+            .autumn-mist-1 {
+
+                left:-25vw;
+                top:25vh;
+
+                animation:
+                    autumnMist1 32s ease-in-out infinite alternate;
+            }
+
+
+            .autumn-mist-2 {
+
+                right:-30vw;
+                top:52vh;
+
+                opacity:.11;
+
+                animation:
+                    autumnMist2 42s ease-in-out infinite alternate;
+            }
+
+
+            .autumn-mist-3 {
+
+                left:10vw;
+                bottom:-15vw;
+
+                opacity:.10;
+
+                animation:
+                    autumnMist3 48s ease-in-out infinite alternate;
+            }
+
+
+            @keyframes autumnMist1 {
+
+                from {
+                    transform:
+                        translateX(-7vw)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translateX(18vw)
+                        scale(1.16);
+                }
+            }
+
+
+            @keyframes autumnMist2 {
+
+                from {
+                    transform:
+                        translateX(8vw)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translateX(-17vw)
+                        scale(1.18);
+                }
+            }
+
+
+            @keyframes autumnMist3 {
+
+                from {
+                    transform:
+                        translateY(3vh)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translate(10vw,-7vh)
+                        scale(1.14);
+                }
+            }
+
+
+            /* =================================================
+               LEAVES
+            ================================================= */
+
+            .autumn-leaves i {
+
+                position:absolute;
+
+                width:11px;
+                height:17px;
+
+                border-radius:
+                    80% 20% 75% 25%;
+
+                background:
+                    #B85F2B;
+
+                box-shadow:
+                    0 0 7px
+                    rgba(190,100,40,.20);
+
+                opacity:0;
+
+                animation:
+                    autumnLeaf linear infinite;
+            }
+
+
+            .autumn-leaves i:nth-child(1)
+            {left:4%;top:-10%;animation-duration:13s;animation-delay:-2s;transform:rotate(25deg);}
+
+            .autumn-leaves i:nth-child(2)
+            {left:9%;top:-25%;animation-duration:17s;animation-delay:-9s;transform:rotate(75deg);}
+
+            .autumn-leaves i:nth-child(3)
+            {left:14%;top:-5%;animation-duration:15s;animation-delay:-6s;transform:rotate(130deg);}
+
+            .autumn-leaves i:nth-child(4)
+            {left:19%;top:-18%;animation-duration:19s;animation-delay:-13s;transform:rotate(40deg);}
+
+            .autumn-leaves i:nth-child(5)
+            {left:24%;top:-30%;animation-duration:14s;animation-delay:-5s;transform:rotate(110deg);}
+
+            .autumn-leaves i:nth-child(6)
+            {left:29%;top:-12%;animation-duration:18s;animation-delay:-11s;transform:rotate(170deg);}
+
+            .autumn-leaves i:nth-child(7)
+            {left:34%;top:-22%;animation-duration:16s;animation-delay:-4s;transform:rotate(55deg);}
+
+            .autumn-leaves i:nth-child(8)
+            {left:39%;top:-35%;animation-duration:20s;animation-delay:-16s;transform:rotate(145deg);}
+
+            .autumn-leaves i:nth-child(9)
+            {left:44%;top:-8%;animation-duration:15s;animation-delay:-8s;transform:rotate(80deg);}
+
+            .autumn-leaves i:nth-child(10)
+            {left:49%;top:-20%;animation-duration:18s;animation-delay:-3s;transform:rotate(15deg);}
+
+            .autumn-leaves i:nth-child(11)
+            {left:54%;top:-30%;animation-duration:21s;animation-delay:-14s;transform:rotate(125deg);}
+
+            .autumn-leaves i:nth-child(12)
+            {left:59%;top:-14%;animation-duration:16s;animation-delay:-7s;transform:rotate(65deg);}
+
+            .autumn-leaves i:nth-child(13)
+            {left:64%;top:-27%;animation-duration:19s;animation-delay:-12s;transform:rotate(155deg);}
+
+            .autumn-leaves i:nth-child(14)
+            {left:69%;top:-6%;animation-duration:14s;animation-delay:-1s;transform:rotate(95deg);}
+
+            .autumn-leaves i:nth-child(15)
+            {left:74%;top:-17%;animation-duration:17s;animation-delay:-10s;transform:rotate(35deg);}
+
+            .autumn-leaves i:nth-child(16)
+            {left:79%;top:-31%;animation-duration:20s;animation-delay:-15s;transform:rotate(135deg);}
+
+            .autumn-leaves i:nth-child(17)
+            {left:84%;top:-11%;animation-duration:15s;animation-delay:-5s;transform:rotate(70deg);}
+
+            .autumn-leaves i:nth-child(18)
+            {left:89%;top:-23%;animation-duration:18s;animation-delay:-9s;transform:rotate(160deg);}
+
+            .autumn-leaves i:nth-child(19)
+            {left:94%;top:-34%;animation-duration:21s;animation-delay:-17s;transform:rotate(45deg);}
+
+            .autumn-leaves i:nth-child(20)
+            {left:98%;top:-15%;animation-duration:16s;animation-delay:-6s;transform:rotate(115deg);}
+
+            .autumn-leaves i:nth-child(21)
+            {left:12%;top:-40%;animation-duration:22s;animation-delay:-18s;transform:rotate(30deg);}
+
+            .autumn-leaves i:nth-child(22)
+            {left:27%;top:-45%;animation-duration:19s;animation-delay:-11s;transform:rotate(145deg);}
+
+            .autumn-leaves i:nth-child(23)
+            {left:43%;top:-38%;animation-duration:23s;animation-delay:-20s;transform:rotate(80deg);}
+
+            .autumn-leaves i:nth-child(24)
+            {left:58%;top:-42%;animation-duration:18s;animation-delay:-14s;transform:rotate(170deg);}
+
+            .autumn-leaves i:nth-child(25)
+            {left:72%;top:-48%;animation-duration:22s;animation-delay:-7s;transform:rotate(60deg);}
+
+            .autumn-leaves i:nth-child(26)
+            {left:87%;top:-40%;animation-duration:20s;animation-delay:-16s;transform:rotate(130deg);}
+
+            .autumn-leaves i:nth-child(27)
+            {left:17%;top:-55%;animation-duration:24s;animation-delay:-21s;transform:rotate(20deg);}
+
+            .autumn-leaves i:nth-child(28)
+            {left:36%;top:-50%;animation-duration:21s;animation-delay:-12s;transform:rotate(105deg);}
+
+            .autumn-leaves i:nth-child(29)
+            {left:66%;top:-58%;animation-duration:23s;animation-delay:-19s;transform:rotate(150deg);}
+
+            .autumn-leaves i:nth-child(30)
+            {left:93%;top:-52%;animation-duration:19s;animation-delay:-8s;transform:rotate(75deg);}
+
+            .autumn-leaves i:nth-child(31)
+            {left:31%;top:-65%;animation-duration:25s;animation-delay:-23s;transform:rotate(120deg);}
+
+            .autumn-leaves i:nth-child(32)
+            {left:81%;top:-62%;animation-duration:22s;animation-delay:-18s;transform:rotate(40deg);}
+
+            .autumn-leaves i:nth-child(33)
+            {left:7%;top:-70%;animation-duration:26s;animation-delay:-24s;transform:rotate(155deg);}
+
+            .autumn-leaves i:nth-child(34)
+            {left:52%;top:-68%;animation-duration:24s;animation-delay:-20s;transform:rotate(65deg);}
+
+            .autumn-leaves i:nth-child(35)
+            {left:76%;top:-72%;animation-duration:27s;animation-delay:-25s;transform:rotate(95deg);}
+
+            .autumn-leaves i:nth-child(36)
+            {left:97%;top:-66%;animation-duration:23s;animation-delay:-15s;transform:rotate(135deg);}
+
+
+            .autumn-leaves i:nth-child(3n) {
+
+                width:8px;
+                height:13px;
+
+                background:#D58A38;
+            }
+
+
+            .autumn-leaves i:nth-child(4n) {
+
+                width:13px;
+                height:19px;
+
+                background:#8E431F;
+            }
+
+
+            .autumn-leaves i:nth-child(5n) {
+
+                background:#C9792E;
+            }
+
+
+            @keyframes autumnLeaf {
+
+                0% {
+
+                    transform:
+                        translate3d(0,-15vh,0)
+                        rotate(0deg);
+
+                    opacity:0;
+                }
+
+                8% {
+
+                    opacity:.75;
+                }
+
+                25% {
+
+                    transform:
+                        translate3d(45px,25vh,0)
+                        rotate(95deg);
+                }
+
+                50% {
+
+                    transform:
+                        translate3d(-70px,52vh,0)
+                        rotate(220deg);
+                }
+
+                75% {
+
+                    transform:
+                        translate3d(55px,80vh,0)
+                        rotate(330deg);
+                }
+
+                100% {
+
+                    transform:
+                        translate3d(-35px,115vh,0)
+                        rotate(470deg);
+
+                    opacity:0;
+                }
+            }
+
+        `);
+
+
+        document.documentElement.classList.add(
+            "arctic-forest-active"
         );
 
-        addStyle(commonCSS);
+        document.body.classList.add(
+            "autumn-theme"
+        );
 
-        createLiveLayer('autumn');
+        createLiveLayer("autumn");
     }
 
+
+    // =========================================================
+    // WINTER
+    // =========================================================
 
     function applyWinter() {
 
-        document.body.classList.add(
-            'winter-theme'
+        addStyle(`
+
+            /* =================================================
+               WINTER
+            ================================================= */
+
+            body,
+            body .main,
+            body .wrap,
+            body .content,
+            body .activity {
+
+                background:
+                    linear-gradient(
+                        180deg,
+                        #091B2A 0%,
+                        #071522 48%,
+                        #040B12 100%
+                    ) !important;
+            }
+
+
+            body {
+
+                color:#ffffff !important;
+            }
+
+
+            body .background,
+            body .modal,
+            body .modal__content,
+            body .settings,
+            body .menu {
+
+                background:#040B12 !important;
+            }
+
+
+            body .selector.focus {
+
+                outline:none !important;
+
+                background:
+                    linear-gradient(
+                        135deg,
+                        #F5FCFF 0%,
+                        #91C9E5 100%
+                    ) !important;
+
+                color:#07131B !important;
+            }
+
+
+            body .card.focus {
+
+                box-shadow:
+                    0 0 0 2px #A7D9EF !important;
+            }
+
+
+            body .settings__content,
+            body .settings__body {
+
+                background:
+                    linear-gradient(
+                        135deg,
+                        rgb(26,47,60),
+                        rgb(5,10,15)
+                    ) !important;
+            }
+
+
+            body .player-panel__progress,
+            body .player-panel__progress-line {
+
+                background:#74C5E5 !important;
+            }
+
+
+            body .extensions,
+            body .extensions__item {
+
+                background:#050B11 !important;
+            }
+
+
+            body .extensions__item.focus {
+
+                background:#142733 !important;
+            }
+
+
+            body .torrent-item__badge,
+            body .torrent-item__quality {
+
+                color:#E1F1F8 !important;
+            }
+
+
+            body .torrent-item.focus {
+
+                background:
+                    rgba(145,201,229,.28) !important;
+            }
+
+
+            body .iptv__item.focus {
+
+                background:#112A36 !important;
+            }
+
+
+            /* =================================================
+               LIVE
+            ================================================= */
+
+            #arctic-forest-live-layer {
+
+                position:fixed;
+                inset:0;
+
+                pointer-events:none;
+
+                z-index:999999;
+
+                overflow:hidden;
+            }
+
+
+            /*
+             * Очень мягкое холодное свечение.
+             * Без горизонтальной яркой полосы.
+             */
+
+            .winter-glow {
+
+                position:absolute;
+
+                width:100vw;
+                height:100vh;
+
+                left:0;
+                top:0;
+
+                background:
+                    radial-gradient(
+                        ellipse at 50% 18%,
+                        rgba(145,215,240,.075),
+                        transparent 48%
+                    );
+
+                filter:blur(38px);
+
+                opacity:.85;
+
+                animation:
+                    winterGlow
+                    22s ease-in-out infinite alternate;
+            }
+
+
+            @keyframes winterGlow {
+
+                from {
+                    transform:
+                        scale(.97);
+
+                    opacity:.55;
+                }
+
+                to {
+                    transform:
+                        scale(1.04);
+
+                    opacity:.85;
+                }
+            }
+
+
+            /* =================================================
+               WINTER MIST
+            ================================================= */
+
+            .winter-mist {
+
+                position:absolute;
+
+                width:75vw;
+                height:30vw;
+
+                border-radius:50%;
+
+                filter:blur(80px);
+
+                background:
+                    radial-gradient(
+                        ellipse,
+                        rgba(155,215,235,.24),
+                        transparent 70%
+                    );
+
+                opacity:.12;
+            }
+
+
+            .winter-mist-1 {
+
+                left:-25vw;
+                top:24vh;
+
+                animation:
+                    winterMist1
+                    34s ease-in-out infinite alternate;
+            }
+
+
+            .winter-mist-2 {
+
+                right:-30vw;
+                top:53vh;
+
+                opacity:.09;
+
+                animation:
+                    winterMist2
+                    44s ease-in-out infinite alternate;
+            }
+
+
+            .winter-mist-3 {
+
+                left:8vw;
+                bottom:-18vw;
+
+                opacity:.10;
+
+                animation:
+                    winterMist3
+                    52s ease-in-out infinite alternate;
+            }
+
+
+            @keyframes winterMist1 {
+
+                from {
+                    transform:
+                        translateX(-7vw)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translateX(17vw)
+                        scale(1.16);
+                }
+            }
+
+
+            @keyframes winterMist2 {
+
+                from {
+                    transform:
+                        translateX(7vw)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translateX(-18vw)
+                        scale(1.18);
+                }
+            }
+
+
+            @keyframes winterMist3 {
+
+                from {
+                    transform:
+                        translate(0,3vh)
+                        scale(1);
+                }
+
+                to {
+                    transform:
+                        translate(10vw,-8vh)
+                        scale(1.15);
+                }
+            }
+
+
+            /* =================================================
+               REAL SNOWFLAKES
+            ================================================= */
+
+            .winter-snow i {
+
+                position:absolute;
+
+                display:block;
+
+                width:auto;
+                height:auto;
+
+                background:none !important;
+
+                border:none !important;
+
+                border-radius:0 !important;
+
+                color:
+                    rgba(240,251,255,.88);
+
+                font-family:
+                    Arial,
+                    sans-serif;
+
+                font-style:normal;
+
+                font-weight:normal;
+
+                line-height:1;
+
+                text-align:center;
+
+                text-shadow:
+                    0 0 5px
+                    rgba(200,240,255,.70),
+
+                    0 0 11px
+                    rgba(140,215,245,.40);
+
+                opacity:0;
+
+                animation:
+                    winterSnow
+                    linear infinite;
+            }
+
+
+            /* =================================================
+               DIFFERENT SNOWFLAKE SIZES
+            ================================================= */
+
+            .winter-snow i:nth-child(3n) {
+
+                font-size:9px;
+
+                opacity:.62;
+            }
+
+
+            .winter-snow i:nth-child(3n+1) {
+
+                font-size:14px;
+
+                opacity:.82;
+            }
+
+
+            .winter-snow i:nth-child(5n) {
+
+                font-size:20px;
+
+                opacity:.92;
+
+                text-shadow:
+                    0 0 7px
+                    rgba(220,248,255,.85),
+
+                    0 0 14px
+                    rgba(150,220,245,.45);
+            }
+
+
+            /* =================================================
+               SNOW POSITIONS
+            ================================================= */
+
+            .winter-snow i:nth-child(1)
+            {left:3%;top:-10%;animation-duration:13s;animation-delay:-2s;}
+
+            .winter-snow i:nth-child(2)
+            {left:8%;top:-25%;animation-duration:18s;animation-delay:-8s;}
+
+            .winter-snow i:nth-child(3)
+            {left:13%;top:-5%;animation-duration:15s;animation-delay:-5s;}
+
+            .winter-snow i:nth-child(4)
+            {left:18%;top:-18%;animation-duration:21s;animation-delay:-13s;}
+
+            .winter-snow i:nth-child(5)
+            {left:23%;top:-30%;animation-duration:16s;animation-delay:-7s;}
+
+            .winter-snow i:nth-child(6)
+            {left:28%;top:-12%;animation-duration:19s;animation-delay:-10s;}
+
+            .winter-snow i:nth-child(7)
+            {left:33%;top:-22%;animation-duration:14s;animation-delay:-4s;}
+
+            .winter-snow i:nth-child(8)
+            {left:38%;top:-35%;animation-duration:22s;animation-delay:-17s;}
+
+            .winter-snow i:nth-child(9)
+            {left:43%;top:-8%;animation-duration:17s;animation-delay:-6s;}
+
+            .winter-snow i:nth-child(10)
+            {left:48%;top:-20%;animation-duration:20s;animation-delay:-3s;}
+
+            .winter-snow i:nth-child(11)
+            {left:53%;top:-30%;animation-duration:15s;animation-delay:-11s;}
+
+            .winter-snow i:nth-child(12)
+            {left:58%;top:-14%;animation-duration:23s;animation-delay:-15s;}
+
+            .winter-snow i:nth-child(13)
+            {left:63%;top:-27%;animation-duration:18s;animation-delay:-9s;}
+
+            .winter-snow i:nth-child(14)
+            {left:68%;top:-6%;animation-duration:14s;animation-delay:-2s;}
+
+            .winter-snow i:nth-child(15)
+            {left:73%;top:-17%;animation-duration:21s;animation-delay:-12s;}
+
+            .winter-snow i:nth-child(16)
+            {left:78%;top:-31%;animation-duration:16s;animation-delay:-5s;}
+
+            .winter-snow i:nth-child(17)
+            {left:83%;top:-11%;animation-duration:19s;animation-delay:-14s;}
+
+            .winter-snow i:nth-child(18)
+            {left:88%;top:-23%;animation-duration:22s;animation-delay:-8s;}
+
+            .winter-snow i:nth-child(19)
+            {left:93%;top:-34%;animation-duration:17s;animation-delay:-10s;}
+
+            .winter-snow i:nth-child(20)
+            {left:98%;top:-15%;animation-duration:20s;animation-delay:-6s;}
+
+            .winter-snow i:nth-child(21)
+            {left:10%;top:-42%;animation-duration:24s;animation-delay:-18s;}
+
+            .winter-snow i:nth-child(22)
+            {left:25%;top:-48%;animation-duration:19s;animation-delay:-12s;}
+
+            .winter-snow i:nth-child(23)
+            {left:41%;top:-40%;animation-duration:25s;animation-delay:-20s;}
+
+            .winter-snow i:nth-child(24)
+            {left:56%;top:-46%;animation-duration:21s;animation-delay:-15s;}
+
+            .winter-snow i:nth-child(25)
+            {left:71%;top:-52%;animation-duration:24s;animation-delay:-7s;}
+
+            .winter-snow i:nth-child(26)
+            {left:86%;top:-43%;animation-duration:22s;animation-delay:-17s;}
+
+            .winter-snow i:nth-child(27)
+            {left:16%;top:-58%;animation-duration:26s;animation-delay:-21s;}
+
+            .winter-snow i:nth-child(28)
+            {left:35%;top:-54%;animation-duration:23s;animation-delay:-13s;}
+
+            .winter-snow i:nth-child(29)
+            {left:65%;top:-62%;animation-duration:27s;animation-delay:-19s;}
+
+            .winter-snow i:nth-child(30)
+            {left:91%;top:-57%;animation-duration:22s;animation-delay:-9s;}
+
+            .winter-snow i:nth-child(31)
+            {left:30%;top:-68%;animation-duration:28s;animation-delay:-23s;}
+
+            .winter-snow i:nth-child(32)
+            {left:80%;top:-65%;animation-duration:25s;animation-delay:-18s;}
+
+            .winter-snow i:nth-child(33)
+            {left:6%;top:-75%;animation-duration:29s;animation-delay:-25s;}
+
+            .winter-snow i:nth-child(34)
+            {left:51%;top:-72%;animation-duration:27s;animation-delay:-20s;}
+
+            .winter-snow i:nth-child(35)
+            {left:75%;top:-78%;animation-duration:30s;animation-delay:-26s;}
+
+            .winter-snow i:nth-child(36)
+            {left:97%;top:-70%;animation-duration:24s;animation-delay:-16s;}
+
+            .winter-snow i:nth-child(37)
+            {left:20%;top:-82%;animation-duration:31s;animation-delay:-22s;}
+
+            .winter-snow i:nth-child(38)
+            {left:45%;top:-76%;animation-duration:26s;animation-delay:-14s;}
+
+            .winter-snow i:nth-child(39)
+            {left:69%;top:-85%;animation-duration:32s;animation-delay:-28s;}
+
+            .winter-snow i:nth-child(40)
+            {left:89%;top:-80%;animation-duration:27s;animation-delay:-19s;}
+
+            .winter-snow i:nth-child(41)
+            {left:14%;top:-92%;animation-duration:33s;animation-delay:-29s;}
+
+            .winter-snow i:nth-child(42)
+            {left:59%;top:-88%;animation-duration:29s;animation-delay:-24s;}
+
+            .winter-snow i:nth-child(43)
+            {left:77%;top:-95%;animation-duration:34s;animation-delay:-31s;}
+
+            .winter-snow i:nth-child(44)
+            {left:36%;top:-90%;animation-duration:30s;animation-delay:-26s;}
+
+            .winter-snow i:nth-child(45)
+            {left:95%;top:-87%;animation-duration:28s;animation-delay:-21s;}
+
+
+            /* =================================================
+               SNOW ANIMATION
+            ================================================= */
+
+            @keyframes winterSnow {
+
+                0% {
+
+                    transform:
+                        translate3d(0,-15vh,0)
+                        rotate(0deg)
+                        scale(.85);
+
+                    opacity:0;
+                }
+
+
+                8% {
+
+                    opacity:.85;
+                }
+
+
+                25% {
+
+                    transform:
+                        translate3d(45px,25vh,0)
+                        rotate(80deg)
+                        scale(1);
+                }
+
+
+                50% {
+
+                    transform:
+                        translate3d(-55px,52vh,0)
+                        rotate(175deg)
+                        scale(.95);
+                }
+
+
+                75% {
+
+                    transform:
+                        translate3d(65px,80vh,0)
+                        rotate(270deg)
+                        scale(1.05);
+                }
+
+
+                100% {
+
+                    transform:
+                        translate3d(-45px,115vh,0)
+                        rotate(380deg)
+                        scale(.90);
+
+                    opacity:0;
+                }
+            }
+
+        `);
+
+
+        document.documentElement.classList.add(
+            "arctic-forest-active"
         );
 
-        addStyle(commonCSS);
+        document.body.classList.add(
+            "winter-theme"
+        );
 
-        createLiveLayer('winter');
+        createLiveLayer("winter");
     }
 
+
+    // =========================================================
+    // STANDARD LAMPA
+    // =========================================================
 
     function applyDefault() {
 
-        /*
-         * ONLY remove our own elements.
-         *
-         * Lampa itself is not modified here.
-         */
-
         removeOurTheme();
+
+        console.log(
+            "[Arctic Forest] Standard Lampa"
+        );
     }
 
 
-    function applyTheme(theme) {
+    // =========================================================
+    // APPLY THEME
+    // =========================================================
+
+    function applyTheme() {
 
         removeOurTheme();
 
-        if (theme === 'default') {
 
-            applyDefault();
-
-            return;
-        }
-
-
-        if (theme === 'arctic') {
+        if (currentTheme === "arctic") {
 
             applyArctic();
 
-            return;
-        }
-
-
-        if (theme === 'forest') {
+        } else if (currentTheme === "forest") {
 
             applyForest();
 
-            return;
-        }
-
-
-        if (theme === 'storm') {
+        } else if (currentTheme === "storm") {
 
             applyStorm();
 
-            return;
-        }
-
-
-        if (theme === 'autumn') {
+        } else if (currentTheme === "autumn") {
 
             applyAutumn();
 
-            return;
-        }
-
-
-        if (theme === 'winter') {
+        } else if (currentTheme === "winter") {
 
             applyWinter();
 
-            return;
+        } else {
+
+            applyDefault();
         }
 
 
-        applyDefault();
+        console.log(
+            "[Arctic Forest] Theme:",
+            currentTheme
+        );
     }
 
 
-    /* =========================================================
-       SETTINGS
-    ========================================================= */
+    // =========================================================
+    // SETTINGS
+    // =========================================================
 
     function settings() {
 
-        if (
-            typeof Lampa === 'undefined' ||
-            !Lampa.SettingsApi
-        ) {
-            return;
-        }
-
-
         try {
+
+            if (!Lampa.SettingsApi) {
+
+                console.error(
+                    "[Arctic Forest] SettingsApi unavailable"
+                );
+
+                return;
+            }
+
 
             Lampa.SettingsApi.addComponent({
 
                 component: COMPONENT,
 
-                name: 'Arctic Forest',
+                name: "Arctic Forest",
 
                 icon:
-                    '<svg xmlns="http://www.w3.org/2000/svg" ' +
-                    'viewBox="0 0 24 24">' +
+                    '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
 
-                    '<path fill="currentColor" d="' +
+                    '<path d="M12 2v20" ' +
+                    'stroke="currentColor" ' +
+                    'stroke-width="1.8" ' +
+                    'stroke-linecap="round"/>' +
 
-                    'M12 2 9.5 7H5l3.7 3.2L7 15l5-2.9L17 15l-1.7-4.8L19 7h-4.5L12 2zm0 5.8L13 10h2l-1.6 1.2.6 1.8-2-1.2-2 1.2.6-1.8L9 10h2l1-2.2z"/>' +
+                    '<path d="M2 12h20" ' +
+                    'stroke="currentColor" ' +
+                    'stroke-width="1.8" ' +
+                    'stroke-linecap="round"/>' +
+
+                    '<path d="M4.93 4.93l14.14 14.14" ' +
+                    'stroke="currentColor" ' +
+                    'stroke-width="1.8" ' +
+                    'stroke-linecap="round"/>' +
+
+                    '<path d="M19.07 4.93L4.93 19.07" ' +
+                    'stroke="currentColor" ' +
+                    'stroke-width="1.8" ' +
+                    'stroke-linecap="round"/>' +
 
                     '</svg>'
             });
@@ -1892,155 +2942,181 @@
 
                 param: {
 
-                    name: 'theme',
+                    name: STORAGE_KEY,
 
-                    type: 'select',
+                    type: "select",
 
                     values: {
 
                         default:
-                            'Стандартная',
+                            "Стандартная",
 
                         arctic:
-                            'Arctic Live',
+                            "Arctic Live",
 
                         forest:
-                            'Dark Forest',
+                            "Dark Forest",
 
                         storm:
-                            '🌩️ Буря',
+                            "🌩️ Буря",
 
                         autumn:
-                            '🍂 Осень',
+                            "🍂 Осень",
 
                         winter:
-                            '❄️ Зима'
+                            "❄️ Зима"
                     },
 
                     default:
-                        DEFAULT_THEME
+                        Lampa.Storage.get(
+                            STORAGE_KEY,
+                            DEFAULT_THEME
+                        )
                 },
 
                 field: {
 
-                    name: 'Тема',
+                    name:
+                        "Тема",
 
                     description:
-                        'Выберите оформление Arctic Forest'
+                        "Выберите оформление Lampa"
                 },
 
                 onChange:
                     function (value) {
 
-                        saveTheme(value);
-
-                        try {
-
-                            if (
-                                typeof Lampa !==
-                                'undefined' &&
-
-                                Lampa.Noty
-                            ) {
-
-                                var names = {
-
-                                    default:
-                                        'Стандартная тема',
-
-                                    arctic:
-                                        'Arctic Live включена',
-
-                                    forest:
-                                        'Dark Forest включена',
-
-                                    storm:
-                                        '🌩️ Буря включена',
-
-                                    autumn:
-                                        '🍂 Осень включена',
-
-                                    winter:
-                                        '❄️ Зима включена'
-                                };
+                        currentTheme =
+                            String(value);
 
 
-                                Lampa.Noty.show(
-                                    names[value] ||
-                                    'Тема изменена'
-                                );
-                            }
+                        if (
+                            currentTheme !== "arctic" &&
+                            currentTheme !== "forest" &&
+                            currentTheme !== "storm" &&
+                            currentTheme !== "autumn" &&
+                            currentTheme !== "winter" &&
+                            currentTheme !== "default"
+                        ) {
 
-                        } catch (e) {}
+                            currentTheme =
+                                DEFAULT_THEME;
+                        }
+
+
+                        saveTheme(
+                            currentTheme
+                        );
+
+
+                        applyTheme();
+
+
+                        if (
+                            Lampa.Noty
+                        ) {
+
+                            var title =
+                                currentTheme === "arctic"
+                                    ? "Arctic Live"
+
+                                    : currentTheme === "forest"
+                                        ? "Dark Forest"
+
+                                        : currentTheme === "storm"
+                                            ? "Буря"
+
+                                            : currentTheme === "autumn"
+                                                ? "Осень"
+
+                                                : currentTheme === "winter"
+                                                    ? "Зима"
+
+                                                    : "Стандартная";
+
+
+                            Lampa.Noty.show(
+                                "Тема изменена: " +
+                                title
+                            );
+                        }
                     }
             });
 
-        } catch (e) {
 
             console.log(
-                '[Arctic Forest] Settings error:',
+                "[Arctic Forest] Settings registered"
+            );
+
+        } catch (e) {
+
+            console.error(
+                "[Arctic Forest] Settings init error:",
                 e
             );
         }
     }
 
 
-    /* =========================================================
-       START
-    ========================================================= */
+    // =========================================================
+    // START
+    // =========================================================
 
     function startPlugin() {
 
+        console.log(
+            "[Arctic Forest] Starting..."
+        );
+
+
         loadTheme();
+
 
         settings();
 
 
-        /*
-         * No saved theme:
-         * do absolutely nothing.
-         */
-
         if (
-            currentTheme ===
-            DEFAULT_THEME
+            currentTheme !== "default"
         ) {
 
+            applyTheme();
+
+        } else {
+
             console.log(
-                '[Arctic Forest] Standard Lampa mode'
+                "[Arctic Forest] Standard mode — no changes"
             );
-
-            return;
         }
-
-
-        /*
-         * Restore previously selected theme.
-         */
-
-        applyTheme(
-            currentTheme
-        );
-
-
-        console.log(
-            '[Arctic Forest] Theme:',
-            currentTheme
-        );
     }
 
 
-    /* =========================================================
-       BOOT
-    ========================================================= */
+    // =========================================================
+    // BOOT
+    // =========================================================
 
     if (
-        typeof Lampa ===
-        'undefined'
+        typeof Lampa === "undefined"
     ) {
 
-        console.log(
-            '[Arctic Forest] Lampa not found'
+        setTimeout(
+            function waitLampa() {
+
+                if (
+                    typeof Lampa !== "undefined"
+                ) {
+
+                    startPlugin();
+
+                } else {
+
+                    setTimeout(
+                        waitLampa,
+                        500
+                    );
+                }
+
+            },
+            500
         );
 
     } else if (
@@ -2055,13 +3131,11 @@
     ) {
 
         Lampa.Listener.follow(
-            'app',
-            function (event) {
+            "app",
+            function (e) {
 
                 if (
-                    event &&
-                    event.type ===
-                    'ready'
+                    e.type === "ready"
                 ) {
 
                     startPlugin();
