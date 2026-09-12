@@ -2809,6 +2809,17 @@
                REAL SNOWFLAKES
             ================================================= */
 
+            .winter-snow {
+
+                position:absolute;
+                inset:0;
+                width:100%;
+                height:100%;
+                overflow:hidden;
+                pointer-events:none;
+            }
+
+
             .winter-snow i {
 
                 position:absolute;
@@ -2848,10 +2859,9 @@
 
                 opacity:0;
 
-                animation:
-                    winterSnow
-                    linear infinite !important;
-
+                animation-name: winterSnow !important;
+                animation-timing-function: linear !important;
+                animation-iteration-count: infinite !important;
                 animation-play-state: running !important;
                 will-change: transform, opacity;
             }
@@ -2897,139 +2907,139 @@
             ================================================= */
 
             .winter-snow i:nth-child(1)
-            {left:3%;top:-32%;animation-name:winterSnow;animation-duration:13s;animation-delay:-2s;animation-play-state:running;}
+            {left:3%;top:-32%;animation-name:winterSnow;animation-duration:13s !important;animation-delay:-2s !important;animation-play-state:running;}
 
             .winter-snow i:nth-child(2)
-            {left:8%;top:-25%;animation-duration:18s;animation-delay:-8s;}
+            {left:8%;top:-25%;animation-duration:18s !important;animation-delay:-8s !important;}
 
             .winter-snow i:nth-child(3)
-            {left:13%;top:-5%;animation-duration:15s;animation-delay:-5s;}
+            {left:13%;top:-5%;animation-duration:15s !important;animation-delay:-5s !important;}
 
             .winter-snow i:nth-child(4)
-            {left:18%;top:-18%;animation-duration:21s;animation-delay:-13s;}
+            {left:18%;top:-18%;animation-duration:21s !important;animation-delay:-13s !important;}
 
             .winter-snow i:nth-child(5)
-            {left:23%;top:-30%;animation-duration:16s;animation-delay:-7s;}
+            {left:23%;top:-30%;animation-duration:16s !important;animation-delay:-7s !important;}
 
             .winter-snow i:nth-child(6)
-            {left:28%;top:-12%;animation-duration:19s;animation-delay:-10s;}
+            {left:28%;top:-12%;animation-duration:19s !important;animation-delay:-10s !important;}
 
             .winter-snow i:nth-child(7)
-            {left:33%;top:-22%;animation-duration:14s;animation-delay:-4s;}
+            {left:33%;top:-22%;animation-duration:14s !important;animation-delay:-4s !important;}
 
             .winter-snow i:nth-child(8)
-            {left:38%;top:-35%;animation-duration:22s;animation-delay:-17s;}
+            {left:38%;top:-35%;animation-duration:22s !important;animation-delay:-17s !important;}
 
             .winter-snow i:nth-child(9)
-            {left:43%;top:-8%;animation-duration:17s;animation-delay:-6s;}
+            {left:43%;top:-8%;animation-duration:17s !important;animation-delay:-6s !important;}
 
             .winter-snow i:nth-child(10)
-            {left:48%;top:-20%;animation-duration:20s;animation-delay:-3s;}
+            {left:48%;top:-20%;animation-duration:20s !important;animation-delay:-3s !important;}
 
             .winter-snow i:nth-child(11)
-            {left:53%;top:-30%;animation-duration:15s;animation-delay:-11s;}
+            {left:53%;top:-30%;animation-duration:15s !important;animation-delay:-11s !important;}
 
             .winter-snow i:nth-child(12)
-            {left:58%;top:-14%;animation-duration:23s;animation-delay:-15s;}
+            {left:58%;top:-14%;animation-duration:23s !important;animation-delay:-15s !important;}
 
             .winter-snow i:nth-child(13)
-            {left:63%;top:-27%;animation-duration:18s;animation-delay:-9s;}
+            {left:63%;top:-27%;animation-duration:18s !important;animation-delay:-9s !important;}
 
             .winter-snow i:nth-child(14)
-            {left:68%;top:-6%;animation-duration:14s;animation-delay:-2s;}
+            {left:68%;top:-6%;animation-duration:14s !important;animation-delay:-2s !important;}
 
             .winter-snow i:nth-child(15)
-            {left:73%;top:-17%;animation-duration:21s;animation-delay:-12s;}
+            {left:73%;top:-17%;animation-duration:21s !important;animation-delay:-12s !important;}
 
             .winter-snow i:nth-child(16)
-            {left:78%;top:-31%;animation-duration:16s;animation-delay:-5s;}
+            {left:78%;top:-31%;animation-duration:16s !important;animation-delay:-5s !important;}
 
             .winter-snow i:nth-child(17)
-            {left:83%;top:-11%;animation-duration:19s;animation-delay:-14s;}
+            {left:83%;top:-11%;animation-duration:19s !important;animation-delay:-14s !important;}
 
             .winter-snow i:nth-child(18)
-            {left:88%;top:-23%;animation-duration:22s;animation-delay:-8s;}
+            {left:88%;top:-23%;animation-duration:22s !important;animation-delay:-8s !important;}
 
             .winter-snow i:nth-child(19)
-            {left:93%;top:-34%;animation-duration:17s;animation-delay:-10s;}
+            {left:93%;top:-34%;animation-duration:17s !important;animation-delay:-10s !important;}
 
             .winter-snow i:nth-child(20)
-            {left:98%;top:-15%;animation-duration:20s;animation-delay:-6s;}
+            {left:98%;top:-15%;animation-duration:20s !important;animation-delay:-6s !important;}
 
             .winter-snow i:nth-child(21)
-            {left:10%;top:-42%;animation-duration:24s;animation-delay:-18s;}
+            {left:10%;top:-42%;animation-duration:24s !important;animation-delay:-18s !important;}
 
             .winter-snow i:nth-child(22)
-            {left:25%;top:-48%;animation-duration:19s;animation-delay:-12s;}
+            {left:25%;top:-48%;animation-duration:19s !important;animation-delay:-12s !important;}
 
             .winter-snow i:nth-child(23)
-            {left:41%;top:-40%;animation-duration:25s;animation-delay:-20s;}
+            {left:41%;top:-40%;animation-duration:25s !important;animation-delay:-20s !important;}
 
             .winter-snow i:nth-child(24)
-            {left:56%;top:-46%;animation-duration:21s;animation-delay:-15s;}
+            {left:56%;top:-46%;animation-duration:21s !important;animation-delay:-15s !important;}
 
             .winter-snow i:nth-child(25)
-            {left:71%;top:-52%;animation-duration:24s;animation-delay:-7s;}
+            {left:71%;top:-52%;animation-duration:24s !important;animation-delay:-7s !important;}
 
             .winter-snow i:nth-child(26)
-            {left:86%;top:-43%;animation-duration:22s;animation-delay:-17s;}
+            {left:86%;top:-43%;animation-duration:22s !important;animation-delay:-17s !important;}
 
             .winter-snow i:nth-child(27)
-            {left:16%;top:-58%;animation-duration:26s;animation-delay:-21s;}
+            {left:16%;top:-58%;animation-duration:26s !important;animation-delay:-21s !important;}
 
             .winter-snow i:nth-child(28)
-            {left:35%;top:-54%;animation-duration:23s;animation-delay:-13s;}
+            {left:35%;top:-54%;animation-duration:23s !important;animation-delay:-13s !important;}
 
             .winter-snow i:nth-child(29)
-            {left:65%;top:-62%;animation-duration:27s;animation-delay:-19s;}
+            {left:65%;top:-62%;animation-duration:27s !important;animation-delay:-19s !important;}
 
             .winter-snow i:nth-child(30)
-            {left:91%;top:-57%;animation-duration:22s;animation-delay:-9s;}
+            {left:91%;top:-57%;animation-duration:22s !important;animation-delay:-9s !important;}
 
             .winter-snow i:nth-child(31)
-            {left:30%;top:-68%;animation-duration:28s;animation-delay:-23s;}
+            {left:30%;top:-68%;animation-duration:28s !important;animation-delay:-23s !important;}
 
             .winter-snow i:nth-child(32)
-            {left:80%;top:-65%;animation-duration:25s;animation-delay:-18s;}
+            {left:80%;top:-65%;animation-duration:25s !important;animation-delay:-18s !important;}
 
             .winter-snow i:nth-child(33)
-            {left:6%;top:-75%;animation-duration:29s;animation-delay:-25s;}
+            {left:6%;top:-75%;animation-duration:29s !important;animation-delay:-25s !important;}
 
             .winter-snow i:nth-child(34)
-            {left:51%;top:-72%;animation-duration:27s;animation-delay:-20s;}
+            {left:51%;top:-72%;animation-duration:27s !important;animation-delay:-20s !important;}
 
             .winter-snow i:nth-child(35)
-            {left:75%;top:-78%;animation-duration:30s;animation-delay:-26s;}
+            {left:75%;top:-78%;animation-duration:30s !important;animation-delay:-26s !important;}
 
             .winter-snow i:nth-child(36)
-            {left:97%;top:-70%;animation-duration:24s;animation-delay:-16s;}
+            {left:97%;top:-70%;animation-duration:24s !important;animation-delay:-16s !important;}
 
             .winter-snow i:nth-child(37)
-            {left:20%;top:-82%;animation-duration:31s;animation-delay:-22s;}
+            {left:20%;top:-82%;animation-duration:31s !important;animation-delay:-22s !important;}
 
             .winter-snow i:nth-child(38)
-            {left:45%;top:-76%;animation-duration:26s;animation-delay:-14s;}
+            {left:45%;top:-76%;animation-duration:26s !important;animation-delay:-14s !important;}
 
             .winter-snow i:nth-child(39)
-            {left:69%;top:-85%;animation-duration:32s;animation-delay:-28s;}
+            {left:69%;top:-85%;animation-duration:32s !important;animation-delay:-28s !important;}
 
             .winter-snow i:nth-child(40)
-            {left:89%;top:-80%;animation-duration:27s;animation-delay:-19s;}
+            {left:89%;top:-80%;animation-duration:27s !important;animation-delay:-19s !important;}
 
             .winter-snow i:nth-child(41)
-            {left:14%;top:-92%;animation-duration:33s;animation-delay:-29s;}
+            {left:14%;top:-92%;animation-duration:33s !important;animation-delay:-29s !important;}
 
             .winter-snow i:nth-child(42)
-            {left:59%;top:-88%;animation-duration:29s;animation-delay:-24s;}
+            {left:59%;top:-88%;animation-duration:29s !important;animation-delay:-24s !important;}
 
             .winter-snow i:nth-child(43)
-            {left:77%;top:-95%;animation-duration:34s;animation-delay:-31s;}
+            {left:77%;top:-95%;animation-duration:34s !important;animation-delay:-31s !important;}
 
             .winter-snow i:nth-child(44)
-            {left:36%;top:-90%;animation-duration:30s;animation-delay:-26s;}
+            {left:36%;top:-90%;animation-duration:30s !important;animation-delay:-26s !important;}
 
             .winter-snow i:nth-child(45)
-            {left:95%;top:-87%;animation-duration:28s;animation-delay:-21s;}
+            {left:95%;top:-87%;animation-duration:28s !important;animation-delay:-21s !important;}
 
 
             /* =================================================
