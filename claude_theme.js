@@ -142,6 +142,7 @@
 
         document.querySelectorAll(".af-season-menu-target").forEach(function (target) {
             target.classList.remove("af-season-menu-target");
+            target.classList.remove("af-season-menu-native-target");
 
             target.querySelectorAll(".af-season-menu-original-icon").forEach(function (icon) {
                 icon.classList.remove("af-season-menu-original-icon");
@@ -162,6 +163,12 @@
         targets.forEach(function (target) {
 
             target.classList.add("af-season-menu-target");
+
+            // If .head__menu-icon itself is the native glyph container,
+            // mark it explicitly so CSS can hide its own snowflake/text.
+            if (target.classList.contains("head__menu-icon")) {
+                target.classList.add("af-season-menu-native-target");
+            }
 
             if (!target.querySelector(".af-season-menu-icon")) {
 
@@ -358,6 +365,26 @@
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
+            }
+
+            /*
+             * Some Lampa builds put the native menu glyph directly on
+             * .head__menu-icon itself (not inside an SVG). In winter this
+             * can leave a static snowflake next to the Santa hat.
+             * Hide the target's own text/background while keeping our
+             * replacement icon visible.
+             */
+            .af-season-menu-target.head__menu-icon {
+                font-size: 0 !important;
+                color: transparent !important;
+                background-image: none !important;
+                text-shadow: none !important;
+            }
+
+            .af-season-menu-target::before,
+            .af-season-menu-target::after {
+                content: none !important;
+                display: none !important;
             }
 
             .af-season-menu-target .af-season-menu-original-icon {
