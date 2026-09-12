@@ -97,9 +97,8 @@
                 if (this.item) this.item.classList.add('ldg-card--focus');
             }.bind(this));
 
-            this.item.addEventListener('hover:touch', function () {
-                openGenre(data);
-            });
+            // Не перехватываем touch-жесты.
+            // Скроллинг оставляем полностью на стандартной навигации Lampa.
         };
 
         this.destroy = function () {
