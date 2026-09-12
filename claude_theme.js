@@ -3453,7 +3453,7 @@
                 // row. Only after it is emitted do we start native TMDB rows.
                 loadHorrorRow(function (horror) {
                     try {
-                        if (oncomplite) oncomplite(horror);
+                        if (oncomplite) oncomplite([horror]);
                     } finally {
                         startNative();
                     }
