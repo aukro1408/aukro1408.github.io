@@ -3344,6 +3344,62 @@
     // =========================================================
 
     var HORROR_ROW_NAME = "arctic_forest_horror_row";
+    var horrorRowObserver = null;
+    var horrorRowTimer = null;
+
+    // ContentRows inserts plugin callbacks before Lampa finishes building its
+    // native main-screen parts. Native parts can subsequently be inserted at
+    // index 0, so index alone cannot guarantee that our row stays first.
+    // Once the DOM row exists, move the actual rendered row to the beginning
+    // of its parent container. A MutationObserver repeats this after Lampa
+    // rebuilds the main screen.
+    function forceHorrorRowFirst() {
+        try {
+            var titles = document.querySelectorAll('.items-line__title');
+            var horror = null;
+
+            for (var i = 0; i < titles.length; i++) {
+                var text = (titles[i].textContent || '').replace(/\s+/g, ' ').trim();
+
+                if (text === 'Ужасы') {
+                    horror = titles[i].closest('.items-line');
+                    break;
+                }
+            }
+
+            if (!horror || !horror.parentElement) return;
+
+            var parent = horror.parentElement;
+
+            if (parent.firstElementChild !== horror) {
+                parent.insertBefore(horror, parent.firstElementChild);
+            }
+        } catch (e) {
+            console.warn('[Arctic Forest] Horror row reorder error:', e);
+        }
+    }
+
+    function startHorrorRowOrder() {
+        forceHorrorRowFirst();
+
+        if (horrorRowTimer) clearInterval(horrorRowTimer);
+        horrorRowTimer = setInterval(forceHorrorRowFirst, 700);
+
+        if (horrorRowObserver) horrorRowObserver.disconnect();
+
+        try {
+            horrorRowObserver = new MutationObserver(function () {
+                forceHorrorRowFirst();
+            });
+
+            horrorRowObserver.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        } catch (e) {
+            console.warn('[Arctic Forest] Horror row observer error:', e);
+        }
+    }
 
     function registerHorrorRow() {
 
@@ -3362,10 +3418,9 @@
 
             Lampa.ContentRows.add({
                 name: HORROR_ROW_NAME,
-                // Force the row to the absolute beginning of main.
-                // Lampa later inserts its own rows at index 0, so a very negative
-                // index is normalized by Array.splice() to position 0.
-                index: -99999,
+                // Initial position. The DOM reorder below is what guarantees
+                // that the rendered row stays before Lampa's native rows.
+                index: 0,
                 screen: ["main"],
                 call: function (params, screen) {
                     return function (done) {
@@ -3427,6 +3482,7 @@
             });
 
             console.log("[Arctic Forest] Horror row registered");
+            startHorrorRowOrder();
 
         } catch (e) {
             console.error("[Arctic Forest] Horror row init error:", e);
