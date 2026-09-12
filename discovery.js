@@ -41,20 +41,24 @@
         });
     }
 
-    function tmdbGet(url, callback) {
+    function tmdbGet(url, callback, page) {
         var source = getTMDB();
         if (!source || typeof source.get !== 'function') {
-            callback([]);
+            callback({ results: [], total_pages: 0, total_results: 0 });
             return;
         }
 
         source.get(url, {
-            page: 1,
+            page: page || 1,
             langs: 'ru-RU'
         }, function (json) {
-            callback(cleanResults(json));
+            callback({
+                results: cleanResults(json),
+                total_pages: json && json.total_pages ? json.total_pages : 0,
+                total_results: json && json.total_results ? json.total_results : 0
+            });
         }, function () {
-            callback([]);
+            callback({ results: [], total_pages: 0, total_results: 0 });
         });
     }
 
@@ -65,25 +69,66 @@
     var ROWS = [
         {
             title: 'Для тебя',
-            url: 'trending/movie/week'
+            url: 'trending/movie/week',
+            more: {
+                url: 'trending/movie/week',
+                title: 'Для тебя',
+                sort_by: 'popularity.desc'
+            }
         },
         {
             title: 'Новинки',
             url: 'discover/movie?sort_by=primary_release_date.desc&vote_count.gte=' + MIN_VOTES +
-                '&primary_release_date.lte=' + today()
+                '&primary_release_date.lte=' + today(),
+            more: {
+                url: 'discover/movie',
+                title: 'Новинки',
+                sort_by: 'primary_release_date.desc',
+                filter: {
+                    'vote_count.gte': MIN_VOTES,
+                    'primary_release_date.lte': today()
+                }
+            }
         },
         {
             title: 'Высокий рейтинг',
             url: 'discover/movie?sort_by=vote_average.desc&vote_count.gte=' + MIN_VOTES +
-                '&primary_release_date.lte=' + today()
+                '&primary_release_date.lte=' + today(),
+            more: {
+                url: 'discover/movie',
+                title: 'Высокий рейтинг',
+                sort_by: 'vote_average.desc',
+                filter: {
+                    'vote_count.gte': MIN_VOTES,
+                    'primary_release_date.lte': today()
+                }
+            }
         },
         {
             title: 'Сейчас смотрят',
-            url: 'discover/movie?sort_by=popularity.desc&vote_count.gte=100&primary_release_date.lte=' + today()
+            url: 'discover/movie?sort_by=popularity.desc&vote_count.gte=100&primary_release_date.lte=' + today(),
+            more: {
+                url: 'discover/movie',
+                title: 'Сейчас смотрят',
+                sort_by: 'popularity.desc',
+                filter: {
+                    'vote_count.gte': 100,
+                    'primary_release_date.lte': today()
+                }
+            }
         },
         {
             title: 'Фильмы 2026',
-            url: 'discover/movie?primary_release_year=2026&sort_by=popularity.desc&vote_count.gte=50'
+            url: 'discover/movie?primary_release_year=2026&sort_by=popularity.desc&vote_count.gte=50',
+            more: {
+                url: 'discover/movie',
+                title: 'Фильмы 2026',
+                sort_by: 'popularity.desc',
+                filter: {
+                    'primary_release_year': 2026,
+                    'vote_count.gte': 50
+                }
+            }
         }
     ];
 
@@ -92,10 +137,16 @@
         var left = ROWS.length;
 
         ROWS.forEach(function (row, index) {
-            tmdbGet(row.url, function (results) {
+            tmdbGet(row.url, function (payload) {
                 rows[index] = {
                     title: row.title,
-                    results: results
+                    results: payload.results,
+                    total_pages: payload.total_pages,
+                    total_results: payload.total_results,
+                    source: 'tmdb',
+                    page: 1,
+                    url: row.url,
+                    discovery_more: row.more
                 };
 
                 left--;
@@ -111,27 +162,31 @@
     // поэтому все карточки жанров визуально разные.
     // ---------------------------------------------------------
 
-    function loadGenreCard(genre, usedPosters, callback) {
+    function loadGenreCard(genre, index, usedPosters, callback) {
         var url = 'discover/movie?with_genres=' + genre.id +
             '&sort_by=vote_average.desc' +
             '&vote_count.gte=' + MIN_VOTES +
             '&primary_release_date.lte=' + today();
 
-        tmdbGet(url, function (results) {
+        // Разные страницы дополнительно защищают от одинаковых первых
+        // результатов, даже если TMDB отдаёт пересекающиеся подборки.
+        var requestedPage = (index % 5) + 1;
+
+        tmdbGet(url, function (payload) {
+            var results = payload.results || [];
             var item = null;
 
             for (var i = 0; i < results.length; i++) {
-                var poster = results[i].poster_path;
+                var candidate = results[(i + index) % results.length];
+                var poster = candidate.poster_path;
                 if (poster && !usedPosters[poster]) {
-                    item = results[i];
+                    item = candidate;
                     usedPosters[poster] = true;
                     break;
                 }
             }
 
-            // Если весь первый набор уже занят, всё равно берём первый
-            // результат, чтобы жанр не пропал из ряда.
-            if (!item && results.length) item = results[0];
+            if (!item && results.length) item = results[index % results.length];
 
             callback({
                 id: genre.id,
@@ -147,7 +202,7 @@
                 discovery_genre_id: genre.id,
                 discovery_genre_title: genre.title
             });
-        });
+        }, requestedPage);
     }
 
     function loadGenres(callback) {
@@ -156,7 +211,7 @@
         var left = GENRES.length;
 
         GENRES.forEach(function (genre, index) {
-            loadGenreCard(genre, usedPosters, function (data) {
+            loadGenreCard(genre, index, usedPosters, function (data) {
                 result[index] = data;
                 left--;
                 if (left === 0) callback(result);
@@ -184,11 +239,65 @@
     }
 
     // ---------------------------------------------------------
+    // Удиви меня — случайная подборка фильмов.
+    // ---------------------------------------------------------
+
+    function loadSurprise(callback) {
+        var randomPage = Math.floor(Math.random() * 8) + 1;
+        var url = 'discover/movie?sort_by=popularity.desc&vote_count.gte=100&primary_release_date.lte=' + today();
+
+        tmdbGet(url, function (payload) {
+            var results = payload.results || [];
+            results.sort(function () { return Math.random() - 0.5; });
+
+            callback({
+                title: 'Удиви меня',
+                results: results,
+                total_pages: payload.total_pages,
+                total_results: payload.total_results,
+                source: 'tmdb',
+                page: randomPage,
+                url: url,
+                discovery_more: {
+                    url: 'discover/movie',
+                    title: 'Удиви меня',
+                    sort_by: 'popularity.desc',
+                    filter: {
+                        'vote_count.gte': 100,
+                        'primary_release_date.lte': today()
+                    }
+                }
+            });
+        }, randomPage);
+    }
+
+    // ---------------------------------------------------------
     // Native Main.
     // Каждый объект Main строит штатный Lampa Line,
     // а Line создаёт штатные Lampa Card.
     // Никакого собственного grid/flex/scroll.
     // ---------------------------------------------------------
+
+    function openRow(data) {
+        if (!Lampa.Activity || typeof Lampa.Activity.push !== 'function' || !data) return;
+
+        var more = data.discovery_more;
+        if (!more) return;
+
+        var activity = {
+            url: more.url,
+            component: 'category_full',
+            source: 'tmdb',
+            page: 1,
+            title: more.title,
+            sort_by: more.sort_by,
+            langs: 'ru-RU'
+        };
+
+        if (more.filter) activity.filter = more.filter;
+
+        Lampa.Activity.push(activity);
+    }
 
     function component(object) {
         if (!Lampa.Maker || typeof Lampa.Maker.make !== 'function') return null;
@@ -201,22 +310,31 @@
 
                 loadMovieRows(function (movieRows) {
                     loadGenres(function (genres) {
-                        // Жанры располагаются после основных рядов,
-                        // как в референсе.
-                        movieRows.push({
-                            title: 'Жанры',
-                            results: genres
-                        });
+                        loadSurprise(function (surprise) {
+                            // Жанры и Удиви меня идут после основных рядов.
+                            movieRows.push({
+                                title: 'Жанры',
+                                results: genres,
+                                total_pages: 1,
+                                source: 'tmdb',
+                                discovery_genres: true
+                            });
 
-                        self.build(movieRows.filter(function (row) {
-                            return row && row.results && row.results.length;
-                        }));
+                            movieRows.push(surprise);
+
+                            self.build(movieRows.filter(function (row) {
+                                return row && row.results && row.results.length;
+                            }));
+                        });
                     });
                 });
             },
 
-            onInstance: function (line) {
+            onInstance: function (line, lineData) {
                 line.use({
+                    onMore: function (data) {
+                        openRow(data);
+                    },
                     onInstance: function (card, cardData) {
                         // Только для жанровых карточек меняем действие Enter.
                         // Сама карточка остаётся штатной Lampa Card.
