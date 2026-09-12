@@ -3342,153 +3342,153 @@
     // =========================================================
     // HORROR ROW — MAIN SCREEN
     // =========================================================
+    //
+    // Unlike ContentRows.add(), this hooks the TMDB main loader itself.
+    // Lampa's native TMDB main() prepends several system rows after
+    // ContentRows.call(), so a ContentRows row cannot be guaranteed to be
+    // the first row. We load the horror row first and only then start the
+    // native TMDB main loader. This keeps the order deterministic without
+    // touching the DOM.
 
     var HORROR_ROW_NAME = "arctic_forest_horror_row";
-    var horrorRowObserver = null;
-    var horrorRowTimer = null;
+    var HORROR_GENRE = "27";
+    var HORROR_PATCH_FLAG = "__arctic_forest_horror_main_patched";
 
-    // ContentRows inserts plugin callbacks before Lampa finishes building its
-    // native main-screen parts. Native parts can subsequently be inserted at
-    // index 0, so index alone cannot guarantee that our row stays first.
-    // Once the DOM row exists, move the actual rendered row to the beginning
-    // of its parent container. A MutationObserver repeats this after Lampa
-    // rebuilds the main screen.
-    function forceHorrorRowFirst() {
-        try {
-            var titles = document.querySelectorAll('.items-line__title');
-            var horror = null;
+    function horrorToday() {
+        var d = new Date();
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, "0");
+        var day = String(d.getDate()).padStart(2, "0");
+        return y + "-" + m + "-" + day;
+    }
 
-            for (var i = 0; i < titles.length; i++) {
-                var text = (titles[i].textContent || '').replace(/\s+/g, ' ').trim();
+    function horrorMoreData(data) {
+        data = data || {};
 
-                if (text === 'Ужасы') {
-                    horror = titles[i].closest('.items-line');
-                    break;
+        data.title = "Ужасы";
+        data.url = "movie";
+        data.genres = HORROR_GENRE;
+        data.sort_by = "primary_release_date.desc";
+        data.filter = {
+            "primary_release_date.lte": horrorToday()
+        };
+        data.source = "tmdb";
+
+        if (Lampa.Maker && Lampa.Maker.module) {
+            try {
+                var Line = Lampa.Maker.module("Line");
+                if (Line && Line.toggle) {
+                    data.params = {
+                        module: Line.toggle(Line.MASK.base, "More")
+                    };
                 }
+            } catch (e) {}
+        }
+
+        return data;
+    }
+
+    function loadHorrorRow(done, fail) {
+        try {
+            var tmdb = Lampa.Api && Lampa.Api.sources && Lampa.Api.sources.tmdb;
+
+            if (!tmdb || typeof tmdb.get !== "function") {
+                if (fail) fail();
+                return;
             }
 
-            if (!horror || !horror.parentElement) return;
-
-            var parent = horror.parentElement;
-
-            if (parent.firstElementChild !== horror) {
-                parent.insertBefore(horror, parent.firstElementChild);
-            }
+            tmdb.get(
+                "discover/movie?with_genres=" + HORROR_GENRE,
+                {
+                    sort_by: "primary_release_date.desc",
+                    filter: {
+                        "primary_release_date.lte": horrorToday()
+                    }
+                },
+                function (data) {
+                    done(horrorMoreData(data));
+                },
+                function () {
+                    if (fail) fail();
+                },
+                { life: 60 * 24 }
+            );
         } catch (e) {
-            console.warn('[Arctic Forest] Horror row reorder error:', e);
+            console.error("[Arctic Forest] Horror load error:", e);
+            if (fail) fail();
         }
     }
 
-    function startHorrorRowOrder() {
-        forceHorrorRowFirst();
-
-        if (horrorRowTimer) clearInterval(horrorRowTimer);
-        horrorRowTimer = setInterval(forceHorrorRowFirst, 700);
-
-        if (horrorRowObserver) horrorRowObserver.disconnect();
-
+    function patchHorrorMain() {
         try {
-            horrorRowObserver = new MutationObserver(function () {
-                forceHorrorRowFirst();
-            });
+            if (window[HORROR_PATCH_FLAG]) return true;
 
-            horrorRowObserver.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
+            var tmdb = Lampa.Api && Lampa.Api.sources && Lampa.Api.sources.tmdb;
+
+            if (!tmdb || typeof tmdb.main !== "function") {
+                console.warn("[Arctic Forest] TMDB main() unavailable");
+                return false;
+            }
+
+            var originalMain = tmdb.main;
+
+            tmdb.main = function (params, oncomplite, onerror) {
+                var started = false;
+                var nativeLoader = null;
+
+                function startNative() {
+                    if (started) return nativeLoader;
+                    started = true;
+
+                    try {
+                        nativeLoader = originalMain.call(tmdb, params, oncomplite, onerror);
+                        return nativeLoader;
+                    } catch (e) {
+                        console.error("[Arctic Forest] Native TMDB main error:", e);
+                        if (onerror) onerror();
+                    }
+                }
+
+                // The first callback emitted here becomes the first visual
+                // row. Only after it is emitted do we start native TMDB rows.
+                loadHorrorRow(function (horror) {
+                    try {
+                        if (oncomplite) oncomplite(horror);
+                    } finally {
+                        startNative();
+                    }
+                }, function () {
+                    // If TMDB fails for the custom row, never block Lampa's
+                    // home screen: fall back to the native loader.
+                    startNative();
+                });
+
+                // Native main() normally returns a loadPart function. We do
+                // not have that function until the native loader starts, so
+                // return a harmless loader that triggers the native fallback.
+                return function () {
+                    if (typeof nativeLoader === "function") {
+                        return nativeLoader.apply(null, arguments);
+                    }
+                };
+            };
+
+            window[HORROR_PATCH_FLAG] = true;
+            console.log("[Arctic Forest] Horror main hook installed");
+            return true;
+
         } catch (e) {
-            console.warn('[Arctic Forest] Horror row observer error:', e);
+            console.error("[Arctic Forest] Horror main hook error:", e);
+            return false;
         }
     }
 
     function registerHorrorRow() {
-
-        try {
-            if (!Lampa.ContentRows || typeof Lampa.ContentRows.add !== "function") {
-                console.warn("[Arctic Forest] ContentRows unavailable");
-                return;
-            }
-
-            // Do not register the same row twice if the plugin is reloaded.
-            if (window.__arctic_forest_horror_row_registered) {
-                return;
-            }
-
-            window.__arctic_forest_horror_row_registered = true;
-
-            Lampa.ContentRows.add({
-                name: HORROR_ROW_NAME,
-                // Initial position. The DOM reorder below is what guarantees
-                // that the rendered row stays before Lampa's native rows.
-                index: 0,
-                screen: ["main"],
-                call: function (params, screen) {
-                    return function (done) {
-
-                        try {
-                            if (!Lampa.Api || !Lampa.Api.sources || !Lampa.Api.sources.tmdb) {
-                                done();
-                                return;
-                            }
-
-                            var tmdb = Lampa.Api.sources.tmdb;
-                            var today = new Date().toISOString().slice(0, 10);
-
-                            tmdb.get(
-                                "discover/movie?with_genres=27",
-                                {
-                                    sort_by: "primary_release_date.desc",
-                                    filter: {
-                                        "primary_release_date.lte": today,
-                                        "vote_count.gte": 5
-                                    }
-                                },
-                                function (data) {
-
-                                    data = data || {};
-                                    data.title = "Ужасы";
-
-                                    // The More button opens a full category page with
-                                    // the complete horror collection sorted by release date.
-                                    data.url = "movie";
-                                    data.genres = "27";
-                                    data.sort_by = "primary_release_date.desc";
-                                    data.filter = {
-                                        "primary_release_date.lte": today,
-                                        "vote_count.gte": 5
-                                    };
-                                    data.source = "tmdb";
-
-                                    data.params = {
-                                        module: Lampa.Maker && Lampa.Maker.module
-                                            ? Lampa.Maker.module("Line").toggle(Lampa.Maker.module("Line").MASK.base, "More")
-                                            : undefined
-                                    };
-
-                                    done(data);
-                                },
-                                function () {
-                                    done();
-                                },
-                                { life: 60 * 24 }
-                            );
-
-                        } catch (e) {
-                            console.error("[Arctic Forest] Horror row error:", e);
-                            done();
-                        }
-                    };
-                }
-            });
-
-            console.log("[Arctic Forest] Horror row registered");
-            startHorrorRowOrder();
-
-        } catch (e) {
-            console.error("[Arctic Forest] Horror row init error:", e);
-        }
+        // Kept as a separate function so startup remains compatible with
+        // previous plugin versions. The actual ordering is handled by the
+        // TMDB main hook above, not by DOM manipulation or ContentRows.
+        patchHorrorMain();
     }
-
 
     // =========================================================
     // START
