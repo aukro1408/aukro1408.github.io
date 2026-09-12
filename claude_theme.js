@@ -106,6 +106,13 @@
 
             try {
                 document.querySelectorAll(selector).forEach(function (element) {
+                    // .head__menu-icon in some Lampa builds is the SVG itself.
+                    // Normalize it to the clickable wrapper so the native SVG
+                    // can be hidden correctly instead of leaving a static icon.
+                    if (element && element.tagName && element.tagName.toLowerCase() === "svg" && element.parentElement) {
+                        element = element.parentElement;
+                    }
+
                     if (found.indexOf(element) === -1) {
                         found.push(element);
                     }
@@ -170,6 +177,15 @@
 
                 if (!svg.closest(".af-season-menu-icon")) {
                     svg.classList.add("af-season-menu-original-icon");
+                }
+            });
+
+            // Some Lampa skins keep the native menu SVG as a direct child
+            // of a nested menu node. Hide every native SVG in this target
+            // except our replacement icon.
+            target.querySelectorAll(".head__menu-icon").forEach(function (node) {
+                if (node.tagName && node.tagName.toLowerCase() === "svg") {
+                    node.classList.add("af-season-menu-original-icon");
                 }
             });
         });
