@@ -3373,6 +3373,9 @@
             "primary_release_date.lte": horrorToday()
         };
         data.source = "tmdb";
+        data.url = "movie";
+        data.langs = "ru-RU";
+        data.arctic_forest_horror = true;
 
         if (Lampa.Maker && Lampa.Maker.module) {
             try {
@@ -3403,7 +3406,8 @@
                     sort_by: "primary_release_date.desc",
                     filter: {
                         "primary_release_date.lte": horrorToday()
-                    }
+                    },
+                    langs: "ru-RU"
                 },
                 function (data) {
                     done(horrorMoreData(data));
@@ -3416,6 +3420,50 @@
         } catch (e) {
             console.error("[Arctic Forest] Horror load error:", e);
             if (fail) fail();
+        }
+    }
+
+    function patchHorrorRouter() {
+        try {
+            if (window.__arctic_forest_horror_router_patched) return true;
+
+            var router = Lampa.Router;
+            if (!router || typeof router.call !== "function" || !Lampa.Activity || typeof Lampa.Activity.push !== "function") {
+                return false;
+            }
+
+            var originalCall = router.call;
+
+            router.call = function (name, data) {
+                if (name === "category_full" && data && data.arctic_forest_horror) {
+                    var push = {};
+                    for (var key in data) push[key] = data[key];
+
+                    push.url = "movie";
+                    push.component = "category_full";
+                    push.source = "tmdb";
+                    push.page = data.page || 1;
+                    push.title = "Ужасы";
+                    push.genres = "27";
+                    push.sort_by = "primary_release_date.desc";
+                    push.langs = "ru-RU";
+                    push.filter = {
+                        "primary_release_date.lte": horrorToday()
+                    };
+
+                    Lampa.Activity.push(push);
+                    return;
+                }
+
+                return originalCall.apply(router, arguments);
+            };
+
+            window.__arctic_forest_horror_router_patched = true;
+            console.log("[Arctic Forest] Horror category route patched");
+            return true;
+        } catch (e) {
+            console.error("[Arctic Forest] Horror router patch error:", e);
+            return false;
         }
     }
 
@@ -3487,6 +3535,7 @@
         // Kept as a separate function so startup remains compatible with
         // previous plugin versions. The actual ordering is handled by the
         // TMDB main hook above, not by DOM manipulation or ContentRows.
+        patchHorrorRouter();
         patchHorrorMain();
     }
 
