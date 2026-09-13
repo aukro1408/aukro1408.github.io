@@ -478,10 +478,7 @@
     // ---------------------------------------------------------
 
     function discoveryIcon() {
-        return '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-            '<circle cx="12" cy="12" r="8.25" stroke="currentColor" stroke-width="1.7"/>' +
-            '<path d="m15.7 8.3-2.2 4.1-4.1 2.2 2.2-4.1 4.1-2.2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>' +
-        '</svg>';
+        return '<img class="ldg-discovery-icon" src="''' + uri + '''" width="24" height="24" alt="" aria-hidden="true" style="display:block;width:1em;height:1em;object-fit:contain;">';
     }
 
     function openDiscovery() {
@@ -528,11 +525,11 @@
     }
 
     function startPlugin() {
-        if (window.__lampa_discovery_v11_ready) return;
-        window.__lampa_discovery_v11_ready = true;
+        if (window.__lampa_discovery_v16_ready) return;
+        window.__lampa_discovery_v16_ready = true;
 
         if (!Lampa.Component || typeof Lampa.Component.add !== 'function') {
-            console.error('[Lampa Discovery v11] Component API unavailable');
+            console.error('[Lampa Discovery v16] Component API unavailable');
             return;
         }
 
@@ -546,7 +543,7 @@
         }
 
         addMenu();
-        console.log('[Lampa Discovery v11] Discovery rows ready');
+        console.log('[Lampa Discovery v16] Discovery rows ready');
     }
 
     if (typeof Lampa === 'undefined') {
