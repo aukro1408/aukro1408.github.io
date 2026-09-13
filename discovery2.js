@@ -211,8 +211,8 @@
             callback({
                 title: '🎲 Удиви меня',
                 results: merged.slice(0, 20),
-                total_pages: 2,
-                total_results: Math.max(40, merged.length),
+                total_pages: 20,
+                total_results: 400,
                 source: 'tmdb',
                 page: 1,
                 url: 'discover/movie',
@@ -222,7 +222,7 @@
                     genres: selected.join('|'),
                     sort_by: 'vote_average.desc',
                     filter: {
-                        'vote_count.gte': MIN_VOTES,
+                        'vote_count.gte': 50,
                         'primary_release_date.lte': today()
                     }
                 }
@@ -626,11 +626,11 @@
     }
 
     function startPlugin() {
-        if (window.__lampa_discovery_v27_ready) return;
-        window.__lampa_discovery_v27_ready = true;
+        if (window.__lampa_discovery_v28_ready) return;
+        window.__lampa_discovery_v28_ready = true;
 
         if (!Lampa.Component || typeof Lampa.Component.add !== 'function') {
-            console.error('[Lampa Discovery v27] Component API unavailable');
+            console.error('[Lampa Discovery v28] Component API unavailable');
             return;
         }
 
@@ -644,7 +644,7 @@
         }
 
         addMenu();
-        console.log('[Lampa Discovery v27] Discovery rows ready');
+        console.log('[Lampa Discovery v28] Discovery rows ready');
     }
 
     if (typeof Lampa === 'undefined') {
