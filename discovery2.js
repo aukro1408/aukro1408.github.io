@@ -2,7 +2,7 @@
     'use strict';
 
     // =========================================================
-    // LAMPA DISCOVERY v11
+    // LAMPA DISCOVERY v9
     // Native Lampa Main -> Line -> Card.
     // Несколько горизонтальных рядов как на главной Lampa.
     // TMDB: русская локализация + нормальные фильтры рейтинга.
@@ -68,7 +68,16 @@
 
     var ROWS = [
         {
-            title: 'Новинки',
+            title: '🔥 Для тебя',
+            url: 'trending/movie/week',
+            more: {
+                url: 'trending/movie/week',
+                title: 'Для тебя',
+                sort_by: 'popularity.desc'
+            }
+        },
+        {
+            title: '🆕 Новинки',
             url: 'discover/movie?sort_by=primary_release_date.desc&vote_count.gte=' + MIN_VOTES +
                 '&primary_release_date.lte=' + today(),
             more: {
@@ -195,7 +204,7 @@
         var taste = buildTaste();
         var personal = personalizedRow(taste);
         var surprise = surpriseRow(taste);
-        var rows = [], configs = [personal].concat(ROWS), left = configs.length;
+        var rows = [], configs = [personal].concat(BASE_ROWS), left = configs.length;
         configs.forEach(function (row, index) {
             tmdbGet(row.url, function (payload) {
                 rows[index] = { title: row.title, results: payload.results, total_pages: payload.total_pages,
@@ -375,40 +384,8 @@
         };
 
         if (more.filter) activity.filter = more.filter;
-        if (more.genres) activity.genres = more.genres;
 
         Lampa.Activity.push(activity);
-    }
-
-    // ---------------------------------------------------------
-    // Иконка «Новинки».
-    // Используем переданный SVG, но красим его в красный цвет.
-    // SVG добавляется только в заголовок строки — штатные карточки,
-    // горизонтальный скролл и остальная механика Lampa не меняются.
-    // ---------------------------------------------------------
-
-    // Стандартная иконка для «Новинки».
-    var NEW_ICON = '🔥';
-
-    function decorateNewTitles() {
-        try {
-            $('.items-line__title').each(function () {
-                var node = $(this);
-                if (node.find('.ldg-new-icon').length) return;
-                var text = $.trim(node.text());
-                if (text === 'Новинки' || text === '🆕 Новинки') {
-                    node.html(NEW_ICON + '<span class="ldg-new-title-text">Новинки</span>');
-                    node.find('.ldg-new-icon').css({
-                        display: 'inline-block',
-                        width: '1em',
-                        height: '1em',
-                        'vertical-align': '-0.12em',
-                        'margin-right': '0.28em',
-                        'flex-shrink': '0'
-                    });
-                }
-            });
-        } catch (e) {}
     }
 
     function component(object) {
@@ -433,8 +410,6 @@
                         self.build(movieRows.filter(function (row) {
                             return row && row.results && row.results.length;
                         }));
-                        setTimeout(decorateNewTitles, 0);
-                        setTimeout(decorateNewTitles, 250);
                     });
                 });
             },
@@ -458,14 +433,6 @@
                 });
             }
         });
-
-        if (typeof MutationObserver !== 'undefined' && main && main.render) {
-            var titleObserver = new MutationObserver(function () {
-                decorateNewTitles();
-            });
-            titleObserver.observe(document.body, { childList: true, subtree: true });
-            setTimeout(decorateNewTitles, 300);
-        }
 
         return main;
     }
@@ -525,11 +492,11 @@
     }
 
     function startPlugin() {
-        if (window.__lampa_discovery_v15_ready) return;
-        window.__lampa_discovery_v15_ready = true;
+        if (window.__lampa_discovery_v9_ready) return;
+        window.__lampa_discovery_v9_ready = true;
 
         if (!Lampa.Component || typeof Lampa.Component.add !== 'function') {
-            console.error('[Lampa Discovery v15] Component API unavailable');
+            console.error('[Lampa Discovery v9] Component API unavailable');
             return;
         }
 
@@ -543,7 +510,7 @@
         }
 
         addMenu();
-        console.log('[Lampa Discovery v15] Discovery rows ready');
+        console.log('[Lampa Discovery v9] Discovery rows ready');
     }
 
     if (typeof Lampa === 'undefined') {
