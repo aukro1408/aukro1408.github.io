@@ -478,7 +478,7 @@
     // ---------------------------------------------------------
 
     function discoveryIcon() {
-        return '<img class="ldg-discovery-icon" src="''' + uri + '''" width="24" height="24" alt="" aria-hidden="true" style="display:block;width:1em;height:1em;object-fit:contain;">';
+        return '<img class="ldg-discovery-icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij4KPHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiB4PSIxIiB5PSIxIiBmaWxsPSIjRjVBNjIzIiByeD0iMSI+CjxhbmltYXRlIGF0dHJpYnV0ZU5hbWU9IngiIGJlZ2luPSIwcyIgZHVyPSIwLjhzIiB2YWx1ZXM9IjE7MTM7MTM7MTsxIiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIvPgo8YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJ5IiBiZWdpbj0iMHMiIGR1cj0iMC44cyIgdmFsdWVzPSIxOzE7MTM7MTM7MSIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiLz4KPC9yZWN0Pgo8cmVjdCB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIHg9IjEiIHk9IjEzIiBmaWxsPSIjRjVBNjIzIiByeD0iMSI+CjxhbmltYXRlIGF0dHJpYnV0ZU5hbWU9IngiIGJlZ2luPSIwcyIgZHVyPSIwLjhzIiB2YWx1ZXM9IjE7MTsxMzsxMzsxIiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIvPgo8YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJ5IiBiZWdpbj0iMHMiIGR1cj0iMC44cyIgdmFsdWVzPSIxMzsxOzE7MTM7MTMiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIi8+CjwvcmVjdD4KPHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiB4PSIxMyIgeT0iMTMiIGZpbGw9IiNGNUE2MjMiIHJ4PSIxIj4KPGFuaW1hdGUgYXR0cmlidXRlTmFtZT0ieCIgYmVnaW49IjBzIiBkdXI9IjAuOHMiIHZhbHVlcz0iMTM7MTsxOzEzOzEzIiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIvPgo8YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJ5IiBiZWdpbj0iMHMiIGR1cj0iMC44cyIgdmFsdWVzPSIxMzsxMzsxOzE7MTMiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIi8+CjwvcmVjdD4KPC9zdmc+" width="24" height="24" alt="" aria-hidden="true" style="display:block;width:1em;height:1em;object-fit:contain;">';
     }
 
     function openDiscovery() {
@@ -525,11 +525,11 @@
     }
 
     function startPlugin() {
-        if (window.__lampa_discovery_v16_ready) return;
-        window.__lampa_discovery_v16_ready = true;
+        if (window.__lampa_discovery_v17_ready) return;
+        window.__lampa_discovery_v17_ready = true;
 
         if (!Lampa.Component || typeof Lampa.Component.add !== 'function') {
-            console.error('[Lampa Discovery v16] Component API unavailable');
+            console.error('[Lampa Discovery v17] Component API unavailable');
             return;
         }
 
@@ -543,7 +543,7 @@
         }
 
         addMenu();
-        console.log('[Lampa Discovery v16] Discovery rows ready');
+        console.log('[Lampa Discovery v17] Discovery rows ready');
     }
 
     if (typeof Lampa === 'undefined') {
