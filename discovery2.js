@@ -2,7 +2,7 @@
     'use strict';
 
     // =========================================================
-    // LAMPA DISCOVERY v9
+    // LAMPA DISCOVERY v10
     // Native Lampa Main -> Line -> Card.
     // Несколько горизонтальных рядов как на главной Lampa.
     // TMDB: русская локализация + нормальные фильтры рейтинга.
@@ -204,7 +204,7 @@
         var taste = buildTaste();
         var personal = personalizedRow(taste);
         var surprise = surpriseRow(taste);
-        var rows = [], configs = [personal].concat(BASE_ROWS), left = configs.length;
+        var rows = [], configs = [personal].concat(ROWS), left = configs.length;
         configs.forEach(function (row, index) {
             tmdbGet(row.url, function (payload) {
                 rows[index] = { title: row.title, results: payload.results, total_pages: payload.total_pages,
@@ -384,6 +384,7 @@
         };
 
         if (more.filter) activity.filter = more.filter;
+        if (more.genres) activity.genres = more.genres;
 
         Lampa.Activity.push(activity);
     }
@@ -496,7 +497,7 @@
         window.__lampa_discovery_v9_ready = true;
 
         if (!Lampa.Component || typeof Lampa.Component.add !== 'function') {
-            console.error('[Lampa Discovery v9] Component API unavailable');
+            console.error('[Lampa Discovery v10] Component API unavailable');
             return;
         }
 
@@ -510,7 +511,7 @@
         }
 
         addMenu();
-        console.log('[Lampa Discovery v9] Discovery rows ready');
+        console.log('[Lampa Discovery v10] Discovery rows ready');
     }
 
     if (typeof Lampa === 'undefined') {
