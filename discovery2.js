@@ -219,7 +219,7 @@
                 discovery_more: {
                     url: 'discover/movie',
                     title: 'Удиви меня',
-                    genres: selected.join(','),
+                    genres: selected.join('|'),
                     sort_by: 'vote_average.desc',
                     filter: {
                         'vote_count.gte': MIN_VOTES,
@@ -626,11 +626,11 @@
     }
 
     function startPlugin() {
-        if (window.__lampa_discovery_v26_ready) return;
-        window.__lampa_discovery_v26_ready = true;
+        if (window.__lampa_discovery_v27_ready) return;
+        window.__lampa_discovery_v27_ready = true;
 
         if (!Lampa.Component || typeof Lampa.Component.add !== 'function') {
-            console.error('[Lampa Discovery v26] Component API unavailable');
+            console.error('[Lampa Discovery v27] Component API unavailable');
             return;
         }
 
@@ -644,7 +644,7 @@
         }
 
         addMenu();
-        console.log('[Lampa Discovery v26] Discovery rows ready');
+        console.log('[Lampa Discovery v27] Discovery rows ready');
     }
 
     if (typeof Lampa === 'undefined') {
