@@ -2,10 +2,10 @@
     'use strict';
 
     if (window.kp_ratings_plugin_v102) return;
-    window.kp_ratings_plugin_v100 = true;
+    window.kp_ratings_plugin_v103 = true;
 
     var NAME = 'KP Ratings';
-    var SETTINGS = 'kp_ratings_settings_v100';
+    var SETTINGS = 'kp_ratings_settings_v103';
 
     var cfg = Object.assign({
         enabled: true,
@@ -13,7 +13,7 @@
         api: 'https://kinopoiskapiunofficial.tech/'
     }, Lampa.Storage.get(SETTINGS, {}) || {});
 
-    var cache = Lampa.Storage.cache('kp_rating_v100', 500, {});
+    var cache = Lampa.Storage.cache('kp_rating_v103', 500, {});
     var inFlight = {};
 
     function saveCfg() {
@@ -127,7 +127,7 @@
         };
 
         cache[key] = item;
-        Lampa.Storage.set('kp_rating_v100', cache);
+        Lampa.Storage.set('kp_rating_v103', cache);
 
         return item;
     }
@@ -140,7 +140,7 @@
 
         if (Date.now() - Number(item.timestamp || 0) > ttl) {
             delete cache[key];
-            Lampa.Storage.set('kp_rating_v100', cache);
+            Lampa.Storage.set('kp_rating_v103', cache);
             return null;
         }
 
@@ -160,7 +160,7 @@
 
         if (!render) return;
 
-        $('.kp-rating-v100', render).remove();
+        $('.kp-rating-v103', render).remove();
 
         var value = rating.toFixed(1);
         var percent = Math.max(0, Math.min(100, rating * 10));
@@ -168,13 +168,7 @@
         var votesText = '';
 
         if (votes > 0) {
-            if (votes >= 1000000) {
-                votesText = (votes / 1000000).toFixed(1).replace('.0', '') + 'M';
-            } else if (votes >= 1000) {
-                votesText = (votes / 1000).toFixed(1).replace('.0', '') + 'K';
-            } else {
-                votesText = String(votes).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-            }
+            votesText = String(Math.round(votes)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
         }
 
         var quality = rating >= 8 ? 'Отлично' :
@@ -183,26 +177,26 @@
             rating >= 5 ? 'Средне' : 'Низкая оценка';
 
         var block =
-            '<div class="kp-rating-v100">' +
-                '<div class="kp-rating-v100__top">' +
-                    '<div class="kp-rating-v100__brand">' +
-                        '<span class="kp-rating-v100__star">★</span>' +
+            '<div class="kp-rating-v103">' +
+                '<div class="kp-rating-v103__top">' +
+                    '<div class="kp-rating-v103__brand">' +
+                        '<span class="kp-rating-v103__star">★</span>' +
                         '<span>КИНОПОИСК</span>' +
                     '</div>' +
-                    '<span class="kp-rating-v100__quality">' + quality + '</span>' +
+                    '<span class="kp-rating-v103__quality">' + quality + '</span>' +
                 '</div>' +
-                '<div class="kp-rating-v100__main">' +
-                    '<div class="kp-rating-v100__score">' +
+                '<div class="kp-rating-v103__main">' +
+                    '<div class="kp-rating-v103__score">' +
                         '<span>' + value + '</span>' +
                         '<small>/10</small>' +
                     '</div>' +
-                    '<div class="kp-rating-v100__votes">' +
+                    '<div class="kp-rating-v103__votes">' +
                         (votesText ?
                             '<strong>' + votesText + '</strong><span>голосов</span>' :
                             '<span>рейтинг пользователей</span>') +
                     '</div>' +
                 '</div>' +
-                '<div class="kp-rating-v100__bar">' +
+                '<div class="kp-rating-v103__bar">' +
                     '<i style="width:' + percent + '%"></i>' +
                 '</div>' +
             '</div>';
@@ -462,7 +456,7 @@
         if (!Lampa.SettingsApi) return;
 
         Lampa.SettingsApi.addComponent({
-            component: 'kp_ratings_v100',
+            component: 'kp_ratings_v103',
             name: NAME,
             icon:
                 '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" ' +
@@ -473,7 +467,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'kp_ratings_v100',
+            component: 'kp_ratings_v103',
             param: {
                 name: 'kp_apikey',
                 type: 'trigger'
@@ -512,7 +506,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'kp_ratings_v100',
+            component: 'kp_ratings_v103',
             param: {
                 name: 'kp_enabled',
                 type: 'select',
@@ -532,7 +526,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'kp_ratings_v100',
+            component: 'kp_ratings_v103',
             param: {
                 name: 'kp_clear',
                 type: 'trigger'
@@ -543,7 +537,7 @@
             },
             onChange: function () {
                 cache = {};
-                Lampa.Storage.set('kp_rating_v100', cache);
+                Lampa.Storage.set('kp_rating_v103', cache);
                 Lampa.Noty.show('Кэш КП очищен');
             }
         });
@@ -551,12 +545,12 @@
 
     function start() {
 
-        if (!document.getElementById('kp-ratings-v100-style')) {
+        if (!document.getElementById('kp-ratings-v103-style')) {
             var style = document.createElement('style');
-            style.id = 'kp-ratings-v100-style';
+            style.id = 'kp-ratings-v103-style';
             style.textContent =
-                '.kp-rating-v100{' +
-                    'width:100%!important;' +
+                '.kp-rating-v103{' +
+                    'width:calc(50% - .4em)!important;' +
                     'box-sizing:border-box!important;' +
                     'margin:.75em 0 .7em!important;' +
                     'padding:.75em .9em .72em!important;' +
@@ -566,15 +560,16 @@
                     'box-shadow:0 5px 18px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.05)!important;' +
                     'color:#fff!important;' +
                     'font-size:1em!important;' +
+                'vertical-align:top!important;' +
                 '}' +
-                '.kp-rating-v100__top{' +
+                '.kp-rating-v103__top{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'justify-content:space-between!important;' +
                     'gap:.5em!important;' +
                     'margin-bottom:.25em!important;' +
                 '}' +
-                '.kp-rating-v100__brand{' +
+                '.kp-rating-v103__brand{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'gap:.42em!important;' +
@@ -583,62 +578,63 @@
                     'letter-spacing:.07em!important;' +
                     'color:#f5b82e!important;' +
                 '}' +
-                '.kp-rating-v100__star{' +
+                '.kp-rating-v103__star{' +
                     'font-size:1.55em!important;' +
                     'line-height:.7!important;' +
                     'text-shadow:0 0 9px rgba(245,184,46,.35)!important;' +
                 '}' +
-                '.kp-rating-v100__quality{' +
+                '.kp-rating-v103__quality{' +
                     'font-size:.68em!important;' +
                     'font-weight:600!important;' +
                     'color:rgba(255,255,255,.55)!important;' +
                 '}' +
-                '.kp-rating-v100__main{' +
+                '.kp-rating-v103__main{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'justify-content:flex-start!important;' +
                     'gap:1.15em!important;' +
                 '}' +
-                '.kp-rating-v100__score{' +
+                '.kp-rating-v103__score{' +
                     'display:flex!important;' +
                     'align-items:baseline!important;' +
                     'white-space:nowrap!important;' +
                 '}' +
-                '.kp-rating-v100__score span{' +
+                '.kp-rating-v103__score span{' +
                     'font-size:2em!important;' +
                     'font-weight:800!important;' +
                     'letter-spacing:-.035em!important;' +
                     'line-height:1!important;' +
                 '}' +
-                '.kp-rating-v100__score small{' +
+                '.kp-rating-v103__score small{' +
                     'margin-left:.18em!important;' +
                     'font-size:.62em!important;' +
                     'font-weight:500!important;' +
                     'color:rgba(255,255,255,.42)!important;' +
                 '}' +
-                '.kp-rating-v100__votes{' +
+                '.kp-rating-v103__votes{' +
                     'display:flex!important;' +
                     'flex-direction:column!important;' +
                     'line-height:1.15!important;' +
                 '}' +
-                '.kp-rating-v100__votes strong{' +
-                    'font-size:.98em!important;' +
+                '.kp-rating-v103__votes strong{' +
+                    'font-size:.95em!important;' +
                     'font-weight:700!important;' +
                     'color:#fff!important;' +
                 '}' +
-                '.kp-rating-v100__votes span{' +
+                '.kp-rating-v103__votes span{' +
                     'margin-top:.16em!important;' +
                     'font-size:.62em!important;' +
-                    'color:rgba(255,255,255,.48)!important;' +
+                    'color:rgba(255,255,255,.52)!important;' +
+                    'white-space:nowrap!important;' +
                 '}' +
-                '.kp-rating-v100__bar{' +
+                '.kp-rating-v103__bar{' +
                     'height:3px!important;' +
                     'margin-top:.65em!important;' +
                     'overflow:hidden!important;' +
                     'border-radius:99px!important;' +
                     'background:rgba(255,255,255,.10)!important;' +
                 '}' +
-                '.kp-rating-v100__bar i{' +
+                '.kp-rating-v103__bar i{' +
                     'display:block!important;' +
                     'height:100%!important;' +
                     'border-radius:99px!important;' +
@@ -655,7 +651,7 @@
 
             var render = e.object.activity.render();
 
-            if ($('.kp-rating-v100', render).length) return;
+            if ($('.kp-rating-v103', render).length) return;
 
             var movie = e.data && e.data.movie;
 
@@ -664,7 +660,7 @@
             inject(movie);
         });
 
-        console.log('[KP Ratings] v1.0.2 started');
+        console.log('[KP Ratings] v1.0.3 started');
     }
 
     function boot() {
