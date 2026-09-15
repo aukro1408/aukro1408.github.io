@@ -1,28 +1,34 @@
 (function () {
     'use strict';
 
-    if (window.kp_ratings_plugin_v104) return;
-    window.kp_ratings_plugin_v104 = true;
+    if (window.kp_ratings_plugin_v105) return;
+    window.kp_ratings_plugin_v105 = true;
 
     var NAME = 'KP Ratings';
-    var SETTINGS = 'kp_ratings_settings_v104';
+    var SETTINGS = 'kp_ratings_settings_v105';
 
     var cfg = Object.assign({
         enabled: true,
         cache_days: 7,
         api: 'https://kinopoiskapiunofficial.tech/'
     }, Object.assign({},
+        Lampa.Storage.get('kp_ratings_settings_v100', {}) || {},
+        Lampa.Storage.get('kp_ratings_settings_v101', {}) || {},
         Lampa.Storage.get('kp_ratings_settings_v102', {}) || {},
         Lampa.Storage.get('kp_ratings_settings_v103', {}) || {},
+        Lampa.Storage.get('kp_ratings_settings_v104', {}) || {},
         Lampa.Storage.get(SETTINGS, {}) || {}
     ));
 
-    var cache = Lampa.Storage.cache('kp_rating_v104', 500, {});
+    var cache = Lampa.Storage.cache('kp_rating_v105', 500, {});
 
     try {
+        var oldCache100 = Lampa.Storage.cache('kp_rating_v100', 500, {});
+        var oldCache101 = Lampa.Storage.cache('kp_rating_v101', 500, {});
         var oldCache102 = Lampa.Storage.cache('kp_rating_v102', 500, {});
         var oldCache103 = Lampa.Storage.cache('kp_rating_v103', 500, {});
-        [oldCache102, oldCache103].forEach(function (oldCache) {
+        var oldCache104 = Lampa.Storage.cache('kp_rating_v105', 500, {});
+        [oldCache100, oldCache101, oldCache102, oldCache103, oldCache104].forEach(function (oldCache) {
             Object.keys(oldCache || {}).forEach(function (key) {
                 if (!cache[key] && oldCache[key]) cache[key] = oldCache[key];
             });
@@ -141,7 +147,7 @@
         };
 
         cache[key] = item;
-        Lampa.Storage.set('kp_rating_v104', cache);
+        Lampa.Storage.set('kp_rating_v105', cache);
 
         return item;
     }
@@ -154,7 +160,7 @@
 
         if (Date.now() - Number(item.timestamp || 0) > ttl) {
             delete cache[key];
-            Lampa.Storage.set('kp_rating_v104', cache);
+            Lampa.Storage.set('kp_rating_v105', cache);
             return null;
         }
 
@@ -174,7 +180,7 @@
 
         if (!render) return;
 
-        $('.kp-rating-v104', render).remove();
+        $('.kp-rating-v105', render).remove();
 
         var value = rating.toFixed(1);
         var percent = Math.max(0, Math.min(100, rating * 10));
@@ -191,25 +197,25 @@
             rating >= 5 ? 'Средне' : 'Низкая оценка';
 
         var block =
-            '<div class="kp-rating-v104">' +
-                '<div class="kp-rating-v104__top">' +
-                    '<div class="kp-rating-v104__brand">' +
-                        '<img class="kp-rating-v104__logo" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NjAgOTYwIj4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgLmNscy0xIHsKICAgICAgICBmaWxsOiAjZjUwOwogICAgICAgIGZpbGwtcnVsZTogZXZlbm9kZDsKICAgICAgICBzdHJva2Utd2lkdGg6IDBweDsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzQ1Ljg2LDQ4MC4wNGMwLTM0LjEzLDE3LjEyLTYxLjQ0LDQ4LTYxLjQ0czQ4LDI3LjMxLDQ4LDYxLjQ0LTE3LjEyLDYxLjQ0LTQ3Ljk5LDYxLjQ0LTQ4LTI3LjMtNDgtNjEuNDRaTTM5My44Niw1MjQuNDRjMTIuMDEsMCwxNy4xMi0yMC40OCwxNy4xMi00NC4zNXMtNS4xNS00NC4zNS0xNy4xMi00NC4zNS0xNy4xMiwyMC40OC0xNy4xMiw0NC4zNWMtLjA0LDIzLjg3LDUuMTEsNDQuMzUsMTcuMTIsNDQuMzVaTTI2Ljk5LDQyMC4zNHYzMi40M2gxLjdsMjIuMjctMzIuNDNoMzAuODNsLTQxLjE0LDM3LjUyLDEuNywxLjcsNzUuNDMtMzkuMjZ2MjcuMzFsLTY2Ljg3LDIzLjg3djEuNjlsNjYuODctNS45NnYyNS42MWwtNjYuODctNS45NnYxLjdsNjYuODcsMjMuODd2MjcuMzFsLTc1LjQzLTM5LjI3LTEuNywxLjcsNDEuMTQsMzcuNTJoLTMwLjgzbC0yMi4yNy0zMi40M2gtMS43djMyLjQzSDQuNzF2LTExOS40NGgyMi4yN3YuMDhaTTEzOC40NSw0MjAuMzRoMjkuMTRsLTEuNyw3MS42NmgxLjdsMzQuMjgtNzEuNjZoMjUuNzJ2MTE5LjQ0aC0yOS4xM2wxLjctNzEuNjZoLTEuN2wtMzQuMyw3MS42N2gtMjUuNzJ2LTExOS40NWgwWk0yNzcuMjksNDIwLjM0aC0yOS4xM3YxMTkuNDRoMjkuMTN2LTUyLjkyaDIzLjk4djUyLjkyaDI5LjEzdi0xMTkuNDRoLTI5LjEzdjQ2LjA5aC0yMy45OHYtNDYuMDlaTTUzOS41Niw0MjAuMzRoLTgyLjI1djExOS40NGgyOS4xNHYtOTguOTdoMjMuOTh2OTguOTdoMjkuMTN2LTExOS40NFpNNTU0Ljk4LDQ4MC4wNGMwLTM0LjEzLDE3LjEyLTYxLjQ0LDQ4LTYxLjQ0czQ4LDI3LjMxLDQ4LDYxLjQ0LTE3LjEyLDYxLjQ0LTQ4LDYxLjQ0LTQ4LTI3LjMtNDgtNjEuNDRaTTYwMi45OCw1MjQuNDRjMTIuMDEsMCwxNy4xMi0yMC40OCwxNy4xMi00NC4zNXMtNS4xNS00NC4zNS0xNy4xMi00NC4zNS0xNy4xMiwyMC40OC0xNy4xMiw0NC4zNSw1LjExLDQ0LjM1LDE3LjEyLDQ0LjM1Wk02OTUuNTMsNDIwLjM0aC0yOS4xM3YxMTkuNDRoMjUuNzJsMzQuMjktNzEuNjZoMS43bC0xLjcsNzEuNjZoMjkuMTN2LTExOS40NGgtMjUuNzJsLTM0LjI5LDcxLjY2aC0xLjdsMS43LTcxLjY2Wk04MzIuNzEsNDk4LjgzbDI3LjQzLDMuMzljLTUuMTUsMjMuODgtMTcuMTIsMzkuMjYtNDIuNjgsMzkuMjYtMzAuODMsMC00Ni40Ni0yNy4zLTQ2LjQ2LTYxLjQ0czE1LjU5LTYxLjQ0LDQ2LjQ2LTYxLjQ0YzI1LjAyLDAsMzcuNTMsMTUuMzUsNDIuNjgsMzcuNTNsLTI3LjQzLDYuODJjLTEuNy0xMS45Ni02LjY5LTI3LjMtMTUuMjYtMjcuMy0xMC4yNiwwLTE1LjU5LDIwLjQ4LTE1LjU5LDQ0LjM1czUuMzIsNDQuMzUsMTUuNTksNDQuMzVjOC40LjA5LDEzLjUtMTMuNTcsMTUuMjYtMjUuNTNaTTkwMS4yOCw0MjAuMzVoLTI3LjQzdjExOS40NGgyNy40M3YtNTIuOTJoMS43bDIwLjU3LDUyLjkyaDMxLjcxbC0zMC4wMS02MS40NCwyOS4xMy01OC4wMWgtMjkuMTNsLTIyLjI3LDUyLjkyaC0xLjd2LTUyLjkyaDBaIi8+Cjwvc3ZnPg==" alt="КиноПоиск">' +
+            '<div class="kp-rating-v105">' +
+                '<div class="kp-rating-v105__top">' +
+                    '<div class="kp-rating-v105__brand">' +
+                        '<img class="kp-rating-v105__logo" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NjAgOTYwIj4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgLmNscy0xIHsKICAgICAgICBmaWxsOiAjZjUwOwogICAgICAgIGZpbGwtcnVsZTogZXZlbm9kZDsKICAgICAgICBzdHJva2Utd2lkdGg6IDBweDsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzQ1Ljg2LDQ4MC4wNGMwLTM0LjEzLDE3LjEyLTYxLjQ0LDQ4LTYxLjQ0czQ4LDI3LjMxLDQ4LDYxLjQ0LTE3LjEyLDYxLjQ0LTQ3Ljk5LDYxLjQ0LTQ4LTI3LjMtNDgtNjEuNDRaTTM5My44Niw1MjQuNDRjMTIuMDEsMCwxNy4xMi0yMC40OCwxNy4xMi00NC4zNXMtNS4xNS00NC4zNS0xNy4xMi00NC4zNS0xNy4xMiwyMC40OC0xNy4xMiw0NC4zNWMtLjA0LDIzLjg3LDUuMTEsNDQuMzUsMTcuMTIsNDQuMzVaTTI2Ljk5LDQyMC4zNHYzMi40M2gxLjdsMjIuMjctMzIuNDNoMzAuODNsLTQxLjE0LDM3LjUyLDEuNywxLjcsNzUuNDMtMzkuMjZ2MjcuMzFsLTY2Ljg3LDIzLjg3djEuNjlsNjYuODctNS45NnYyNS42MWwtNjYuODctNS45NnYxLjdsNjYuODcsMjMuODd2MjcuMzFsLTc1LjQzLTM5LjI3LTEuNywxLjcsNDEuMTQsMzcuNTJoLTMwLjgzbC0yMi4yNy0zMi40M2gtMS43djMyLjQzSDQuNzF2LTExOS40NGgyMi4yN3YuMDhaTTEzOC40NSw0MjAuMzRoMjkuMTRsLTEuNyw3MS42NmgxLjdsMzQuMjgtNzEuNjZoMjUuNzJ2MTE5LjQ0aC0yOS4xM2wxLjctNzEuNjZoLTEuN2wtMzQuMyw3MS42N2gtMjUuNzJ2LTExOS40NWgwWk0yNzcuMjksNDIwLjM0aC0yOS4xM3YxMTkuNDRoMjkuMTN2LTUyLjkyaDIzLjk4djUyLjkyaDI5LjEzdi0xMTkuNDRoLTI5LjEzdjQ2LjA5aC0yMy45OHYtNDYuMDlaTTUzOS41Niw0MjAuMzRoLTgyLjI1djExOS40NGgyOS4xNHYtOTguOTdoMjMuOTh2OTguOTdoMjkuMTN2LTExOS40NFpNNTU0Ljk4LDQ4MC4wNGMwLTM0LjEzLDE3LjEyLTYxLjQ0LDQ4LTYxLjQ0czQ4LDI3LjMxLDQ4LDYxLjQ0LTE3LjEyLDYxLjQ0LTQ4LDYxLjQ0LTQ4LTI3LjMtNDgtNjEuNDRaTTYwMi45OCw1MjQuNDRjMTIuMDEsMCwxNy4xMi0yMC40OCwxNy4xMi00NC4zNXMtNS4xNS00NC4zNS0xNy4xMi00NC4zNS0xNy4xMiwyMC40OC0xNy4xMiw0NC4zNSw1LjExLDQ0LjM1LDE3LjEyLDQ0LjM1Wk02OTUuNTMsNDIwLjM0aC0yOS4xM3YxMTkuNDRoMjUuNzJsMzQuMjktNzEuNjZoMS43bC0xLjcsNzEuNjZoMjkuMTN2LTExOS40NGgtMjUuNzJsLTM0LjI5LDcxLjY2aC0xLjdsMS43LTcxLjY2Wk04MzIuNzEsNDk4LjgzbDI3LjQzLDMuMzljLTUuMTUsMjMuODgtMTcuMTIsMzkuMjYtNDIuNjgsMzkuMjYtMzAuODMsMC00Ni40Ni0yNy4zLTQ2LjQ2LTYxLjQ0czE1LjU5LTYxLjQ0LDQ2LjQ2LTYxLjQ0YzI1LjAyLDAsMzcuNTMsMTUuMzUsNDIuNjgsMzcuNTNsLTI3LjQzLDYuODJjLTEuNy0xMS45Ni02LjY5LTI3LjMtMTUuMjYtMjcuMy0xMC4yNiwwLTE1LjU5LDIwLjQ4LTE1LjU5LDQ0LjM1czUuMzIsNDQuMzUsMTUuNTksNDQuMzVjOC40LjA5LDEzLjUtMTMuNTcsMTUuMjYtMjUuNTNaTTkwMS4yOCw0MjAuMzVoLTI3LjQzdjExOS40NGgyNy40M3YtNTIuOTJoMS43bDIwLjU3LDUyLjkyaDMxLjcxbC0zMC4wMS02MS40NCwyOS4xMy01OC4wMWgtMjkuMTNsLTIyLjI3LDUyLjkyaC0xLjd2LTUyLjkyaDBaIi8+Cjwvc3ZnPg==" alt="КиноПоиск">' +
                     '</div>' +
-                    '<span class="kp-rating-v104__quality">' + quality + '</span>' +
+                    '<span class="kp-rating-v105__quality">' + quality + '</span>' +
                 '</div>' +
-                '<div class="kp-rating-v104__main">' +
-                    '<div class="kp-rating-v104__score">' +
+                '<div class="kp-rating-v105__main">' +
+                    '<div class="kp-rating-v105__score">' +
                         '<span>' + value + '</span>' +
                         '<small>/10</small>' +
                     '</div>' +
-                    '<div class="kp-rating-v104__votes">' +
+                    '<div class="kp-rating-v105__votes">' +
                         (votesText ?
                             '<strong>' + votesText + '</strong><span>голосов</span>' :
                             '<span>рейтинг пользователей</span>') +
                     '</div>' +
                 '</div>' +
-                '<div class="kp-rating-v104__bar">' +
+                '<div class="kp-rating-v105__bar">' +
                     '<i style="width:' + percent + '%"></i>' +
                 '</div>' +
             '</div>';
@@ -236,7 +242,10 @@
 
         if (details.length) {
             details.prepend(block);
+            return;
         }
+
+        $(render).append(block);
     }
 
     function findFilm(card, items) {
@@ -385,12 +394,19 @@
                 base + 'api/v2.2/films/' + encodeURIComponent(id),
                 function (data) {
                     var kp = data && data.ratingKinopoisk;
+                    var ratingObject = data && data.ratingKinopoisk;
                     var votes = data && (
                         data.ratingKinopoiskVoteCount ||
                         data.ratingKinopoiskVotes ||
                         data.ratingKinopoiskVoteCountTotal ||
+                        (ratingObject && typeof ratingObject === 'object' && (ratingObject.voteCount || ratingObject.votes)) ||
+                        data.voteCount ||
                         0
                     );
+
+                    if (ratingObject && typeof ratingObject === 'object') {
+                        kp = ratingObject.value || ratingObject.rating || ratingObject.rate;
+                    }
 
                     if (kp === undefined || kp === null) {
                         finish(saveRating(key, 0, 0));
@@ -469,7 +485,7 @@
         if (!Lampa.SettingsApi) return;
 
         Lampa.SettingsApi.addComponent({
-            component: 'kp_ratings_v104',
+            component: 'kp_ratings_v105',
             name: NAME,
             icon:
                 '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" ' +
@@ -480,7 +496,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'kp_ratings_v104',
+            component: 'kp_ratings_v105',
             param: {
                 name: 'kp_apikey',
                 type: 'trigger'
@@ -519,7 +535,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'kp_ratings_v104',
+            component: 'kp_ratings_v105',
             param: {
                 name: 'kp_enabled',
                 type: 'select',
@@ -539,7 +555,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'kp_ratings_v104',
+            component: 'kp_ratings_v105',
             param: {
                 name: 'kp_clear',
                 type: 'trigger'
@@ -550,7 +566,7 @@
             },
             onChange: function () {
                 cache = {};
-                Lampa.Storage.set('kp_rating_v104', cache);
+                Lampa.Storage.set('kp_rating_v105', cache);
                 Lampa.Noty.show('Кэш КП очищен');
             }
         });
@@ -558,11 +574,11 @@
 
     function start() {
 
-        if (!document.getElementById('kp-ratings-v103-style')) {
+        if (!document.getElementById('kp-ratings-v105-style')) {
             var style = document.createElement('style');
-            style.id = 'kp-ratings-v103-style';
+            style.id = 'kp-ratings-v105-style';
             style.textContent =
-                '.kp-rating-v104{' +
+                '.kp-rating-v105{' +
                     'display:inline-block!important;' +
                     'width:calc(50% - .55em)!important;' +
                     'box-sizing:border-box!important;' +
@@ -576,19 +592,19 @@
                     'font-size:1em!important;' +
                 'vertical-align:top!important;' +
                 '}' +
-                '.kp-rating-v104__top{' +
+                '.kp-rating-v105__top{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'justify-content:space-between!important;' +
                     'gap:.5em!important;' +
                     'margin-bottom:.25em!important;' +
                 '}' +
-                '.kp-rating-v104__brand{' +
+                '.kp-rating-v105__brand{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'height:1.15em!important;' +
                 '}' +
-                '.kp-rating-v104__logo{' +
+                '.kp-rating-v105__logo{' +
                     'display:block!important;' +
                     'width:7.2em!important;' +
                     'height:1.05em!important;' +
@@ -596,58 +612,58 @@
                     'object-position:left center!important;' +
                     'filter:drop-shadow(0 0 5px rgba(255,85,0,.16))!important;' +
                 '}' +
-                '.kp-rating-v104__quality{' +
+                '.kp-rating-v105__quality{' +
                     'font-size:.68em!important;' +
                     'font-weight:600!important;' +
                     'color:rgba(255,255,255,.55)!important;' +
                 '}' +
-                '.kp-rating-v104__main{' +
+                '.kp-rating-v105__main{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'justify-content:flex-start!important;' +
                     'gap:1.15em!important;' +
                 '}' +
-                '.kp-rating-v104__score{' +
+                '.kp-rating-v105__score{' +
                     'display:flex!important;' +
                     'align-items:baseline!important;' +
                     'white-space:nowrap!important;' +
                 '}' +
-                '.kp-rating-v104__score span{' +
+                '.kp-rating-v105__score span{' +
                     'font-size:2em!important;' +
                     'font-weight:800!important;' +
                     'letter-spacing:-.035em!important;' +
                     'line-height:1!important;' +
                 '}' +
-                '.kp-rating-v104__score small{' +
+                '.kp-rating-v105__score small{' +
                     'margin-left:.18em!important;' +
                     'font-size:.62em!important;' +
                     'font-weight:500!important;' +
                     'color:rgba(255,255,255,.42)!important;' +
                 '}' +
-                '.kp-rating-v104__votes{' +
+                '.kp-rating-v105__votes{' +
                     'display:flex!important;' +
                     'flex-direction:column!important;' +
                     'line-height:1.15!important;' +
                 '}' +
-                '.kp-rating-v104__votes strong{' +
+                '.kp-rating-v105__votes strong{' +
                     'font-size:.95em!important;' +
                     'font-weight:700!important;' +
                     'color:#fff!important;' +
                 '}' +
-                '.kp-rating-v104__votes span{' +
+                '.kp-rating-v105__votes span{' +
                     'margin-top:.16em!important;' +
                     'font-size:.62em!important;' +
                     'color:rgba(255,255,255,.52)!important;' +
                     'white-space:nowrap!important;' +
                 '}' +
-                '.kp-rating-v104__bar{' +
+                '.kp-rating-v105__bar{' +
                     'height:3px!important;' +
                     'margin-top:.65em!important;' +
                     'overflow:hidden!important;' +
                     'border-radius:99px!important;' +
                     'background:rgba(255,255,255,.10)!important;' +
                 '}' +
-                '.kp-rating-v104__bar i{' +
+                '.kp-rating-v105__bar i{' +
                     'display:block!important;' +
                     'height:100%!important;' +
                     'border-radius:99px!important;' +
@@ -664,7 +680,7 @@
 
             var render = e.object.activity.render();
 
-            if ($('.kp-rating-v104', render).length) return;
+            if ($('.kp-rating-v105', render).length) return;
 
             var movie = e.data && e.data.movie;
 
@@ -673,7 +689,7 @@
             inject(movie);
         });
 
-        console.log('[KP Ratings] v1.0.4 started');
+        console.log('[KP Ratings] v1.0.5 started');
     }
 
     function boot() {
