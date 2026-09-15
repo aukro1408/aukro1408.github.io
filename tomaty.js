@@ -1,324 +1,304 @@
 (function () {
     'use strict';
 
-    if (window.rt_ratings_plugin_v116) return;
-    window.rt_ratings_plugin_v116 = true;
+    if (window.kp_ratings_plugin_v100) return;
+    window.kp_ratings_plugin_v100 = true;
 
-    var NAME = 'RT Ratings';
-    var SETTINGS = 'rt_ratings_settings_v116';
-    var CACHE = 'rt_ratings_cache_v116';
-
-    var oldCfg = Object.assign(
-        {},
-        Lampa.Storage.get('rt_ratings_settings_v111', {}) || {},
-        Lampa.Storage.get('rt_ratings_settings_v113', {}) || {},
-        Lampa.Storage.get('rt_ratings_settings_v114', {}) || {},
-        Lampa.Storage.get('rt_ratings_settings_v115', {}) || {}
-    );
-
-    var oldCache = Object.assign(
-        {},
-        Lampa.Storage.get('rt_ratings_cache_v111', {}) || {},
-        Lampa.Storage.get('rt_ratings_cache_v113', {}) || {},
-        Lampa.Storage.get('rt_ratings_cache_v114', {}) || {},
-        Lampa.Storage.get('rt_ratings_cache_v115', {}) || {}
-    );
+    var NAME = 'KP Ratings';
+    var SETTINGS = 'kp_ratings_settings_v100';
 
     var cfg = Object.assign({
         enabled: true,
-        critic: true,
-        audience: false,
         cache_days: 7,
-        api: 'https://www.omdbapi.com/',
-        apikey: ''
-    }, oldCfg, Lampa.Storage.get(SETTINGS, {}) || {});
+        api: 'https://kinopoiskapiunofficial.tech/'
+    }, Lampa.Storage.get(SETTINGS, {}) || {});
 
-    var cache = Object.assign({}, oldCache, Lampa.Storage.get(CACHE, {}) || {});
+    var cache = Lampa.Storage.cache('kp_rating_v100', 500, {});
     var inFlight = {};
 
     function saveCfg() {
         Lampa.Storage.set(SETTINGS, cfg);
     }
 
-    function saveCache() {
-        Lampa.Storage.set(CACHE, cache);
-    }
-
-    function getMovie(data) {
-        if (!data) return null;
-        return data.movie || data;
-    }
-
-    function getTitle(movie) {
-        return String(
-            movie.original_title ||
-            movie.original_name ||
-            movie.title ||
-            movie.name ||
-            ''
-        ).trim();
-    }
-
-    function getYear(movie) {
-        var date = movie.release_date || movie.first_air_date || movie.year || '';
-        var m = String(date).match(/\b(19|20)\d{2}\b/);
-        return m ? m[0] : '';
-    }
-
-    function getImdbId(movie) {
-        if (!movie) return '';
-
-        var candidates = [
-            movie.imdb_id,
-            movie.imdb,
-            movie.imdbId,
-            movie.imdbID,
-            movie.external_ids && movie.external_ids.imdb_id,
-            movie.ids && movie.ids.imdb
-        ];
-
-        for (var i = 0; i < candidates.length; i++) {
-            var id = String(candidates[i] || '').trim();
-            if (/^tt\d+$/i.test(id)) return id;
-        }
-
-        return '';
-    }
-
-    function parseScore(v) {
-        if (v === null || v === undefined || v === '' || v === 'N/A') return null;
-
-        var n = parseInt(String(v).replace('%', '').trim(), 10);
-        return isNaN(n) ? null : Math.max(0, Math.min(100, n));
-    }
-
-    function parseJsonIfNeeded(res) {
-        if (typeof res !== 'string') return res;
-
-        try {
-            return JSON.parse(res);
-        } catch (e) {
-            console.warn('[RT Ratings] JSON PARSE ERROR:', res);
-            return null;
-        }
-    }
-
-    function normalizeResponse(res) {
-        res = parseJsonIfNeeded(res);
-
-        if (!res || typeof res !== 'object') return null;
-
-        console.log('[RT Ratings] PARSED:', res);
-
-        if (String(res.Response || '').toLowerCase() === 'false') {
-            console.warn('[RT Ratings] OMDb ERROR:', res.Error || 'Unknown error');
-            return null;
-        }
-
-        var critic = null;
-        var ratings = Array.isArray(res.Ratings) ? res.Ratings : [];
-
-        ratings.forEach(function (r) {
-            if (!r) return;
-
-            var source = String(r.Source || '').toLowerCase();
-
-            if (source === 'rotten tomatoes' ||
-                source.indexOf('rotten tomatoes') !== -1) {
-                critic = parseScore(r.Value);
-            }
-        });
-
-        if (critic === null) {
-            critic = parseScore(res.tomatoMeter);
-        }
-
-        // OMDb does not provide RT's audience/popcorn score.
-        var audience = null;
-
-        if (critic === null && audience === null) {
-            console.warn('[RT Ratings] NO RT SCORE IN RESPONSE:', res);
-            return null;
-        }
-
-        return {
-            critic: critic,
-            audience: audience,
-            title: res.Title || '',
-            year: res.Year || '',
-            imdb: res.imdbID || '',
-            url: ''
-        };
-    }
-
-    function scoreClass(n) {
-        if (n >= 75) return 'rt-good';
-        if (n >= 60) return 'rt-mid';
-        return 'rt-bad';
-    }
-
-    function styles() {
-        if (document.getElementById('rt-ratings-v116-style')) return;
-
-        var s = document.createElement('style');
-        s.id = 'rt-ratings-v116-style';
-        s.textContent =
-            '.rt-ratings-v116{display:flex;align-items:center;gap:7px;margin:.35em 0 .65em;flex-wrap:wrap;}' +
-            '.rt-ratings-v116__badge{display:inline-flex;align-items:center;gap:5px;padding:.42em .68em;border-radius:.55em;' +
-            'background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);color:#fff;' +
-            'font-size:1em;font-weight:600;line-height:1;box-shadow:0 2px 9px rgba(0,0,0,.18);}' +
-            '.rt-ratings-v116__badge.rt-good{border-color:rgba(78,190,102,.65);}' +
-            '.rt-ratings-v116__badge.rt-mid{border-color:rgba(220,177,66,.65);}' +
-            '.rt-ratings-v116__badge.rt-bad{border-color:rgba(220,75,75,.65);}' +
-            '.rt-ratings-v116__label{opacity:.72;font-size:.78em;font-weight:500;}' +
-            '.rt-ratings-v116__icon{font-size:1.05em;}' +
-            '.rt-ratings-card{position:relative!important;}' +
-            '.rt-ratings-card-badge{position:absolute;left:5px;bottom:5px;z-index:30;display:flex;gap:4px;pointer-events:none;}' +
-            '.rt-ratings-card-badge span{padding:3px 5px;border-radius:6px;background:rgba(8,10,12,.9);' +
-            'font:700 11px/1 Arial,sans-serif;color:#fff;border:1px solid rgba(255,255,255,.16);}' +
-            '.rt-ratings-card-badge .good{border-color:rgba(78,190,102,.7);}' +
-            '.rt-ratings-card-badge .mid{border-color:rgba(220,177,66,.7);}' +
-            '.rt-ratings-card-badge .bad{border-color:rgba(220,75,75,.7);}';
-        document.head.appendChild(s);
-    }
-
-    function badgeHtml(data) {
-        if (!data) return '';
-
-        var html = '<div class="rt-ratings-v116">';
-
-        if (cfg.critic && data.critic !== null) {
-            html += '<div class="rt-ratings-v116__badge ' + scoreClass(data.critic) + '">' +
-                '<span class="rt-ratings-v116__icon">🍅</span>' +
-                '<span>' + data.critic + '%</span>' +
-                '<span class="rt-ratings-v116__label">критики</span>' +
-                '</div>';
-        }
-
-        if (cfg.audience && data.audience !== null) {
-            html += '<div class="rt-ratings-v116__badge ' + scoreClass(data.audience) + '">' +
-                '<span class="rt-ratings-v116__icon">🍿</span>' +
-                '<span>' + data.audience + '%</span>' +
-                '<span class="rt-ratings-v116__label">зрители</span>' +
-                '</div>';
-        }
-
-        return html + '</div>';
-    }
-
-    function normalizeMatch(value) {
-        return String(value || '')
-            .toLowerCase()
-            .replace(/[^a-z0-9а-яё]+/gi, ' ')
-            .replace(/\s+/g, ' ')
+    function cleanTitle(str) {
+        return String(str || '')
+            .replace(/[\s.,:;’'`!?]+/g, ' ')
             .trim();
     }
 
-    function responseMatchesMovie(data, movie) {
-        if (!data) return false;
+    function kpCleanTitle(str) {
+        return cleanTitle(str)
+            .replace(/^[ \/\\]+/, '')
+            .replace(/[ \/\\]+$/, '')
+            .replace(/\+( *[+\/\\])+/g, '+')
+            .replace(/([+\/\\] *)+\+/g, '+')
+            .replace(/( *[\/\\]+ *)+/g, '+');
+    }
 
-        var requestedId = getImdbId(movie);
-        var responseId = String(data.imdb || '').trim();
+    function normalizeTitle(str) {
+        return cleanTitle(String(str || '').toLowerCase()
+            .replace(/[\-\u2010-\u2015\u2E3A\u2E3B\uFE58\uFE63\uFF0D]+/g, '-')
+            .replace(/ё/g, 'е'));
+    }
 
-        if (requestedId && responseId &&
-            requestedId.toLowerCase() === responseId.toLowerCase()) {
-            return true;
-        }
+    function equalTitle(a, b) {
+        return typeof a === 'string' &&
+            typeof b === 'string' &&
+            normalizeTitle(a) === normalizeTitle(b);
+    }
 
-        var requestedTitle = normalizeMatch(getTitle(movie));
-        var responseTitle = normalizeMatch(data.title);
+    function containsTitle(a, b) {
+        return typeof a === 'string' &&
+            typeof b === 'string' &&
+            normalizeTitle(a).indexOf(normalizeTitle(b)) !== -1;
+    }
 
-        if (!responseTitle || !requestedTitle) return true;
-        if (requestedTitle === responseTitle) return true;
-        if (responseTitle.indexOf(requestedTitle) !== -1) return true;
-        if (requestedTitle.indexOf(responseTitle) !== -1) return true;
+    function getYear(card) {
+        var date = card.release_date ||
+            card.first_air_date ||
+            card.last_air_date ||
+            card.year || '0000';
 
-        var a = requestedTitle.split(' ');
-        var b = responseTitle.split(' ');
-        var common = 0;
+        var m = String(date).match(/\b(19|20)\d{2}\b/);
+        return m ? parseInt(m[0], 10) : 0;
+    }
 
-        a.forEach(function (word) {
-            if (word.length > 2 && b.indexOf(word) !== -1) common++;
+    function getImdb(card) {
+        var id = card && (
+            card.imdb_id ||
+            card.imdb ||
+            card.imdbId ||
+            card.imdbID
+        );
+
+        return /^tt\d+$/i.test(String(id || '').trim()) ?
+            String(id).trim() : '';
+    }
+
+    function getTitle(card) {
+        return kpCleanTitle(
+            card.original_title ||
+            card.original_name ||
+            card.title ||
+            card.name ||
+            ''
+        );
+    }
+
+    function apiBase() {
+        var base = String(cfg.api || '').trim();
+        if (base.charAt(base.length - 1) !== '/') base += '/';
+        return base;
+    }
+
+    function headers() {
+        return {
+            'X-API-KEY': String(cfg.apikey || '').trim()
+        };
+    }
+
+    function request(url, success, error, timeout) {
+        var net = new Lampa.Reguest();
+        net.clear();
+        net.timeout(timeout || 15000);
+
+        console.log('[KP Ratings] REQUEST:', url);
+
+        net.silent(url, function (data) {
+            console.log('[KP Ratings] RESPONSE:', data);
+            success(data);
+        }, function (a, c) {
+            var err = net.errorDecode(a, c);
+            console.warn('[KP Ratings] ERROR:', err);
+            if (error) error(err);
+        }, false, {
+            headers: headers()
         });
 
-        return common >= Math.min(2, a.length);
+        return net;
     }
 
-    function makeUrl(movie, mode) {
-        var base = String(cfg.api || 'https://www.omdbapi.com/').trim();
+    function saveRating(key, kp) {
+        var item = {
+            kp: kp === null || kp === undefined ? 0 : Number(kp),
+            timestamp: Date.now()
+        };
 
-        if (base.charAt(base.length - 1) !== '?') base += '?';
+        cache[key] = item;
+        Lampa.Storage.set('kp_rating_v100', cache);
 
-        var parts = [
-            'apikey=' + encodeURIComponent(cfg.apikey)
-        ];
-
-        if (mode === 'id') {
-            parts.push('i=' + encodeURIComponent(getImdbId(movie)));
-        } else {
-            parts.push('t=' + encodeURIComponent(getTitle(movie)));
-
-            var year = getYear(movie);
-            if (year) parts.push('y=' + encodeURIComponent(year));
-        }
-
-        return base + parts.join('&');
+        return item;
     }
 
-    function requestUrl(url, callback) {
-        console.log('[RT Ratings] HTTP:', url);
-
-        var net = new Lampa.Reguest();
-        var done = false;
-
-        function finishOnce(error, res) {
-            if (done) return;
-            done = true;
-            callback(error, res);
-        }
-
-        try {
-            net.silent(function () {}, function () {});
-        } catch (e) {}
-
-        try {
-            net.silent(url, function (res) {
-                finishOnce(null, res);
-            }, function (error) {
-                finishOnce(error || 'request error', null);
-            });
-        } catch (e) {
-            finishOnce(e, null);
-        }
-    }
-
-    function request(movie, callback) {
-        if (!cfg.enabled || !movie) return;
-
-        if (!cfg.apikey) {
-            console.warn('[RT Ratings] OMDb API KEY IS EMPTY');
-            callback(null);
-            return;
-        }
-
-        var title = getTitle(movie);
-        if (!title) {
-            callback(null);
-            return;
-        }
-
-        var year = getYear(movie);
-        var imdbId = getImdbId(movie);
-
-        var stableId = imdbId || movie.id || title + '|' + year;
-        var key = String(stableId).toLowerCase();
+    function getCache(key) {
+        var item = cache[key];
+        if (!item) return null;
 
         var ttl = Number(cfg.cache_days || 7) * 86400000;
 
-        if (cache[key] && Date.now() - cache[key].time < ttl) {
-            console.log('[RT Ratings] CACHE:', title, cache[key].data);
-            callback(cache[key].data);
+        if (Date.now() - Number(item.timestamp || 0) > ttl) {
+            delete cache[key];
+            Lampa.Storage.set('kp_rating_v100', cache);
+            return null;
+        }
+
+        return item;
+    }
+
+    function showRating(data) {
+        if (!data || data.kp === null || data.kp === undefined) return;
+
+        var rating = Number(data.kp);
+
+        if (isNaN(rating) || rating <= 0) return;
+
+        var render = Lampa.Activity.active() &&
+            Lampa.Activity.active().activity &&
+            Lampa.Activity.active().activity.render();
+
+        if (!render) return;
+
+        var value = rating.toFixed(1);
+
+        $('.kp-rating-v100', render).remove();
+
+        var block =
+            '<div class="kp-rating-v100">' +
+                '<span class="kp-rating-v100__icon">⭐</span>' +
+                '<span class="kp-rating-v100__value">' + value + '</span>' +
+                '<span class="kp-rating-v100__label">КП</span>' +
+            '</div>';
+
+        var info = $('.info__rate', render);
+
+        if (info.length) {
+            info.after(block);
             return;
+        }
+
+        var rates = $('.full-start-new__rates', render);
+
+        if (!rates.length) rates = $('.full-start__rates', render);
+
+        if (rates.length) {
+            rates.after(block);
+            return;
+        }
+
+        var details = $('.full-start-new__details', render);
+
+        if (!details.length) details = $('.full-start__details', render);
+
+        if (details.length) {
+            details.after(block);
+        }
+    }
+
+    function findFilm(card, items) {
+        if (!items || !items.length) return null;
+
+        var imdb = getImdb(card);
+        var year = getYear(card);
+        var original = card.original_title || card.original_name || '';
+        var title = card.title || card.name || '';
+
+        if (imdb) {
+            var byImdb = items.filter(function (item) {
+                return String(
+                    item.imdb_id ||
+                    item.imdbId ||
+                    item.imdb ||
+                    ''
+                ).toLowerCase() === imdb.toLowerCase();
+            });
+
+            if (byImdb.length) return byImdb[0];
+        }
+
+        var exact = items.filter(function (item) {
+            return equalTitle(
+                item.orig_title || item.nameOriginal ||
+                item.en_title || item.nameEn ||
+                item.title || item.ru_title || item.nameRu,
+                original || title
+            );
+        });
+
+        if (exact.length) {
+            if (year) {
+                var exactYear = exact.filter(function (item) {
+                    var y = parseInt(String(
+                        item.start_date || item.year || '0000'
+                    ).slice(0, 4), 10);
+
+                    return y === year;
+                });
+
+                if (exactYear.length) return exactYear[0];
+            }
+
+            return exact[0];
+        }
+
+        var contains = items.filter(function (item) {
+            var names = [
+                item.orig_title,
+                item.nameOriginal,
+                item.en_title,
+                item.nameEn,
+                item.title,
+                item.ru_title,
+                item.nameRu
+            ];
+
+            return names.some(function (name) {
+                return containsTitle(name, original || title) ||
+                    containsTitle(name, title);
+            });
+        });
+
+        if (contains.length) {
+            if (year) {
+                var nearYear = contains.filter(function (item) {
+                    var y = parseInt(String(
+                        item.start_date || item.year || '0000'
+                    ).slice(0, 4), 10);
+
+                    return y && Math.abs(y - year) <= 1;
+                });
+
+                if (nearYear.length) return nearYear[0];
+            }
+
+            return contains[0];
+        }
+
+        return null;
+    }
+
+    function getRating(card, callback) {
+        if (!cfg.enabled) return callback(null);
+
+        if (!cfg.apikey) {
+            console.warn('[KP Ratings] API KEY IS EMPTY');
+            return callback(null);
+        }
+
+        var imdb = getImdb(card);
+        var title = getTitle(card);
+        var year = getYear(card);
+
+        if (!title && !imdb) return callback(null);
+
+        var key = String(
+            imdb || card.id || title + '|' + year
+        ).toLowerCase();
+
+        var old = getCache(key);
+
+        if (old) {
+            console.log('[KP Ratings] CACHE:', key, old);
+            return callback(old);
         }
 
         if (inFlight[key]) {
@@ -328,219 +308,113 @@
 
         inFlight[key] = [callback];
 
-        console.log('[RT Ratings] MOVIE:', {
-            title: title,
-            year: year,
-            imdb: imdbId
-        });
+        var base = apiBase();
+        var titleUrl = Lampa.Utils.addUrlComponent(
+            base + 'api/v2.1/films/search-by-keyword',
+            'keyword=' + encodeURIComponent(title)
+        );
 
-        var urls = [];
+        function finish(data) {
+            var list = inFlight[key] || [];
+            delete inFlight[key];
 
-        if (imdbId) {
-            urls.push({
-                type: 'id',
-                url: makeUrl(movie, 'id')
+            list.forEach(function (cb) {
+                try { cb(data); } catch (e) {}
             });
         }
 
-        urls.push({
-            type: 'title',
-            url: makeUrl(movie, 'title')
-        });
+        function loadDetails(film) {
+            var id = film && (
+                film.kp_id ||
+                film.kinopoisk_id ||
+                film.kinopoiskId ||
+                film.filmId
+            );
 
-        function tryNext(index) {
-            if (index >= urls.length) {
-                console.warn('[RT Ratings] ALL REQUESTS FAILED:', title);
-                finish(key, null);
+            if (!id) {
+                finish(null);
                 return;
             }
 
-            var item = urls[index];
-
-            requestUrl(item.url, function (error, res) {
-                if (error) {
-                    console.warn('[RT Ratings] API ERROR:', item.type, error);
-                    tryNext(index + 1);
-                    return;
-                }
-
-                console.log('[RT Ratings] RESPONSE:', item.type, title, res);
-
-                var data = normalizeResponse(res);
-
-                if (!data) {
-                    tryNext(index + 1);
-                    return;
-                }
-
-                if (!responseMatchesMovie(data, movie)) {
-                    console.warn(
-                        '[RT Ratings] REJECTED MISMATCH:',
-                        title,
-                        '=>',
-                        data.title,
-                        data.imdb
+            request(
+                base + 'api/v2.2/films/' + encodeURIComponent(id),
+                function (data) {
+                    var kp = data && (
+                        data.ratingKinopoisk !== undefined ?
+                        data.ratingKinopoisk :
+                        data.ratingKinopoiskVoteCount &&
+                        data.ratingKinopoisk
                     );
-                    tryNext(index + 1);
-                    return;
+
+                    if (kp === undefined || kp === null) {
+                        finish(saveRating(key, 0));
+                        return;
+                    }
+
+                    finish(saveRating(key, kp));
+                },
+                function () {
+                    finish(null);
                 }
-
-                cache[key] = {
-                    time: Date.now(),
-                    data: data
-                };
-
-                saveCache();
-
-                console.log('[RT Ratings] SUCCESS:', title, data);
-                finish(key, data);
-            });
+            );
         }
 
-        tryNext(0);
-    }
+        function searchByTitle() {
+            request(
+                titleUrl,
+                function (json) {
+                    var items = json && (
+                        json.items || json.films || []
+                    );
 
-    function finish(key, data) {
-        var list = inFlight[key] || [];
-        delete inFlight[key];
+                    var film = findFilm(card, items);
 
-        list.forEach(function (cb) {
-            try {
-                cb(data);
-            } catch (e) {
-                console.error('[RT Ratings] CALLBACK ERROR:', e);
-            }
-        });
-    }
-
-    function injectFull(root, data) {
-        if (!root || !data) return;
-        if (!cfg.critic && !cfg.audience) return;
-
-        var old = root.find('.rt-ratings-v116');
-        if (old && old.length) old.remove();
-
-        var html = $(badgeHtml(data));
-        if (!html.length) return;
-
-        var info = root.find('.full-start-new__info');
-        if (info.length) {
-            info.after(html);
-            return;
-        }
-
-        info = root.find('.full-start__info');
-        if (info.length) {
-            info.after(html);
-            return;
-        }
-
-        var buttons = root.find('.full-start-new__buttons');
-        if (!buttons.length) buttons = root.find('.full-start__buttons');
-
-        if (buttons.length) {
-            buttons.before(html);
-            return;
-        }
-
-        var poster = root.find('.full-start-new__poster');
-        if (!poster.length) poster = root.find('.full-start__poster');
-
-        if (poster.length) poster.after(html);
-    }
-
-    function hookFull() {
-        Lampa.Listener.follow('full', function (e) {
-            if (!e || e.type !== 'complite') return;
-            if (!cfg.enabled) return;
-
-            var root = e.object && e.object.activity ?
-                e.object.activity.render() : null;
-            var movie = getMovie(e.data);
-
-            if (!root || !movie) return;
-
-            request(movie, function (data) {
-                if (data) injectFull(root, data);
-            });
-        });
-    }
-
-    function cardBadge(element, data) {
-        if (!element || !data) return;
-
-        var box = element.querySelector('.rt-ratings-card-badge');
-        if (box) box.remove();
-
-        var html = '<div class="rt-ratings-card-badge">';
-
-        if (cfg.critic && data.critic !== null) {
-            html += '<span class="' + scoreClass(data.critic) + '">🍅 ' +
-                data.critic + '%</span>';
-        }
-
-        if (cfg.audience && data.audience !== null) {
-            html += '<span class="' + scoreClass(data.audience) + '">🍿 ' +
-                data.audience + '%</span>';
-        }
-
-        html += '</div>';
-
-        element.classList.add('rt-ratings-card');
-        element.insertAdjacentHTML('beforeend', html);
-    }
-
-    function hookCards() {
-        if (!Lampa.Listener || !Lampa.Listener.follow) return;
-
-        Lampa.Listener.follow('card', function (e) {
-            if (!cfg.enabled || !e) return;
-
-            var movie = e.data || e.card;
-            var element = e.element;
-
-            if (e.type && e.type !== 'render' &&
-                e.action && e.action !== 'render') return;
-
-            if (!movie || !element) return;
-
-            var el = element.jquery ? element[0] : element;
-            if (!el) return;
-
-            request(movie, function (data) {
-                if (data) cardBadge(el, data);
-            });
-        });
-    }
-
-    function testApi() {
-        if (!cfg.apikey) {
-            if (Lampa.Noty) Lampa.Noty.show('Сначала введите OMDb API ключ');
-            console.warn('[RT Ratings] TEST: API KEY EMPTY');
-            return;
-        }
-
-        var testMovie = {
-            title: 'Inception',
-            original_title: 'Inception',
-            release_date: '2010-07-16'
-        };
-
-        console.log('[RT Ratings] TEST START');
-
-        request(testMovie, function (data) {
-            if (data && data.critic !== null) {
-                console.log('[RT Ratings] TEST SUCCESS:', data);
-
-                if (Lampa.Noty) {
-                    Lampa.Noty.show('OMDb работает: Rotten Tomatoes ' +
-                        data.critic + '%');
+                    if (film) {
+                        loadDetails(film);
+                    } else {
+                        finish(saveRating(key, 0));
+                    }
+                },
+                function () {
+                    finish(null);
                 }
-            } else {
-                console.warn('[RT Ratings] TEST FAILED');
-                if (Lampa.Noty) {
-                    Lampa.Noty.show('OMDb не вернул Rotten Tomatoes');
+            );
+        }
+
+        if (imdb) {
+            var imdbUrl = Lampa.Utils.addUrlComponent(
+                base + 'api/v2.2/films',
+                'imdbId=' + encodeURIComponent(imdb)
+            );
+
+            request(
+                imdbUrl,
+                function (json) {
+                    var items = json && (
+                        json.items || json.films || []
+                    );
+
+                    var film = findFilm(card, items);
+
+                    if (film) {
+                        loadDetails(film);
+                    } else {
+                        searchByTitle();
+                    }
+                },
+                function () {
+                    searchByTitle();
                 }
+            );
+        } else {
+            searchByTitle();
+        }
+    }
+
+    function inject(card) {
+        getRating(card, function (data) {
+            if (data && Number(data.kp) > 0) {
+                showRating(data);
             }
         });
     }
@@ -548,57 +422,48 @@
     function settings() {
         if (!Lampa.SettingsApi) return;
 
-        var icon =
-            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" ' +
-            'viewBox="0 0 24 24" fill="none">' +
-            '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/>' +
-            '<path d="M8 8.5h8M8 12h8M8 15.5h5" stroke="currentColor" ' +
-            'stroke-width="1.7" stroke-linecap="round"/>' +
-            '</svg>';
-
         Lampa.SettingsApi.addComponent({
-            component: 'rt_ratings_v116',
+            component: 'kp_ratings_v100',
             name: NAME,
-            icon: icon
+            icon:
+                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" ' +
+                'viewBox="0 0 24 24" fill="none">' +
+                '<path d="M12 3.5l2.65 5.37 5.92.86-4.28 4.17 1.01 5.9L12 17.02l-5.3 2.78 1.01-5.9L3.43 9.73l5.92-.86L12 3.5z" ' +
+                'stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>' +
+                '</svg>'
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v116',
+            component: 'kp_ratings_v100',
             param: {
-                name: 'rt_apikey',
+                name: 'kp_apikey',
                 type: 'trigger'
             },
             field: {
-                name: 'OMDb API ключ',
+                name: 'API-ключ КиноПоиска',
                 description: cfg.apikey ?
-                    'Ключ сохранён (нажмите, чтобы изменить)' :
-                    'Не задан — нажмите, чтобы ввести'
+                    'Ключ сохранён — нажмите для изменения' :
+                    'Ключ не задан'
             },
             onChange: function () {
                 if (!Lampa.Input || !Lampa.Input.edit) {
-                    if (Lampa.Noty) {
-                        Lampa.Noty.show(
-                            'Ввод текста недоступен в этой версии Lampa'
-                        );
-                    }
+                    Lampa.Noty.show('Ввод текста недоступен');
                     return;
                 }
 
                 Lampa.Input.edit({
-                    title: 'OMDb API ключ',
+                    title: 'API-ключ КиноПоиска',
                     value: cfg.apikey || '',
                     free: true
                 }, function (value) {
                     cfg.apikey = String(value || '').trim();
                     saveCfg();
 
-                    if (Lampa.Noty) {
-                        Lampa.Noty.show(
-                            cfg.apikey ?
-                            'OMDb ключ сохранён' :
-                            'OMDb ключ очищен'
-                        );
-                    }
+                    Lampa.Noty.show(
+                        cfg.apikey ?
+                        'API-ключ КиноПоиска сохранён' :
+                        'API-ключ очищен'
+                    );
 
                     if (Lampa.Settings && Lampa.Settings.update) {
                         Lampa.Settings.update();
@@ -608,27 +473,19 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v116',
+            component: 'kp_ratings_v100',
             param: {
-                name: 'rt_test',
-                type: 'trigger'
-            },
-            field: {
-                name: 'Проверить OMDb API',
-                description: 'Тестовый запрос: Inception (2010)'
-            },
-            onChange: testApi
-        });
-
-        Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v116',
-            param: {
-                name: 'rt_enabled',
+                name: 'kp_enabled',
                 type: 'select',
-                values: {1: 'Включено', 0: 'Выключено'},
+                values: {
+                    1: 'Включено',
+                    0: 'Выключено'
+                },
                 default: cfg.enabled ? 1 : 0
             },
-            field: {name: 'Показывать RT на карточках'},
+            field: {
+                name: 'Показывать рейтинг КП'
+            },
             onChange: function (v) {
                 cfg.enabled = Number(v) === 1;
                 saveCfg();
@@ -636,66 +493,42 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v116',
+            component: 'kp_ratings_v100',
             param: {
-                name: 'rt_critic',
-                type: 'select',
-                values: {1: 'Да', 0: 'Нет'},
-                default: cfg.critic ? 1 : 0
-            },
-            field: {name: 'Tomatometer 🍅'},
-            onChange: function (v) {
-                cfg.critic = Number(v) === 1;
-                saveCfg();
-            }
-        });
-
-        Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v116',
-            param: {
-                name: 'rt_audience',
-                type: 'select',
-                values: {1: 'Да', 0: 'Нет'},
-                default: cfg.audience ? 1 : 0
-            },
-            field: {
-                name: 'Popcornmeter 🍿',
-                description: 'OMDb не предоставляет этот показатель'
-            },
-            onChange: function (v) {
-                cfg.audience = Number(v) === 1;
-                saveCfg();
-            }
-        });
-
-        Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v116',
-            param: {
-                name: 'rt_clear',
+                name: 'kp_clear',
                 type: 'trigger'
             },
             field: {
                 name: 'Очистить кэш',
-                description: 'Удалит сохранённые RT-рейтинги'
+                description: 'Удалить сохранённые рейтинги'
             },
             onChange: function () {
                 cache = {};
-                saveCache();
-
-                if (Lampa.Noty) {
-                    Lampa.Noty.show('Кэш RT очищен');
-                }
+                Lampa.Storage.set('kp_rating_v100', cache);
+                Lampa.Noty.show('Кэш КП очищен');
             }
         });
     }
 
     function start() {
-        styles();
         settings();
-        hookFull();
-        hookCards();
 
-        console.log('[RT Ratings] v1.1.6 (OMDb + IMDb ID) started');
+        Lampa.Listener.follow('full', function (e) {
+            if (!e || e.type !== 'complite') return;
+            if (!cfg.enabled) return;
+
+            var render = e.object.activity.render();
+
+            if ($('.kp-rating-v100', render).length) return;
+
+            var movie = e.data && e.data.movie;
+
+            if (!movie) return;
+
+            inject(movie);
+        });
+
+        console.log('[KP Ratings] v1.0 started');
     }
 
     function boot() {
