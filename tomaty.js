@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    if (window.kp_ratings_plugin_v101) return;
+    if (window.kp_ratings_plugin_v102) return;
     window.kp_ratings_plugin_v100 = true;
 
     var NAME = 'KP Ratings';
@@ -121,6 +121,8 @@
     function saveRating(key, kp) {
         var item = {
             kp: kp === null || kp === undefined ? 0 : Number(kp),
+            votes: arguments.length > 2 && arguments[2] !== null && arguments[2] !== undefined ?
+                Number(arguments[2]) : 0,
             timestamp: Date.now()
         };
 
@@ -149,6 +151,7 @@
         if (!data || data.kp === null || data.kp === undefined) return;
 
         var rating = Number(data.kp);
+        var votes = Number(data.votes || 0);
 
         if (isNaN(rating) || rating <= 0) return;
 
@@ -157,26 +160,57 @@
 
         if (!render) return;
 
-        var value = rating.toFixed(1);
-
         $('.kp-rating-v100', render).remove();
+
+        var value = rating.toFixed(1);
+        var percent = Math.max(0, Math.min(100, rating * 10));
+
+        var votesText = '';
+
+        if (votes > 0) {
+            if (votes >= 1000000) {
+                votesText = (votes / 1000000).toFixed(1).replace('.0', '') + 'M';
+            } else if (votes >= 1000) {
+                votesText = (votes / 1000).toFixed(1).replace('.0', '') + 'K';
+            } else {
+                votesText = String(votes).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+            }
+        }
+
+        var quality = rating >= 8 ? 'Отлично' :
+            rating >= 7 ? 'Хорошо' :
+            rating >= 6 ? 'Неплохо' :
+            rating >= 5 ? 'Средне' : 'Низкая оценка';
 
         var block =
             '<div class="kp-rating-v100">' +
-                '<span class="kp-rating-v100__icon">⭐</span>' +
-                '<span class="kp-rating-v100__value">' + value + '</span>' +
-                '<span class="kp-rating-v100__label">КП</span>' +
+                '<div class="kp-rating-v100__top">' +
+                    '<div class="kp-rating-v100__brand">' +
+                        '<span class="kp-rating-v100__star">★</span>' +
+                        '<span>КИНОПОИСК</span>' +
+                    '</div>' +
+                    '<span class="kp-rating-v100__quality">' + quality + '</span>' +
+                '</div>' +
+                '<div class="kp-rating-v100__main">' +
+                    '<div class="kp-rating-v100__score">' +
+                        '<span>' + value + '</span>' +
+                        '<small>/10</small>' +
+                    '</div>' +
+                    '<div class="kp-rating-v100__votes">' +
+                        (votesText ?
+                            '<strong>' + votesText + '</strong><span>голосов</span>' :
+                            '<span>рейтинг пользователей</span>') +
+                    '</div>' +
+                '</div>' +
+                '<div class="kp-rating-v100__bar">' +
+                    '<i style="width:' + percent + '%"></i>' +
+                '</div>' +
             '</div>';
 
         var info = $('.info__rate', render);
 
-        /*
-         * Главное изменение:
-         * KP теперь находится ВНУТРИ той же группы, где Lampa показывает TMDB,
-         * а не отдельной строкой под жанрами.
-         */
         if (info.length) {
-            info.append(block);
+            info.after(block);
             return;
         }
 
@@ -185,7 +219,7 @@
         if (!rates.length) rates = $('.full-start__rates', render);
 
         if (rates.length) {
-            rates.append(block);
+            rates.after(block);
             return;
         }
 
@@ -343,19 +377,20 @@
             request(
                 base + 'api/v2.2/films/' + encodeURIComponent(id),
                 function (data) {
-                    var kp = data && (
-                        data.ratingKinopoisk !== undefined ?
-                        data.ratingKinopoisk :
-                        data.ratingKinopoiskVoteCount &&
-                        data.ratingKinopoisk
+                    var kp = data && data.ratingKinopoisk;
+                    var votes = data && (
+                        data.ratingKinopoiskVoteCount ||
+                        data.ratingKinopoiskVotes ||
+                        data.ratingKinopoiskVoteCountTotal ||
+                        0
                     );
 
                     if (kp === undefined || kp === null) {
-                        finish(saveRating(key, 0));
+                        finish(saveRating(key, 0, 0));
                         return;
                     }
 
-                    finish(saveRating(key, kp));
+                    finish(saveRating(key, kp, votes));
                 },
                 function () {
                     finish(null);
@@ -376,7 +411,7 @@
                     if (film) {
                         loadDetails(film);
                     } else {
-                        finish(saveRating(key, 0));
+                        finish(saveRating(key, 0, 0));
                     }
                 },
                 function () {
@@ -521,35 +556,94 @@
             style.id = 'kp-ratings-v100-style';
             style.textContent =
                 '.kp-rating-v100{' +
-                    'display:inline-flex!important;' +
-                    'align-items:center!important;' +
-                    'vertical-align:middle!important;' +
+                    'width:100%!important;' +
                     'box-sizing:border-box!important;' +
-                    'min-height:2.05em!important;' +
-                    'margin:0 .45em 0 0!important;' +
-                    'padding:.34em .62em!important;' +
-                    'gap:.28em!important;' +
-                    'border-radius:.55em!important;' +
-                    'background:rgba(255,255,255,.10)!important;' +
-                    'border:1px solid rgba(255,255,255,.14)!important;' +
+                    'margin:.75em 0 .7em!important;' +
+                    'padding:.75em .9em .72em!important;' +
+                    'border-radius:.85em!important;' +
+                    'background:linear-gradient(135deg,rgba(38,32,18,.78),rgba(20,20,20,.94))!important;' +
+                    'border:1px solid rgba(245,180,45,.34)!important;' +
+                    'box-shadow:0 5px 18px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.05)!important;' +
                     'color:#fff!important;' +
                     'font-size:1em!important;' +
+                '}' +
+                '.kp-rating-v100__top{' +
+                    'display:flex!important;' +
+                    'align-items:center!important;' +
+                    'justify-content:space-between!important;' +
+                    'gap:.5em!important;' +
+                    'margin-bottom:.25em!important;' +
+                '}' +
+                '.kp-rating-v100__brand{' +
+                    'display:flex!important;' +
+                    'align-items:center!important;' +
+                    'gap:.42em!important;' +
+                    'font-size:.72em!important;' +
+                    'font-weight:800!important;' +
+                    'letter-spacing:.07em!important;' +
+                    'color:#f5b82e!important;' +
+                '}' +
+                '.kp-rating-v100__star{' +
+                    'font-size:1.55em!important;' +
+                    'line-height:.7!important;' +
+                    'text-shadow:0 0 9px rgba(245,184,46,.35)!important;' +
+                '}' +
+                '.kp-rating-v100__quality{' +
+                    'font-size:.68em!important;' +
                     'font-weight:600!important;' +
-                    'line-height:1!important;' +
-                    'box-shadow:0 2px 8px rgba(0,0,0,.16)!important;' +
+                    'color:rgba(255,255,255,.55)!important;' +
                 '}' +
-                '.kp-rating-v100__icon{' +
-                    'font-size:1.05em!important;' +
+                '.kp-rating-v100__main{' +
+                    'display:flex!important;' +
+                    'align-items:center!important;' +
+                    'justify-content:flex-start!important;' +
+                    'gap:1.15em!important;' +
+                '}' +
+                '.kp-rating-v100__score{' +
+                    'display:flex!important;' +
+                    'align-items:baseline!important;' +
+                    'white-space:nowrap!important;' +
+                '}' +
+                '.kp-rating-v100__score span{' +
+                    'font-size:2em!important;' +
+                    'font-weight:800!important;' +
+                    'letter-spacing:-.035em!important;' +
                     'line-height:1!important;' +
                 '}' +
-                '.kp-rating-v100__value{' +
-                    'font-size:1em!important;' +
+                '.kp-rating-v100__score small{' +
+                    'margin-left:.18em!important;' +
+                    'font-size:.62em!important;' +
+                    'font-weight:500!important;' +
+                    'color:rgba(255,255,255,.42)!important;' +
+                '}' +
+                '.kp-rating-v100__votes{' +
+                    'display:flex!important;' +
+                    'flex-direction:column!important;' +
+                    'line-height:1.15!important;' +
+                '}' +
+                '.kp-rating-v100__votes strong{' +
+                    'font-size:.98em!important;' +
                     'font-weight:700!important;' +
+                    'color:#fff!important;' +
                 '}' +
-                '.kp-rating-v100__label{' +
-                    'font-size:.78em!important;' +
-                    'opacity:.72!important;' +
-                    'font-weight:600!important;' +
+                '.kp-rating-v100__votes span{' +
+                    'margin-top:.16em!important;' +
+                    'font-size:.62em!important;' +
+                    'color:rgba(255,255,255,.48)!important;' +
+                '}' +
+                '.kp-rating-v100__bar{' +
+                    'height:3px!important;' +
+                    'margin-top:.65em!important;' +
+                    'overflow:hidden!important;' +
+                    'border-radius:99px!important;' +
+                    'background:rgba(255,255,255,.10)!important;' +
+                '}' +
+                '.kp-rating-v100__bar i{' +
+                    'display:block!important;' +
+                    'height:100%!important;' +
+                    'border-radius:99px!important;' +
+                    'background:linear-gradient(90deg,#d99419,#ffd35a)!important;' +
+                    'box-shadow:0 0 8px rgba(245,184,46,.38)!important;' +
                 '}';
             document.head.appendChild(style);
         }
@@ -570,7 +664,7 @@
             inject(movie);
         });
 
-        console.log('[KP Ratings] v1.0.1 started');
+        console.log('[KP Ratings] v1.0.2 started');
     }
 
     function boot() {
