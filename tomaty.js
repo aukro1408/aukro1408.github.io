@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    if (window.kp_ratings_plugin_v100) return;
+    if (window.kp_ratings_plugin_v101) return;
     window.kp_ratings_plugin_v100 = true;
 
     var NAME = 'KP Ratings';
@@ -152,9 +152,8 @@
 
         if (isNaN(rating) || rating <= 0) return;
 
-        var render = Lampa.Activity.active() &&
-            Lampa.Activity.active().activity &&
-            Lampa.Activity.active().activity.render();
+        var active = Lampa.Activity.active();
+        var render = active && active.activity && active.activity.render();
 
         if (!render) return;
 
@@ -171,8 +170,13 @@
 
         var info = $('.info__rate', render);
 
+        /*
+         * Главное изменение:
+         * KP теперь находится ВНУТРИ той же группы, где Lampa показывает TMDB,
+         * а не отдельной строкой под жанрами.
+         */
         if (info.length) {
-            info.after(block);
+            info.append(block);
             return;
         }
 
@@ -181,7 +185,7 @@
         if (!rates.length) rates = $('.full-start__rates', render);
 
         if (rates.length) {
-            rates.after(block);
+            rates.append(block);
             return;
         }
 
@@ -190,7 +194,7 @@
         if (!details.length) details = $('.full-start__details', render);
 
         if (details.length) {
-            details.after(block);
+            details.prepend(block);
         }
     }
 
@@ -511,6 +515,44 @@
     }
 
     function start() {
+
+        if (!document.getElementById('kp-ratings-v100-style')) {
+            var style = document.createElement('style');
+            style.id = 'kp-ratings-v100-style';
+            style.textContent =
+                '.kp-rating-v100{' +
+                    'display:inline-flex!important;' +
+                    'align-items:center!important;' +
+                    'vertical-align:middle!important;' +
+                    'box-sizing:border-box!important;' +
+                    'min-height:2.05em!important;' +
+                    'margin:0 .45em 0 0!important;' +
+                    'padding:.34em .62em!important;' +
+                    'gap:.28em!important;' +
+                    'border-radius:.55em!important;' +
+                    'background:rgba(255,255,255,.10)!important;' +
+                    'border:1px solid rgba(255,255,255,.14)!important;' +
+                    'color:#fff!important;' +
+                    'font-size:1em!important;' +
+                    'font-weight:600!important;' +
+                    'line-height:1!important;' +
+                    'box-shadow:0 2px 8px rgba(0,0,0,.16)!important;' +
+                '}' +
+                '.kp-rating-v100__icon{' +
+                    'font-size:1.05em!important;' +
+                    'line-height:1!important;' +
+                '}' +
+                '.kp-rating-v100__value{' +
+                    'font-size:1em!important;' +
+                    'font-weight:700!important;' +
+                '}' +
+                '.kp-rating-v100__label{' +
+                    'font-size:.78em!important;' +
+                    'opacity:.72!important;' +
+                    'font-weight:600!important;' +
+                '}';
+            document.head.appendChild(style);
+        }
         settings();
 
         Lampa.Listener.follow('full', function (e) {
@@ -528,7 +570,7 @@
             inject(movie);
         });
 
-        console.log('[KP Ratings] v1.0 started');
+        console.log('[KP Ratings] v1.0.1 started');
     }
 
     function boot() {
