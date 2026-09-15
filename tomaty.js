@@ -1,23 +1,25 @@
 (function () {
     'use strict';
 
-    if (window.rt_ratings_plugin_v114) return;
-    window.rt_ratings_plugin_v114 = true;
+    if (window.rt_ratings_plugin_v115) return;
+    window.rt_ratings_plugin_v115 = true;
 
     var NAME = 'RT Ratings';
-    var SETTINGS = 'rt_ratings_settings_v114';
-    var CACHE = 'rt_ratings_cache_v114';
+    var SETTINGS = 'rt_ratings_settings_v115';
+    var CACHE = 'rt_ratings_cache_v115';
 
     // подхватываем настройки/кэш от предыдущих версий плагина
     var oldCfg = Object.assign(
         {},
         Lampa.Storage.get('rt_ratings_settings_v111', {}) || {},
-        Lampa.Storage.get('rt_ratings_settings_v113', {}) || {}
+        Lampa.Storage.get('rt_ratings_settings_v113', {}) || {},
+        Lampa.Storage.get('rt_ratings_settings_v114', {}) || {}
     );
     var oldCache = Object.assign(
         {},
         Lampa.Storage.get('rt_ratings_cache_v111', {}) || {},
-        Lampa.Storage.get('rt_ratings_cache_v113', {}) || {}
+        Lampa.Storage.get('rt_ratings_cache_v113', {}) || {},
+        Lampa.Storage.get('rt_ratings_cache_v114', {}) || {}
     );
 
     var cfg = Object.assign({
@@ -127,20 +129,20 @@
     }
 
     function styles() {
-        if (document.getElementById('rt-ratings-v114-style')) return;
+        if (document.getElementById('rt-ratings-v115-style')) return;
 
         var s = document.createElement('style');
-        s.id = 'rt-ratings-v114-style';
+        s.id = 'rt-ratings-v115-style';
         s.textContent =
-            '.rt-ratings-v114{display:flex;align-items:center;gap:7px;margin:.35em 0 .65em;flex-wrap:wrap;}' +
-            '.rt-ratings-v114__badge{display:inline-flex;align-items:center;gap:5px;padding:.42em .68em;border-radius:.55em;' +
+            '.rt-ratings-v115{display:flex;align-items:center;gap:7px;margin:.35em 0 .65em;flex-wrap:wrap;}' +
+            '.rt-ratings-v115__badge{display:inline-flex;align-items:center;gap:5px;padding:.42em .68em;border-radius:.55em;' +
             'background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);color:#fff;' +
             'font-size:1em;font-weight:600;line-height:1;box-shadow:0 2px 9px rgba(0,0,0,.18);}' +
-            '.rt-ratings-v114__badge.rt-good{border-color:rgba(78,190,102,.65);}' +
-            '.rt-ratings-v114__badge.rt-mid{border-color:rgba(220,177,66,.65);}' +
-            '.rt-ratings-v114__badge.rt-bad{border-color:rgba(220,75,75,.65);}' +
-            '.rt-ratings-v114__label{opacity:.72;font-size:.78em;font-weight:500;}' +
-            '.rt-ratings-v114__icon{font-size:1.05em;}' +
+            '.rt-ratings-v115__badge.rt-good{border-color:rgba(78,190,102,.65);}' +
+            '.rt-ratings-v115__badge.rt-mid{border-color:rgba(220,177,66,.65);}' +
+            '.rt-ratings-v115__badge.rt-bad{border-color:rgba(220,75,75,.65);}' +
+            '.rt-ratings-v115__label{opacity:.72;font-size:.78em;font-weight:500;}' +
+            '.rt-ratings-v115__icon{font-size:1.05em;}' +
             '.rt-ratings-card{position:relative!important;}' +
             '.rt-ratings-card-badge{position:absolute;left:5px;bottom:5px;z-index:30;display:flex;gap:4px;pointer-events:none;}' +
             '.rt-ratings-card-badge span{padding:3px 5px;border-radius:6px;background:rgba(8,10,12,.9);' +
@@ -154,21 +156,21 @@
     function badgeHtml(data) {
         if (!data) return '';
 
-        var html = '<div class="rt-ratings-v114">';
+        var html = '<div class="rt-ratings-v115">';
 
         if (cfg.critic && data.critic !== null) {
-            html += '<div class="rt-ratings-v114__badge ' + scoreClass(data.critic) + '">' +
-                '<span class="rt-ratings-v114__icon">🍅</span>' +
+            html += '<div class="rt-ratings-v115__badge ' + scoreClass(data.critic) + '">' +
+                '<span class="rt-ratings-v115__icon">🍅</span>' +
                 '<span>' + data.critic + '%</span>' +
-                '<span class="rt-ratings-v114__label">критики</span>' +
+                '<span class="rt-ratings-v115__label">критики</span>' +
                 '</div>';
         }
 
         if (cfg.audience && data.audience !== null) {
-            html += '<div class="rt-ratings-v114__badge ' + scoreClass(data.audience) + '">' +
-                '<span class="rt-ratings-v114__icon">🍿</span>' +
+            html += '<div class="rt-ratings-v115__badge ' + scoreClass(data.audience) + '">' +
+                '<span class="rt-ratings-v115__icon">🍿</span>' +
                 '<span>' + data.audience + '%</span>' +
-                '<span class="rt-ratings-v114__label">зрители</span>' +
+                '<span class="rt-ratings-v115__label">зрители</span>' +
                 '</div>';
         }
 
@@ -311,7 +313,7 @@
         if (!root || !data) return;
         if (!cfg.critic && !cfg.audience) return;
 
-        var old = root.find('.rt-ratings-v114');
+        var old = root.find('.rt-ratings-v115');
         if (old && old.length) old.remove();
 
         var html = $(badgeHtml(data));
@@ -420,30 +422,45 @@
             '</svg>';
 
         Lampa.SettingsApi.addComponent({
-            component: 'rt_ratings_v114',
+            component: 'rt_ratings_v115',
             name: NAME,
             icon: icon
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v114',
+            component: 'rt_ratings_v115',
             param: {
                 name: 'rt_apikey',
-                type: 'input',
-                default: cfg.apikey || ''
+                type: 'trigger'
             },
             field: {
                 name: 'OMDb API ключ',
-                description: 'Бесплатно на omdbapi.com/apikey.aspx (1000 запросов/день)'
+                description: (cfg.apikey ? 'Ключ сохранён (нажмите, чтобы изменить)' : 'Не задан — нажмите, чтобы ввести') +
+                    '. Бесплатно на omdbapi.com/apikey.aspx (1000 запросов/день)'
             },
-            onChange: function (v) {
-                cfg.apikey = String(v || '').trim();
-                saveCfg();
+            onChange: function () {
+                if (!Lampa.Input || !Lampa.Input.edit) {
+                    if (Lampa.Noty) Lampa.Noty.show('Ввод текста недоступен в этой версии Lampa');
+                    return;
+                }
+
+                Lampa.Input.edit({
+                    title: 'OMDb API ключ',
+                    value: cfg.apikey || '',
+                    free: true
+                }, function (value) {
+                    cfg.apikey = String(value || '').trim();
+                    saveCfg();
+
+                    if (Lampa.Noty) Lampa.Noty.show('Ключ сохранён');
+
+                    if (Lampa.Settings && Lampa.Settings.update) Lampa.Settings.update();
+                });
             }
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v114',
+            component: 'rt_ratings_v115',
             param: {
                 name: 'rt_enabled',
                 type: 'select',
@@ -458,7 +475,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v114',
+            component: 'rt_ratings_v115',
             param: {
                 name: 'rt_critic',
                 type: 'select',
@@ -473,7 +490,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v114',
+            component: 'rt_ratings_v115',
             param: {
                 name: 'rt_audience',
                 type: 'select',
@@ -491,7 +508,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v114',
+            component: 'rt_ratings_v115',
             param: {
                 name: 'rt_clear',
                 type: 'trigger'
