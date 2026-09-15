@@ -1,11 +1,11 @@
 (function () {
     'use strict';
 
-    if (window.kp_ratings_plugin_v107) return;
-    window.kp_ratings_plugin_v107 = true;
+    if (window.kp_ratings_plugin_v108) return;
+    window.kp_ratings_plugin_v108 = true;
 
     var NAME = 'KP Ratings';
-    var SETTINGS = 'kp_ratings_settings_v107';
+    var SETTINGS = 'kp_ratings_settings_v108';
 
     var cfg = Object.assign({
         enabled: true,
@@ -20,15 +20,15 @@
         Lampa.Storage.get(SETTINGS, {}) || {}
     ));
 
-    var cache = Lampa.Storage.cache('kp_rating_v107', 500, {});
+    var cache = Lampa.Storage.cache('kp_rating_v108', 500, {});
 
     try {
         var oldCache100 = Lampa.Storage.cache('kp_rating_v100', 500, {});
         var oldCache101 = Lampa.Storage.cache('kp_rating_v101', 500, {});
         var oldCache102 = Lampa.Storage.cache('kp_rating_v102', 500, {});
         var oldCache103 = Lampa.Storage.cache('kp_rating_v103', 500, {});
-        var oldCache104 = Lampa.Storage.cache('kp_rating_v107', 500, {});
-        [oldCache100, oldCache101, oldCache102, oldCache103, oldCache104, oldCache106].forEach(function (oldCache) {
+        var oldCache104 = Lampa.Storage.cache('kp_rating_v104', 500, {});
+        [oldCache100, oldCache101, oldCache102, oldCache103, oldCache104].forEach(function (oldCache) {
             Object.keys(oldCache || {}).forEach(function (key) {
                 if (!cache[key] && oldCache[key]) cache[key] = oldCache[key];
             });
@@ -147,7 +147,7 @@
         };
 
         cache[key] = item;
-        Lampa.Storage.set('kp_rating_v107', cache);
+        Lampa.Storage.set('kp_rating_v108', cache);
 
         return item;
     }
@@ -160,7 +160,7 @@
 
         if (Date.now() - Number(item.timestamp || 0) > ttl) {
             delete cache[key];
-            Lampa.Storage.set('kp_rating_v107', cache);
+            Lampa.Storage.set('kp_rating_v108', cache);
             return null;
         }
 
@@ -205,7 +205,7 @@
         var render = active && active.activity && active.activity.render();
         if (!render) return;
 
-        $('.kp-tmdb-ratings-v107', render).remove();
+        $('.kp-tmdb-ratings-v108', render).remove();
 
         var kpValue = kp.toFixed(1);
         var kpVotes = formatVotes(kpData.votes);
@@ -218,41 +218,41 @@
             var tmdbPercent = Math.max(0, Math.min(100, tmdb * 10));
             var tmdbVotesText = formatVotes(tmdbVotes);
             tmdbBlock =
-                '<div class="tmdb-rating-v107">' +
-                    '<div class="tmdb-rating-v107__top">' +
-                        '<div class="tmdb-rating-v107__brand">' +
-                            '<img class="tmdb-rating-v107__logo" src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/tmdb.svg" alt="TMDB">' +
+                '<div class="tmdb-rating-v108">' +
+                    '<div class="tmdb-rating-v108__top">' +
+                        '<div class="tmdb-rating-v108__brand">' +
+                            '<img class="tmdb-rating-v108__logo" src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/tmdb.svg" alt="TMDB">' +
                         '</div>' +
-                        '<span class="tmdb-rating-v107__quality">' + qualityText(tmdb) + '</span>' +
+                        '<span class="tmdb-rating-v108__quality">' + qualityText(tmdb) + '</span>' +
                     '</div>' +
-                    '<div class="tmdb-rating-v107__main">' +
-                        '<div class="tmdb-rating-v107__score"><span>' + tmdbValue + '</span><small>/10</small></div>' +
-                        '<div class="tmdb-rating-v107__votes">' +
+                    '<div class="tmdb-rating-v108__main">' +
+                        '<div class="tmdb-rating-v108__score"><span>' + tmdbValue + '</span><small>/10</small></div>' +
+                        '<div class="tmdb-rating-v108__votes">' +
                             (tmdbVotesText ? '<strong>' + tmdbVotesText + '</strong><span>голосов</span>' : '<span>рейтинг пользователей</span>') +
                         '</div>' +
                     '</div>' +
-                    '<div class="tmdb-rating-v107__bar"><i style="width:' + tmdbPercent + '%"></i></div>' +
+                    '<div class="tmdb-rating-v108__bar"><i style="width:' + tmdbPercent + '%"></i></div>' +
                 '</div>';
         }
 
         var kpBlock =
-            '<div class="kp-rating-v107">' +
-                '<div class="kp-rating-v107__top">' +
-                    '<div class="kp-rating-v107__brand">' +
-                        '<img class="kp-rating-v107__logo" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMzkwIDk2MCAxODAiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEgewogICAgICAgIGZpbGw6ICNmNTA7CiAgICAgICAgZmlsbC1ydWxlOiBldmVub2RkOwogICAgICAgIHN0cm9rZS13aWR0aDogMHB4OwogICAgICB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zNDUuODYsNDgwLjA0YzAtMzQuMTMsMTcuMTItNjEuNDQsNDgtNjEuNDRzNDgsMjcuMzEsNDgsNjEuNDQtMTcuMTIsNjEuNDQtNDcuOTksNDgtNjEuNDRaTTM5My44Niw1MjQuNDRjMTIuMDEsMCwxNy4xMi0yMC40OCwxNy4xMi00NC4zNXMtNS4xNS00NC4zNS0xNy4xMi00NC4zNS0xNy4xMiwyMC40OC0xNy4xMiw0NC4zNWMtLjA0LDIzLjg3LDUuMTEsNDQuMzUsMTcuMTIsNDQuMzVaTTI2Ljk5LDQyMC4zNHYzMi40M2gxLjdsMjIuMjctMzIuNDNoMzAuODNsLTQxLjE0LDM3LjUyLDEuNywxLjcsNzUuNDMtMzkuMjZ2MjcuMzFsLTY2Ljg3LDIzLjg3djEuNjlsNjYuODctNS45NnYyNS42MWwtNjYuODctNS45NnYxLjdsNjYuODcsMjMuODd2MjcuMzFsLTc1LjQzLTM5LjI3LTEuNywxLjcsNDEuMTQsMzcuNTJoLTMwLjgzbC0yMi4yNy0zMi40M2gtMS43djMyLjQzSDQuNzF2LTExOS40NGgyMi4yN3YuMDhaTTEzOC40NSw0MjAuMzRoMjkuMTRsLTEuNyw3MS42NmgxLjdsMzQuMjgtNzEuNjZoMjUuNzJ2MTE5LjQ0aC0yOS4xM2wxLjctNzEuNjZoLTEuN2wtMzQuMyw3MS42N2gtMjUuNzJ2LTExOS40NWgwWk0yNzcuMjksNDIwLjM0aC0yOS4xM3YxMTkuNDRoMjkuMTN2LTUyLjkyaDIzLjk4djUyLjkyaDI5LjEzdi0xMTkuNDRoLTI5LjEzdjQ2LjA5aC0yMy45OHYtNDYuMDlaTTUzOS41Niw0MjAuMzRoLTgyLjI1djExOS40NGgyOS4xNHYtOTguOTdoMjMuOTh2OTguOTdoMjkuMTN2LTExOS40NGgtMjkuMTN2NDYuMDloLTIzLjk4di00Ni4wOVpNNTU0Ljk4LDQ4MC4wNGMwLTM0LjEzLDE3LjEyLTYxLjQ0LDQ4LTYxLjQ0czQ4LDI3LjMxLDQ4LDYxLjQ0LTE3LjEyLDYxLjQ0LTQ4LDYxLjQ0LTQ4LTI3LjMtNDgtNjEuNDRaTTYwMi45OCw1MjQuNDRjMTIuMDEsMCwxNy4xMi0yMC40OCwxNy4xMi00NC4zNXMtNS4xNS00NC4zNS0xNy4xMi00NC4zNS0xNy4xMiwyMC40OC0xNy4xMiw0NC4zNSw1LjExLDQ0LjM1LDE3LjEyLDQ0LjM1Wk02OTUuNTMsNDIwLjM0aC0yOS4xM3YxMTkuNDRoMjUuNzJsMzQuMjktNzEuNjZoMS43bC0xLjcsNzEuNjZoMjkuMTN2LTExOS40NGgtMjUuNzJsLTM0LjI5LDcxLjY2aC0xLjdsMS43LTcxLjY2Wk04MzIuNzEsNDk4LjgzbDI3LjQzLDMuMzljLTUuMTUsMjMuODgtMTcuMTIsMzkuMjYtNDIuNjgsMzkuMjYtMzAuODMsMC00Ni40Ni0yNy4zLTQ2LjQ2LTYxLjQ0czE1LjU5LTYxLjQ0LDQ2LjQ2LTYxLjQ0YzI1LjAyLDAsMzcuNTMsMTUuMzUsNDIuNjgsMzcuNTNsLTI3LjQzLDYuODJjLTEuNy0xMS45Ni02LjY5LTI3LjMtMTUuMjYtMjcuMy0xMC4yNiwwLTE1LjU5LDIwLjQ4LTE1LjU5LDQ0LjM1czUuMzIsNDQuMzUsMTUuNTksNDQuMzVjOC40LDAsMTMuNS0xMy41NywxNS4yNi0yNS41M1pNOTAxLjI4LDQyMC4zNWgtMjcuNDN2MTE5LjQ0aDI3LjQzdi01Mi45MmgxLjdsMjAuNTcsNTIuOTJoMzEuNzFsLTMwLjAxLTYxLjQ0LDI5LjEzLTU4LjAxaC0yOS4xM2wtMjIuMjctNTIuOTJoLTEuN3YtNTIuOTJoMFoiLz4KPC9zdmc+" alt="КиноПоиск">' +
+            '<div class="kp-rating-v108">' +
+                '<div class="kp-rating-v108__top">' +
+                    '<div class="kp-rating-v108__brand">' +
+                        '<img class="kp-rating-v108__logo" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMzkwIDk2MCAxODAiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEgewogICAgICAgIGZpbGw6ICNmNTA7CiAgICAgICAgZmlsbC1ydWxlOiBldmVub2RkOwogICAgICAgIHN0cm9rZS13aWR0aDogMHB4OwogICAgICB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zNDUuODYsNDgwLjA0YzAtMzQuMTMsMTcuMTItNjEuNDQsNDgtNjEuNDRzNDgsMjcuMzEsNDgsNjEuNDQtMTcuMTIsNjEuNDQtNDcuOTksNDgtNjEuNDRaTTM5My44Niw1MjQuNDRjMTIuMDEsMCwxNy4xMi0yMC40OCwxNy4xMi00NC4zNXMtNS4xNS00NC4zNS0xNy4xMi00NC4zNS0xNy4xMiwyMC40OC0xNy4xMiw0NC4zNWMtLjA0LDIzLjg3LDUuMTEsNDQuMzUsMTcuMTIsNDQuMzVaTTI2Ljk5LDQyMC4zNHYzMi40M2gxLjdsMjIuMjctMzIuNDNoMzAuODNsLTQxLjE0LDM3LjUyLDEuNywxLjcsNzUuNDMtMzkuMjZ2MjcuMzFsLTY2Ljg3LDIzLjg3djEuNjlsNjYuODctNS45NnYyNS42MWwtNjYuODctNS45NnYxLjdsNjYuODcsMjMuODd2MjcuMzFsLTc1LjQzLTM5LjI3LTEuNywxLjcsNDEuMTQsMzcuNTJoLTMwLjgzbC0yMi4yNy0zMi40M2gtMS43djMyLjQzSDQuNzF2LTExOS40NGgyMi4yN3YuMDhaTTEzOC40NSw0MjAuMzRoMjkuMTRsLTEuNyw3MS42NmgxLjdsMzQuMjgtNzEuNjZoMjUuNzJ2MTE5LjQ0aC0yOS4xM2wxLjctNzEuNjZoLTEuN2wtMzQuMyw3MS42N2gtMjUuNzJ2LTExOS40NWgwWk0yNzcuMjksNDIwLjM0aC0yOS4xM3YxMTkuNDRoMjkuMTN2LTUyLjkyaDIzLjk4djUyLjkyaDI5LjEzdi0xMTkuNDRoLTI5LjEzdjQ2LjA5aC0yMy45OHYtNDYuMDlaTTUzOS41Niw0MjAuMzRoLTgyLjI1djExOS40NGgyOS4xNHYtOTguOTdoMjMuOTh2OTguOTdoMjkuMTN2LTExOS40NGgtMjkuMTN2NDYuMDloLTIzLjk4di00Ni4wOVpNNTU0Ljk4LDQ4MC4wNGMwLTM0LjEzLDE3LjEyLTYxLjQ0LDQ4LTYxLjQ0czQ4LDI3LjMxLDQ4LDYxLjQ0LTE3LjEyLDYxLjQ0LTQ4LDYxLjQ0LTQ4LTI3LjMtNDgtNjEuNDRaTTYwMi45OCw1MjQuNDRjMTIuMDEsMCwxNy4xMi0yMC40OCwxNy4xMi00NC4zNXMtNS4xNS00NC4zNS0xNy4xMi00NC4zNS0xNy4xMiwyMC40OC0xNy4xMiw0NC4zNSw1LjExLDQ0LjM1LDE3LjEyLDQ0LjM1Wk02OTUuNTMsNDIwLjM0aC0yOS4xM3YxMTkuNDRoMjUuNzJsMzQuMjktNzEuNjZoMS43bC0xLjcsNzEuNjZoMjkuMTN2LTExOS40NGgtMjUuNzJsLTM0LjI5LDcxLjY2aC0xLjdsMS43LTcxLjY2Wk04MzIuNzEsNDk4LjgzbDI3LjQzLDMuMzljLTUuMTUsMjMuODgtMTcuMTIsMzkuMjYtNDIuNjgsMzkuMjYtMzAuODMsMC00Ni40Ni0yNy4zLTQ2LjQ2LTYxLjQ0czE1LjU5LTYxLjQ0LDQ2LjQ2LTYxLjQ0YzI1LjAyLDAsMzcuNTMsMTUuMzUsNDIuNjgsMzcuNTNsLTI3LjQzLDYuODJjLTEuNy0xMS45Ni02LjY5LTI3LjMtMTUuMjYtMjcuMy0xMC4yNiwwLTE1LjU5LDIwLjQ4LTE1LjU5LDQ0LjM1czUuMzIsNDQuMzUsMTUuNTksNDQuMzVjOC40LDAsMTMuNS0xMy41NywxNS4yNi0yNS41M1pNOTAxLjI4LDQyMC4zNWgtMjcuNDN2MTE5LjQ0aDI3LjQzdi01Mi45MmgxLjdsMjAuNTcsNTIuOTJoMzEuNzFsLTMwLjAxLTYxLjQ0LDI5LjEzLTU4LjAxaC0yOS4xM2wtMjIuMjctNTIuOTJoLTEuN3YtNTIuOTJoMFoiLz4KPC9zdmc+" alt="КиноПоиск">' +
                     '</div>' +
-                    '<span class="kp-rating-v107__quality">' + kpQuality + '</span>' +
+                    '<span class="kp-rating-v108__quality">' + kpQuality + '</span>' +
                 '</div>' +
-                '<div class="kp-rating-v107__main">' +
-                    '<div class="kp-rating-v107__score"><span>' + kpValue + '</span><small>/10</small></div>' +
-                    '<div class="kp-rating-v107__votes">' +
+                '<div class="kp-rating-v108__main">' +
+                    '<div class="kp-rating-v108__score"><span>' + kpValue + '</span><small>/10</small></div>' +
+                    '<div class="kp-rating-v108__votes">' +
                         (kpVotes ? '<strong>' + kpVotes + '</strong><span>голосов</span>' : '<span>рейтинг пользователей</span>') +
                     '</div>' +
                 '</div>' +
-                '<div class="kp-rating-v107__bar"><i style="width:' + kpPercent + '%"></i></div>' +
+                '<div class="kp-rating-v108__bar"><i style="width:' + kpPercent + '%"></i></div>' +
             '</div>';
 
-        var block = '<div class="kp-tmdb-ratings-v107">' + kpBlock + tmdbBlock + '</div>';
+        var block = '<div class="kp-tmdb-ratings-v108">' + kpBlock + tmdbBlock + '</div>';
         var info = $('.info__rate', render);
         if (info.length) { info.after(block); return; }
         var rates = $('.full-start-new__rates', render);
@@ -502,7 +502,7 @@
     function inject(card) {
         getRating(card, function (data) {
             if (data && Number(data.kp) > 0) {
-                showRatings(data, movie);
+                showRatings(data, card);
             }
         });
     }
@@ -511,7 +511,7 @@
         if (!Lampa.SettingsApi) return;
 
         Lampa.SettingsApi.addComponent({
-            component: 'kp_ratings_v106',
+            component: 'kp_ratings_v108',
             name: NAME,
             icon:
                 '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" ' +
@@ -522,7 +522,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'kp_ratings_v106',
+            component: 'kp_ratings_v108',
             param: {
                 name: 'kp_apikey',
                 type: 'trigger'
@@ -561,7 +561,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'kp_ratings_v106',
+            component: 'kp_ratings_v108',
             param: {
                 name: 'kp_enabled',
                 type: 'select',
@@ -581,7 +581,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'kp_ratings_v106',
+            component: 'kp_ratings_v108',
             param: {
                 name: 'kp_clear',
                 type: 'trigger'
@@ -592,7 +592,7 @@
             },
             onChange: function () {
                 cache = {};
-                Lampa.Storage.set('kp_rating_v107', cache);
+                Lampa.Storage.set('kp_rating_v108', cache);
                 Lampa.Noty.show('Кэш КП очищен');
             }
         });
@@ -600,11 +600,11 @@
 
     function start() {
 
-        if (!document.getElementById('kp-ratings-v107-style')) {
+        if (!document.getElementById('kp-ratings-v108-style')) {
             var style = document.createElement('style');
-            style.id = 'kp-ratings-v107-style';
+            style.id = 'kp-ratings-v108-style';
             style.textContent =
-                '.kp-tmdb-ratings-v107{' +
+                '.kp-tmdb-ratings-v108{' +
                     'display:flex!important;' +
                     'align-items:stretch!important;' +
                     'gap:1.1em!important;' +
@@ -612,7 +612,7 @@
                     'margin:.75em 0 .7em!important;' +
                     'box-sizing:border-box!important;' +
                 '}' +
-                '.kp-rating-v107,.tmdb-rating-v107{' +
+                '.kp-rating-v108,.tmdb-rating-v108{' +
                     'display:block!important;' +
                     'flex:1 1 0!important;' +
                     'min-width:0!important;' +
@@ -624,17 +624,17 @@
                     'vertical-align:top!important;' +
                     'overflow:hidden!important;' +
                 '}' +
-                '.kp-rating-v107{' +
+                '.kp-rating-v108{' +
                     'background:linear-gradient(135deg,rgba(38,32,18,.82),rgba(20,20,20,.96))!important;' +
                     'border:1px solid rgba(245,180,45,.34)!important;' +
                     'box-shadow:0 5px 18px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.05)!important;' +
                 '}' +
-                '.tmdb-rating-v107{' +
+                '.tmdb-rating-v108{' +
                     'background:linear-gradient(135deg,rgba(7,37,55,.96),rgba(8,20,30,.98))!important;' +
                     'border:1px solid rgba(1,180,228,.42)!important;' +
                     'box-shadow:0 5px 18px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.05)!important;' +
                 '}' +
-                '.kp-rating-v107__top,.tmdb-rating-v107__top{' +
+                '.kp-rating-v108__top,.tmdb-rating-v108__top{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'justify-content:space-between!important;' +
@@ -642,13 +642,13 @@
                     'height:1.25em!important;' +
                     'margin-bottom:.25em!important;' +
                 '}' +
-                '.kp-rating-v107__brand,.tmdb-rating-v107__brand{' +
+                '.kp-rating-v108__brand,.tmdb-rating-v108__brand{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'height:1.15em!important;' +
                     'min-width:0!important;' +
                 '}' +
-                '.kp-rating-v107__logo{' +
+                '.kp-rating-v108__logo{' +
                     'display:block!important;' +
                     'width:9.2em!important;' +
                     'height:1.05em!important;' +
@@ -656,89 +656,89 @@
                     'object-position:left center!important;' +
                     'filter:drop-shadow(0 0 5px rgba(255,85,0,.16))!important;' +
                 '}' +
-                '.tmdb-rating-v107__logo{' +
+                '.tmdb-rating-v108__logo{' +
                     'display:block!important;' +
                     'width:5.8em!important;' +
                     'height:1.35em!important;' +
                     'object-fit:contain!important;' +
                     'object-position:left center!important;' +
                 '}' +
-                '.kp-rating-v107__quality,.tmdb-rating-v107__quality{' +
+                '.kp-rating-v108__quality,.tmdb-rating-v108__quality{' +
                     'font-size:.68em!important;' +
                     'font-weight:600!important;' +
                     'color:rgba(255,255,255,.58)!important;' +
                     'white-space:nowrap!important;' +
                 '}' +
-                '.tmdb-rating-v107__quality{' +
+                '.tmdb-rating-v108__quality{' +
                     'color:rgba(1,180,228,.88)!important;' +
                 '}' +
-                '.kp-rating-v107__main,.tmdb-rating-v107__main{' +
+                '.kp-rating-v108__main,.tmdb-rating-v108__main{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'justify-content:flex-start!important;' +
                     'gap:1.05em!important;' +
                 '}' +
-                '.kp-rating-v107__score,.tmdb-rating-v107__score{' +
+                '.kp-rating-v108__score,.tmdb-rating-v108__score{' +
                     'display:flex!important;' +
                     'align-items:baseline!important;' +
                     'white-space:nowrap!important;' +
                 '}' +
-                '.kp-rating-v107__score span,.tmdb-rating-v107__score span{' +
+                '.kp-rating-v108__score span,.tmdb-rating-v108__score span{' +
                     'font-size:2em!important;' +
                     'font-weight:800!important;' +
                     'letter-spacing:-.035em!important;' +
                     'line-height:1!important;' +
                 '}' +
-                '.kp-rating-v107__score small,.tmdb-rating-v107__score small{' +
+                '.kp-rating-v108__score small,.tmdb-rating-v108__score small{' +
                     'margin-left:.18em!important;' +
                     'font-size:.62em!important;' +
                     'font-weight:500!important;' +
                     'color:rgba(255,255,255,.44)!important;' +
                 '}' +
-                '.kp-rating-v107__votes,.tmdb-rating-v107__votes{' +
+                '.kp-rating-v108__votes,.tmdb-rating-v108__votes{' +
                     'display:flex!important;' +
                     'flex-direction:column!important;' +
                     'line-height:1.15!important;' +
                     'min-width:0!important;' +
                 '}' +
-                '.kp-rating-v107__votes strong,.tmdb-rating-v107__votes strong{' +
+                '.kp-rating-v108__votes strong,.tmdb-rating-v108__votes strong{' +
                     'font-size:.9em!important;' +
                     'font-weight:700!important;' +
                     'color:#fff!important;' +
                 '}' +
-                '.kp-rating-v107__votes span,.tmdb-rating-v107__votes span{' +
+                '.kp-rating-v108__votes span,.tmdb-rating-v108__votes span{' +
                     'margin-top:.16em!important;' +
                     'font-size:.62em!important;' +
                     'color:rgba(255,255,255,.52)!important;' +
                     'white-space:nowrap!important;' +
                 '}' +
-                '.kp-rating-v107__bar,.tmdb-rating-v107__bar{' +
+                '.kp-rating-v108__bar,.tmdb-rating-v108__bar{' +
                     'height:3px!important;' +
                     'margin-top:.65em!important;' +
                     'overflow:hidden!important;' +
                     'border-radius:99px!important;' +
                     'background:rgba(255,255,255,.10)!important;' +
                 '}' +
-                '.kp-rating-v107__bar i,.tmdb-rating-v107__bar i{' +
+                '.kp-rating-v108__bar i,.tmdb-rating-v108__bar i{' +
                     'display:block!important;' +
                     'height:100%!important;' +
                     'border-radius:99px!important;' +
                 '}' +
-                '.kp-rating-v107__bar i{' +
+                '.kp-rating-v108__bar i{' +
                     'background:linear-gradient(90deg,#d99419,#ffd35a)!important;' +
                     'box-shadow:0 0 8px rgba(245,184,46,.38)!important;' +
                 '}' +
-                '.tmdb-rating-v107__bar i{' +
+                '.tmdb-rating-v108__bar i{' +
                     'background:linear-gradient(90deg,#01b4e4,#90e7f8)!important;' +
                     'box-shadow:0 0 8px rgba(1,180,228,.38)!important;' +
                 '}' +
                 '@media (max-width:520px){' +
-                    '.kp-tmdb-ratings-v107{gap:.65em!important;}' +
-                    '.kp-rating-v107,.tmdb-rating-v107{padding:.68em .65em .65em!important;}' +
-                    '.kp-rating-v107__logo{width:7.2em!important;}' +
-                    '.tmdb-rating-v107__logo{width:5em!important;}' +
-                    '.kp-rating-v107__score span,.tmdb-rating-v107__score span{font-size:1.7em!important;}' +
-                    '.kp-rating-v107__main,.tmdb-rating-v107__main{gap:.55em!important;}' +
+                    '.kp-tmdb-ratings-v108{gap:.65em!important;}' +
+                    '.kp-rating-v108,.tmdb-rating-v108{padding:.68em .65em .65em!important;}' +
+                    '.kp-rating-v108__logo{width:7.2em!important;}' +
+                    '.tmdb-rating-v108__logo{width:5em!important;}' +
+                    '.kp-rating-v108__score span,.tmdb-rating-v108__score span{font-size:1.7em!important;}' +
+                    '.kp-rating-v108__main,.tmdb-rating-v108__main{gap:.55em!important;}' +
                 '}';
             document.head.appendChild(style);
         }
@@ -750,7 +750,7 @@
 
             var render = e.object.activity.render();
 
-            if ($('.kp-rating-v107', render).length) return;
+            if ($('.kp-rating-v108', render).length) return;
 
             var movie = e.data && e.data.movie;
 
@@ -759,7 +759,7 @@
             inject(movie);
         });
 
-        console.log('[KP Ratings] v1.0.7 started');
+        console.log('[KP Ratings] v1.0.8 started');
     }
 
     function boot() {
