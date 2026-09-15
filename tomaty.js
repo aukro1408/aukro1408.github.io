@@ -1,12 +1,15 @@
 (function () {
     'use strict';
 
-    if (window.rt_ratings_plugin_v112) return;
-    window.rt_ratings_plugin_v112 = true;
+    if (window.rt_ratings_plugin_v113) return;
+    window.rt_ratings_plugin_v113 = true;
 
     var NAME = 'RT Ratings';
-    var SETTINGS = 'rt_ratings_settings_v112';
-    var CACHE = 'rt_ratings_cache_v112';
+    var SETTINGS = 'rt_ratings_settings_v113';
+    var CACHE = 'rt_ratings_cache_v113';
+
+    var oldCfg = Lampa.Storage.get('rt_ratings_settings_v111', {}) || {};
+    var oldCache = Lampa.Storage.get('rt_ratings_cache_v111', {}) || {};
 
     var cfg = Object.assign({
         enabled: true,
@@ -14,15 +17,10 @@
         audience: true,
         cache_days: 7,
         api: 'https://rt-api-jade.vercel.app/api/rotten-tomatoes'
-    }, Lampa.Storage.get(SETTINGS, {}) || {});
+    }, oldCfg, Lampa.Storage.get(SETTINGS, {}) || {});
 
-    var cache = Lampa.Storage.get(CACHE, {}) || {};
+    var cache = Object.assign({}, oldCache, Lampa.Storage.get(CACHE, {}) || {});
     var inFlight = {};
-
-    // The current rt-api documentation lists /api/rotten-tomatoes,
-    // while its README also shows /rotten-tomatoes in a curl example.
-    // Try the configured endpoint first, then the alternate path.
-    var API_FALLBACK = 'https://rt-api-jade.vercel.app/rotten-tomatoes';
 
     function saveCfg() {
         Lampa.Storage.set(SETTINGS, cfg);
@@ -59,22 +57,22 @@
         return isNaN(n) ? null : Math.max(0, Math.min(100, n));
     }
 
+    function parseJsonIfNeeded(res) {
+        if (typeof res !== 'string') return res;
+
+        try {
+            return JSON.parse(res);
+        } catch (e) {
+            console.warn('[RT Ratings] JSON PARSE ERROR:', res);
+            return null;
+        }
+    }
+
     function normalizeResponse(res) {
-        if (!res) return null;
+        res = parseJsonIfNeeded(res);
+        if (!res || typeof res !== 'object') return null;
 
-        // Lampa may already give us an object; some builds/connectors may
-        // return JSON text instead.
-        if (typeof res === 'string') {
-            try {
-                res = JSON.parse(res);
-            } catch (e) {
-                return null;
-            }
-        }
-
-        if (res && res.result && typeof res.result === 'object') {
-            res = res.result;
-        }
+        console.log('[RT Ratings] PARSED:', res);
 
         var data = res.data && typeof res.data === 'object' ? res.data : res;
 
@@ -90,7 +88,10 @@
         if (audience === null) audience = parseScore(data.audienceScore);
         if (audience === null) audience = parseScore(data.audience);
 
-        if (critic === null && audience === null) return null;
+        if (critic === null && audience === null) {
+            console.warn('[RT Ratings] NO SCORES IN RESPONSE:', data);
+            return null;
+        }
 
         return {
             critic: critic,
@@ -108,20 +109,20 @@
     }
 
     function styles() {
-        if (document.getElementById('rt-ratings-v112-style')) return;
+        if (document.getElementById('rt-ratings-v113-style')) return;
 
         var s = document.createElement('style');
-        s.id = 'rt-ratings-v112-style';
+        s.id = 'rt-ratings-v113-style';
         s.textContent =
-            '.rt-ratings-v112{display:flex;align-items:center;gap:7px;margin:.35em 0 .65em;flex-wrap:wrap;}' +
-            '.rt-ratings-v112__badge{display:inline-flex;align-items:center;gap:5px;padding:.42em .68em;border-radius:.55em;' +
+            '.rt-ratings-v113{display:flex;align-items:center;gap:7px;margin:.35em 0 .65em;flex-wrap:wrap;}' +
+            '.rt-ratings-v113__badge{display:inline-flex;align-items:center;gap:5px;padding:.42em .68em;border-radius:.55em;' +
             'background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);color:#fff;' +
             'font-size:1em;font-weight:600;line-height:1;box-shadow:0 2px 9px rgba(0,0,0,.18);}' +
-            '.rt-ratings-v112__badge.rt-good{border-color:rgba(78,190,102,.65);}' +
-            '.rt-ratings-v112__badge.rt-mid{border-color:rgba(220,177,66,.65);}' +
-            '.rt-ratings-v112__badge.rt-bad{border-color:rgba(220,75,75,.65);}' +
-            '.rt-ratings-v112__label{opacity:.72;font-size:.78em;font-weight:500;}' +
-            '.rt-ratings-v112__icon{font-size:1.05em;}' +
+            '.rt-ratings-v113__badge.rt-good{border-color:rgba(78,190,102,.65);}' +
+            '.rt-ratings-v113__badge.rt-mid{border-color:rgba(220,177,66,.65);}' +
+            '.rt-ratings-v113__badge.rt-bad{border-color:rgba(220,75,75,.65);}' +
+            '.rt-ratings-v113__label{opacity:.72;font-size:.78em;font-weight:500;}' +
+            '.rt-ratings-v113__icon{font-size:1.05em;}' +
             '.rt-ratings-card{position:relative!important;}' +
             '.rt-ratings-card-badge{position:absolute;left:5px;bottom:5px;z-index:30;display:flex;gap:4px;pointer-events:none;}' +
             '.rt-ratings-card-badge span{padding:3px 5px;border-radius:6px;background:rgba(8,10,12,.9);' +
@@ -135,21 +136,21 @@
     function badgeHtml(data) {
         if (!data) return '';
 
-        var html = '<div class="rt-ratings-v112">';
+        var html = '<div class="rt-ratings-v113">';
 
         if (cfg.critic && data.critic !== null) {
-            html += '<div class="rt-ratings-v112__badge ' + scoreClass(data.critic) + '">' +
-                '<span class="rt-ratings-v112__icon">🍅</span>' +
+            html += '<div class="rt-ratings-v113__badge ' + scoreClass(data.critic) + '">' +
+                '<span class="rt-ratings-v113__icon">🍅</span>' +
                 '<span>' + data.critic + '%</span>' +
-                '<span class="rt-ratings-v112__label">критики</span>' +
+                '<span class="rt-ratings-v113__label">критики</span>' +
                 '</div>';
         }
 
         if (cfg.audience && data.audience !== null) {
-            html += '<div class="rt-ratings-v112__badge ' + scoreClass(data.audience) + '">' +
-                '<span class="rt-ratings-v112__icon">🍿</span>' +
+            html += '<div class="rt-ratings-v113__badge ' + scoreClass(data.audience) + '">' +
+                '<span class="rt-ratings-v113__icon">🍿</span>' +
                 '<span>' + data.audience + '%</span>' +
-                '<span class="rt-ratings-v112__label">зрители</span>' +
+                '<span class="rt-ratings-v113__label">зрители</span>' +
                 '</div>';
         }
 
@@ -186,54 +187,6 @@
         return common >= Math.min(2, a.length);
     }
 
-    function buildUrls(title) {
-        var urls = [];
-        var primary = String(cfg.api || '').trim();
-
-        if (primary) {
-            urls.push(primary + '?movie=' + encodeURIComponent(title));
-        }
-
-        var fallback = API_FALLBACK;
-        if (primary.indexOf('/api/rotten-tomatoes') !== -1) {
-            fallback = primary.replace('/api/rotten-tomatoes', '/rotten-tomatoes');
-        } else if (primary.indexOf('/rotten-tomatoes') !== -1) {
-            fallback = primary.replace('/rotten-tomatoes', '/api/rotten-tomatoes');
-        }
-
-        var fallbackUrl = fallback + '?movie=' + encodeURIComponent(title);
-
-        if (urls.indexOf(fallbackUrl) === -1) {
-            urls.push(fallbackUrl);
-        }
-
-        return urls;
-    }
-
-    function requestUrl(url, callback) {
-        var net = new Lampa.Reguest();
-
-        var finished = false;
-
-        function ok(res) {
-            if (finished) return;
-            finished = true;
-            callback(null, res);
-        }
-
-        function fail(error) {
-            if (finished) return;
-            finished = true;
-            callback(error || 'request error', null);
-        }
-
-        try {
-            net.silent(url, ok, fail);
-        } catch (e) {
-            fail(e);
-        }
-    }
-
     function request(movie, callback) {
         if (!cfg.enabled || !movie) return;
 
@@ -257,6 +210,7 @@
         var ttl = Number(cfg.cache_days || 7) * 86400000;
 
         if (cache[key] && Date.now() - cache[key].time < ttl) {
+            console.log('[RT Ratings] CACHE:', title, cache[key].data);
             callback(cache[key].data);
             return;
         }
@@ -268,55 +222,53 @@
 
         inFlight[key] = [callback];
 
-        var urls = buildUrls(title);
+        var url = cfg.api +
+            '?movie=' +
+            encodeURIComponent(title);
 
-        console.log('[RT Ratings] REQUEST:', title, year, urls);
+        console.log('[RT Ratings] REQUEST:', title, year, url);
 
-        function tryNext(index) {
-            if (index >= urls.length) {
-                finish(key, null);
-                return;
-            }
+        var net = new Lampa.Reguest();
 
-            requestUrl(urls[index], function (error, res) {
-                if (error) {
-                    console.warn('[RT Ratings] ENDPOINT ERROR:', urls[index], error);
-                    tryNext(index + 1);
-                    return;
-                }
+        try {
+            net.silent(url, function (res) {
+                console.log('[RT Ratings] RESPONSE:', title, res);
 
                 var data = normalizeResponse(res);
 
-                if (!data) {
-                    console.warn('[RT Ratings] INVALID/EMPTY RESPONSE:', urls[index], res);
-                    tryNext(index + 1);
-                    return;
-                }
-
-                if (!responseMatchesMovie(data, movie)) {
+                if (data && !responseMatchesMovie(data, movie)) {
                     console.warn(
                         '[RT Ratings] REJECTED MISMATCH:',
                         title,
                         '=>',
                         data.title
                     );
-                    tryNext(index + 1);
-                    return;
+                    data = null;
                 }
 
-                console.log('[RT Ratings] SUCCESS:', title, data);
+                if (data) {
+                    cache[key] = {
+                        time: Date.now(),
+                        data: data
+                    };
+                    saveCache();
 
-                cache[key] = {
-                    time: Date.now(),
-                    data: data
-                };
-                saveCache();
+                    console.log('[RT Ratings] SUCCESS:', title, data);
+                }
 
                 finish(key, data);
+            }, function (error) {
+                console.warn(
+                    '[RT Ratings] API ERROR:',
+                    title,
+                    error
+                );
+                finish(key, null);
             });
+        } catch (e) {
+            console.error('[RT Ratings] REQUEST EXCEPTION:', title, e);
+            finish(key, null);
         }
-
-        tryNext(0);
     }
 
     function finish(key, data) {
@@ -324,7 +276,9 @@
         delete inFlight[key];
 
         list.forEach(function (cb) {
-            try { cb(data); } catch (e) {}
+            try { cb(data); } catch (e) {
+                console.error('[RT Ratings] CALLBACK ERROR:', e);
+            }
         });
     }
 
@@ -332,17 +286,20 @@
         if (!root || !data) return;
         if (!cfg.critic && !cfg.audience) return;
 
-        var old = root.find ? root.find('.rt-ratings-v112') : $(root).find('.rt-ratings-v112');
+        var old = root.find('.rt-ratings-v113');
         if (old && old.length) old.remove();
 
         var html = $(badgeHtml(data));
         if (!html.length) return;
 
-        var info =
-            root.find('.full-start-new__info') ||
-            root.find('.full-start__info');
+        var info = root.find('.full-start-new__info');
+        if (info.length) {
+            info.after(html);
+            return;
+        }
 
-        if (info && info.length) {
+        info = root.find('.full-start__info');
+        if (info.length) {
             info.after(html);
             return;
         }
@@ -363,10 +320,13 @@
 
     function hookFull() {
         Lampa.Listener.follow('full', function (e) {
-            if (e.type !== 'complite') return;
+            if (!e || e.type !== 'complite') return;
             if (!cfg.enabled) return;
 
-            var root = e.object && e.object.activity ? e.object.activity.render() : null;
+            var root = e.object && e.object.activity ?
+                e.object.activity.render() :
+                null;
+
             var movie = getMovie(e.data);
 
             if (!root || !movie) return;
@@ -401,42 +361,47 @@
     }
 
     function hookCards() {
-        if (Lampa.Listener && Lampa.Listener.follow) {
-            Lampa.Listener.follow('card', function (e) {
-                if (!cfg.enabled || !e) return;
+        if (!Lampa.Listener || !Lampa.Listener.follow) return;
 
-                var movie = e.data || e.card;
-                var element = e.element;
+        Lampa.Listener.follow('card', function (e) {
+            if (!cfg.enabled || !e) return;
 
-                if (e.type && e.type !== 'render' && e.action && e.action !== 'render') return;
-                if (!movie || !element) return;
+            var movie = e.data || e.card;
+            var element = e.element;
 
-                var el = element.jquery ? element[0] : element;
-                if (!el) return;
+            if (e.type && e.type !== 'render' &&
+                e.action && e.action !== 'render') return;
 
-                request(movie, function (data) {
-                    if (data) cardBadge(el, data);
-                });
+            if (!movie || !element) return;
+
+            var el = element.jquery ? element[0] : element;
+            if (!el) return;
+
+            request(movie, function (data) {
+                if (data) cardBadge(el, data);
             });
-        }
+        });
     }
 
     function settings() {
         if (!Lampa.SettingsApi) return;
 
-        var icon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">' +
+        var icon =
+            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" ' +
+            'viewBox="0 0 24 24" fill="none">' +
             '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/>' +
-            '<path d="M8 8.5h8M8 12h8M8 15.5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>' +
+            '<path d="M8 8.5h8M8 12h8M8 15.5h5" stroke="currentColor" ' +
+            'stroke-width="1.7" stroke-linecap="round"/>' +
             '</svg>';
 
         Lampa.SettingsApi.addComponent({
-            component: 'rt_ratings_v112',
+            component: 'rt_ratings_v113',
             name: NAME,
             icon: icon
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v112',
+            component: 'rt_ratings_v113',
             param: {
                 name: 'rt_enabled',
                 type: 'select',
@@ -451,7 +416,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v112',
+            component: 'rt_ratings_v113',
             param: {
                 name: 'rt_critic',
                 type: 'select',
@@ -466,7 +431,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v112',
+            component: 'rt_ratings_v113',
             param: {
                 name: 'rt_audience',
                 type: 'select',
@@ -481,7 +446,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v112',
+            component: 'rt_ratings_v113',
             param: {
                 name: 'rt_clear',
                 type: 'trigger'
@@ -493,7 +458,10 @@
             onChange: function () {
                 cache = {};
                 saveCache();
-                if (Lampa.Noty) Lampa.Noty.show('Кэш RT очищен');
+
+                if (Lampa.Noty) {
+                    Lampa.Noty.show('Кэш RT очищен');
+                }
             }
         });
     }
@@ -503,7 +471,8 @@
         settings();
         hookFull();
         hookCards();
-        console.log('[RT Ratings] v1.1.2 started');
+
+        console.log('[RT Ratings] v1.1.3 started');
     }
 
     function boot() {
