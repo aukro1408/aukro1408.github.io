@@ -1,22 +1,32 @@
 (function () {
     'use strict';
 
-    if (window.rt_ratings_plugin_v113) return;
-    window.rt_ratings_plugin_v113 = true;
+    if (window.rt_ratings_plugin_v114) return;
+    window.rt_ratings_plugin_v114 = true;
 
     var NAME = 'RT Ratings';
-    var SETTINGS = 'rt_ratings_settings_v113';
-    var CACHE = 'rt_ratings_cache_v113';
+    var SETTINGS = 'rt_ratings_settings_v114';
+    var CACHE = 'rt_ratings_cache_v114';
 
-    var oldCfg = Lampa.Storage.get('rt_ratings_settings_v111', {}) || {};
-    var oldCache = Lampa.Storage.get('rt_ratings_cache_v111', {}) || {};
+    // подхватываем настройки/кэш от предыдущих версий плагина
+    var oldCfg = Object.assign(
+        {},
+        Lampa.Storage.get('rt_ratings_settings_v111', {}) || {},
+        Lampa.Storage.get('rt_ratings_settings_v113', {}) || {}
+    );
+    var oldCache = Object.assign(
+        {},
+        Lampa.Storage.get('rt_ratings_cache_v111', {}) || {},
+        Lampa.Storage.get('rt_ratings_cache_v113', {}) || {}
+    );
 
     var cfg = Object.assign({
         enabled: true,
         critic: true,
-        audience: true,
+        audience: true, // оставлено в настройках, но OMDb зрительский % не отдаёт — см. normalizeResponse
         cache_days: 7,
-        api: 'https://rt-api-jade.vercel.app/api/rotten-tomatoes'
+        api: 'https://www.omdbapi.com/',
+        apikey: '' // получить бесплатно: https://www.omdbapi.com/apikey.aspx
     }, oldCfg, Lampa.Storage.get(SETTINGS, {}) || {});
 
     var cache = Object.assign({}, oldCache, Lampa.Storage.get(CACHE, {}) || {});
@@ -52,7 +62,7 @@
     }
 
     function parseScore(v) {
-        if (v === null || v === undefined || v === '') return null;
+        if (v === null || v === undefined || v === '' || v === 'N/A') return null;
         var n = parseInt(String(v).replace('%', '').trim(), 10);
         return isNaN(n) ? null : Math.max(0, Math.min(100, n));
     }
@@ -68,37 +78,45 @@
         }
     }
 
+    // --- OMDb-специфичный разбор ответа ---
+    // Формат: { Response:"True", Title, Year, Ratings:[{Source:"Rotten Tomatoes", Value:"83%"}, ...], ... }
     function normalizeResponse(res) {
         res = parseJsonIfNeeded(res);
         if (!res || typeof res !== 'object') return null;
 
         console.log('[RT Ratings] PARSED:', res);
 
-        var data = res.data && typeof res.data === 'object' ? res.data : res;
-
-        if (data.data && typeof data.data === 'object') {
-            data = data.data;
+        if (res.Response === 'False') {
+            console.warn('[RT Ratings] OMDb ERROR:', res.Error);
+            return null;
         }
 
-        var critic = parseScore(data.tomatometer);
-        if (critic === null) critic = parseScore(data.criticScore);
-        if (critic === null) critic = parseScore(data.critic_score);
+        var critic = null;
+        var ratings = Array.isArray(res.Ratings) ? res.Ratings : [];
 
-        var audience = parseScore(data.audience_score);
-        if (audience === null) audience = parseScore(data.audienceScore);
-        if (audience === null) audience = parseScore(data.audience);
+        ratings.forEach(function (r) {
+            if (r && r.Source === 'Rotten Tomatoes') {
+                critic = parseScore(r.Value);
+            }
+        });
+
+        // на случай, если когда-нибудь снова заработают устаревшие tomato*-поля OMDb
+        if (critic === null) critic = parseScore(res.tomatoMeter);
+
+        // OMDb не отдаёт зрительский % (Popcornmeter) — публичного RT audience API нет
+        var audience = null;
 
         if (critic === null && audience === null) {
-            console.warn('[RT Ratings] NO SCORES IN RESPONSE:', data);
+            console.warn('[RT Ratings] NO RT SCORE IN RESPONSE:', res);
             return null;
         }
 
         return {
             critic: critic,
             audience: audience,
-            title: data.title || '',
-            year: data.year || '',
-            url: data.url || ''
+            title: res.Title || '',
+            year: res.Year || '',
+            url: ''
         };
     }
 
@@ -109,20 +127,20 @@
     }
 
     function styles() {
-        if (document.getElementById('rt-ratings-v113-style')) return;
+        if (document.getElementById('rt-ratings-v114-style')) return;
 
         var s = document.createElement('style');
-        s.id = 'rt-ratings-v113-style';
+        s.id = 'rt-ratings-v114-style';
         s.textContent =
-            '.rt-ratings-v113{display:flex;align-items:center;gap:7px;margin:.35em 0 .65em;flex-wrap:wrap;}' +
-            '.rt-ratings-v113__badge{display:inline-flex;align-items:center;gap:5px;padding:.42em .68em;border-radius:.55em;' +
+            '.rt-ratings-v114{display:flex;align-items:center;gap:7px;margin:.35em 0 .65em;flex-wrap:wrap;}' +
+            '.rt-ratings-v114__badge{display:inline-flex;align-items:center;gap:5px;padding:.42em .68em;border-radius:.55em;' +
             'background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);color:#fff;' +
             'font-size:1em;font-weight:600;line-height:1;box-shadow:0 2px 9px rgba(0,0,0,.18);}' +
-            '.rt-ratings-v113__badge.rt-good{border-color:rgba(78,190,102,.65);}' +
-            '.rt-ratings-v113__badge.rt-mid{border-color:rgba(220,177,66,.65);}' +
-            '.rt-ratings-v113__badge.rt-bad{border-color:rgba(220,75,75,.65);}' +
-            '.rt-ratings-v113__label{opacity:.72;font-size:.78em;font-weight:500;}' +
-            '.rt-ratings-v113__icon{font-size:1.05em;}' +
+            '.rt-ratings-v114__badge.rt-good{border-color:rgba(78,190,102,.65);}' +
+            '.rt-ratings-v114__badge.rt-mid{border-color:rgba(220,177,66,.65);}' +
+            '.rt-ratings-v114__badge.rt-bad{border-color:rgba(220,75,75,.65);}' +
+            '.rt-ratings-v114__label{opacity:.72;font-size:.78em;font-weight:500;}' +
+            '.rt-ratings-v114__icon{font-size:1.05em;}' +
             '.rt-ratings-card{position:relative!important;}' +
             '.rt-ratings-card-badge{position:absolute;left:5px;bottom:5px;z-index:30;display:flex;gap:4px;pointer-events:none;}' +
             '.rt-ratings-card-badge span{padding:3px 5px;border-radius:6px;background:rgba(8,10,12,.9);' +
@@ -136,21 +154,21 @@
     function badgeHtml(data) {
         if (!data) return '';
 
-        var html = '<div class="rt-ratings-v113">';
+        var html = '<div class="rt-ratings-v114">';
 
         if (cfg.critic && data.critic !== null) {
-            html += '<div class="rt-ratings-v113__badge ' + scoreClass(data.critic) + '">' +
-                '<span class="rt-ratings-v113__icon">🍅</span>' +
+            html += '<div class="rt-ratings-v114__badge ' + scoreClass(data.critic) + '">' +
+                '<span class="rt-ratings-v114__icon">🍅</span>' +
                 '<span>' + data.critic + '%</span>' +
-                '<span class="rt-ratings-v113__label">критики</span>' +
+                '<span class="rt-ratings-v114__label">критики</span>' +
                 '</div>';
         }
 
         if (cfg.audience && data.audience !== null) {
-            html += '<div class="rt-ratings-v113__badge ' + scoreClass(data.audience) + '">' +
-                '<span class="rt-ratings-v113__icon">🍿</span>' +
+            html += '<div class="rt-ratings-v114__badge ' + scoreClass(data.audience) + '">' +
+                '<span class="rt-ratings-v114__icon">🍿</span>' +
                 '<span>' + data.audience + '%</span>' +
-                '<span class="rt-ratings-v113__label">зрители</span>' +
+                '<span class="rt-ratings-v114__label">зрители</span>' +
                 '</div>';
         }
 
@@ -190,6 +208,12 @@
     function request(movie, callback) {
         if (!cfg.enabled || !movie) return;
 
+        if (!cfg.apikey) {
+            console.warn('[RT Ratings] Нет API-ключа OMDb — задайте его в настройках плагина');
+            callback(null);
+            return;
+        }
+
         var title = getTitle(movie);
         if (!title) return;
 
@@ -223,8 +247,9 @@
         inFlight[key] = [callback];
 
         var url = cfg.api +
-            '?movie=' +
-            encodeURIComponent(title);
+            '?apikey=' + encodeURIComponent(cfg.apikey) +
+            '&t=' + encodeURIComponent(title) +
+            (year ? '&y=' + encodeURIComponent(year) : '');
 
         console.log('[RT Ratings] REQUEST:', title, year, url);
 
@@ -286,7 +311,7 @@
         if (!root || !data) return;
         if (!cfg.critic && !cfg.audience) return;
 
-        var old = root.find('.rt-ratings-v113');
+        var old = root.find('.rt-ratings-v114');
         if (old && old.length) old.remove();
 
         var html = $(badgeHtml(data));
@@ -395,13 +420,30 @@
             '</svg>';
 
         Lampa.SettingsApi.addComponent({
-            component: 'rt_ratings_v113',
+            component: 'rt_ratings_v114',
             name: NAME,
             icon: icon
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v113',
+            component: 'rt_ratings_v114',
+            param: {
+                name: 'rt_apikey',
+                type: 'input',
+                default: cfg.apikey || ''
+            },
+            field: {
+                name: 'OMDb API ключ',
+                description: 'Бесплатно на omdbapi.com/apikey.aspx (1000 запросов/день)'
+            },
+            onChange: function (v) {
+                cfg.apikey = String(v || '').trim();
+                saveCfg();
+            }
+        });
+
+        Lampa.SettingsApi.addParam({
+            component: 'rt_ratings_v114',
             param: {
                 name: 'rt_enabled',
                 type: 'select',
@@ -416,7 +458,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v113',
+            component: 'rt_ratings_v114',
             param: {
                 name: 'rt_critic',
                 type: 'select',
@@ -431,14 +473,17 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v113',
+            component: 'rt_ratings_v114',
             param: {
                 name: 'rt_audience',
                 type: 'select',
                 values: {1: 'Да', 0: 'Нет'},
                 default: cfg.audience ? 1 : 0
             },
-            field: {name: 'Popcornmeter 🍿'},
+            field: {
+                name: 'Popcornmeter 🍿',
+                description: 'OMDb не отдаёт зрительский % — поле оставлено на случай смены источника'
+            },
             onChange: function (v) {
                 cfg.audience = Number(v) === 1;
                 saveCfg();
@@ -446,7 +491,7 @@
         });
 
         Lampa.SettingsApi.addParam({
-            component: 'rt_ratings_v113',
+            component: 'rt_ratings_v114',
             param: {
                 name: 'rt_clear',
                 type: 'trigger'
@@ -472,7 +517,7 @@
         hookFull();
         hookCards();
 
-        console.log('[RT Ratings] v1.1.3 started');
+        console.log('[RT Ratings] v1.1.4 (OMDb) started');
     }
 
     function boot() {
