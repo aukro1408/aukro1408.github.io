@@ -1,11 +1,11 @@
 (function () {
     'use strict';
 
-    if (window.kp_ratings_plugin_v110) return;
-    window.kp_ratings_plugin_v110 = true;
+    if (window.kp_ratings_plugin_v111) return;
+    window.kp_ratings_plugin_v111 = true;
 
     var NAME = 'KP Ratings';
-    var SETTINGS = 'kp_ratings_settings_v110';
+    var SETTINGS = 'kp_ratings_settings_v111';
 
     var cfg = Object.assign({
         enabled: true,
@@ -20,7 +20,7 @@
         Lampa.Storage.get(SETTINGS, {}) || {}
     ));
 
-    var cache = Lampa.Storage.cache('kp_rating_v110', 500, {});
+    var cache = Lampa.Storage.cache('kp_rating_v111', 500, {});
 
     try {
         var oldCache100 = Lampa.Storage.cache('kp_rating_v100', 500, {});
@@ -147,7 +147,7 @@
         };
 
         cache[key] = item;
-        Lampa.Storage.set('kp_rating_v110', cache);
+        Lampa.Storage.set('kp_rating_v111', cache);
 
         return item;
     }
@@ -160,7 +160,7 @@
 
         if (Date.now() - Number(item.timestamp || 0) > ttl) {
             delete cache[key];
-            Lampa.Storage.set('kp_rating_v110', cache);
+            Lampa.Storage.set('kp_rating_v111', cache);
             return null;
         }
 
@@ -205,7 +205,7 @@
         var render = active && active.activity && active.activity.render();
         if (!render) return;
 
-        $('.kp-tmdb-ratings-v110', render).remove();
+        $('.kp-tmdb-ratings-v111', render).remove();
 
         var kpValue = kp.toFixed(1);
         var kpVotes = formatVotes(kpData.votes);
@@ -218,50 +218,170 @@
             var tmdbPercent = Math.max(0, Math.min(100, tmdb * 10));
             var tmdbVotesText = formatVotes(tmdbVotes);
             tmdbBlock =
-                '<div class="tmdb-rating-v110">' +
-                    '<div class="tmdb-rating-v110__top">' +
-                        '<div class="tmdb-rating-v110__brand">' +
-                            '<img class="tmdb-rating-v110__logo" src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/tmdb.svg" alt="TMDB">' +
+                '<div class="tmdb-rating-v111 selector">' +
+                    '<div class="tmdb-rating-v111__top">' +
+                        '<div class="tmdb-rating-v111__brand">' +
+                            '<img class="tmdb-rating-v111__logo" src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/tmdb.svg" alt="TMDB">' +
                         '</div>' +
-                        '<span class="tmdb-rating-v110__quality">' + qualityText(tmdb) + '</span>' +
+                        '<span class="tmdb-rating-v111__quality">' + qualityText(tmdb) + '</span>' +
                     '</div>' +
-                    '<div class="tmdb-rating-v110__main">' +
-                        '<div class="tmdb-rating-v110__score"><span>' + tmdbValue + '</span><small>/10</small></div>' +
-                        '<div class="tmdb-rating-v110__votes">' +
+                    '<div class="tmdb-rating-v111__main">' +
+                        '<div class="tmdb-rating-v111__score"><span>' + tmdbValue + '</span><small>/10</small></div>' +
+                        '<div class="tmdb-rating-v111__votes">' +
                             (tmdbVotesText ? '<strong>' + tmdbVotesText + '</strong><span>голосов</span>' : '<span>рейтинг пользователей</span>') +
                         '</div>' +
                     '</div>' +
-                    '<div class="tmdb-rating-v110__bar"><i data-width="' + tmdbPercent + '" style="width:0%"></i></div>' +
+                    '<div class="tmdb-rating-v111__bar"><i data-width="' + tmdbPercent + '" style="width:0%"></i></div>' +
                 '</div>';
         }
 
         var kpBlock =
-            '<div class="kp-rating-v110">' +
-                '<div class="kp-rating-v110__top">' +
-                    '<div class="kp-rating-v110__brand">' +
-                        '<img class="kp-rating-v110__logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMzkwIDk2MCAxODAiPjxwYXRoIGZpbGw9IiNmNTAiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTM0NS44Niw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00Ny45OSw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk0zOTMuODYsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzVjLS4wNCwyMy44Nyw1LjExLDQ0LjM1LDE3LjEyLDQ0LjM1Wk0yNi45OSw0MjAuMzR2MzIuNDNoMS43bDIyLjI3LTMyLjQzaDMwLjgzbC00MS4xNCwzNy41MiwxLjcsMS43LDc1LjQzLTM5LjI2djI3LjMxbC02Ni44NywyMy44N3YxLjY5bDY2Ljg3LTUuOTZ2MjUuNjFsLTY2Ljg3LTUuOTZ2MS43bDY2Ljg3LDIzLjg3djI3LjMxbC03NS40My0zOS4yNy0xLjcsMS43LDQxLjE0LDM3LjUyaC0zMC44M2wtMjIuMjctMzIuNDNoLTEuN3YzMi40M0g0Ljcxdi0xMTkuNDRoMjIuMjd2LjA4Wk0xMzguNDUsNDIwLjM0aDI5LjE0bC0xLjcsNzEuNjZoMS43bDM0LjI4LTcxLjY2aDI1LjcydjExOS40NGgtMjkuMTNsMS43LTcxLjY2aC0xLjdsLTM0LjMsNzEuNjdoLTI1Ljcydi0xMTkuNDVoMFpNMjc3LjI5LDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI5LjEzdi01Mi45MmgyMy45OHY1Mi45MmgyOS4xM3YtMTE5LjQ0aC0yOS4xM3Y0Ni4wOWgtMjMuOTh2LTQ2LjA5Wk01MzkuNTYsNDIwLjM0aC04Mi4yNXYxMTkuNDRoMjkuMTR2LTk4Ljk3aDIzLjk4djk4Ljk3aDI5LjEzdi0xMTkuNDRaTTU1NC45OCw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00OCw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk02MDIuOTgsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzUsNS4xMSw0NC4zNSwxNy4xMiw0NC4zNVpNNjk1LjUzLDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI1LjcybDM0LjI5LTcxLjY2aDEuN2wtMS43LDcxLjY2aDI5LjEzdi0xMTkuNDRoLTI1LjcybC0zNC4yOSw3MS42NmgtMS43bDEuNy03MS42NlpNODMyLjcxLDQ5OC44M2wyNy40MywzLjM5Yy01LjE1LDIzLjg4LTE3LjEyLDM5LjI2LTQyLjY4LDM5LjI2LTMwLjgzLDAtNDYuNDYtMjcuMy00Ni40Ni02MS40NHMxNS41OS02MS40NCw0Ni40Ni02MS40NGMyNS4wMiwwLDM3LjUzLDE1LjM1LDQyLjY4LDM3LjUzbC0yNy40Myw2LjgyYy0xLjctMTEuOTYtNi42OS0yNy4zLTE1LjI2LTI3LjMtMTAuMjYsMC0xNS41OSwyMC40OC0xNS41OSw0NC4zNXM1LjMyLDQ0LjM1LDE1LjU5LDQ0LjM1YzguNC4wOSwxMy41LTEzLjU3LDE1LjI2LTI1LjUzWk05MDEuMjgsNDIwLjM1aC0yNy40M3YxMTkuNDRoMjcuNDN2LTUyLjkyaDEuN2wyMC41Nyw1Mi45MmgzMS43MWwtMzAuMDEtNjEuNDQsMjkuMTMtNTguMDFoLTI5LjEzbC0yMi4yNyw1Mi45MmgtMS43di01Mi45MmgwWiIvPjwvc3ZnPg==" alt="КиноПоиск">' +
+            '<div class="kp-rating-v111 selector">' +
+                '<div class="kp-rating-v111__top">' +
+                    '<div class="kp-rating-v111__brand">' +
+                        '<img class="kp-rating-v111__logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMzkwIDk2MCAxODAiPjxwYXRoIGZpbGw9IiNmNTAiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTM0NS44Niw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00Ny45OSw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk0zOTMuODYsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzVjLS4wNCwyMy44Nyw1LjExLDQ0LjM1LDE3LjEyLDQ0LjM1Wk0yNi45OSw0MjAuMzR2MzIuNDNoMS43bDIyLjI3LTMyLjQzaDMwLjgzbC00MS4xNCwzNy41MiwxLjcsMS43LDc1LjQzLTM5LjI2djI3LjMxbC02Ni44NywyMy44N3YxLjY5bDY2Ljg3LTUuOTZ2MjUuNjFsLTY2Ljg3LTUuOTZ2MS43bDY2Ljg3LDIzLjg3djI3LjMxbC03NS40My0zOS4yNy0xLjcsMS43LDQxLjE0LDM3LjUyaC0zMC44M2wtMjIuMjctMzIuNDNoLTEuN3YzMi40M0g0Ljcxdi0xMTkuNDRoMjIuMjd2LjA4Wk0xMzguNDUsNDIwLjM0aDI5LjE0bC0xLjcsNzEuNjZoMS43bDM0LjI4LTcxLjY2aDI1LjcydjExOS40NGgtMjkuMTNsMS43LTcxLjY2aC0xLjdsLTM0LjMsNzEuNjdoLTI1Ljcydi0xMTkuNDVoMFpNMjc3LjI5LDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI5LjEzdi01Mi45MmgyMy45OHY1Mi45MmgyOS4xM3YtMTE5LjQ0aC0yOS4xM3Y0Ni4wOWgtMjMuOTh2LTQ2LjA5Wk01MzkuNTYsNDIwLjM0aC04Mi4yNXYxMTkuNDRoMjkuMTR2LTk4Ljk3aDIzLjk4djk4Ljk3aDI5LjEzdi0xMTkuNDRaTTU1NC45OCw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00OCw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk02MDIuOTgsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzUsNS4xMSw0NC4zNSwxNy4xMiw0NC4zNVpNNjk1LjUzLDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI1LjcybDM0LjI5LTcxLjY2aDEuN2wtMS43LDcxLjY2aDI5LjEzdi0xMTkuNDRoLTI1LjcybC0zNC4yOSw3MS42NmgtMS43bDEuNy03MS42NlpNODMyLjcxLDQ5OC44M2wyNy40MywzLjM5Yy01LjE1LDIzLjg4LTE3LjEyLDM5LjI2LTQyLjY4LDM5LjI2LTMwLjgzLDAtNDYuNDYtMjcuMy00Ni40Ni02MS40NHMxNS41OS02MS40NCw0Ni40Ni02MS40NGMyNS4wMiwwLDM3LjUzLDE1LjM1LDQyLjY4LDM3LjUzbC0yNy40Myw2LjgyYy0xLjctMTEuOTYtNi42OS0yNy4zLTE1LjI2LTI3LjMtMTAuMjYsMC0xNS41OSwyMC40OC0xNS41OSw0NC4zNXM1LjMyLDQ0LjM1LDE1LjU5LDQ0LjM1YzguNC4wOSwxMy41LTEzLjU3LDE1LjI2LTI1LjUzWk05MDEuMjgsNDIwLjM1aC0yNy40M3YxMTkuNDRoMjcuNDN2LTUyLjkyaDEuN2wyMC41Nyw1Mi45MmgzMS43MWwtMzAuMDEtNjEuNDQsMjkuMTMtNTguMDFoLTI5LjEzbC0yMi4yNyw1Mi45MmgtMS43di01Mi45MmgwWiIvPjwvc3ZnPg==" alt="КиноПоиск">' +
                     '</div>' +
-                    '<span class="kp-rating-v110__quality">' + kpQuality + '</span>' +
+                    '<span class="kp-rating-v111__quality">' + kpQuality + '</span>' +
                 '</div>' +
-                '<div class="kp-rating-v110__main">' +
-                    '<div class="kp-rating-v110__score"><span>' + kpValue + '</span><small>/10</small></div>' +
-                    '<div class="kp-rating-v110__votes">' +
+                '<div class="kp-rating-v111__main">' +
+                    '<div class="kp-rating-v111__score"><span>' + kpValue + '</span><small>/10</small></div>' +
+                    '<div class="kp-rating-v111__votes">' +
                         (kpVotes ? '<strong>' + kpVotes + '</strong><span>голосов</span>' : '') +
                     '</div>' +
                 '</div>' +
-                '<div class="kp-rating-v110__bar"><i data-width="' + kpPercent + '" style="width:0%"></i></div>' +
+                '<div class="kp-rating-v111__bar"><i data-width="' + kpPercent + '" style="width:0%"></i></div>' +
             '</div>';
 
-        var block = '<div class="kp-tmdb-ratings-v110">' + kpBlock + tmdbBlock + '</div>';
-        function animateBars110(root) {var bars = $('.kp-rating-v110__bar i,.tmdb-rating-v110__bar i', root);if (!bars.length) return;requestAnimationFrame(function () {requestAnimationFrame(function () {bars.each(function () {var width = $(this).attr('data-width') || '0';$(this).css({width: width + '%', transition: 'width .8s cubic-bezier(.22,.61,.36,1)'});});});});}var info = $('.info__rate', render);
-        if (info.length) { info.after(block); animateBars110(render); return; }
+        var block = '<div class="kp-tmdb-ratings-v111">' + kpBlock + tmdbBlock + '</div>';
+        function animateBars110(root) {var bars = $('.kp-rating-v111__bar i,.tmdb-rating-v111__bar i', root);if (!bars.length) return;requestAnimationFrame(function () {requestAnimationFrame(function () {bars.each(function () {var width = $(this).attr('data-width') || '0';$(this).css({width: width + '%', transition: 'width .8s cubic-bezier(.22,.61,.36,1)'});});});});}var info = $('.info__rate', render);
+        if (info.length) { info.after(block); animateBars110(render); bindRatingModal111(render, movie, kpData); return; }
         var rates = $('.full-start-new__rates', render);
         if (!rates.length) rates = $('.full-start__rates', render);
-        if (rates.length) { rates.after(block); animateBars110(render); return; }
+        if (rates.length) { rates.after(block); animateBars110(render); bindRatingModal111(render, movie, kpData); return; }
         var details = $('.full-start-new__details', render);
         if (!details.length) details = $('.full-start__details', render);
-        if (details.length) { details.prepend(block); animateBars110(render); return; }
-        $(render).append(block); animateBars110(render);
+        if (details.length) { details.prepend(block); animateBars110(render); bindRatingModal111(render, movie, kpData); return; }
+        $(render).append(block); animateBars110(render); bindRatingModal111(render, movie, kpData);
+    }
+
+    function escapeHtml111(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function openRatingModal111(kind, movie, kpData) {
+        if (!movie || !Lampa.Modal || !Lampa.Modal.open) return;
+
+        var isKP = kind === 'kp';
+        var rating = isKP ? Number(kpData && kpData.kp) : Number(
+            movie.vote_average !== undefined ? movie.vote_average :
+            movie.rating_tmdb !== undefined ? movie.rating_tmdb :
+            movie.ratingTmdb
+        );
+
+        if (!isFinite(rating) || rating <= 0) return;
+
+        var votes = isKP
+            ? formatVotes(kpData && kpData.votes)
+            : formatVotes(movie.vote_count !== undefined ? movie.vote_count : movie.voteCount);
+
+        var title = movie.title || movie.name || '';
+        var original = movie.original_title || movie.original_name || '';
+        var year = getYear(movie);
+        var genres = Array.isArray(movie.genres)
+            ? movie.genres.map(function (g) { return g && g.name; }).filter(Boolean).slice(0, 3)
+            : [];
+
+        var meta = [year || '', genres.join(' • ')].filter(Boolean).join('  •  ');
+        var percent = Math.max(0, Math.min(100, rating * 10));
+        var quality = qualityText(rating);
+
+        var logo = isKP
+            ? 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMzkwIDk2MCAxODAiPjxwYXRoIGZpbGw9IiNmNTAiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTM0NS44Niw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00Ny45OSw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk0zOTMuODYsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzVjLS4wNCwyMy44Nyw1LjExLDQ0LjM1LDE3LjEyLDQ0LjM1Wk0yNi45OSw0MjAuMzR2MzIuNDNoMS43bDIyLjI3LTMyLjQzaDMwLjgzbC00MS4xNCwzNy41MiwxLjcsMS43LDc1LjQzLTM5LjI2djI3LjMxbC02Ni44NywyMy44N3YxLjY5bDY2Ljg3LTUuOTZ2MjUuNjFsLTY2Ljg3LTUuOTZ2MS43bDY2Ljg3LDIzLjg3djI3LjMxbC03NS40My0zOS4yNy0xLjcsMS43LDQxLjE0LDM3LjUyaC0zMC44M2wtMjIuMjctMzIuNDNoLTEuN3YzMi40M0g0Ljcxdi0xMTkuNDRoMjIuMjd2LjA4Wk0xMzguNDUsNDIwLjM0aDI5LjE0bC0xLjcsNzEuNjZoMS43bDM0LjI4LTcxLjY2aDI1LjcydjExOS40NGgtMjkuMTNsMS43LTcxLjY2aC0xLjdsLTM0LjMsNzEuNjdoLTI1Ljcydi0xMTkuNDVoMFpNMjc3LjI5LDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI5LjEzdi01Mi45MmgyMy45OHY1Mi45MmgyOS4xM3YtMTE5LjQ0aC0yOS4xM3Y0Ni4wOWgtMjMuOTh2LTQ2LjA5Wk01MzkuNTYsNDIwLjM0aC04Mi4yNXYxMTkuNDRoMjkuMTR2LTk4Ljk3aDIzLjk4djk4Ljk3aDI5LjEzdi0xMTkuNDRaTTU1NC45OCw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00OCw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk02MDIuOTgsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzUsNS4xMSw0NC4zNSwxNy4xMiw0NC4zNVpNNjk1LjUzLDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI1LjcybDM0LjI5LTcxLjY2aDEuN2wtMS43LDcxLjY2aDI5LjEzdi0xMTkuNDRoLTI1LjcybC0zNC4yOSw3MS42NmgtMS43bDEuNy03MS42NlpNODMyLjcxLDQ5OC44M2wyNy40MywzLjM5Yy01LjE1LDIzLjg4LTE3LjEyLDM5LjI2LTQyLjY4LDM5LjI2LTMwLjgzLDAtNDYuNDYtMjcuMy00Ni40Ni02MS40NHMxNS41OS02MS40NCw0Ni40Ni02MS40NGMyNS4wMiwwLDM3LjUzLDE1LjM1LDQyLjY4LDM3LjUzbC0yNy40Myw2LjgyYy0xLjctMTEuOTYtNi42OS0yNy4zLTE1LjI2LTI3LjMtMTAuMjYsMC0xNS41OSwyMC40OC0xNS41OSw0NC4zNXM1LjMyLDQ0LjM1LDE1LjU5LDQ0LjM1YzguNC4wOSwxMy41LTEzLjU3LDE1LjI2LTI1LjUzWk05MDEuMjgsNDIwLjM1aC0yNy40M3YxMTkuNDRoMjcuNDN2LTUyLjkyaDEuN2wyMC41Nyw1Mi45MmgzMS43MWwtMzAuMDEtNjEuNDQsMjkuMTMtNTguMDFoLTI5LjEzbC0yMi4yNyw1Mi45MmgtMS43di01Mi45MmgwWiIvPjwvc3ZnPg=='
+            : 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/tmdb.svg';
+
+        var brandClass = isKP ? 'kp' : 'tmdb';
+        var votesHtml = votes
+            ? '<strong>' + escapeHtml111(votes) + '</strong><span>голосов</span>'
+            : '';
+
+        var cardHtml =
+            '<div class="kp-rating-modal-card kp-rating-modal-card--' + brandClass + '">' +
+                '<div class="kp-rating-modal-top">' +
+                    '<div class="kp-rating-modal-brand">' +
+                        '<img src="' + logo + '" alt="' + (isKP ? 'КиноПоиск' : 'TMDB') + '">' +
+                    '</div>' +
+                    '<span class="kp-rating-modal-quality">' + escapeHtml111(quality) + '</span>' +
+                '</div>' +
+                '<div class="kp-rating-modal-main">' +
+                    '<div class="kp-rating-modal-score"><span>' + rating.toFixed(1) + '</span><small>/10</small></div>' +
+                    '<div class="kp-rating-modal-votes">' + votesHtml + '</div>' +
+                '</div>' +
+                '<div class="kp-rating-modal-bar"><i style="width:' + percent + '%"></i></div>' +
+            '</div>';
+
+        var html =
+            '<div class="kp-rating-modal-page">' +
+                '<div class="kp-rating-modal-hero">' +
+                    cardHtml +
+                    '<div class="kp-rating-modal-title">' + escapeHtml111(title) + '</div>' +
+                    (original && original !== title ? '<div class="kp-rating-modal-original">' + escapeHtml111(original) + '</div>' : '') +
+                    (meta ? '<div class="kp-rating-modal-meta">' + escapeHtml111(meta) + '</div>' : '') +
+                '</div>' +
+                '<div class="kp-rating-modal-body">' +
+                    '<div class="kp-rating-modal-caption">' +
+                        (isKP ? 'Рейтинг КиноПоиска' : 'Рейтинг TMDB') +
+                    '</div>' +
+                    '<div class="kp-rating-modal-text">' +
+                        'Оценка <b>' + rating.toFixed(1) + '</b> из 10' +
+                        (votes ? ' • ' + escapeHtml111(votes) + ' голосов' : '') +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+        var controllerName = '';
+        try {
+            controllerName = Lampa.Controller.enabled().name;
+        } catch (e) {}
+
+        Lampa.Modal.open({
+            title: title || (isKP ? 'КиноПоиск' : 'TMDB'),
+            html: $(html),
+            size: 'large',
+            onBack: function () {
+                Lampa.Modal.close();
+                if (controllerName) {
+                    try { Lampa.Controller.toggle(controllerName); } catch (e) {}
+                }
+            }
+        });
+
+        setTimeout(function () {
+            var modal = $('.kp-rating-modal-page').last();
+            if (!modal.length) return;
+
+            modal.find('.kp-rating-modal-bar i').css({
+                width: percent + '%',
+                transition: 'width .75s cubic-bezier(.22,.61,.36,1)'
+            });
+        }, 30);
+    }
+
+    function bindRatingModal111(render, movie, kpData) {
+        var root = $('.kp-tmdb-ratings-v111', render);
+        if (!root.length) return;
+
+        root.find('.kp-rating-v111').off('hover:enter.kpRatings').on('hover:enter.kpRatings', function () {
+            openRatingModal111('kp', movie, kpData);
+        });
+
+        root.find('.tmdb-rating-v111').off('hover:enter.kpRatings').on('hover:enter.kpRatings', function () {
+            openRatingModal111('tmdb', movie, kpData);
+        });
     }
 
     function findFilm(card, items) {
@@ -592,7 +712,7 @@
             },
             onChange: function () {
                 cache = {};
-                Lampa.Storage.set('kp_rating_v110', cache);
+                Lampa.Storage.set('kp_rating_v111', cache);
                 Lampa.Noty.show('Кэш КП очищен');
             }
         });
@@ -600,11 +720,11 @@
 
     function start() {
 
-        if (!document.getElementById('kp-ratings-v110-style')) {
+        if (!document.getElementById('kp-ratings-v111-style')) {
             var style = document.createElement('style');
-            style.id = 'kp-ratings-v110-style';
+            style.id = 'kp-ratings-v111-style';
             style.textContent =
-                '@keyframes kpRatingsAppear110{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:translateY(0);}}@keyframes kpRatingsScore110{from{opacity:0;transform:translateY(5px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}.kp-tmdb-ratings-v110{' +
+                '@keyframes kpRatingsAppear110{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:translateY(0);}}@keyframes kpRatingsScore110{from{opacity:0;transform:translateY(5px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}.kp-tmdb-ratings-v111{' +
                     'display:flex!important;' +
                     'align-items:stretch!important;' +
                     'gap:1.1em!important;' +
@@ -612,7 +732,7 @@
                     'margin:.75em 0 .7em!important;' +
                     'box-sizing:border-box!important;' +
                 '}' +
-                '.kp-rating-v110,.tmdb-rating-v110{animation-delay:.08s!important;' +
+                '.kp-rating-v111,.tmdb-rating-v111{animation-delay:.08s!important;' +
                     'display:block!important;' +
                     'flex:1 1 0!important;' +
                     'min-width:0!important;' +
@@ -624,17 +744,17 @@
                     'vertical-align:top!important;' +
                     'overflow:hidden!important;animation:kpRatingsAppear110 .42s cubic-bezier(.22,.61,.36,1) both!important;' +
                 '}' +
-                '.kp-rating-v110{' +
+                '.kp-rating-v111{' +
                     'background:linear-gradient(135deg,rgba(38,32,18,.82),rgba(20,20,20,.96))!important;' +
                     'border:1px solid rgba(245,180,45,.34)!important;' +
                     'box-shadow:0 5px 18px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.05)!important;' +
                 '}' +
-                '.tmdb-rating-v110{' +
+                '.tmdb-rating-v111{' +
                     'background:linear-gradient(135deg,rgba(7,37,55,.96),rgba(8,20,30,.98))!important;' +
                     'border:1px solid rgba(1,180,228,.42)!important;' +
                     'box-shadow:0 5px 18px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.05)!important;' +
                 '}' +
-                '.kp-rating-v110__top,.tmdb-rating-v110__top{' +
+                '.kp-rating-v111__top,.tmdb-rating-v111__top{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'justify-content:space-between!important;' +
@@ -642,13 +762,13 @@
                     'height:1.25em!important;' +
                     'margin-bottom:.25em!important;' +
                 '}' +
-                '.kp-rating-v110__brand,.tmdb-rating-v110__brand{' +
+                '.kp-rating-v111__brand,.tmdb-rating-v111__brand{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'height:1.15em!important;' +
                     'min-width:0!important;' +
                 '}' +
-                '.kp-rating-v110__logo{' +
+                '.kp-rating-v111__logo{' +
                     'display:block!important;' +
                     'width:9.2em!important;' +
                     'height:1.05em!important;' +
@@ -656,90 +776,119 @@
                     'object-position:left center!important;' +
                     'filter:drop-shadow(0 0 5px rgba(255,85,0,.16))!important;' +
                 '}' +
-                '.tmdb-rating-v110__logo{' +
+                '.tmdb-rating-v111__logo{' +
                     'display:block!important;' +
                     'width:5.8em!important;' +
                     'height:1.35em!important;' +
                     'object-fit:contain!important;' +
                     'object-position:left center!important;' +
                 '}' +
-                '.kp-rating-v110__quality,.tmdb-rating-v110__quality{' +
+                '.kp-rating-v111__quality,.tmdb-rating-v111__quality{' +
                     'font-size:.68em!important;' +
                     'font-weight:600!important;' +
                     'color:rgba(255,255,255,.58)!important;' +
                     'white-space:nowrap!important;' +
                 '}' +
-                '.tmdb-rating-v110__quality{' +
+                '.tmdb-rating-v111__quality{' +
                     'color:rgba(1,180,228,.88)!important;' +
                 '}' +
-                '.kp-rating-v110__main,.tmdb-rating-v110__main{' +
+                '.kp-rating-v111__main,.tmdb-rating-v111__main{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'justify-content:flex-start!important;' +
                     'gap:1.05em!important;' +
                 '}' +
-                '.kp-rating-v110__score,.tmdb-rating-v110__score{' +
+                '.kp-rating-v111__score,.tmdb-rating-v111__score{' +
                     'display:flex!important;' +
                     'align-items:baseline!important;' +
                     'white-space:nowrap!important;' +
                 '}' +
-                '.kp-rating-v110__score span,.tmdb-rating-v110__score span{' +
+                '.kp-rating-v111__score span,.tmdb-rating-v111__score span{' +
                     'animation:kpRatingsScore110 .48s .10s both!important;' +
                     'font-size:2em!important;' +
                     'font-weight:800!important;' +
                     'letter-spacing:-.035em!important;' +
                     'line-height:1!important;' +
                 '}' +
-                '.kp-rating-v110__score small,.tmdb-rating-v110__score small{' +
+                '.kp-rating-v111__score small,.tmdb-rating-v111__score small{' +
                     'margin-left:.18em!important;' +
                     'font-size:.62em!important;' +
                     'font-weight:500!important;' +
                     'color:rgba(255,255,255,.44)!important;' +
                 '}' +
-                '.kp-rating-v110__votes,.tmdb-rating-v110__votes{' +
+                '.kp-rating-v111__votes,.tmdb-rating-v111__votes{' +
                     'display:flex!important;' +
                     'flex-direction:column!important;' +
                     'line-height:1.15!important;' +
                     'min-width:0!important;' +
                 '}' +
-                '.kp-rating-v110__votes strong,.tmdb-rating-v110__votes strong{' +
+                '.kp-rating-v111__votes strong,.tmdb-rating-v111__votes strong{' +
                     'font-size:.9em!important;' +
                     'font-weight:700!important;' +
                     'color:#fff!important;' +
                 '}' +
-                '.kp-rating-v110__votes span,.tmdb-rating-v110__votes span{' +
+                '.kp-rating-v111__votes span,.tmdb-rating-v111__votes span{' +
                     'margin-top:.16em!important;' +
                     'font-size:.62em!important;' +
                     'color:rgba(255,255,255,.52)!important;' +
                     'white-space:nowrap!important;' +
                 '}' +
-                '.kp-rating-v110__bar,.tmdb-rating-v110__bar{' +
+                '.kp-rating-v111__bar,.tmdb-rating-v111__bar{' +
                     'height:3px!important;' +
                     'margin-top:.65em!important;' +
                     'overflow:hidden!important;' +
                     'border-radius:99px!important;transition:width .8s cubic-bezier(.22,.61,.36,1)!important;' +
                     'background:rgba(255,255,255,.10)!important;' +
                 '}' +
-                '.kp-rating-v110__bar i,.tmdb-rating-v110__bar i{' +
+                '.kp-rating-v111__bar i,.tmdb-rating-v111__bar i{' +
                     'display:block!important;' +
                     'height:100%!important;' +
                     'border-radius:99px!important;' +
                 '}' +
-                '.kp-rating-v110__bar i{' +
+                '.kp-rating-v111__bar i{' +
                     'background:linear-gradient(90deg,#d99419,#ffd35a)!important;' +
                     'box-shadow:0 0 8px rgba(245,184,46,.38)!important;' +
                 '}' +
-                '.tmdb-rating-v110__bar i{' +
+                '.tmdb-rating-v111__bar i{' +
                     'background:linear-gradient(90deg,#01b4e4,#90e7f8)!important;' +
                     'box-shadow:0 0 8px rgba(1,180,228,.38)!important;' +
                 '}' +
+
+                '.kp-rating-modal-page{background:#151718;color:#fff;min-height:100%;overflow:hidden;box-sizing:border-box;}' +
+                '.kp-rating-modal-hero{position:relative;min-height:250px;padding:22px 22px 24px;display:flex;flex-direction:column;justify-content:flex-end;box-sizing:border-box;background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.07),transparent 60%),linear-gradient(to bottom,#202426 0%,#151718 100%);}' +
+                '.kp-rating-modal-card{width:100%;box-sizing:border-box;border-radius:1em;padding:1.05em 1.15em 1em;color:#fff;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06);animation:kpRatingsScore110 .4s cubic-bezier(.22,.61,.36,1) both;}' +
+                '.kp-rating-modal-card--kp{background:linear-gradient(135deg,rgba(38,32,18,.96),rgba(20,20,20,.98));border:1px solid rgba(245,180,45,.42);}' +
+                '.kp-rating-modal-card--tmdb{background:linear-gradient(135deg,rgba(7,37,55,.98),rgba(8,20,30,1));border:1px solid rgba(1,180,228,.5);}' +
+                '.kp-rating-modal-top{display:flex;align-items:center;justify-content:space-between;gap:.7em;}' +
+                '.kp-rating-modal-brand{display:flex;align-items:center;height:2em;min-width:0;}' +
+                '.kp-rating-modal-brand img{display:block;max-width:14em;width:auto;height:1.7em;object-fit:contain;object-position:left center;}' +
+                '.kp-rating-modal-card--tmdb .kp-rating-modal-brand img{width:7.5em;height:2em;}' +
+                '.kp-rating-modal-quality{font-size:.82em;font-weight:650;color:rgba(255,255,255,.66);white-space:nowrap;}' +
+                '.kp-rating-modal-card--tmdb .kp-rating-modal-quality{color:rgba(1,180,228,.9);}' +
+                '.kp-rating-modal-main{display:flex;align-items:center;gap:1.5em;margin-top:.35em;}' +
+                '.kp-rating-modal-score{display:flex;align-items:baseline;white-space:nowrap;}' +
+                '.kp-rating-modal-score span{font-size:3.25em;font-weight:850;line-height:1;letter-spacing:-.045em;}' +
+                '.kp-rating-modal-score small{margin-left:.2em;font-size:.78em;color:rgba(255,255,255,.45);}' +
+                '.kp-rating-modal-votes{display:flex;flex-direction:column;line-height:1.15;}' +
+                '.kp-rating-modal-votes strong{font-size:1.05em;font-weight:750;}' +
+                '.kp-rating-modal-votes span{margin-top:.18em;font-size:.72em;color:rgba(255,255,255,.52);}' +
+                '.kp-rating-modal-bar{height:4px;margin-top:.85em;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.11);}' +
+                '.kp-rating-modal-bar i{display:block;height:100%;border-radius:99px;}' +
+                '.kp-rating-modal-card--kp .kp-rating-modal-bar i{background:linear-gradient(90deg,#d99419,#ffd35a);box-shadow:0 0 10px rgba(245,184,46,.42);}' +
+                '.kp-rating-modal-card--tmdb .kp-rating-modal-bar i{background:linear-gradient(90deg,#01b4e4,#90e7f8);box-shadow:0 0 10px rgba(1,180,228,.42);}' +
+                '.kp-rating-modal-title{margin-top:18px;font-size:28px;line-height:1.12;font-weight:800;letter-spacing:-.02em;text-shadow:0 2px 10px rgba(0,0,0,.6);}' +
+                '.kp-rating-modal-original{margin-top:5px;font-size:15px;color:rgba(255,255,255,.55);}' +
+                '.kp-rating-modal-meta{margin-top:9px;font-size:15px;color:rgba(255,255,255,.78);}' +
+                '.kp-rating-modal-body{padding:22px;color:rgba(255,255,255,.82);}' +
+                '.kp-rating-modal-caption{font-size:18px;font-weight:750;margin-bottom:8px;}' +
+                '.kp-rating-modal-text{font-size:15px;color:rgba(255,255,255,.56);}' +
                 '@media (max-width:520px){' +
-                    '.kp-tmdb-ratings-v110{gap:.65em!important;}' +
-                    '.kp-rating-v110,.tmdb-rating-v110{padding:.68em .65em .65em!important;}' +
-                    '.kp-rating-v110__logo{width:7.2em!important;}' +
-                    '.tmdb-rating-v110__logo{width:5em!important;}' +
-                    '.kp-rating-v110__score span,.tmdb-rating-v110__score span{font-size:1.7em!important;}' +
-                    '.kp-rating-v110__main,.tmdb-rating-v110__main{gap:.55em!important;}' +
+                    '.kp-tmdb-ratings-v111{gap:.65em!important;}' +
+                    '.kp-rating-v111,.tmdb-rating-v111{padding:.68em .65em .65em!important;}' +
+                    '.kp-rating-v111__logo{width:7.2em!important;}' +
+                    '.tmdb-rating-v111__logo{width:5em!important;}' +
+                    '.kp-rating-v111__score span,.tmdb-rating-v111__score span{font-size:1.7em!important;}' +
+                    '.kp-rating-v111__main,.tmdb-rating-v111__main{gap:.55em!important;}' +
                 '}';
             document.head.appendChild(style);
         }
@@ -751,7 +900,7 @@
 
             var render = e.object.activity.render();
 
-            if ($('.kp-rating-v110', render).length) return;
+            if ($('.kp-rating-v111', render).length) return;
 
             var movie = e.data && e.data.movie;
 
@@ -760,7 +909,7 @@
             inject(movie);
         });
 
-        console.log('[KP Ratings] v1.1.0 started');
+        console.log('[KP Ratings] v1.1.1 started');
     }
 
     function boot() {
