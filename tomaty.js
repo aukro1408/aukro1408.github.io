@@ -1,11 +1,11 @@
 (function () {
     'use strict';
 
-    if (window.kp_ratings_plugin_v111) return;
-    window.kp_ratings_plugin_v111 = true;
+    if (window.kp_ratings_plugin_v112) return;
+    window.kp_ratings_plugin_v112 = true;
 
     var NAME = 'KP Ratings';
-    var SETTINGS = 'kp_ratings_settings_v111';
+    var SETTINGS = 'kp_ratings_settings_v112';
 
     var cfg = Object.assign({
         enabled: true,
@@ -20,7 +20,7 @@
         Lampa.Storage.get(SETTINGS, {}) || {}
     ));
 
-    var cache = Lampa.Storage.cache('kp_rating_v111', 500, {});
+    var cache = Lampa.Storage.cache('kp_rating_v112', 500, {});
 
     try {
         var oldCache100 = Lampa.Storage.cache('kp_rating_v100', 500, {});
@@ -147,7 +147,7 @@
         };
 
         cache[key] = item;
-        Lampa.Storage.set('kp_rating_v111', cache);
+        Lampa.Storage.set('kp_rating_v112', cache);
 
         return item;
     }
@@ -160,7 +160,7 @@
 
         if (Date.now() - Number(item.timestamp || 0) > ttl) {
             delete cache[key];
-            Lampa.Storage.set('kp_rating_v111', cache);
+            Lampa.Storage.set('kp_rating_v112', cache);
             return null;
         }
 
@@ -205,7 +205,7 @@
         var render = active && active.activity && active.activity.render();
         if (!render) return;
 
-        $('.kp-tmdb-ratings-v111', render).remove();
+        $('.kp-tmdb-ratings-v112', render).remove();
 
         var kpValue = kp.toFixed(1);
         var kpVotes = formatVotes(kpData.votes);
@@ -218,53 +218,53 @@
             var tmdbPercent = Math.max(0, Math.min(100, tmdb * 10));
             var tmdbVotesText = formatVotes(tmdbVotes);
             tmdbBlock =
-                '<div class="tmdb-rating-v111 selector">' +
-                    '<div class="tmdb-rating-v111__top">' +
-                        '<div class="tmdb-rating-v111__brand">' +
-                            '<img class="tmdb-rating-v111__logo" src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/tmdb.svg" alt="TMDB">' +
+                '<div class="tmdb-rating-v112 selector">' +
+                    '<div class="tmdb-rating-v112__top">' +
+                        '<div class="tmdb-rating-v112__brand">' +
+                            '<img class="tmdb-rating-v112__logo" src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/tmdb.svg" alt="TMDB">' +
                         '</div>' +
-                        '<span class="tmdb-rating-v111__quality">' + qualityText(tmdb) + '</span>' +
+                        '<span class="tmdb-rating-v112__quality">' + qualityText(tmdb) + '</span>' +
                     '</div>' +
-                    '<div class="tmdb-rating-v111__main">' +
-                        '<div class="tmdb-rating-v111__score"><span>' + tmdbValue + '</span><small>/10</small></div>' +
-                        '<div class="tmdb-rating-v111__votes">' +
+                    '<div class="tmdb-rating-v112__main">' +
+                        '<div class="tmdb-rating-v112__score"><span>' + tmdbValue + '</span><small>/10</small></div>' +
+                        '<div class="tmdb-rating-v112__votes">' +
                             (tmdbVotesText ? '<strong>' + tmdbVotesText + '</strong><span>голосов</span>' : '<span>рейтинг пользователей</span>') +
                         '</div>' +
                     '</div>' +
-                    '<div class="tmdb-rating-v111__bar"><i data-width="' + tmdbPercent + '" style="width:0%"></i></div>' +
+                    '<div class="tmdb-rating-v112__bar"><i data-width="' + tmdbPercent + '" style="width:0%"></i></div>' +
                 '</div>';
         }
 
         var kpBlock =
-            '<div class="kp-rating-v111 selector">' +
-                '<div class="kp-rating-v111__top">' +
-                    '<div class="kp-rating-v111__brand">' +
-                        '<img class="kp-rating-v111__logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMzkwIDk2MCAxODAiPjxwYXRoIGZpbGw9IiNmNTAiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTM0NS44Niw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00Ny45OSw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk0zOTMuODYsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzVjLS4wNCwyMy44Nyw1LjExLDQ0LjM1LDE3LjEyLDQ0LjM1Wk0yNi45OSw0MjAuMzR2MzIuNDNoMS43bDIyLjI3LTMyLjQzaDMwLjgzbC00MS4xNCwzNy41MiwxLjcsMS43LDc1LjQzLTM5LjI2djI3LjMxbC02Ni44NywyMy44N3YxLjY5bDY2Ljg3LTUuOTZ2MjUuNjFsLTY2Ljg3LTUuOTZ2MS43bDY2Ljg3LDIzLjg3djI3LjMxbC03NS40My0zOS4yNy0xLjcsMS43LDQxLjE0LDM3LjUyaC0zMC44M2wtMjIuMjctMzIuNDNoLTEuN3YzMi40M0g0Ljcxdi0xMTkuNDRoMjIuMjd2LjA4Wk0xMzguNDUsNDIwLjM0aDI5LjE0bC0xLjcsNzEuNjZoMS43bDM0LjI4LTcxLjY2aDI1LjcydjExOS40NGgtMjkuMTNsMS43LTcxLjY2aC0xLjdsLTM0LjMsNzEuNjdoLTI1Ljcydi0xMTkuNDVoMFpNMjc3LjI5LDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI5LjEzdi01Mi45MmgyMy45OHY1Mi45MmgyOS4xM3YtMTE5LjQ0aC0yOS4xM3Y0Ni4wOWgtMjMuOTh2LTQ2LjA5Wk01MzkuNTYsNDIwLjM0aC04Mi4yNXYxMTkuNDRoMjkuMTR2LTk4Ljk3aDIzLjk4djk4Ljk3aDI5LjEzdi0xMTkuNDRaTTU1NC45OCw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00OCw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk02MDIuOTgsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzUsNS4xMSw0NC4zNSwxNy4xMiw0NC4zNVpNNjk1LjUzLDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI1LjcybDM0LjI5LTcxLjY2aDEuN2wtMS43LDcxLjY2aDI5LjEzdi0xMTkuNDRoLTI1LjcybC0zNC4yOSw3MS42NmgtMS43bDEuNy03MS42NlpNODMyLjcxLDQ5OC44M2wyNy40MywzLjM5Yy01LjE1LDIzLjg4LTE3LjEyLDM5LjI2LTQyLjY4LDM5LjI2LTMwLjgzLDAtNDYuNDYtMjcuMy00Ni40Ni02MS40NHMxNS41OS02MS40NCw0Ni40Ni02MS40NGMyNS4wMiwwLDM3LjUzLDE1LjM1LDQyLjY4LDM3LjUzbC0yNy40Myw2LjgyYy0xLjctMTEuOTYtNi42OS0yNy4zLTE1LjI2LTI3LjMtMTAuMjYsMC0xNS41OSwyMC40OC0xNS41OSw0NC4zNXM1LjMyLDQ0LjM1LDE1LjU5LDQ0LjM1YzguNC4wOSwxMy41LTEzLjU3LDE1LjI2LTI1LjUzWk05MDEuMjgsNDIwLjM1aC0yNy40M3YxMTkuNDRoMjcuNDN2LTUyLjkyaDEuN2wyMC41Nyw1Mi45MmgzMS43MWwtMzAuMDEtNjEuNDQsMjkuMTMtNTguMDFoLTI5LjEzbC0yMi4yNyw1Mi45MmgtMS43di01Mi45MmgwWiIvPjwvc3ZnPg==" alt="КиноПоиск">' +
+            '<div class="kp-rating-v112 selector">' +
+                '<div class="kp-rating-v112__top">' +
+                    '<div class="kp-rating-v112__brand">' +
+                        '<img class="kp-rating-v112__logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMzkwIDk2MCAxODAiPjxwYXRoIGZpbGw9IiNmNTAiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTM0NS44Niw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00Ny45OSw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk0zOTMuODYsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzVjLS4wNCwyMy44Nyw1LjExLDQ0LjM1LDE3LjEyLDQ0LjM1Wk0yNi45OSw0MjAuMzR2MzIuNDNoMS43bDIyLjI3LTMyLjQzaDMwLjgzbC00MS4xNCwzNy41MiwxLjcsMS43LDc1LjQzLTM5LjI2djI3LjMxbC02Ni44NywyMy44N3YxLjY5bDY2Ljg3LTUuOTZ2MjUuNjFsLTY2Ljg3LTUuOTZ2MS43bDY2Ljg3LDIzLjg3djI3LjMxbC03NS40My0zOS4yNy0xLjcsMS43LDQxLjE0LDM3LjUyaC0zMC44M2wtMjIuMjctMzIuNDNoLTEuN3YzMi40M0g0Ljcxdi0xMTkuNDRoMjIuMjd2LjA4Wk0xMzguNDUsNDIwLjM0aDI5LjE0bC0xLjcsNzEuNjZoMS43bDM0LjI4LTcxLjY2aDI1LjcydjExOS40NGgtMjkuMTNsMS43LTcxLjY2aC0xLjdsLTM0LjMsNzEuNjdoLTI1Ljcydi0xMTkuNDVoMFpNMjc3LjI5LDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI5LjEzdi01Mi45MmgyMy45OHY1Mi45MmgyOS4xM3YtMTE5LjQ0aC0yOS4xM3Y0Ni4wOWgtMjMuOTh2LTQ2LjA5Wk01MzkuNTYsNDIwLjM0aC04Mi4yNXYxMTkuNDRoMjkuMTR2LTk4Ljk3aDIzLjk4djk4Ljk3aDI5LjEzdi0xMTkuNDRaTTU1NC45OCw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00OCw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk02MDIuOTgsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzUsNS4xMSw0NC4zNSwxNy4xMiw0NC4zNVpNNjk1LjUzLDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI1LjcybDM0LjI5LTcxLjY2aDEuN2wtMS43LDcxLjY2aDI5LjEzdi0xMTkuNDRoLTI1LjcybC0zNC4yOSw3MS42NmgtMS43bDEuNy03MS42NlpNODMyLjcxLDQ5OC44M2wyNy40MywzLjM5Yy01LjE1LDIzLjg4LTE3LjEyLDM5LjI2LTQyLjY4LDM5LjI2LTMwLjgzLDAtNDYuNDYtMjcuMy00Ni40Ni02MS40NHMxNS41OS02MS40NCw0Ni40Ni02MS40NGMyNS4wMiwwLDM3LjUzLDE1LjM1LDQyLjY4LDM3LjUzbC0yNy40Myw2LjgyYy0xLjctMTEuOTYtNi42OS0yNy4zLTE1LjI2LTI3LjMtMTAuMjYsMC0xNS41OSwyMC40OC0xNS41OSw0NC4zNXM1LjMyLDQ0LjM1LDE1LjU5LDQ0LjM1YzguNC4wOSwxMy41LTEzLjU3LDE1LjI2LTI1LjUzWk05MDEuMjgsNDIwLjM1aC0yNy40M3YxMTkuNDRoMjcuNDN2LTUyLjkyaDEuN2wyMC41Nyw1Mi45MmgzMS43MWwtMzAuMDEtNjEuNDQsMjkuMTMtNTguMDFoLTI5LjEzbC0yMi4yNyw1Mi45MmgtMS43di01Mi45MmgwWiIvPjwvc3ZnPg==" alt="КиноПоиск">' +
                     '</div>' +
-                    '<span class="kp-rating-v111__quality">' + kpQuality + '</span>' +
+                    '<span class="kp-rating-v112__quality">' + kpQuality + '</span>' +
                 '</div>' +
-                '<div class="kp-rating-v111__main">' +
-                    '<div class="kp-rating-v111__score"><span>' + kpValue + '</span><small>/10</small></div>' +
-                    '<div class="kp-rating-v111__votes">' +
+                '<div class="kp-rating-v112__main">' +
+                    '<div class="kp-rating-v112__score"><span>' + kpValue + '</span><small>/10</small></div>' +
+                    '<div class="kp-rating-v112__votes">' +
                         (kpVotes ? '<strong>' + kpVotes + '</strong><span>голосов</span>' : '') +
                     '</div>' +
                 '</div>' +
-                '<div class="kp-rating-v111__bar"><i data-width="' + kpPercent + '" style="width:0%"></i></div>' +
+                '<div class="kp-rating-v112__bar"><i data-width="' + kpPercent + '" style="width:0%"></i></div>' +
             '</div>';
 
-        var block = '<div class="kp-tmdb-ratings-v111">' + kpBlock + tmdbBlock + '</div>';
-        function animateBars110(root) {var bars = $('.kp-rating-v111__bar i,.tmdb-rating-v111__bar i', root);if (!bars.length) return;requestAnimationFrame(function () {requestAnimationFrame(function () {bars.each(function () {var width = $(this).attr('data-width') || '0';$(this).css({width: width + '%', transition: 'width .8s cubic-bezier(.22,.61,.36,1)'});});});});}var info = $('.info__rate', render);
-        if (info.length) { info.after(block); animateBars110(render); bindRatingModal111(render, movie, kpData); return; }
+        var block = '<div class="kp-tmdb-ratings-v112">' + kpBlock + tmdbBlock + '</div>';
+        function animateBars112(root) {var bars = $('.kp-rating-v112__bar i,.tmdb-rating-v112__bar i', root);if (!bars.length) return;requestAnimationFrame(function () {requestAnimationFrame(function () {bars.each(function () {var width = $(this).attr('data-width') || '0';$(this).css({width: width + '%', transition: 'width .8s cubic-bezier(.22,.61,.36,1)'});});});});}var info = $('.info__rate', render);
+        if (info.length) { info.after(block); animateBars112(render); bindRatingModal112(render, movie, kpData); return; }
         var rates = $('.full-start-new__rates', render);
         if (!rates.length) rates = $('.full-start__rates', render);
-        if (rates.length) { rates.after(block); animateBars110(render); bindRatingModal111(render, movie, kpData); return; }
+        if (rates.length) { rates.after(block); animateBars112(render); bindRatingModal112(render, movie, kpData); return; }
         var details = $('.full-start-new__details', render);
         if (!details.length) details = $('.full-start__details', render);
-        if (details.length) { details.prepend(block); animateBars110(render); bindRatingModal111(render, movie, kpData); return; }
-        $(render).append(block); animateBars110(render); bindRatingModal111(render, movie, kpData);
+        if (details.length) { details.prepend(block); animateBars112(render); bindRatingModal112(render, movie, kpData); return; }
+        $(render).append(block); animateBars112(render); bindRatingModal112(render, movie, kpData);
     }
 
-    function escapeHtml111(value) {
+    function escapeHtml112(value) {
         return String(value == null ? '' : value)
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
@@ -273,7 +273,7 @@
             .replace(/'/g, '&#039;');
     }
 
-    function openRatingModal111(kind, movie, kpData) {
+    function openRatingModal112(kind, movie, kpData) {
         if (!movie || !Lampa.Modal || !Lampa.Modal.open) return;
 
         var isKP = kind === 'kp';
@@ -292,30 +292,165 @@
         var title = movie.title || movie.name || '';
         var original = movie.original_title || movie.original_name || '';
         var year = getYear(movie);
+
         var genres = Array.isArray(movie.genres)
-            ? movie.genres.map(function (g) { return g && g.name; }).filter(Boolean).slice(0, 3)
+            ? movie.genres.map(function (g) { return g && g.name; }).filter(Boolean).slice(0, 4)
             : [];
 
         var meta = [year || '', genres.join(' • ')].filter(Boolean).join('  •  ');
+
         var percent = Math.max(0, Math.min(100, rating * 10));
         var quality = qualityText(rating);
+
+        // Дополнительные данные TMDB. Актёров и создателей намеренно не выводим:
+        // они уже есть в штатной карточке Lampa.
+        var overview = String(movie.overview || movie.description || '').trim();
+
+        var countries = [];
+        if (Array.isArray(movie.production_countries)) {
+            countries = movie.production_countries.map(function (c) {
+                return c && (c.name || c.iso_3166_1);
+            }).filter(Boolean);
+        }
+        if (!countries.length && Array.isArray(movie.origin_country)) {
+            countries = movie.origin_country.filter(Boolean);
+        }
+        if (!countries.length && Array.isArray(movie.production_companies)) {
+            countries = movie.production_companies.map(function (c) {
+                return c && c.name;
+            }).filter(Boolean).slice(0, 3);
+        }
+
+        var releaseDate = movie.release_date || movie.first_air_date || '';
+        var releaseDateText = '';
+        if (/^\d{4}-\d{2}-\d{2}$/.test(String(releaseDate))) {
+            var parts = String(releaseDate).split('-');
+            releaseDateText = parts[2] + '.' + parts[1] + '.' + parts[0];
+        } else if (releaseDate) {
+            releaseDateText = String(releaseDate);
+        }
+
+        var runtime = Number(movie.runtime || 0);
+        if (!runtime && Array.isArray(movie.episode_run_time) && movie.episode_run_time[0]) {
+            runtime = Number(movie.episode_run_time[0]);
+        }
+
+        function formatRuntime112(minutes) {
+            minutes = Math.round(Number(minutes || 0));
+            if (!minutes) return '';
+            var h = Math.floor(minutes / 60);
+            var m = minutes % 60;
+            if (h && m) return h + ' ч ' + m + ' мин';
+            if (h) return h + ' ч';
+            return m + ' мин';
+        }
+
+        function formatMoney112(value) {
+            value = Number(value || 0);
+            if (!isFinite(value) || value <= 0) return '';
+            if (value >= 1000000000) return (value / 1000000000).toFixed(1).replace('.0', '') + ' млрд $';
+            if (value >= 1000000) return Math.round(value / 1000000) + ' млн $';
+            if (value >= 1000) return Math.round(value / 1000) + ' тыс. $';
+            return value.toLocaleString('ru-RU') + ' $';
+        }
+
+        var isSeries = !!(
+            movie.first_air_date ||
+            movie.number_of_seasons ||
+            movie.number_of_episodes ||
+            movie.seasons
+        );
+
+        var extraItems = [];
+
+        if (countries.length) {
+            extraItems.push(
+                '<div class="kp-rating-modal-info-item">' +
+                    '<span>Страна</span><b>' + escapeHtml112(countries.join(', ')) + '</b>' +
+                '</div>'
+            );
+        }
+
+        if (releaseDateText) {
+            extraItems.push(
+                '<div class="kp-rating-modal-info-item">' +
+                    '<span>Премьера</span><b>' + escapeHtml112(releaseDateText) + '</b>' +
+                '</div>'
+            );
+        }
+
+        if (isSeries) {
+            var seasons = Number(movie.number_of_seasons || 0);
+            var episodes = Number(movie.number_of_episodes || 0);
+            var seriesMeta = [];
+            if (seasons) seriesMeta.push(seasons + ' ' + (seasons === 1 ? 'сезон' : seasons < 5 ? 'сезона' : 'сезонов'));
+            if (episodes) seriesMeta.push(episodes + ' ' + (episodes === 1 ? 'серия' : episodes < 5 ? 'серии' : 'серий'));
+
+            if (seriesMeta.length) {
+                extraItems.push(
+                    '<div class="kp-rating-modal-info-item">' +
+                        '<span>Формат</span><b>' + escapeHtml112(seriesMeta.join(' • ')) + '</b>' +
+                    '</div>'
+                );
+            }
+
+            if (movie.status) {
+                extraItems.push(
+                    '<div class="kp-rating-modal-info-item">' +
+                        '<span>Статус</span><b>' + escapeHtml112(String(movie.status)) + '</b>' +
+                    '</div>'
+                );
+            }
+
+            if (runtime) {
+                extraItems.push(
+                    '<div class="kp-rating-modal-info-item">' +
+                        '<span>Серия</span><b>' + escapeHtml112(formatRuntime112(runtime)) + '</b>' +
+                    '</div>'
+                );
+            }
+        } else {
+            if (runtime) {
+                extraItems.push(
+                    '<div class="kp-rating-modal-info-item">' +
+                        '<span>Длительность</span><b>' + escapeHtml112(formatRuntime112(runtime)) + '</b>' +
+                    '</div>'
+                );
+            }
+
+            var budgetText = formatMoney112(movie.budget);
+            var revenueText = formatMoney112(movie.revenue);
+
+            if (budgetText) {
+                extraItems.push(
+                    '<div class="kp-rating-modal-info-item">' +
+                        '<span>Бюджет</span><b>' + escapeHtml112(budgetText) + '</b>' +
+                    '</div>'
+                );
+            }
+
+            if (revenueText) {
+                extraItems.push(
+                    '<div class="kp-rating-modal-info-item">' +
+                        '<span>Сборы</span><b>' + escapeHtml112(revenueText) + '</b>' +
+                    '</div>'
+                );
+            }
+        }
 
         var logo = isKP
             ? 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMzkwIDk2MCAxODAiPjxwYXRoIGZpbGw9IiNmNTAiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTM0NS44Niw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00Ny45OSw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk0zOTMuODYsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzVjLS4wNCwyMy44Nyw1LjExLDQ0LjM1LDE3LjEyLDQ0LjM1Wk0yNi45OSw0MjAuMzR2MzIuNDNoMS43bDIyLjI3LTMyLjQzaDMwLjgzbC00MS4xNCwzNy41MiwxLjcsMS43LDc1LjQzLTM5LjI2djI3LjMxbC02Ni44NywyMy44N3YxLjY5bDY2Ljg3LTUuOTZ2MjUuNjFsLTY2Ljg3LTUuOTZ2MS43bDY2Ljg3LDIzLjg3djI3LjMxbC03NS40My0zOS4yNy0xLjcsMS43LDQxLjE0LDM3LjUyaC0zMC44M2wtMjIuMjctMzIuNDNoLTEuN3YzMi40M0g0Ljcxdi0xMTkuNDRoMjIuMjd2LjA4Wk0xMzguNDUsNDIwLjM0aDI5LjE0bC0xLjcsNzEuNjZoMS43bDM0LjI4LTcxLjY2aDI1LjcydjExOS40NGgtMjkuMTNsMS43LTcxLjY2aC0xLjdsLTM0LjMsNzEuNjdoLTI1Ljcydi0xMTkuNDVoMFpNMjc3LjI5LDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI5LjEzdi01Mi45MmgyMy45OHY1Mi45MmgyOS4xM3YtMTE5LjQ0aC0yOS4xM3Y0Ni4wOWgtMjMuOTh2LTQ2LjA5Wk01MzkuNTYsNDIwLjM0aC04Mi4yNXYxMTkuNDRoMjkuMTR2LTk4Ljk3aDIzLjk4djk4Ljk3aDI5LjEzdi0xMTkuNDRaTTU1NC45OCw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00OCw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk02MDIuOTgsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzUsNS4xMSw0NC4zNSwxNy4xMiw0NC4zNVpNNjk1LjUzLDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI1LjcybDM0LjI5LTcxLjY2aDEuN2wtMS43LDcxLjY2aDI5LjEzdi0xMTkuNDRoLTI1LjcybC0zNC4yOSw3MS42NmgtMS43bDEuNy03MS42NlpNODMyLjcxLDQ5OC44M2wyNy40MywzLjM5Yy01LjE1LDIzLjg4LTE3LjEyLDM5LjI2LTQyLjY4LDM5LjI2LTMwLjgzLDAtNDYuNDYtMjcuMy00Ni40Ni02MS40NHMxNS41OS02MS40NCw0Ni40Ni02MS40NGMyNS4wMiwwLDM3LjUzLDE1LjM1LDQyLjY4LDM3LjUzbC0yNy40Myw2LjgyYy0xLjctMTEuOTYtNi42OS0yNy4zLTE1LjI2LTI3LjMtMTAuMjYsMC0xNS41OSwyMC40OC0xNS41OSw0NC4zNXM1LjMyLDQ0LjM1LDE1LjU5LDQ0LjM1YzguNC4wOSwxMy41LTEzLjU3LDE1LjI2LTI1LjUzWk05MDEuMjgsNDIwLjM1aC0yNy40M3YxMTkuNDRoMjcuNDN2LTUyLjkyaDEuN2wyMC41Nyw1Mi45MmgzMS43MWwtMzAuMDEtNjEuNDQsMjkuMTMtNTguMDFoLTI5LjEzbC0yMi4yNyw1Mi45MmgtMS43di01Mi45MmgwWiIvPjwvc3ZnPg=='
             : 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/tmdb.svg';
 
-        var brandClass = isKP ? 'kp' : 'tmdb';
         var votesHtml = votes
-            ? '<strong>' + escapeHtml111(votes) + '</strong><span>голосов</span>'
+            ? '<strong>' + escapeHtml112(votes) + '</strong><span>голосов</span>'
             : '';
 
         var cardHtml =
-            '<div class="kp-rating-modal-card kp-rating-modal-card--' + brandClass + '">' +
+            '<div class="kp-rating-modal-card kp-rating-modal-card--' + (isKP ? 'kp' : 'tmdb') + '">' +
                 '<div class="kp-rating-modal-top">' +
-                    '<div class="kp-rating-modal-brand">' +
-                        '<img src="' + logo + '" alt="' + (isKP ? 'КиноПоиск' : 'TMDB') + '">' +
-                    '</div>' +
-                    '<span class="kp-rating-modal-quality">' + escapeHtml111(quality) + '</span>' +
+                    '<div class="kp-rating-modal-brand"><img src="' + logo + '" alt="' + (isKP ? 'КиноПоиск' : 'TMDB') + '"></div>' +
+                    '<span class="kp-rating-modal-quality">' + escapeHtml112(quality) + '</span>' +
                 '</div>' +
                 '<div class="kp-rating-modal-main">' +
                     '<div class="kp-rating-modal-score"><span>' + rating.toFixed(1) + '</span><small>/10</small></div>' +
@@ -328,18 +463,23 @@
             '<div class="kp-rating-modal-page">' +
                 '<div class="kp-rating-modal-hero">' +
                     cardHtml +
-                    '<div class="kp-rating-modal-title">' + escapeHtml111(title) + '</div>' +
-                    (original && original !== title ? '<div class="kp-rating-modal-original">' + escapeHtml111(original) + '</div>' : '') +
-                    (meta ? '<div class="kp-rating-modal-meta">' + escapeHtml111(meta) + '</div>' : '') +
+                    '<div class="kp-rating-modal-title">' + escapeHtml112(title) + '</div>' +
+                    (original && original !== title ? '<div class="kp-rating-modal-original">' + escapeHtml112(original) + '</div>' : '') +
+                    (meta ? '<div class="kp-rating-modal-meta">' + escapeHtml112(meta) + '</div>' : '') +
                 '</div>' +
                 '<div class="kp-rating-modal-body">' +
-                    '<div class="kp-rating-modal-caption">' +
-                        (isKP ? 'Рейтинг КиноПоиска' : 'Рейтинг TMDB') +
-                    '</div>' +
-                    '<div class="kp-rating-modal-text">' +
-                        'Оценка <b>' + rating.toFixed(1) + '</b> из 10' +
-                        (votes ? ' • ' + escapeHtml111(votes) + ' голосов' : '') +
-                    '</div>' +
+                    (overview
+                        ? '<section class="kp-rating-modal-section"><div class="kp-rating-modal-section-title">О фильме</div><div class="kp-rating-modal-overview">' + escapeHtml112(overview) + '</div></section>'
+                        : '') +
+                    (extraItems.length
+                        ? '<section class="kp-rating-modal-section"><div class="kp-rating-modal-section-title">Дополнительно</div><div class="kp-rating-modal-info-grid">' + extraItems.join('') + '</div></section>'
+                        : '') +
+                    '<section class="kp-rating-modal-section kp-rating-modal-summary">' +
+                        '<div class="kp-rating-modal-section-title">' + (isKP ? 'Рейтинг КиноПоиска' : 'Рейтинг TMDB') + '</div>' +
+                        '<div class="kp-rating-modal-text">Оценка <b>' + rating.toFixed(1) + '</b> из 10' +
+                        (votes ? ' • ' + escapeHtml112(votes) + ' голосов' : '') +
+                        '</div>' +
+                    '</section>' +
                 '</div>' +
             '</div>';
 
@@ -363,7 +503,6 @@
         setTimeout(function () {
             var modal = $('.kp-rating-modal-page').last();
             if (!modal.length) return;
-
             modal.find('.kp-rating-modal-bar i').css({
                 width: percent + '%',
                 transition: 'width .75s cubic-bezier(.22,.61,.36,1)'
@@ -371,16 +510,16 @@
         }, 30);
     }
 
-    function bindRatingModal111(render, movie, kpData) {
-        var root = $('.kp-tmdb-ratings-v111', render);
+    function bindRatingModal112(render, movie, kpData) {
+        var root = $('.kp-tmdb-ratings-v112', render);
         if (!root.length) return;
 
-        root.find('.kp-rating-v111').off('hover:enter.kpRatings').on('hover:enter.kpRatings', function () {
-            openRatingModal111('kp', movie, kpData);
+        root.find('.kp-rating-v112').off('hover:enter.kpRatings').on('hover:enter.kpRatings', function () {
+            openRatingModal112('kp', movie, kpData);
         });
 
-        root.find('.tmdb-rating-v111').off('hover:enter.kpRatings').on('hover:enter.kpRatings', function () {
-            openRatingModal111('tmdb', movie, kpData);
+        root.find('.tmdb-rating-v112').off('hover:enter.kpRatings').on('hover:enter.kpRatings', function () {
+            openRatingModal112('tmdb', movie, kpData);
         });
     }
 
@@ -712,7 +851,7 @@
             },
             onChange: function () {
                 cache = {};
-                Lampa.Storage.set('kp_rating_v111', cache);
+                Lampa.Storage.set('kp_rating_v112', cache);
                 Lampa.Noty.show('Кэш КП очищен');
             }
         });
@@ -720,11 +859,11 @@
 
     function start() {
 
-        if (!document.getElementById('kp-ratings-v111-style')) {
+        if (!document.getElementById('kp-ratings-v112-style')) {
             var style = document.createElement('style');
-            style.id = 'kp-ratings-v111-style';
+            style.id = 'kp-ratings-v112-style';
             style.textContent =
-                '@keyframes kpRatingsAppear110{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:translateY(0);}}@keyframes kpRatingsScore110{from{opacity:0;transform:translateY(5px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}.kp-tmdb-ratings-v111{' +
+                '@keyframes kpRatingsAppear110{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:translateY(0);}}@keyframes kpRatingsScore110{from{opacity:0;transform:translateY(5px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}.kp-tmdb-ratings-v112{' +
                     'display:flex!important;' +
                     'align-items:stretch!important;' +
                     'gap:1.1em!important;' +
@@ -732,7 +871,7 @@
                     'margin:.75em 0 .7em!important;' +
                     'box-sizing:border-box!important;' +
                 '}' +
-                '.kp-rating-v111,.tmdb-rating-v111{animation-delay:.08s!important;' +
+                '.kp-rating-v112,.tmdb-rating-v112{animation-delay:.08s!important;' +
                     'display:block!important;' +
                     'flex:1 1 0!important;' +
                     'min-width:0!important;' +
@@ -744,17 +883,17 @@
                     'vertical-align:top!important;' +
                     'overflow:hidden!important;animation:kpRatingsAppear110 .42s cubic-bezier(.22,.61,.36,1) both!important;' +
                 '}' +
-                '.kp-rating-v111{' +
+                '.kp-rating-v112{' +
                     'background:linear-gradient(135deg,rgba(38,32,18,.82),rgba(20,20,20,.96))!important;' +
                     'border:1px solid rgba(245,180,45,.34)!important;' +
                     'box-shadow:0 5px 18px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.05)!important;' +
                 '}' +
-                '.tmdb-rating-v111{' +
+                '.tmdb-rating-v112{' +
                     'background:linear-gradient(135deg,rgba(7,37,55,.96),rgba(8,20,30,.98))!important;' +
                     'border:1px solid rgba(1,180,228,.42)!important;' +
                     'box-shadow:0 5px 18px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.05)!important;' +
                 '}' +
-                '.kp-rating-v111__top,.tmdb-rating-v111__top{' +
+                '.kp-rating-v112__top,.tmdb-rating-v112__top{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'justify-content:space-between!important;' +
@@ -762,13 +901,13 @@
                     'height:1.25em!important;' +
                     'margin-bottom:.25em!important;' +
                 '}' +
-                '.kp-rating-v111__brand,.tmdb-rating-v111__brand{' +
+                '.kp-rating-v112__brand,.tmdb-rating-v112__brand{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'height:1.15em!important;' +
                     'min-width:0!important;' +
                 '}' +
-                '.kp-rating-v111__logo{' +
+                '.kp-rating-v112__logo{' +
                     'display:block!important;' +
                     'width:9.2em!important;' +
                     'height:1.05em!important;' +
@@ -776,80 +915,80 @@
                     'object-position:left center!important;' +
                     'filter:drop-shadow(0 0 5px rgba(255,85,0,.16))!important;' +
                 '}' +
-                '.tmdb-rating-v111__logo{' +
+                '.tmdb-rating-v112__logo{' +
                     'display:block!important;' +
                     'width:5.8em!important;' +
                     'height:1.35em!important;' +
                     'object-fit:contain!important;' +
                     'object-position:left center!important;' +
                 '}' +
-                '.kp-rating-v111__quality,.tmdb-rating-v111__quality{' +
+                '.kp-rating-v112__quality,.tmdb-rating-v112__quality{' +
                     'font-size:.68em!important;' +
                     'font-weight:600!important;' +
                     'color:rgba(255,255,255,.58)!important;' +
                     'white-space:nowrap!important;' +
                 '}' +
-                '.tmdb-rating-v111__quality{' +
+                '.tmdb-rating-v112__quality{' +
                     'color:rgba(1,180,228,.88)!important;' +
                 '}' +
-                '.kp-rating-v111__main,.tmdb-rating-v111__main{' +
+                '.kp-rating-v112__main,.tmdb-rating-v112__main{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'justify-content:flex-start!important;' +
                     'gap:1.05em!important;' +
                 '}' +
-                '.kp-rating-v111__score,.tmdb-rating-v111__score{' +
+                '.kp-rating-v112__score,.tmdb-rating-v112__score{' +
                     'display:flex!important;' +
                     'align-items:baseline!important;' +
                     'white-space:nowrap!important;' +
                 '}' +
-                '.kp-rating-v111__score span,.tmdb-rating-v111__score span{' +
+                '.kp-rating-v112__score span,.tmdb-rating-v112__score span{' +
                     'animation:kpRatingsScore110 .48s .10s both!important;' +
                     'font-size:2em!important;' +
                     'font-weight:800!important;' +
                     'letter-spacing:-.035em!important;' +
                     'line-height:1!important;' +
                 '}' +
-                '.kp-rating-v111__score small,.tmdb-rating-v111__score small{' +
+                '.kp-rating-v112__score small,.tmdb-rating-v112__score small{' +
                     'margin-left:.18em!important;' +
                     'font-size:.62em!important;' +
                     'font-weight:500!important;' +
                     'color:rgba(255,255,255,.44)!important;' +
                 '}' +
-                '.kp-rating-v111__votes,.tmdb-rating-v111__votes{' +
+                '.kp-rating-v112__votes,.tmdb-rating-v112__votes{' +
                     'display:flex!important;' +
                     'flex-direction:column!important;' +
                     'line-height:1.15!important;' +
                     'min-width:0!important;' +
                 '}' +
-                '.kp-rating-v111__votes strong,.tmdb-rating-v111__votes strong{' +
+                '.kp-rating-v112__votes strong,.tmdb-rating-v112__votes strong{' +
                     'font-size:.9em!important;' +
                     'font-weight:700!important;' +
                     'color:#fff!important;' +
                 '}' +
-                '.kp-rating-v111__votes span,.tmdb-rating-v111__votes span{' +
+                '.kp-rating-v112__votes span,.tmdb-rating-v112__votes span{' +
                     'margin-top:.16em!important;' +
                     'font-size:.62em!important;' +
                     'color:rgba(255,255,255,.52)!important;' +
                     'white-space:nowrap!important;' +
                 '}' +
-                '.kp-rating-v111__bar,.tmdb-rating-v111__bar{' +
+                '.kp-rating-v112__bar,.tmdb-rating-v112__bar{' +
                     'height:3px!important;' +
                     'margin-top:.65em!important;' +
                     'overflow:hidden!important;' +
                     'border-radius:99px!important;transition:width .8s cubic-bezier(.22,.61,.36,1)!important;' +
                     'background:rgba(255,255,255,.10)!important;' +
                 '}' +
-                '.kp-rating-v111__bar i,.tmdb-rating-v111__bar i{' +
+                '.kp-rating-v112__bar i,.tmdb-rating-v112__bar i{' +
                     'display:block!important;' +
                     'height:100%!important;' +
                     'border-radius:99px!important;' +
                 '}' +
-                '.kp-rating-v111__bar i{' +
+                '.kp-rating-v112__bar i{' +
                     'background:linear-gradient(90deg,#d99419,#ffd35a)!important;' +
                     'box-shadow:0 0 8px rgba(245,184,46,.38)!important;' +
                 '}' +
-                '.tmdb-rating-v111__bar i{' +
+                '.tmdb-rating-v112__bar i{' +
                     'background:linear-gradient(90deg,#01b4e4,#90e7f8)!important;' +
                     'box-shadow:0 0 8px rgba(1,180,228,.38)!important;' +
                 '}' +
@@ -882,13 +1021,23 @@
                 '.kp-rating-modal-body{padding:22px;color:rgba(255,255,255,.82);}' +
                 '.kp-rating-modal-caption{font-size:18px;font-weight:750;margin-bottom:8px;}' +
                 '.kp-rating-modal-text{font-size:15px;color:rgba(255,255,255,.56);}' +
+                '.kp-rating-modal-section{margin-bottom:24px;}' +
+                '.kp-rating-modal-section:last-child{margin-bottom:0;}' +
+                '.kp-rating-modal-section-title{font-size:19px;font-weight:800;line-height:1.2;margin-bottom:9px;color:rgba(255,255,255,.94);}' +
+                '.kp-rating-modal-overview{font-size:16px;line-height:1.55;color:rgba(255,255,255,.72);}' +
+                '.kp-rating-modal-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:rgba(255,255,255,.08);border-radius:.75em;overflow:hidden;}' +
+                '.kp-rating-modal-info-item{display:flex;flex-direction:column;gap:5px;padding:12px 14px;background:rgba(255,255,255,.035);min-width:0;}' +
+                '.kp-rating-modal-info-item span{font-size:12px;color:rgba(255,255,255,.43);}' +
+                '.kp-rating-modal-info-item b{font-size:15px;font-weight:650;color:rgba(255,255,255,.88);word-break:break-word;}' +
+                '.kp-rating-modal-summary{padding-top:4px;}' +
                 '@media (max-width:520px){' +
-                    '.kp-tmdb-ratings-v111{gap:.65em!important;}' +
-                    '.kp-rating-v111,.tmdb-rating-v111{padding:.68em .65em .65em!important;}' +
-                    '.kp-rating-v111__logo{width:7.2em!important;}' +
-                    '.tmdb-rating-v111__logo{width:5em!important;}' +
-                    '.kp-rating-v111__score span,.tmdb-rating-v111__score span{font-size:1.7em!important;}' +
-                    '.kp-rating-v111__main,.tmdb-rating-v111__main{gap:.55em!important;}' +
+                '.kp-rating-modal-info-grid{grid-template-columns:1fr!important;}' +
+                    '.kp-tmdb-ratings-v112{gap:.65em!important;}' +
+                    '.kp-rating-v112,.tmdb-rating-v112{padding:.68em .65em .65em!important;}' +
+                    '.kp-rating-v112__logo{width:7.2em!important;}' +
+                    '.tmdb-rating-v112__logo{width:5em!important;}' +
+                    '.kp-rating-v112__score span,.tmdb-rating-v112__score span{font-size:1.7em!important;}' +
+                    '.kp-rating-v112__main,.tmdb-rating-v112__main{gap:.55em!important;}' +
                 '}';
             document.head.appendChild(style);
         }
@@ -900,7 +1049,7 @@
 
             var render = e.object.activity.render();
 
-            if ($('.kp-rating-v111', render).length) return;
+            if ($('.kp-rating-v112', render).length) return;
 
             var movie = e.data && e.data.movie;
 
@@ -909,7 +1058,7 @@
             inject(movie);
         });
 
-        console.log('[KP Ratings] v1.1.1 started');
+        console.log('[KP Ratings] v1.1.2 started');
     }
 
     function boot() {
