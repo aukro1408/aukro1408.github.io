@@ -1,11 +1,11 @@
 (function () {
     'use strict';
 
-    if (window.kp_ratings_plugin_v115) return;
-    window.kp_ratings_plugin_v115 = true;
+    if (window.kp_ratings_plugin_v116) return;
+    window.kp_ratings_plugin_v116 = true;
 
     var NAME = 'KP Ratings';
-    var SETTINGS = 'kp_ratings_settings_v115';
+    var SETTINGS = 'kp_ratings_settings_v116';
 
     var cfg = Object.assign({
         enabled: true,
@@ -20,7 +20,7 @@
         Lampa.Storage.get(SETTINGS, {}) || {}
     ));
 
-    var cache = Lampa.Storage.cache('kp_rating_v115', 500, {});
+    var cache = Lampa.Storage.cache('kp_rating_v116', 500, {});
 
     try {
         var oldCache100 = Lampa.Storage.cache('kp_rating_v100', 500, {});
@@ -147,7 +147,7 @@
         };
 
         cache[key] = item;
-        Lampa.Storage.set('kp_rating_v115', cache);
+        Lampa.Storage.set('kp_rating_v116', cache);
 
         return item;
     }
@@ -160,7 +160,7 @@
 
         if (Date.now() - Number(item.timestamp || 0) > ttl) {
             delete cache[key];
-            Lampa.Storage.set('kp_rating_v115', cache);
+            Lampa.Storage.set('kp_rating_v116', cache);
             return null;
         }
 
@@ -205,7 +205,7 @@
         var render = active && active.activity && active.activity.render();
         if (!render) return;
 
-        $('.kp-tmdb-ratings-v115', render).remove();
+        $('.kp-tmdb-ratings-v116', render).remove();
 
         var kpValue = kp.toFixed(1);
         var kpVotes = formatVotes(kpData.votes);
@@ -218,42 +218,42 @@
             var tmdbPercent = Math.max(0, Math.min(100, tmdb * 10));
             var tmdbVotesText = formatVotes(tmdbVotes);
             tmdbBlock =
-                '<div class="tmdb-rating-v115 selector">' +
-                    '<div class="tmdb-rating-v115__top">' +
-                        '<div class="tmdb-rating-v115__brand">' +
-                            '<img class="tmdb-rating-v115__logo" src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/tmdb.svg" alt="TMDB">' +
+                '<div class="tmdb-rating-v116 selector">' +
+                    '<div class="tmdb-rating-v116__top">' +
+                        '<div class="tmdb-rating-v116__brand">' +
+                            '<img class="tmdb-rating-v116__logo" src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/tmdb.svg" alt="TMDB">' +
                         '</div>' +
-                        '<span class="tmdb-rating-v115__quality">' + qualityText(tmdb) + '</span>' +
+                        '<span class="tmdb-rating-v116__quality">' + qualityText(tmdb) + '</span>' +
                     '</div>' +
-                    '<div class="tmdb-rating-v115__main">' +
-                        '<div class="tmdb-rating-v115__score"><span>' + tmdbValue + '</span><small>/10</small></div>' +
-                        '<div class="tmdb-rating-v115__votes">' +
+                    '<div class="tmdb-rating-v116__main">' +
+                        '<div class="tmdb-rating-v116__score"><span>' + tmdbValue + '</span><small>/10</small></div>' +
+                        '<div class="tmdb-rating-v116__votes">' +
                             (tmdbVotesText ? '<strong>' + tmdbVotesText + '</strong><span>голосов</span>' : '<span>рейтинг пользователей</span>') +
                         '</div>' +
                     '</div>' +
-                    '<div class="tmdb-rating-v115__bar"><i data-width="' + tmdbPercent + '" style="width:0%"></i></div>' +
+                    '<div class="tmdb-rating-v116__bar"><i data-width="' + tmdbPercent + '" style="width:0%"></i></div>' +
                 '</div>';
         }
 
         var kpBlock =
-            '<div class="kp-rating-v115 selector">' +
-                '<div class="kp-rating-v115__top">' +
-                    '<div class="kp-rating-v115__brand">' +
-                        '<img class="kp-rating-v115__logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMzkwIDk2MCAxODAiPjxwYXRoIGZpbGw9IiNmNTAiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTM0NS44Niw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00Ny45OSw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk0zOTMuODYsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzVjLS4wNCwyMy44Nyw1LjExLDQ0LjM1LDE3LjEyLDQ0LjM1Wk0yNi45OSw0MjAuMzR2MzIuNDNoMS43bDIyLjI3LTMyLjQzaDMwLjgzbC00MS4xNCwzNy41MiwxLjcsMS43LDc1LjQzLTM5LjI2djI3LjMxbC02Ni44NywyMy44N3YxLjY5bDY2Ljg3LTUuOTZ2MjUuNjFsLTY2Ljg3LTUuOTZ2MS43bDY2Ljg3LDIzLjg3djI3LjMxbC03NS40My0zOS4yNy0xLjcsMS43LDQxLjE0LDM3LjUyaC0zMC44M2wtMjIuMjctMzIuNDNoLTEuN3YzMi40M0g0Ljcxdi0xMTkuNDRoMjIuMjd2LjA4Wk0xMzguNDUsNDIwLjM0aDI5LjE0bC0xLjcsNzEuNjZoMS43bDM0LjI4LTcxLjY2aDI1LjcydjExOS40NGgtMjkuMTNsMS43LTcxLjY2aC0xLjdsLTM0LjMsNzEuNjdoLTI1Ljcydi0xMTkuNDVoMFpNMjc3LjI5LDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI5LjEzdi01Mi45MmgyMy45OHY1Mi45MmgyOS4xM3YtMTE5LjQ0aC0yOS4xM3Y0Ni4wOWgtMjMuOTh2LTQ2LjA5Wk01MzkuNTYsNDIwLjM0aC04Mi4yNXYxMTkuNDRoMjkuMTR2LTk4Ljk3aDIzLjk4djk4Ljk3aDI5LjEzdi0xMTkuNDRaTTU1NC45OCw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00OCw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk02MDIuOTgsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzUsNS4xMSw0NC4zNSwxNy4xMiw0NC4zNVpNNjk1LjUzLDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI1LjcybDM0LjI5LTcxLjY2aDEuN2wtMS43LDcxLjY2aDI5LjEzdi0xMTkuNDRoLTI1LjcybC0zNC4yOSw3MS42NmgtMS43bDEuNy03MS42NlpNODMyLjcxLDQ5OC44M2wyNy40MywzLjM5Yy01LjE1LDIzLjg4LTE3LjEyLDM5LjI2LTQyLjY4LDM5LjI2LTMwLjgzLDAtNDYuNDYtMjcuMy00Ni40Ni02MS40NHMxNS41OS02MS40NCw0Ni40Ni02MS40NGMyNS4wMiwwLDM3LjUzLDE1LjM1LDQyLjY4LDM3LjUzbC0yNy40Myw2LjgyYy0xLjctMTEuOTYtNi42OS0yNy4zLTE1LjI2LTI3LjMtMTAuMjYsMC0xNS41OSwyMC40OC0xNS41OSw0NC4zNXM1LjMyLDQ0LjM1LDE1LjU5LDQ0LjM1YzguNC4wOSwxMy41LTEzLjU3LDE1LjI2LTI1LjUzWk05MDEuMjgsNDIwLjM1aC0yNy40M3YxMTkuNDRoMjcuNDN2LTUyLjkyaDEuN2wyMC41Nyw1Mi45MmgzMS43MWwtMzAuMDEtNjEuNDQsMjkuMTMtNTguMDFoLTI5LjEzbC0yMi4yNyw1Mi45MmgtMS43di01Mi45MmgwWiIvPjwvc3ZnPg==" alt="КиноПоиск">' +
+            '<div class="kp-rating-v116 selector">' +
+                '<div class="kp-rating-v116__top">' +
+                    '<div class="kp-rating-v116__brand">' +
+                        '<img class="kp-rating-v116__logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMzkwIDk2MCAxODAiPjxwYXRoIGZpbGw9IiNmNTAiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTM0NS44Niw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00Ny45OSw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk0zOTMuODYsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzVjLS4wNCwyMy44Nyw1LjExLDQ0LjM1LDE3LjEyLDQ0LjM1Wk0yNi45OSw0MjAuMzR2MzIuNDNoMS43bDIyLjI3LTMyLjQzaDMwLjgzbC00MS4xNCwzNy41MiwxLjcsMS43LDc1LjQzLTM5LjI2djI3LjMxbC02Ni44NywyMy44N3YxLjY5bDY2Ljg3LTUuOTZ2MjUuNjFsLTY2Ljg3LTUuOTZ2MS43bDY2Ljg3LDIzLjg3djI3LjMxbC03NS40My0zOS4yNy0xLjcsMS43LDQxLjE0LDM3LjUyaC0zMC44M2wtMjIuMjctMzIuNDNoLTEuN3YzMi40M0g0Ljcxdi0xMTkuNDRoMjIuMjd2LjA4Wk0xMzguNDUsNDIwLjM0aDI5LjE0bC0xLjcsNzEuNjZoMS43bDM0LjI4LTcxLjY2aDI1LjcydjExOS40NGgtMjkuMTNsMS43LTcxLjY2aC0xLjdsLTM0LjMsNzEuNjdoLTI1Ljcydi0xMTkuNDVoMFpNMjc3LjI5LDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI5LjEzdi01Mi45MmgyMy45OHY1Mi45MmgyOS4xM3YtMTE5LjQ0aC0yOS4xM3Y0Ni4wOWgtMjMuOTh2LTQ2LjA5Wk01MzkuNTYsNDIwLjM0aC04Mi4yNXYxMTkuNDRoMjkuMTR2LTk4Ljk3aDIzLjk4djk4Ljk3aDI5LjEzdi0xMTkuNDRaTTU1NC45OCw0ODAuMDRjMC0zNC4xMywxNy4xMi02MS40NCw0OC02MS40NHM0OCwyNy4zMSw0OCw2MS40NC0xNy4xMiw2MS40NC00OCw2MS40NC00OC0yNy4zLTQ4LTYxLjQ0Wk02MDIuOTgsNTI0LjQ0YzEyLjAxLDAsMTcuMTItMjAuNDgsMTcuMTItNDQuMzVzLTUuMTUtNDQuMzUtMTcuMTItNDQuMzUtMTcuMTIsMjAuNDgtMTcuMTIsNDQuMzUsNS4xMSw0NC4zNSwxNy4xMiw0NC4zNVpNNjk1LjUzLDQyMC4zNGgtMjkuMTN2MTE5LjQ0aDI1LjcybDM0LjI5LTcxLjY2aDEuN2wtMS43LDcxLjY2aDI5LjEzdi0xMTkuNDRoLTI1LjcybC0zNC4yOSw3MS42NmgtMS43bDEuNy03MS42NlpNODMyLjcxLDQ5OC44M2wyNy40MywzLjM5Yy01LjE1LDIzLjg4LTE3LjEyLDM5LjI2LTQyLjY4LDM5LjI2LTMwLjgzLDAtNDYuNDYtMjcuMy00Ni40Ni02MS40NHMxNS41OS02MS40NCw0Ni40Ni02MS40NGMyNS4wMiwwLDM3LjUzLDE1LjM1LDQyLjY4LDM3LjUzbC0yNy40Myw2LjgyYy0xLjctMTEuOTYtNi42OS0yNy4zLTE1LjI2LTI3LjMtMTAuMjYsMC0xNS41OSwyMC40OC0xNS41OSw0NC4zNXM1LjMyLDQ0LjM1LDE1LjU5LDQ0LjM1YzguNC4wOSwxMy41LTEzLjU3LDE1LjI2LTI1LjUzWk05MDEuMjgsNDIwLjM1aC0yNy40M3YxMTkuNDRoMjcuNDN2LTUyLjkyaDEuN2wyMC41Nyw1Mi45MmgzMS43MWwtMzAuMDEtNjEuNDQsMjkuMTMtNTguMDFoLTI5LjEzbC0yMi4yNyw1Mi45MmgtMS43di01Mi45MmgwWiIvPjwvc3ZnPg==" alt="КиноПоиск">' +
                     '</div>' +
-                    '<span class="kp-rating-v115__quality">' + kpQuality + '</span>' +
+                    '<span class="kp-rating-v116__quality">' + kpQuality + '</span>' +
                 '</div>' +
-                '<div class="kp-rating-v115__main">' +
-                    '<div class="kp-rating-v115__score"><span>' + kpValue + '</span><small>/10</small></div>' +
-                    '<div class="kp-rating-v115__votes">' +
+                '<div class="kp-rating-v116__main">' +
+                    '<div class="kp-rating-v116__score"><span>' + kpValue + '</span><small>/10</small></div>' +
+                    '<div class="kp-rating-v116__votes">' +
                         (kpVotes ? '<strong>' + kpVotes + '</strong><span>голосов</span>' : '') +
                     '</div>' +
                 '</div>' +
-                '<div class="kp-rating-v115__bar"><i data-width="' + kpPercent + '" style="width:0%"></i></div>' +
+                '<div class="kp-rating-v116__bar"><i data-width="' + kpPercent + '" style="width:0%"></i></div>' +
             '</div>';
 
-        var block = '<div class="kp-tmdb-ratings-v115">' + kpBlock + tmdbBlock + '</div>';
-        function animateBars112(root) {var bars = $('.kp-rating-v115__bar i,.tmdb-rating-v115__bar i', root);if (!bars.length) return;requestAnimationFrame(function () {requestAnimationFrame(function () {bars.each(function () {var width = $(this).attr('data-width') || '0';$(this).css({width: width + '%', transition: 'width .8s cubic-bezier(.22,.61,.36,1)'});});});});}var info = $('.info__rate', render);
+        var block = '<div class="kp-tmdb-ratings-v116">' + kpBlock + tmdbBlock + '</div>';
+        function animateBars112(root) {var bars = $('.kp-rating-v116__bar i,.tmdb-rating-v116__bar i', root);if (!bars.length) return;requestAnimationFrame(function () {requestAnimationFrame(function () {bars.each(function () {var width = $(this).attr('data-width') || '0';$(this).css({width: width + '%', transition: 'width .8s cubic-bezier(.22,.61,.36,1)'});});});});}var info = $('.info__rate', render);
         if (info.length) { info.after(block); animateBars112(render); bindRatingModal112(render, movie, kpData); return; }
         var rates = $('.full-start-new__rates', render);
         if (!rates.length) rates = $('.full-start__rates', render);
@@ -783,7 +783,8 @@
             '</div>';
 
         var html =
-            '<div class="kp-rating-modal-page">' +
+            '<div class="kp-rating-modal-page kp-rating-modal-page--' + (isKP ? 'kp' : 'tmdb') + '">' +
+                '<div class="kp-rating-modal-close selector" role="button" aria-label="Закрыть" tabindex="0"><span></span></div>' +
                 '<div class="kp-rating-modal-hero">' +
                     cardHtml +
                     '<div class="kp-rating-modal-title">' + escapeHtml112(title) + '</div>' +
@@ -853,6 +854,15 @@
 
 
             if (!modal.length) return;
+
+            modal.find('.kp-rating-modal-close').on('hover:enter click', function (event) {
+                if (event && event.preventDefault) event.preventDefault();
+                Lampa.Modal.close();
+                if (controllerName) {
+                    try { Lampa.Controller.toggle(controllerName); } catch (e) {}
+                }
+            });
+
             modal.find('.kp-rating-modal-bar i').css({
                 width: percent + '%',
                 transition: 'width .75s cubic-bezier(.22,.61,.36,1)'
@@ -861,14 +871,14 @@
     }
 
     function bindRatingModal112(render, movie, kpData) {
-        var root = $('.kp-tmdb-ratings-v115', render);
+        var root = $('.kp-tmdb-ratings-v116', render);
         if (!root.length) return;
 
-        root.find('.kp-rating-v115').off('hover:enter.kpRatings').on('hover:enter.kpRatings', function () {
+        root.find('.kp-rating-v116').off('hover:enter.kpRatings').on('hover:enter.kpRatings', function () {
             openRatingModal112('kp', movie, kpData);
         });
 
-        root.find('.tmdb-rating-v115').off('hover:enter.kpRatings').on('hover:enter.kpRatings', function () {
+        root.find('.tmdb-rating-v116').off('hover:enter.kpRatings').on('hover:enter.kpRatings', function () {
             openRatingModal112('tmdb', movie, kpData);
         });
     }
@@ -1201,7 +1211,7 @@
             },
             onChange: function () {
                 cache = {};
-                Lampa.Storage.set('kp_rating_v115', cache);
+                Lampa.Storage.set('kp_rating_v116', cache);
                 Lampa.Noty.show('Кэш КП очищен');
             }
         });
@@ -1209,11 +1219,11 @@
 
     function start() {
 
-        if (!document.getElementById('kp-ratings-v115-style')) {
+        if (!document.getElementById('kp-ratings-v116-style')) {
             var style = document.createElement('style');
-            style.id = 'kp-ratings-v115-style';
+            style.id = 'kp-ratings-v116-style';
             style.textContent =
-                '@keyframes kpRatingsAppear110{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:translateY(0);}}@keyframes kpRatingsScore110{from{opacity:0;transform:translateY(5px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}.kp-tmdb-ratings-v115{' +
+                '@keyframes kpRatingsAppear110{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:translateY(0);}}@keyframes kpRatingsScore110{from{opacity:0;transform:translateY(5px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}.kp-tmdb-ratings-v116{' +
                     'display:flex!important;' +
                     'align-items:stretch!important;' +
                     'gap:1.1em!important;' +
@@ -1221,7 +1231,7 @@
                     'margin:.75em 0 .7em!important;' +
                     'box-sizing:border-box!important;' +
                 '}' +
-                '.kp-rating-v115,.tmdb-rating-v115{animation-delay:.08s!important;' +
+                '.kp-rating-v116,.tmdb-rating-v116{animation-delay:.08s!important;' +
                     'display:block!important;' +
                     'flex:1 1 0!important;' +
                     'min-width:0!important;' +
@@ -1233,17 +1243,17 @@
                     'vertical-align:top!important;' +
                     'overflow:hidden!important;animation:kpRatingsAppear110 .42s cubic-bezier(.22,.61,.36,1) both!important;' +
                 '}' +
-                '.kp-rating-v115{' +
+                '.kp-rating-v116{' +
                     'background:linear-gradient(135deg,rgba(38,32,18,.82),rgba(20,20,20,.96))!important;' +
                     'border:1px solid rgba(245,180,45,.34)!important;' +
                     'box-shadow:0 5px 18px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.05)!important;' +
                 '}' +
-                '.tmdb-rating-v115{' +
+                '.tmdb-rating-v116{' +
                     'background:linear-gradient(135deg,rgba(7,37,55,.96),rgba(8,20,30,.98))!important;' +
                     'border:1px solid rgba(1,180,228,.42)!important;' +
                     'box-shadow:0 5px 18px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.05)!important;' +
                 '}' +
-                '.kp-rating-v115__top,.tmdb-rating-v115__top{' +
+                '.kp-rating-v116__top,.tmdb-rating-v116__top{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'justify-content:space-between!important;' +
@@ -1251,13 +1261,13 @@
                     'height:1.25em!important;' +
                     'margin-bottom:.25em!important;' +
                 '}' +
-                '.kp-rating-v115__brand,.tmdb-rating-v115__brand{' +
+                '.kp-rating-v116__brand,.tmdb-rating-v116__brand{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'height:1.15em!important;' +
                     'min-width:0!important;' +
                 '}' +
-                '.kp-rating-v115__logo{' +
+                '.kp-rating-v116__logo{' +
                     'display:block!important;' +
                     'width:9.2em!important;' +
                     'height:1.05em!important;' +
@@ -1265,85 +1275,96 @@
                     'object-position:left center!important;' +
                     'filter:drop-shadow(0 0 5px rgba(255,85,0,.16))!important;' +
                 '}' +
-                '.tmdb-rating-v115__logo{' +
+                '.tmdb-rating-v116__logo{' +
                     'display:block!important;' +
                     'width:5.8em!important;' +
                     'height:1.35em!important;' +
                     'object-fit:contain!important;' +
                     'object-position:left center!important;' +
                 '}' +
-                '.kp-rating-v115__quality,.tmdb-rating-v115__quality{' +
+                '.kp-rating-v116__quality,.tmdb-rating-v116__quality{' +
                     'font-size:.68em!important;' +
                     'font-weight:600!important;' +
                     'color:rgba(255,255,255,.58)!important;' +
                     'white-space:nowrap!important;' +
                 '}' +
-                '.tmdb-rating-v115__quality{' +
+                '.tmdb-rating-v116__quality{' +
                     'color:rgba(1,180,228,.88)!important;' +
                 '}' +
-                '.kp-rating-v115__main,.tmdb-rating-v115__main{' +
+                '.kp-rating-v116__main,.tmdb-rating-v116__main{' +
                     'display:flex!important;' +
                     'align-items:center!important;' +
                     'justify-content:flex-start!important;' +
                     'gap:1.05em!important;' +
                 '}' +
-                '.kp-rating-v115__score,.tmdb-rating-v115__score{' +
+                '.kp-rating-v116__score,.tmdb-rating-v116__score{' +
                     'display:flex!important;' +
                     'align-items:baseline!important;' +
                     'white-space:nowrap!important;' +
                 '}' +
-                '.kp-rating-v115__score span,.tmdb-rating-v115__score span{' +
+                '.kp-rating-v116__score span,.tmdb-rating-v116__score span{' +
                     'animation:kpRatingsScore110 .48s .10s both!important;' +
                     'font-size:2em!important;' +
                     'font-weight:800!important;' +
                     'letter-spacing:-.035em!important;' +
                     'line-height:1!important;' +
                 '}' +
-                '.kp-rating-v115__score small,.tmdb-rating-v115__score small{' +
+                '.kp-rating-v116__score small,.tmdb-rating-v116__score small{' +
                     'margin-left:.18em!important;' +
                     'font-size:.62em!important;' +
                     'font-weight:500!important;' +
                     'color:rgba(255,255,255,.44)!important;' +
                 '}' +
-                '.kp-rating-v115__votes,.tmdb-rating-v115__votes{' +
+                '.kp-rating-v116__votes,.tmdb-rating-v116__votes{' +
                     'display:flex!important;' +
                     'flex-direction:column!important;' +
                     'line-height:1.15!important;' +
                     'min-width:0!important;' +
                 '}' +
-                '.kp-rating-v115__votes strong,.tmdb-rating-v115__votes strong{' +
+                '.kp-rating-v116__votes strong,.tmdb-rating-v116__votes strong{' +
                     'font-size:.9em!important;' +
                     'font-weight:700!important;' +
                     'color:#fff!important;' +
                 '}' +
-                '.kp-rating-v115__votes span,.tmdb-rating-v115__votes span{' +
+                '.kp-rating-v116__votes span,.tmdb-rating-v116__votes span{' +
                     'margin-top:.16em!important;' +
                     'font-size:.62em!important;' +
                     'color:rgba(255,255,255,.52)!important;' +
                     'white-space:nowrap!important;' +
                 '}' +
-                '.kp-rating-v115__bar,.tmdb-rating-v115__bar{' +
+                '.kp-rating-v116__bar,.tmdb-rating-v116__bar{' +
                     'height:3px!important;' +
                     'margin-top:.65em!important;' +
                     'overflow:hidden!important;' +
                     'border-radius:99px!important;transition:width .8s cubic-bezier(.22,.61,.36,1)!important;' +
                     'background:rgba(255,255,255,.10)!important;' +
                 '}' +
-                '.kp-rating-v115__bar i,.tmdb-rating-v115__bar i{' +
+                '.kp-rating-v116__bar i,.tmdb-rating-v116__bar i{' +
                     'display:block!important;' +
                     'height:100%!important;' +
                     'border-radius:99px!important;' +
                 '}' +
-                '.kp-rating-v115__bar i{' +
+                '.kp-rating-v116__bar i{' +
                     'background:linear-gradient(90deg,#d99419,#ffd35a)!important;' +
                     'box-shadow:0 0 8px rgba(245,184,46,.38)!important;' +
                 '}' +
-                '.tmdb-rating-v115__bar i{' +
+                '.tmdb-rating-v116__bar i{' +
                     'background:linear-gradient(90deg,#01b4e4,#90e7f8)!important;' +
                     'box-shadow:0 0 8px rgba(1,180,228,.38)!important;' +
                 '}' +
 
-                '.kp-rating-modal-page{background:#151718;color:#fff;min-height:100%;overflow:hidden;box-sizing:border-box;}' +
+                /* Круглый крестик закрытия: КП — золотой, TMDB — фирменный голубой */
+                '.kp-rating-modal-page{position:relative;background:#151718;color:#fff;min-height:100%;overflow:hidden;box-sizing:border-box;}' +
+                '.kp-rating-modal-close{position:absolute;top:14px;right:14px;z-index:100;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-sizing:border-box;cursor:pointer;background:rgba(12,15,17,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:transform .15s ease,background .15s ease,box-shadow .15s ease;}' +
+                '.kp-rating-modal-page--kp .kp-rating-modal-close{border:2px solid #f5b42d;color:#f5b42d;box-shadow:0 0 14px rgba(245,180,45,.22);}' +
+                '.kp-rating-modal-page--tmdb .kp-rating-modal-close{border:2px solid #01b4e4;color:#01b4e4;box-shadow:0 0 14px rgba(1,180,228,.22);}' +
+                '.kp-rating-modal-close span,.kp-rating-modal-close span:before{position:absolute;width:17px;height:2.5px;border-radius:3px;background:currentColor;content:"";display:block;}' +
+                '.kp-rating-modal-close span{transform:rotate(45deg);}' +
+                '.kp-rating-modal-close span:before{transform:rotate(90deg);}' +
+                '.kp-rating-modal-close.focus,.kp-rating-modal-close:hover{transform:scale(1.08);}' +
+                '.kp-rating-modal-page--kp .kp-rating-modal-close.focus,.kp-rating-modal-page--kp .kp-rating-modal-close:hover{background:rgba(245,180,45,.16);box-shadow:0 0 20px rgba(245,180,45,.42);}' +
+                '.kp-rating-modal-page--tmdb .kp-rating-modal-close.focus,.kp-rating-modal-page--tmdb .kp-rating-modal-close:hover{background:rgba(1,180,228,.16);box-shadow:0 0 20px rgba(1,180,228,.40);}' +
+
                 '.kp-rating-modal-hero{position:relative;min-height:250px;padding:22px 22px 24px;display:flex;flex-direction:column;justify-content:flex-end;box-sizing:border-box;background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.07),transparent 60%),linear-gradient(to bottom,#202426 0%,#151718 100%);}' +
                 '.kp-rating-modal-card{width:100%;box-sizing:border-box;border-radius:1em;padding:1.05em 1.15em 1em;color:#fff;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06);animation:kpRatingsScore110 .4s cubic-bezier(.22,.61,.36,1) both;}' +
                 '.kp-rating-modal-card--kp{background:linear-gradient(135deg,rgba(38,32,18,.96),rgba(20,20,20,.98));border:1px solid rgba(245,180,45,.42);}' +
@@ -1413,12 +1434,12 @@
                 '.kp-modal-reviews-error-115{color:rgba(255,255,255,.5);}' +
                 '@media (max-width:520px){' +
                 '.kp-rating-modal-info-grid{grid-template-columns:1fr!important;}' +
-                    '.kp-tmdb-ratings-v115{gap:.65em!important;}' +
-                    '.kp-rating-v115,.tmdb-rating-v115{padding:.68em .65em .65em!important;}' +
-                    '.kp-rating-v115__logo{width:7.2em!important;}' +
-                    '.tmdb-rating-v115__logo{width:5em!important;}' +
-                    '.kp-rating-v115__score span,.tmdb-rating-v115__score span{font-size:1.7em!important;}' +
-                    '.kp-rating-v115__main,.tmdb-rating-v115__main{gap:.55em!important;}' +
+                    '.kp-tmdb-ratings-v116{gap:.65em!important;}' +
+                    '.kp-rating-v116,.tmdb-rating-v116{padding:.68em .65em .65em!important;}' +
+                    '.kp-rating-v116__logo{width:7.2em!important;}' +
+                    '.tmdb-rating-v116__logo{width:5em!important;}' +
+                    '.kp-rating-v116__score span,.tmdb-rating-v116__score span{font-size:1.7em!important;}' +
+                    '.kp-rating-v116__main,.tmdb-rating-v116__main{gap:.55em!important;}' +
                 '}';
             document.head.appendChild(style);
         }
@@ -1430,7 +1451,7 @@
 
             var render = e.object.activity.render();
 
-            if ($('.kp-rating-v115', render).length) return;
+            if ($('.kp-rating-v116', render).length) return;
 
             var movie = e.data && e.data.movie;
 
