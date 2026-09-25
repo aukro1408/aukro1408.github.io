@@ -3404,13 +3404,17 @@
 
         addStyle(`
 
-            body,
+            body {
+
+                background:#f4f3ef !important;
+            }
+
             body .main,
             body .wrap,
             body .content,
             body .activity {
 
-                background:#f4f3ef !important;
+                background:transparent !important;
             }
 
             body {
@@ -3423,7 +3427,7 @@
             body .settings,
             body .menu {
 
-                background:#ebe9e1 !important;
+                background:rgba(244,243,239,.88) !important;
             }
 
             body .selector.focus {
@@ -3499,7 +3503,7 @@
 
                 pointer-events:none;
 
-                z-index:999999;
+                z-index:-1;
 
                 overflow:hidden;
             }
@@ -3572,13 +3576,17 @@
 
         addStyle(`
 
-            body,
+            body {
+
+                background:#050811 !important;
+            }
+
             body .main,
             body .wrap,
             body .content,
             body .activity {
 
-                background:#050811 !important;
+                background:transparent !important;
             }
 
             body {
@@ -3591,7 +3599,7 @@
             body .settings,
             body .menu {
 
-                background:#03050a !important;
+                background:rgba(5,8,17,.88) !important;
             }
 
             body .selector.focus {
@@ -3668,7 +3676,7 @@
 
                 pointer-events:none;
 
-                z-index:999999;
+                z-index:-1;
 
                 overflow:hidden;
             }
@@ -3741,13 +3749,17 @@
 
         addStyle(`
 
-            body,
+            body {
+
+                background:#0b130e !important;
+            }
+
             body .main,
             body .wrap,
             body .content,
             body .activity {
 
-                background:#0b130e !important;
+                background:transparent !important;
             }
 
             body {
@@ -3760,7 +3772,7 @@
             body .settings,
             body .menu {
 
-                background:#070c09 !important;
+                background:rgba(11,19,14,.88) !important;
             }
 
             body .selector.focus {
@@ -3837,7 +3849,7 @@
 
                 pointer-events:none;
 
-                z-index:999999;
+                z-index:-1;
 
                 overflow:hidden;
             }
