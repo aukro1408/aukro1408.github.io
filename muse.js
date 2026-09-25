@@ -382,6 +382,8 @@
             );
         }
 
+        if (typeof PulsBg !== "undefined") PulsBg.stop();
+
         removeSeasonMenuIcon();
     }
 
@@ -490,6 +492,196 @@
 
         document.head.appendChild(style);
     }
+
+
+    // =========================================================
+    // PULS LIVE BACKGROUND
+    // Порт движка BgFx из «Пульса» 1:1:
+    // те же палитры, те же блобы, тот же блур и зерно.
+    // =========================================================
+
+    var PULS_PALETTES = {
+
+        aurora: {
+            bg: '#f4f3ef', dark: false,
+            colors: ['#ff4d30', '#c5d86d', '#70c1ff', '#ffaa4d', '#ff2a6d', '#e2efa8']
+        },
+
+        cyberpunk: {
+            bg: '#050811', dark: true,
+            colors: ['#ff0055', '#00ffe0', '#9d00ff', '#ffb700', '#0077ff', '#ff00aa']
+        },
+
+        forestglow: {
+            bg: '#0b130e', dark: true,
+            colors: ['#059669', '#34d399', '#a3e635', '#f59e0b', '#10b981', '#84cc16']
+        }
+    };
+
+
+    var PulsBg = (function () {
+
+        var canvas = null, ctx = null, wrap = null, noiseEl = null;
+        var W = 0, H = 0;
+        var blobs = [];
+        var raf = 0;
+        var running = false;
+        var bound = false;
+        var palette = null;
+
+        var mouse = { x: -9999, y: -9999, tx: -9999, ty: -9999, active: false };
+
+        var reduced = false;
+        try { reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+        var BLUR = 80, SPEED = 1, NOISE = 5.5, COUNT = 6, MAGNET = true;
+
+        function hexA(hex, a) {
+            var c = hex.replace('#', '');
+            if (c.length === 3) c = c.split('').map(function (x) { return x + x; }).join('');
+            var n = parseInt(c, 16);
+            return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+        }
+
+        function Blob(i, color) {
+            this.i = i;
+            this.color = color;
+            this.spawn();
+        }
+
+        Blob.prototype.spawn = function () {
+            this.x = Math.random() * W;
+            this.y = Math.random() * H;
+            var m = Math.min(W, H);
+            this.r = m * (0.28 + Math.random() * 0.22);
+            this.vx = (Math.random() - .5) * 1.2;
+            this.vy = (Math.random() - .5) * 1.2;
+            this.ph = Math.random() * 6.283;
+            this.ps = .005 + Math.random() * .01;
+            this.ox = 0;
+            this.oy = 0;
+        };
+
+        Blob.prototype.step = function () {
+            this.x += this.vx * SPEED;
+            this.y += this.vy * SPEED;
+            this.ph += this.ps * SPEED;
+            var r = this.r * (1 + Math.sin(this.ph) * .15), mg = r * .5;
+            if (this.x < -mg) { this.x = -mg; this.vx *= -1; }
+            if (this.x > W + mg) { this.x = W + mg; this.vx *= -1; }
+            if (this.y < -mg) { this.y = -mg; this.vy *= -1; }
+            if (this.y > H + mg) { this.y = H + mg; this.vy *= -1; }
+            if (MAGNET && mouse.active) {
+                var dx = mouse.x - this.x, dy = mouse.y - this.y;
+                var d = Math.sqrt(dx * dx + dy * dy), md = Math.max(W, H) * .4;
+                if (d < md && d > 1) {
+                    var f = (1 - d / md) * 35 * (this.i % 2 ? -.6 : 1);
+                    this.ox += ((dx / d) * f - this.ox) * .05;
+                    this.oy += ((dy / d) * f - this.oy) * .05;
+                } else { this.ox *= .95; this.oy *= .95; }
+            } else { this.ox *= .95; this.oy *= .95; }
+        };
+
+        Blob.prototype.draw = function (c) {
+            var x = this.x + this.ox, y = this.y + this.oy;
+            var r = this.r * (1 + Math.sin(this.ph) * .15);
+            var g = c.createRadialGradient(x, y, 0, x, y, r);
+            g.addColorStop(0, hexA(this.color, .8));
+            g.addColorStop(.65, hexA(this.color, .5));
+            g.addColorStop(1, hexA(this.color, 0));
+            c.fillStyle = g;
+            c.beginPath();
+            c.arc(x, y, r, 0, 6.283);
+            c.fill();
+        };
+
+        function size() {
+            var r = wrap.getBoundingClientRect();
+            var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+            W = r.width; H = r.height;
+            canvas.width = Math.round(W * dpr);
+            canvas.height = Math.round(H * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function rebuild() {
+            blobs = [];
+            for (var i = 0; i < COUNT; i++) {
+                blobs.push(new Blob(i, palette.colors[i % palette.colors.length]));
+            }
+        }
+
+        function paint(animate) {
+            mouse.x += (mouse.tx - mouse.x) * .1;
+            mouse.y += (mouse.ty - mouse.y) * .1;
+            ctx.clearRect(0, 0, W, H);
+            for (var i = 0; i < blobs.length; i++) {
+                if (animate) blobs[i].step();
+                blobs[i].draw(ctx);
+            }
+        }
+
+        function frame() {
+            paint(true);
+            raf = requestAnimationFrame(frame);
+        }
+
+        function applyFx() {
+            if (wrap) wrap.style.filter = 'blur(' + BLUR + 'px)';
+            if (noiseEl) noiseEl.style.opacity = (NOISE / 100).toString();
+        }
+
+        function bind() {
+            if (bound) return;
+            bound = true;
+            window.addEventListener('resize', function () {
+                if (running) { size(); applyFx(); }
+            });
+            var move = function (e) {
+                var t = e.touches && e.touches[0];
+                var cx = t ? t.clientX : e.clientX, cy = t ? t.clientY : e.clientY;
+                if (cx == null || !wrap) return;
+                var r = wrap.getBoundingClientRect();
+                mouse.tx = cx - r.left;
+                mouse.ty = cy - r.top;
+                mouse.active = true;
+            };
+            var leave = function () { mouse.active = false; };
+            window.addEventListener('pointermove', move, { passive: true });
+            window.addEventListener('touchmove', move, { passive: true });
+            window.addEventListener('touchstart', move, { passive: true });
+            document.addEventListener('mouseleave', leave);
+            window.addEventListener('touchend', leave);
+            document.addEventListener('visibilitychange', function () {
+                cancelAnimationFrame(raf);
+                if (!document.hidden && running && !reduced) raf = requestAnimationFrame(frame);
+            });
+        }
+
+        return {
+            start: function (layer, pal) {
+                this.stop();
+                bind();
+                palette = pal;
+                wrap = layer.querySelector('.pulsbg-wrap');
+                canvas = layer.querySelector('canvas');
+                noiseEl = layer.querySelector('.pulsbg-noise');
+                if (!wrap || !canvas) return;
+                ctx = canvas.getContext('2d');
+                size();
+                rebuild();
+                applyFx();
+                running = true;
+                cancelAnimationFrame(raf);
+                if (reduced) paint(false);
+                else raf = requestAnimationFrame(frame);
+            },
+            stop: function () {
+                running = false;
+                cancelAnimationFrame(raf);
+            }
+        };
+    })();
 
 
     // =========================================================
@@ -672,75 +864,18 @@
 
 
         // =====================================================
-        // AURORA (Пульс)
+        // ПУЛЬС: Аврора / Киберпанк / Лесное свечение
+        // Живой фон рисует движок PulsBg (canvas), как в «Пульсе».
         // =====================================================
 
-        if (theme === "aurora") {
+        if (theme === "aurora" || theme === "cyberpunk" || theme === "forestglow") {
 
             layer.innerHTML = `
 
-                <div class="au-mist au-mist-1"></div>
-                <div class="au-mist au-mist-2"></div>
-                <div class="au-mist au-mist-3"></div>
-                <div class="au-mist au-mist-4"></div>
-
-                <div class="au-rays"></div>
-
-                <div class="au-sparkles">
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i>
-                </div>
-            `;
-        }
-
-
-        // =====================================================
-        // CYBERPUNK (Пульс)
-        // =====================================================
-
-        if (theme === "cyberpunk") {
-
-            layer.innerHTML = `
-
-                <div class="cb-grid"></div>
-
-                <div class="cb-mist cb-mist-1"></div>
-                <div class="cb-mist cb-mist-2"></div>
-                <div class="cb-mist cb-mist-3"></div>
-
-                <div class="cb-scan"></div>
-
-                <div class="cb-neon">
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i>
-                </div>
-            `;
-        }
-
-
-        // =====================================================
-        // FORESTGLOW (Пульс)
-        // =====================================================
-
-        if (theme === "forestglow") {
-
-            layer.innerHTML = `
-
-                <div class="fg-glow"></div>
-
-                <div class="fg-mist fg-mist-1"></div>
-                <div class="fg-mist fg-mist-2"></div>
-                <div class="fg-mist fg-mist-3"></div>
-
-                <div class="fg-fireflies">
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i>
-                    <i></i><i></i>
+                <div class="pulsbg">
+                    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="pulsNoiseF"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter></svg>
+                    <div class="pulsbg-wrap"><canvas></canvas></div>
+                    <div class="pulsbg-noise"></div>
                 </div>
             `;
         }
@@ -3370,196 +3505,45 @@
             }
 
 
-            .au-mist {
+            .pulsbg {
+
+                position:absolute;
+                inset:0;
+
+                overflow:hidden;
+            }
+
+            .pulsbg-wrap {
 
                 position:absolute;
 
-                width:55vw;
-                height:55vw;
-
-                border-radius:50%;
-
-                filter:blur(90px);
-
-                opacity:.32;
-            }
-
-            .au-mist-1 {
-
-                left:-15vw;
-                top:10vh;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(255,77,48,.55),
-                        transparent 70%
-                    );
-
-                animation: auMist1 26s ease-in-out infinite alternate;
-            }
-
-            .au-mist-2 {
-
-                right:-15vw;
-                top:42vh;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(112,193,255,.55),
-                        transparent 70%
-                    );
-
-                animation: auMist2 33s ease-in-out infinite alternate;
-            }
-
-            .au-mist-3 {
-
-                left:22vw;
-                bottom:-28vw;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(255,42,109,.38),
-                        transparent 70%
-                    );
-
-                animation: auMist3 39s ease-in-out infinite alternate;
-            }
-
-            .au-mist-4 {
-
-                right:8vw;
-                bottom:4vh;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(197,216,109,.5),
-                        transparent 70%
-                    );
-
-                animation: auMist1 45s ease-in-out infinite alternate-reverse;
-            }
-
-            @keyframes auMist1 {
-
-                from {
-                    transform: translate3d(-5vw,0,0) scale(1);
-                }
-
-                to {
-                    transform: translate3d(14vw,8vh,0) scale(1.15);
-                }
-            }
-
-            @keyframes auMist2 {
-
-                from {
-                    transform: translate3d(5vw,-5vh,0) scale(1);
-                }
-
-                to {
-                    transform: translate3d(-14vw,10vh,0) scale(1.2);
-                }
-            }
-
-            @keyframes auMist3 {
-
-                from {
-                    transform: translate3d(0,0,0) scale(1);
-                }
-
-                to {
-                    transform: translate3d(8vw,-12vh,0) scale(1.18);
-                }
-            }
-
-            .au-rays {
-
-                position:absolute;
-
-                left:-20%;
-                top:-12%;
+                inset:-20%;
 
                 width:140%;
-                height:62%;
+                height:140%;
 
-                background:
-                    radial-gradient(
-                        ellipse at center,
-                        rgba(255,170,77,.22),
-                        transparent 65%
-                    );
-
-                filter:blur(42px);
-
-                animation: auRays 30s ease-in-out infinite alternate;
+                will-change:transform,filter;
             }
 
-            @keyframes auRays {
+            .pulsbg-wrap canvas {
 
-                from {
-                    transform: translateX(-6%) rotate(-2deg);
-                }
+                width:100%;
+                height:100%;
 
-                to {
-                    transform: translateX(8%) rotate(3deg);
-                }
+                display:block;
             }
 
-            .au-sparkles i {
+            .pulsbg-noise {
 
                 position:absolute;
+                inset:0;
 
-                width:4px;
-                height:4px;
+                pointer-events:none;
 
-                border-radius:50%;
+                mix-blend-mode:overlay;
 
-                background: rgba(255,122,70,.85);
-
-                box-shadow:
-                    0 0 10px
-                    rgba(255,122,70,.6);
-
-                animation: auSpark linear infinite;
+                filter:url(#pulsNoiseF);
             }
-
-            .au-sparkles i:nth-child(1) { left:6%;  top:92%; animation-duration:23s; animation-delay:-4s; }
-            .au-sparkles i:nth-child(2) { left:14%; top:78%; animation-duration:29s; animation-delay:-11s; }
-            .au-sparkles i:nth-child(3) { left:23%; top:95%; animation-duration:26s; animation-delay:-7s; }
-            .au-sparkles i:nth-child(4) { left:31%; top:84%; animation-duration:34s; animation-delay:-15s; }
-            .au-sparkles i:nth-child(5) { left:40%; top:70%; animation-duration:28s; animation-delay:-3s; }
-            .au-sparkles i:nth-child(6) { left:48%; top:90%; animation-duration:36s; animation-delay:-18s; }
-            .au-sparkles i:nth-child(7) { left:57%; top:76%; animation-duration:25s; animation-delay:-9s; }
-            .au-sparkles i:nth-child(8) { left:66%; top:93%; animation-duration:32s; animation-delay:-13s; }
-            .au-sparkles i:nth-child(9) { left:74%; top:82%; animation-duration:27s; animation-delay:-5s; }
-            .au-sparkles i:nth-child(10) { left:83%; top:88%; animation-duration:35s; animation-delay:-19s; }
-            .au-sparkles i:nth-child(11) { left:91%; top:74%; animation-duration:24s; animation-delay:-8s; }
-            .au-sparkles i:nth-child(12) { left:19%; top:60%; animation-duration:31s; animation-delay:-12s; }
-            .au-sparkles i:nth-child(13) { left:52%; top:55%; animation-duration:37s; animation-delay:-21s; }
-            .au-sparkles i:nth-child(14) { left:78%; top:62%; animation-duration:30s; animation-delay:-6s; }
-
-            @keyframes auSpark {
-
-                from {
-                    transform: translateY(0);
-                    opacity:0;
-                }
-
-                15% {
-                    opacity:.9;
-                }
-
-                to {
-                    transform: translateY(-70vh);
-                    opacity:0;
-                }
-            }
-
         `);
 
 
@@ -3572,6 +3556,11 @@
         );
 
         createLiveLayer("aurora");
+
+        PulsBg.start(
+            document.getElementById("arctic-forest-live-layer"),
+            PULS_PALETTES.aurora
+        );
     }
 
 
@@ -3685,217 +3674,45 @@
             }
 
 
-            .cb-grid {
+            .pulsbg {
 
                 position:absolute;
                 inset:0;
 
-                background-image:
-                    linear-gradient(rgba(0,255,224,.05) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(0,255,224,.05) 1px, transparent 1px);
-
-                background-size: 44px 44px;
-
-                mask-image:
-                    radial-gradient(
-                        ellipse at center,
-                        black 30%,
-                        transparent 75%
-                    );
+                overflow:hidden;
             }
 
-            .cb-mist {
+            .pulsbg-wrap {
 
                 position:absolute;
 
-                width:55vw;
-                height:55vw;
+                inset:-20%;
 
-                border-radius:50%;
+                width:140%;
+                height:140%;
 
-                filter:blur(100px);
-
-                opacity:.16;
+                will-change:transform,filter;
             }
 
-            .cb-mist-1 {
+            .pulsbg-wrap canvas {
 
-                left:-15vw;
-                top:12vh;
+                width:100%;
+                height:100%;
 
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(255,0,85,.6),
-                        transparent 70%
-                    );
-
-                animation: cbMist1 24s ease-in-out infinite alternate;
+                display:block;
             }
 
-            .cb-mist-2 {
-
-                right:-15vw;
-                top:45vh;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(157,0,255,.6),
-                        transparent 70%
-                    );
-
-                animation: cbMist2 31s ease-in-out infinite alternate;
-            }
-
-            .cb-mist-3 {
-
-                left:25vw;
-                bottom:-28vw;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(0,255,224,.45),
-                        transparent 70%
-                    );
-
-                animation: cbMist3 37s ease-in-out infinite alternate;
-            }
-
-            @keyframes cbMist1 {
-
-                from {
-                    transform: translate3d(-6vw,0,0) scale(1);
-                }
-
-                to {
-                    transform: translate3d(16vw,9vh,0) scale(1.16);
-                }
-            }
-
-            @keyframes cbMist2 {
-
-                from {
-                    transform: translate3d(6vw,-6vh,0) scale(1);
-                }
-
-                to {
-                    transform: translate3d(-16vw,11vh,0) scale(1.22);
-                }
-            }
-
-            @keyframes cbMist3 {
-
-                from {
-                    transform: translate3d(0,0,0) scale(1);
-                }
-
-                to {
-                    transform: translate3d(9vw,-13vh,0) scale(1.18);
-                }
-            }
-
-            .cb-scan {
+            .pulsbg-noise {
 
                 position:absolute;
+                inset:0;
 
-                left:0;
-                right:0;
-                top:-20%;
+                pointer-events:none;
 
-                height:18%;
+                mix-blend-mode:overlay;
 
-                background:
-                    linear-gradient(
-                        to bottom,
-                        transparent,
-                        rgba(0,255,224,.06),
-                        transparent
-                    );
-
-                animation: cbScan 9s linear infinite;
+                filter:url(#pulsNoiseF);
             }
-
-            @keyframes cbScan {
-
-                from {
-                    transform: translateY(0);
-                }
-
-                to {
-                    transform: translateY(700%);
-                }
-            }
-
-            .cb-neon i {
-
-                position:absolute;
-
-                width:3px;
-                height:3px;
-
-                border-radius:50%;
-
-                background: rgba(0,255,224,.9);
-
-                box-shadow:
-                    0 0 10px 2px
-                    rgba(0,255,224,.55);
-
-                animation: cbNeon linear infinite;
-            }
-
-            .cb-neon i:nth-child(3n) {
-
-                background: rgba(255,0,85,.9);
-
-                box-shadow:
-                    0 0 10px 2px
-                    rgba(255,0,85,.55);
-            }
-
-            .cb-neon i:nth-child(4n) {
-
-                background: rgba(157,0,255,.9);
-
-                box-shadow:
-                    0 0 10px 2px
-                    rgba(157,0,255,.55);
-            }
-
-            .cb-neon i:nth-child(1) { left:7%;  top:90%; animation-duration:22s; animation-delay:-4s; }
-            .cb-neon i:nth-child(2) { left:16%; top:76%; animation-duration:28s; animation-delay:-10s; }
-            .cb-neon i:nth-child(3) { left:24%; top:94%; animation-duration:25s; animation-delay:-6s; }
-            .cb-neon i:nth-child(4) { left:33%; top:82%; animation-duration:33s; animation-delay:-14s; }
-            .cb-neon i:nth-child(5) { left:42%; top:68%; animation-duration:27s; animation-delay:-3s; }
-            .cb-neon i:nth-child(6) { left:50%; top:88%; animation-duration:35s; animation-delay:-17s; }
-            .cb-neon i:nth-child(7) { left:59%; top:74%; animation-duration:24s; animation-delay:-8s; }
-            .cb-neon i:nth-child(8) { left:68%; top:92%; animation-duration:31s; animation-delay:-12s; }
-            .cb-neon i:nth-child(9) { left:76%; top:80%; animation-duration:26s; animation-delay:-5s; }
-            .cb-neon i:nth-child(10) { left:85%; top:86%; animation-duration:34s; animation-delay:-16s; }
-            .cb-neon i:nth-child(11) { left:93%; top:72%; animation-duration:23s; animation-delay:-7s; }
-            .cb-neon i:nth-child(12) { left:21%; top:58%; animation-duration:30s; animation-delay:-11s; }
-            .cb-neon i:nth-child(13) { left:54%; top:52%; animation-duration:36s; animation-delay:-19s; }
-            .cb-neon i:nth-child(14) { left:80%; top:60%; animation-duration:29s; animation-delay:-9s; }
-
-            @keyframes cbNeon {
-
-                from {
-                    transform: translateY(0);
-                    opacity:0;
-                }
-
-                12% {
-                    opacity:1;
-                }
-
-                to {
-                    transform: translateY(-75vh);
-                    opacity:0;
-                }
-            }
-
         `);
 
 
@@ -3908,6 +3725,11 @@
         );
 
         createLiveLayer("cyberpunk");
+
+        PulsBg.start(
+            document.getElementById("arctic-forest-live-layer"),
+            PULS_PALETTES.cyberpunk
+        );
     }
 
 
@@ -4021,205 +3843,45 @@
             }
 
 
-            .fg-glow {
+            .pulsbg {
+
+                position:absolute;
+                inset:0;
+
+                overflow:hidden;
+            }
+
+            .pulsbg-wrap {
 
                 position:absolute;
 
-                left:-20%;
-                top:-15%;
+                inset:-20%;
 
                 width:140%;
-                height:65%;
+                height:140%;
 
-                background:
-                    radial-gradient(
-                        ellipse at center,
-                        rgba(163,230,53,.10),
-                        transparent 65%
-                    );
-
-                filter:blur(45px);
-
-                animation: fgGlow 34s ease-in-out infinite alternate;
+                will-change:transform,filter;
             }
 
-            @keyframes fgGlow {
+            .pulsbg-wrap canvas {
 
-                from {
-                    transform: translateX(-5%) rotate(-2deg);
-                }
+                width:100%;
+                height:100%;
 
-                to {
-                    transform: translateX(7%) rotate(2deg);
-                }
+                display:block;
             }
 
-            .fg-mist {
+            .pulsbg-noise {
 
                 position:absolute;
+                inset:0;
 
-                width:55vw;
-                height:55vw;
+                pointer-events:none;
 
-                border-radius:50%;
+                mix-blend-mode:overlay;
 
-                filter:blur(95px);
-
-                opacity:.14;
+                filter:url(#pulsNoiseF);
             }
-
-            .fg-mist-1 {
-
-                left:-15vw;
-                top:14vh;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(5,150,105,.55),
-                        transparent 70%
-                    );
-
-                animation: fgMist1 27s ease-in-out infinite alternate;
-            }
-
-            .fg-mist-2 {
-
-                right:-15vw;
-                top:44vh;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(52,211,153,.5),
-                        transparent 70%
-                    );
-
-                animation: fgMist2 34s ease-in-out infinite alternate;
-            }
-
-            .fg-mist-3 {
-
-                left:24vw;
-                bottom:-28vw;
-
-                background:
-                    radial-gradient(
-                        circle,
-                        rgba(132,204,22,.42),
-                        transparent 70%
-                    );
-
-                animation: fgMist3 41s ease-in-out infinite alternate;
-            }
-
-            @keyframes fgMist1 {
-
-                from {
-                    transform: translate3d(-5vw,0,0) scale(1);
-                }
-
-                to {
-                    transform: translate3d(15vw,8vh,0) scale(1.15);
-                }
-            }
-
-            @keyframes fgMist2 {
-
-                from {
-                    transform: translate3d(5vw,-5vh,0) scale(1);
-                }
-
-                to {
-                    transform: translate3d(-15vw,10vh,0) scale(1.2);
-                }
-            }
-
-            @keyframes fgMist3 {
-
-                from {
-                    transform: translate3d(0,0,0) scale(1);
-                }
-
-                to {
-                    transform: translate3d(8vw,-12vh,0) scale(1.18);
-                }
-            }
-
-            .fg-fireflies i {
-
-                position:absolute;
-
-                width:5px;
-                height:5px;
-
-                border-radius:50%;
-
-                background: rgba(163,230,53,.95);
-
-                box-shadow:
-                    0 0 12px 3px
-                    rgba(163,230,53,.5);
-
-                animation:
-                    fgFly 12s ease-in-out infinite,
-                    fgBlink 4s ease-in-out infinite;
-            }
-
-            .fg-fireflies i:nth-child(3n) {
-
-                background: rgba(52,211,153,.95);
-
-                box-shadow:
-                    0 0 12px 3px
-                    rgba(52,211,153,.5);
-            }
-
-            .fg-fireflies i:nth-child(1) { left:8%;  top:70%; animation-delay:-2s, -1s; }
-            .fg-fireflies i:nth-child(2) { left:17%; top:45%; animation-delay:-5s, -2.5s; }
-            .fg-fireflies i:nth-child(3) { left:26%; top:80%; animation-delay:-8s, -.5s; }
-            .fg-fireflies i:nth-child(4) { left:35%; top:55%; animation-delay:-3s, -3s; }
-            .fg-fireflies i:nth-child(5) { left:44%; top:75%; animation-delay:-7s, -1.8s; }
-            .fg-fireflies i:nth-child(6) { left:53%; top:40%; animation-delay:-10s, -3.6s; }
-            .fg-fireflies i:nth-child(7) { left:62%; top:68%; animation-delay:-4s, -.8s; }
-            .fg-fireflies i:nth-child(8) { left:71%; top:50%; animation-delay:-9s, -2.2s; }
-            .fg-fireflies i:nth-child(9) { left:80%; top:78%; animation-delay:-6s, -1.2s; }
-            .fg-fireflies i:nth-child(10) { left:89%; top:60%; animation-delay:-11s, -3.2s; }
-            .fg-fireflies i:nth-child(11) { left:12%; top:30%; animation-delay:-1s, -2.8s; }
-            .fg-fireflies i:nth-child(12) { left:48%; top:25%; animation-delay:-8.5s, -1.5s; }
-            .fg-fireflies i:nth-child(13) { left:66%; top:32%; animation-delay:-3.5s, -3.9s; }
-            .fg-fireflies i:nth-child(14) { left:84%; top:28%; animation-delay:-6.5s, -.3s; }
-
-            @keyframes fgFly {
-
-                0%, 100% {
-                    transform: translate3d(0,0,0);
-                }
-
-                25% {
-                    transform: translate3d(3vw,-4vh,0);
-                }
-
-                50% {
-                    transform: translate3d(-2vw,-8vh,0);
-                }
-
-                75% {
-                    transform: translate3d(-4vw,-3vh,0);
-                }
-            }
-
-            @keyframes fgBlink {
-
-                0%, 100% {
-                    opacity:.25;
-                }
-
-                50% {
-                    opacity:1;
-                }
-            }
-
         `);
 
 
@@ -4232,6 +3894,11 @@
         );
 
         createLiveLayer("forestglow");
+
+        PulsBg.start(
+            document.getElementById("arctic-forest-live-layer"),
+            PULS_PALETTES.forestglow
+        );
     }
 
 
