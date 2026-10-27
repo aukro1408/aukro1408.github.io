@@ -637,7 +637,6 @@
       .icon-btn{ width:3em; height:3em; border-radius:50%; background:var(--panel); border:1px solid var(--line);
         display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink); font-family:inherit; font-size:1.3em; line-height:1; }
       .icon-btn svg{ width:1.25em; height:1.25em; }
-      .icon-btn.fav-on{ color:#e5484d; border-color:rgba(229,72,77,.5); }
       .detail-menu{ display:none; position:absolute; left:0; top:calc(100% + .5em); z-index:10;
         flex-direction:column; gap:.4em; background:var(--panel); border:1px solid var(--line);
         border-radius:.8em; padding:.5em; box-shadow:0 10px 30px rgba(23,52,110,.18); }
@@ -653,8 +652,6 @@
       .glass-lab{ font-size:.78em; color:var(--muted); font-weight:600; }
       .glass-val{ font-size:.92em; font-weight:600; color:var(--ink); line-height:1.35; }
       body.on-provider .tabs{ display:none; }
-      .detail-sourcesbar{ display:flex; align-items:center; gap:.8em; margin:0 2.4em;
-        background:var(--panel); border:1px solid var(--line); border-radius:1em; padding:.8em 1.2em; }
       .src-label{ font-weight:600; font-size:.95em; white-space:nowrap; }
       .src-btn{ appearance:none; border:1px solid var(--line); background:var(--panel-2); color:var(--ink);
         font:700 .92em "Onest",sans-serif; padding:.5em 1.3em; border-radius:999px; cursor:pointer; }
@@ -687,7 +684,6 @@
         .detail-hero-in{ flex-direction:column; padding:1em 1.1em 1.6em; }
         .detail-glass{ flex-basis:auto; width:100%; }
         .detail-topbar{ padding:1em 1.1em .8em; }
-        .detail-sourcesbar{ margin:0 1.1em; flex-wrap:wrap; }
         .prov-body{ padding:0 1.1em 4.6em; }
         .detail-similar{ padding:0 1.1em 4.6em; }
         .sim-card{ flex-basis:13em; }
@@ -739,11 +735,15 @@
       #screen-detail .sidebar{ position:relative; z-index:2; }
       #screen-detail .main{ background:#0b1220; }
       #screen-detail .detail-hero::after{ background:none; }
-      #screen-detail #detail-bg{ position:fixed; inset:0; width:100vw; height:100vh;
+      /* Фон — на уровне body (не внутри .main): fixed на весь вьюпорт,
+         заходит за боковую панель (z ниже неё) и до правого края, полос нет.
+         Виден только на экране фильма (body.on-detail ставит show()). */
+      #detail-bg{ position:fixed; inset:0; width:100vw; height:100vh;
         object-fit:cover; object-position:center;
         filter:blur(40px) saturate(1.9) brightness(.92); transform:scale(1.25); z-index:0; }
-      #screen-detail .detail-shade{ position:fixed; inset:0; z-index:0; pointer-events:none;
+      .detail-shade{ position:fixed; inset:0; z-index:0; pointer-events:none;
         background:linear-gradient(180deg, rgba(11,18,32,.18) 0%, rgba(11,18,32,.42) 42%, #0b1220 88%, #0b1220 100%); }
+      body:not(.on-detail) #detail-bg, body:not(.on-detail) .detail-shade{ display:none !important; }
       #screen-detail .detail-art{ position:relative; height:36vh; min-height:280px; max-height:460px; overflow:hidden;
         -webkit-mask-image:linear-gradient(180deg,#000 68%,transparent 97%);
         mask-image:linear-gradient(180deg,#000 68%,transparent 97%); }
@@ -752,7 +752,7 @@
         background:linear-gradient(180deg, rgba(8,12,24,.22) 0%, rgba(8,12,24,0) 35%, rgba(8,12,24,.30) 60%, rgba(11,18,32,.55) 100%); }
       #screen-detail .detail-topbar{ position:relative; z-index:3; }
       #screen-detail .detail-hero-in{ position:relative; z-index:1; }
-      #screen-detail .detail-sourcesbar, #screen-detail .detail-similar{ position:relative; z-index:1; }
+      #screen-detail .detail-similar{ position:relative; z-index:1; }
       #screen-detail .detail-title{ color:#fff; text-transform:uppercase; letter-spacing:.3em;
         font-size:2.9em; line-height:1.18; text-shadow:0 2px 24px rgba(0,0,0,.5); overflow-wrap:break-word; }
       #screen-detail .detail-main .meta{ color:rgba(255,255,255,.85); }
@@ -772,8 +772,6 @@
       #screen-detail .glass-lab{ color:rgba(255,255,255,.6); }
       #screen-detail .glass-val{ color:#fff; }
       #screen-detail #glass-av{ display:none; }
-      #screen-detail .detail-sourcesbar{ background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
-        backdrop-filter:blur(14px); box-shadow:none; }
       #screen-detail .src-btn{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); color:#fff; }
       #screen-detail .top-search{ background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.22);
         color:rgba(255,255,255,.8); }
@@ -795,7 +793,9 @@
       #screen-detail .main{ position:relative; }
       #screen-detail .detail-hero{ position:static; }
       #screen-detail .detail-topbar{ position:absolute; top:0; left:0; right:0; z-index:5; }
-      #screen-detail .detail-art{ position:absolute; top:0; left:0; right:0; z-index:0;
+      /* Фон теперь на уровне body и идёт ПОЗЖЕ в дереве: hero-арт поднят
+         на z-index:1, иначе размытый фон лёг бы поверх резкого арта. */
+      #screen-detail .detail-art{ position:absolute; top:0; left:0; right:0; z-index:1;
         height:58vh; min-height:400px; max-height:660px; }
       #screen-detail .detail-art img{ object-position:50% 0; }
       #screen-detail .detail-hero-in{ padding:21vh 2.4em 2.2em; }
@@ -865,6 +865,23 @@
         #screen-provider .prov-hero{ height:auto; min-height:240px; }
         #screen-provider .prov-body{ padding:1em .7em 4.6em; }
         #screen-detail .detail-extra{ padding:0 1.1em 2em; }
+      }
+      /* Ряд кнопок карточки: провайдеры встали рядом со «Смотреть»,
+         плашка источников удалена; на узких экранах кнопки переносятся. */
+      .detail-actions2{ flex-wrap:wrap; }
+      /* Логотип фильма вместо текстового названия (паттерн «Кино»: m.logo). */
+      .detail-logo{ display:block; max-width:22em; max-height:6em; width:auto; height:auto; object-fit:contain;
+        filter:drop-shadow(0 4px 18px rgba(0,0,0,.55)); }
+      /* Закладка: заполненная, когда фильм в избранном или «смотреть позже». */
+      #screen-detail .icon-btn.bk-on{ color:#8cddff; border-color:rgba(140,221,255,.55); }
+      /* Плитка «Ещё» в конце ряда главной + кнопка «Показать ещё» в сетке категории. */
+      .row-more .mimg{ display:flex; align-items:center; justify-content:center; }
+      .row-more .mimg span{ font-size:2.4em; font-weight:800; color:var(--accent); }
+      .cat-more{ flex:1 1 100%; margin-top:.5em; }
+      /* Сайдбар слегка прозрачный (Denis: «немного, но не сильно»):
+         фон едва просвечивает сквозь рейку, стеклом она не становится. */
+      @media (min-width:761px){
+        .sidebar{ background:rgba(255,255,255,.85); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
       }
 
 </style>
@@ -1058,19 +1075,7 @@
 
 
 
-    <div class="toolbar">
-      <div class="brand">pawflix</div>
-      <div class="tabs" role="tablist">
-        <button class="tab active" data-goto="home">1 · Главная</button>
-        <button class="tab" data-goto="detail">2 · Карточка</button>
-        <button class="tab" data-goto="plugins">3 · Плагины</button>
-        <button class="tab" data-goto="settings">4 · Настройки</button>
-        <button class="tab" data-goto="search">5 · Поиск</button>
-        <button class="tab" data-goto="library">6 · Библиотека</button>
-        <button class="tab" data-goto="categories">7 · Категории</button>
-      </div>
-      <div class="note">Стрелки — навигация · OK — открыть · Esc — на главную</div>
-    </div>
+    
 
     <div class="stage-wrap">
       <div class="stage" id="stage">
@@ -1178,27 +1183,27 @@
               <div>
                 <h2 class="row-title">Стриминги <span>фильмы и сериалы по подпискам</span></h2>
                 <div class="streamings-row">
-                  <div class="stream-item focusable">
+                  <div class="stream-item focusable" data-stream="netflix" data-prov="8" data-region="UA">
                     <div class="stream-card"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNDAgODAiPjx0ZXh0IHg9IjEyMCIgeT0iNTYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCBOYXJyb3csIEhlbHZldGljYSwgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNDYiIGZvbnQtd2VpZ2h0PSI5MDAiIGxldHRlci1zcGFjaW5nPSIxIiBmaWxsPSIjRTUwOTE0Ij5ORVRGTElYPC90ZXh0Pjwvc3ZnPgo=" alt="Netflix" /></div>
                     <div class="stream-name">Netflix</div>
                   </div>
-                  <div class="stream-item focusable">
+                  <div class="stream-item focusable" data-stream="apple" data-prov="350" data-region="UA">
                     <div class="stream-card"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNDAgODAiPjxnIGZpbGw9IiMxMTExMTEiPjxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU4IDE3KSBzY2FsZSgxLjkyKSIgZD0iTTEyLjE1MiA2Ljg5NmMtLjk0OCAwLTIuNDE1LTEuMDc4LTMuOTYtMS4wNC0yLjA0LjAyNy0zLjkxIDEuMTgzLTQuOTYxIDMuMDE0LTIuMTE3IDMuNjc1LS41NDYgOS4xMDMgMS41MTkgMTIuMDkgMS4wMTMgMS40NTQgMi4yMDggMy4wOSAzLjc5MiAzLjAzIDEuNTItLjA2NSAyLjA5LS45ODcgMy45MzUtLjk4NyAxLjgzMSAwIDIuMzUuOTg3IDMuOTYuOTQ4IDEuNjM3LS4wMjYgMi42NzYtMS40OCAzLjY3Ni0yLjk0OCAxLjE1Ni0xLjY4OCAxLjYzNi0zLjMyNSAxLjY2Mi0zLjQxNS0uMDM5LS4wMTMtMy4xODItMS4yMjEtMy4yMi00Ljg1Ny0uMDI2LTMuMDQgMi40OC00LjQ5NCAyLjU5Ny00LjU1OS0xLjQyOS0yLjA5LTMuNjIzLTIuMzI0LTQuMzktMi4zNzYtMi0uMTU2LTMuNjc1IDEuMDktNC42MSAxLjF6TTE1LjUzIDMuODNjLjg0My0xLjAxMiAxLjQtMi40MjcgMS4yNDUtMy44My0xLjIwNy4wNTItMi42NjIuODA1LTMuNTMyIDEuODE4LS43OC44OTYtMS40NTQgMi4zMzgtMS4yNzMgMy43MTQgMS4zMzguMTA0IDIuNzE1LS42ODggMy41NTktMS43MDIiLz48dGV4dCB4PSIxMTAiIHk9IjU3IiBmb250LWZhbWlseT0iSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSI0NCIgZm9udC13ZWlnaHQ9IjYwMCIgbGV0dGVyLXNwYWNpbmc9Ii0xIiBmaWxsPSIjMTExMTExIj50dis8L3RleHQ+PC9nPjwvc3ZnPgo=" alt="Apple TV+" /></div>
                     <div class="stream-name">Apple TV+</div>
                   </div>
-                  <div class="stream-item focusable">
+                  <div class="stream-item focusable" data-stream="disney" data-prov="337" data-region="UA">
                     <div class="stream-card"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNDAgODAiPjx0ZXh0IHg9IjEyMCIgeT0iNTYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCAnVGltZXMgTmV3IFJvbWFuJywgc2VyaWYiIGZvbnQtc2l6ZT0iNDQiIGZvbnQtd2VpZ2h0PSI3MDAiIGZvbnQtc3R5bGU9Iml0YWxpYyIgZmlsbD0iIzExM0NDRiI+RGlzbmV5KzwvdGV4dD48L3N2Zz4K" alt="Disney+" /></div>
                     <div class="stream-name">Disney+</div>
                   </div>
-                  <div class="stream-item focusable">
+                  <div class="stream-item focusable" data-stream="max" data-prov="1899" data-region="UA">
                     <div class="stream-card"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNDAgODAiPjx0ZXh0IHg9IjEyMCIgeT0iNTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJIZWx2ZXRpY2EsIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjUyIiBmb250LXdlaWdodD0iOTAwIiBsZXR0ZXItc3BhY2luZz0iLTIiIGZpbGw9IiMwMDJCRTciPm1heDwvdGV4dD48L3N2Zz4K" alt="Max" /></div>
                     <div class="stream-name">Max</div>
                   </div>
-                  <div class="stream-item focusable">
+                  <div class="stream-item focusable" data-stream="prime" data-prov="9" data-region="UA">
                     <div class="stream-card"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNDAgODAiPjx0ZXh0IHg9IjEyMCIgeT0iNTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJIZWx2ZXRpY2EsIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjM4IiBmb250LXdlaWdodD0iNzAwIiBsZXR0ZXItc3BhY2luZz0iLTEiIGZpbGw9IiMwMEE4RTEiPnByaW1lIHZpZGVvPC90ZXh0Pjwvc3ZnPgo=" alt="Prime Video" /></div>
                     <div class="stream-name">Prime Video</div>
                   </div>
-                  <div class="stream-item focusable">
+                  <div class="stream-item focusable" data-stream="okko" data-prov="501" data-region="RU">
                     <div class="stream-card"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNDAgODAiPjx0ZXh0IHg9IjEyMCIgeT0iNTciIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJIZWx2ZXRpY2EsIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjQ4IiBmb250LXdlaWdodD0iOTAwIiBsZXR0ZXItc3BhY2luZz0iLTEiIGZpbGw9IiM2QzFDRTgiPm9ra288L3RleHQ+PC9zdmc+Cg==" alt="Okko" /></div>
                     <div class="stream-name">Okko</div>
                   </div>
@@ -1308,9 +1313,7 @@
             </div>
             <div class="detail-clock" id="detail-clock"></div>
           </div>
-<div class="detail-hero"><img class="bg" id="detail-bg" src="" alt="" />
-          <div class="detail-shade"></div>
-          <div class="detail-art" id="detail-art"><img id="detail-art-img" src="" alt="" /><div class="detail-art-shade"></div></div>
+<div class="detail-hero"><div class="detail-art" id="detail-art"><img id="detail-art-img" src="" alt="" /><div class="detail-art-shade"></div></div>
           <div class="detail-hero-in">
             <div class="detail-main">
               <h1 class="detail-title" id="detail-title">Выберите фильм или сериал</h1>
@@ -1322,15 +1325,17 @@
                   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>
                   Смотреть
                 </button>
+                <button class="src-btn focusable" id="src-filmix" type="button">filmix</button>
+                <button class="src-btn focusable" id="src-lumio" type="button">lumio</button>
+                <button class="src-btn focusable" id="src-torrents" type="button">torrent</button>
                 <button class="btn focusable" id="detail-trailer" type="button">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="3.5"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor" stroke="none"/></svg>
                   Трейлер
                 </button>
-                <button class="icon-btn focusable" id="detail-fav" type="button" aria-label="В избранное"></button>
-                <button class="icon-btn focusable" id="detail-more" type="button" aria-label="Ещё">…</button>
-                <div class="detail-menu" id="detail-menu">
-                  <button class="btn focusable" id="detail-later" type="button">Смотреть позже</button>
-                  <button class="btn focusable" id="detail-torrents" type="button">Торренты</button>
+                <button class="icon-btn focusable" id="detail-bookmark" type="button" aria-label="Закладка"></button>
+                <div class="detail-menu" id="detail-bookmark-menu">
+                  <button class="btn focusable" id="detail-bk-fav" type="button">В избранное</button>
+                  <button class="btn focusable" id="detail-bk-later" type="button">Смотреть позже</button>
                 </div>
               </div>
             </div>
@@ -1346,12 +1351,7 @@
             </div>
           </div>
 </div>
-                    <div class="detail-sourcesbar">
-            <button class="src-btn focusable" id="src-lumio" type="button">lumio</button>
-            <button class="src-btn focusable" id="src-filmix" type="button">filmix</button>
-            <button class="src-btn focusable" id="src-torrents" type="button">torrent</button>
-          </div>
-
+          
                   <div class="detail-extra">
             <div class="detail-about">
               <h3 class="src-title">О фильме</h3>
@@ -1701,17 +1701,29 @@
             </div>
 
                         <div class="set-row">
-              <div><span class="lab">TorrServer</span><span class="hint">Адрес сервера для торрентов · пусто = прокси по умолчанию</span></div>
-              <span class="val"><input id="ts-input" class="key-input focusable" type="text" placeholder="https://torrserver.flyugertdiana.workers.dev" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="ts-save" type="button">Сохранить</button></span>
+              <div><span class="lab">TorrServer · https</span><span class="hint">Прямой https-адрес твоего сервера</span></div>
+              <span class="val"><input id="ts-https-input" class="key-input focusable" type="text" placeholder="https://…" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="ts-https-save" type="button">Сохранить</button></span>
+            </div>
+            <div class="set-row">
+              <div><span class="lab">TorrServer · http</span><span class="hint">Только адрес сервера — прокси и nip.io подставятся сами · приоритет над https</span></div>
+              <span class="val"><input id="ts-http-input" class="key-input focusable" type="text" placeholder="http://IP:8090" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="ts-http-save" type="button">Сохранить</button></span>
             </div>
 
                         <div class="set-row">
-              <div><span class="lab">Поиск торрентов</span><span class="hint">Jackett-совместимый API · пусто = поиск через TPB</span></div>
-              <span class="val"><input id="jackett-input" class="key-input focusable" type="text" placeholder="URL Jackett API" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="jackett-save" type="button">Сохранить</button></span>
+              <div><span class="lab">Парсер JacRed</span><span class="hint">Основной парсер · пусто = https://jac.red</span></div>
+              <span class="val"><input id="jac-url-input" class="key-input focusable" type="text" placeholder="https://jac.red" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="jac-url-save" type="button">Сохранить</button></span>
             </div>
             <div class="set-row">
-              <div><span class="lab">Ключ Jackett</span><span class="hint">API-ключ парсера, если нужен</span></div>
-              <span class="val"><input id="jackett-key-input" class="key-input focusable" type="text" placeholder="Ключ API" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="jackett-key-save" type="button">Сохранить</button></span>
+              <div><span class="lab">Ключ JacRed</span><span class="hint">API-ключ основного парсера</span></div>
+              <span class="val"><input id="jac-key-input" class="key-input focusable" type="text" placeholder="Ключ API" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="jac-key-save" type="button">Сохранить</button></span>
+            </div>
+            <div class="set-row">
+              <div><span class="lab">Парсер JacRed 2</span><span class="hint">Запасной парсер · если основной не отвечает</span></div>
+              <span class="val"><input id="jac-url2-input" class="key-input focusable" type="text" placeholder="https://…" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="jac-url2-save" type="button">Сохранить</button></span>
+            </div>
+            <div class="set-row">
+              <div><span class="lab">Ключ JacRed 2</span><span class="hint">API-ключ запасного парсера</span></div>
+              <span class="val"><input id="jac-key2-input" class="key-input focusable" type="text" placeholder="Ключ API" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="jac-key2-save" type="button">Сохранить</button></span>
             </div>
 
                         <div class="set-row">
@@ -2067,15 +2079,13 @@
           </button>
         </nav>
 
-        <div class="hintbar">
-          <span><span class="key">←</span><span class="key">→</span><span class="key">↑</span><span class="key">↓</span><b>навигация</b></span>
-          <span><span class="key">OK</span><b>открыть</b></span>
-          <span><span class="key">1–7</span><b>экраны</b></span>
-          <span><span class="key">Esc</span><b>назад</b></span>
-        </div>
+        
 
       </div>
     </div>
+
+<img class="bg" id="detail-bg" src="" alt="" />
+<div class="detail-shade"></div>
 
 <div class="toast" id="toast"></div>
 <div class="pl-overlay" id="pl-overlay">
@@ -2186,14 +2196,17 @@
           if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) {
             if (k === 'Escape') { ae.blur(); e.preventDefault(); }
             else if (k === 'Enter' && ae.id === 'tmdb-key-input') { saveKey(); e.preventDefault(); }
-            else if (k === 'Enter' && ae.id === 'ts-input') { saveTs(); e.preventDefault(); }
-            else if (k === 'Enter' && ae.id === 'jackett-input') { saveJackett(); e.preventDefault(); }
-            else if (k === 'Enter' && ae.id === 'jackett-key-input') { saveJackettKey(); e.preventDefault(); }
+            else if (k === 'Enter' && ae.id === 'ts-https-input') { saveTsHttps(); e.preventDefault(); }
+            else if (k === 'Enter' && ae.id === 'ts-http-input') { saveTsHttp(); e.preventDefault(); }
+            else if (k === 'Enter' && ae.id === 'jac-url-input') { saveJacUrl(); e.preventDefault(); }
+            else if (k === 'Enter' && ae.id === 'jac-key-input') { saveJacKey(); e.preventDefault(); }
+            else if (k === 'Enter' && ae.id === 'jac-url2-input') { saveJacUrl2(); e.preventDefault(); }
+            else if (k === 'Enter' && ae.id === 'jac-key2-input') { saveJacKey2(); e.preventDefault(); }
             else if (k === 'Enter' && ae.id === 'filmix-input') { saveFilmix(); e.preventDefault(); }
             else if (k === 'Enter' && ae.id === 'filmix-proxy-input') { saveFilmixProxy(); e.preventDefault(); }
             return;
           }
-          if (k === 'Escape' && isDetailMenuOpen()) { closeDetailMenu(); e.preventDefault(); return; }
+          if (k === 'Escape' && isBookmarkSheetOpen()) { closeBookmarkSheet(); e.preventDefault(); return; }
           // На экране поиска буквы и цифры с физической клавиатуры идут в запрос,
           // а не в переключатель экранов; Backspace стирает символ.
           if (current === 'search' && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -2408,10 +2421,18 @@
         });
 
         /* ============ Ряды главной ============ */
-        function renderRow(id, items){
+        function renderRow(id, items, more){
           var box = document.getElementById(id);
           box.innerHTML = '';
-          items.slice(0, 6).forEach(function(m){ box.appendChild(makeCard(toCard(m))); });
+          items.slice(0, 10).forEach(function(m){ box.appendChild(makeCard(toCard(m))); });
+          if (more) {
+            var mt = document.createElement('div');
+            mt.className = 'mcard focusable row-more';
+            mt.innerHTML = '<div class="mimg"><span>›</span></div><div class="mname">Ещё</div><div class="mmeta"><span>Вся категория</span></div>';
+            mt.addEventListener('click', function(){ openCatGrid(more.title, more.path); });
+            mt.addEventListener('mouseenter', function(){ setFocus(mt); });
+            box.appendChild(mt);
+          }
         }
         function renderMsgRow(id, text, sub){
           var box = document.getElementById(id);
@@ -2445,14 +2466,14 @@
             setHero(0); restartHero();
           }).catch(function(){ setHeroPlaceholder('error'); });
           var rows = [
-            ['row-new', '/movie/now_playing'],
-            ['row-trending', '/trending/movie/day'],
-            ['row-horror', '/discover/movie?with_genres=27&sort_by=popularity.desc'],
-            ['row-thriller', '/discover/movie?with_genres=53&sort_by=popularity.desc']
+            ['row-new', '/movie/now_playing', 'Новинки'],
+            ['row-trending', '/trending/movie/day', 'Сейчас смотрят'],
+            ['row-horror', '/discover/movie?with_genres=27&sort_by=popularity.desc', 'Ужасы'],
+            ['row-thriller', '/discover/movie?with_genres=53&sort_by=popularity.desc', 'Триллеры']
           ];
           rows.forEach(function(pair){
             tmdb(pair[1]).then(function(j){
-              renderRow(pair[0], j.results || []);
+              renderRow(pair[0], j.results || [], { title: pair[2], path: pair[1] });
             }).catch(function(){
               renderMsgRow(pair[0], 'Проверьте TMDB-ключ в Настройках', 'Настройки');
             });
@@ -2462,22 +2483,25 @@
         /* ============ Карточка фильма/сериала ============ */
         var currentDetail = null, currentDetailCard = null;
         var detailWatch = document.getElementById('detail-watch');
-        var detailFav = document.getElementById('detail-fav');
-        var detailLater = document.getElementById('detail-later');
-        var detailTorrents = document.getElementById('detail-torrents');
+        var detailBookmark = document.getElementById('detail-bookmark');
+        var detailBkMenu = document.getElementById('detail-bookmark-menu');
+        var detailBkFav = document.getElementById('detail-bk-fav');
+        var detailBkLater = document.getElementById('detail-bk-later');
         var detailTrailer = document.getElementById('detail-trailer');
-        var detailMore = document.getElementById('detail-more');
-        var detailMenu = document.getElementById('detail-menu');
-        var HEART_OUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
-        var HEART_ON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
-        function isDetailMenuOpen(){ return detailMenu.classList.contains('show'); }
-        function closeDetailMenu(){ detailMenu.classList.remove('show'); }
+        /* Закладка вместо сердечка (требование Denis): тап открывает выбор
+           «В избранное» / «Смотреть позже» с текущим состоянием ✓. */
+        var BOOKMARK_OUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>';
+        var BOOKMARK_ON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12v18l-6-4-6 4z"/></svg>';
+        function isBookmarkSheetOpen(){ return detailBkMenu.classList.contains('show'); }
+        function closeBookmarkSheet(){ detailBkMenu.classList.remove('show'); }
         function updateDetailButtons(){
           if (!currentDetailCard) return;
           var fav = inList('fav', currentDetailCard);
-          detailFav.innerHTML = fav ? HEART_ON : HEART_OUT;
-          detailFav.classList.toggle('fav-on', fav);
-          detailLater.textContent = inList('later', currentDetailCard) ? '✓ Смотреть позже' : 'Смотреть позже';
+          var later = inList('later', currentDetailCard);
+          detailBookmark.innerHTML = (fav || later) ? BOOKMARK_ON : BOOKMARK_OUT;
+          detailBookmark.classList.toggle('bk-on', fav || later);
+          detailBkFav.textContent = fav ? '✓ В избранное' : 'В избранное';
+          detailBkLater.textContent = later ? '✓ Смотреть позже' : 'Смотреть позже';
         }
         detailWatch.addEventListener('click', function(){
           if (!currentDetailCard) { toast('Откройте карточку фильма или сериала'); return; }
@@ -2490,35 +2514,30 @@
           var clamped = t.classList.toggle('clamped');
           detailAboutMore.textContent = clamped ? 'Читать полностью ▾' : 'Свернуть ▴';
         });
-        detailFav.addEventListener('click', function(){
+        detailBookmark.addEventListener('click', function(){
+          if (!currentDetailCard) { toast('Откройте карточку фильма или сериала'); return; }
+          if (isBookmarkSheetOpen()) { closeBookmarkSheet(); return; }
+          updateDetailButtons();
+          detailBkMenu.classList.add('show');
+          setFocus(detailBkFav);
+        });
+        detailBkFav.addEventListener('click', function(){
           if (!currentDetailCard) { toast('Откройте карточку фильма или сериала'); return; }
           var added = toggleList('fav', currentDetailCard);
           updateDetailButtons();
           toast(added ? 'Добавлено в избранное' : 'Убрано из избранного');
         });
-        detailLater.addEventListener('click', function(){
-          closeDetailMenu();
+        detailBkLater.addEventListener('click', function(){
           if (!currentDetailCard) { toast('Откройте карточку фильма или сериала'); return; }
           var added = toggleList('later', currentDetailCard);
           updateDetailButtons();
           toast(added ? 'Добавлено в «Смотреть позже»' : 'Убрано из «Смотреть позже»');
         });
-        detailTorrents.addEventListener('click', function(){
-          closeDetailMenu();
-          if (!currentDetailMeta) { toast('Откройте карточку фильма или сериала'); return; }
-          openProvider('torrents');
-        });
-        detailMore.addEventListener('click', function(){
-          if (isDetailMenuOpen()) { closeDetailMenu(); return; }
-          detailMenu.classList.add('show');
-          var first = detailMenu.querySelector('.focusable');
-          setFocus(first);
-        });
         detailTrailer.addEventListener('click', function(){
           if (!currentDetail) { toast('Откройте карточку фильма или сериала'); return; }
           playTrailer();
         });
-        document.getElementById('detail-search').addEventListener('click', function(){ closeDetailMenu(); show('search'); });
+        document.getElementById('detail-search').addEventListener('click', function(){ closeBookmarkSheet(); show('search'); });
         document.getElementById('detail-bell').addEventListener('click', function(){ toast('Уведомления появятся позже'); });
         function updateDetailClock(){
           var el = document.getElementById('detail-clock');
@@ -2585,7 +2604,7 @@
           currentDetailCard = null;
           currentDetailMeta = null;
           trailerKey = null;
-          closeDetailMenu();
+          closeBookmarkSheet();
           show('detail');
           document.getElementById('detail-title').textContent = 'Загрузка…';
           document.getElementById('detail-desc').textContent = '';
@@ -2606,7 +2625,7 @@
           document.getElementById('detail-art-img').style.display = 'none';
           resetSources();
           resetSimilar();
-          var extra = type === 'movie' ? 'credits,release_dates' : 'credits,content_ratings';
+          var extra = type === 'movie' ? 'credits,release_dates,images' : 'credits,content_ratings,images';
           tmdb('/' + type + '/' + id + '?append_to_response=' + extra).then(function(d){
             var year = (d.release_date || d.first_air_date || '').slice(0, 4);
             var genres = (d.genres || []).map(function(g){ return g.name; });
@@ -2638,7 +2657,17 @@
             var poster = document.getElementById('detail-poster');
             if (d.poster_path) { poster.src = IMG + 'w500' + d.poster_path; poster.style.display = ''; }
             else poster.style.display = 'none';
-            document.getElementById('detail-title').textContent = d.title || d.name || '';
+            /* Логотип вместо названия (паттерн «Кино»: m.logo; приоритет
+               ru → en → любой; нет логотипа — текстовое название). */
+            var titleEl = document.getElementById('detail-title');
+            var logos = (d.images && d.images.logos) || [];
+            var logo = logos.filter(function(l){ return l.iso_639_1 === 'ru'; })[0] ||
+                       logos.filter(function(l){ return l.iso_639_1 === 'en'; })[0] || logos[0] || null;
+            if (logo && logo.file_path) {
+              titleEl.innerHTML = '<img class="detail-logo" src="' + IMG + 'w500' + logo.file_path + '" alt="' + esc(d.title || d.name || '') + '" />';
+            } else {
+              titleEl.textContent = d.title || d.name || '';
+            }
             var metaParts = [];
             if (year) metaParts.push(year);
             if (genres.length) metaParts.push(genres.join(', '));
@@ -2837,8 +2866,116 @@
           });
         });
 
+        /* ============ Полная категория: сетка + «Показать ещё» ============
+           Плитка «Ещё» в конце ряда главной и пилюли стримингов открывают
+           полную категорию сеткой (как cat-экран «Кино»): страницы TMDB
+           подгружаются кнопкой, пока страница возвращает полные 20. */
+        var catGridPath = '', catGridPage = 1, catGridMoreBtn = null;
+        function openCatGrid(title, basePath){
+          show('categories');
+          catTitle.innerHTML = esc(title) + ' <span>загрузка…</span>';
+          catBox.innerHTML = '';
+          catGridPath = basePath; catGridPage = 1; catGridMoreBtn = null;
+          loadCatGridPage(title);
+        }
+        function loadCatGridPage(title){
+          if (!tmdbKey()) {
+            catTitle.innerHTML = esc(title) + ' <span>нужен TMDB-ключ</span>';
+            catBox.innerHTML = '<div class="empty-note">Добавьте TMDB-ключ в Настройках.</div>';
+            return;
+          }
+          var sep = catGridPath.indexOf('?') !== -1 ? '&' : '?';
+          tmdb(catGridPath + sep + 'page=' + catGridPage).then(function(j){
+            var list = j.results || [];
+            list.forEach(function(m){ catBox.appendChild(makeCard(toCard(m))); });
+            var total = catBox.querySelectorAll('.mcard').length;
+            catTitle.innerHTML = esc(title) + ' <span>найдено: ' + total + '</span>';
+            if (catGridMoreBtn) { catGridMoreBtn.remove(); catGridMoreBtn = null; }
+            if (list.length >= 20) {
+              var b = document.createElement('button');
+              b.className = 'btn focusable cat-more';
+              b.type = 'button';
+              b.textContent = 'Показать ещё';
+              b.addEventListener('click', function(){ catGridPage++; loadCatGridPage(title); });
+              b.addEventListener('mouseenter', function(){ setFocus(b); });
+              catBox.appendChild(b);
+              catGridMoreBtn = b;
+            }
+          }).catch(function(){
+            catTitle.innerHTML = esc(title) + ' <span>ошибка</span>';
+            catBox.innerHTML = '<div class="empty-note">Проверьте TMDB-ключ в Настройках.</div>';
+          });
+        }
+
+        /* Стриминги: тап по пилюле → категория этого стриминга (шаблон
+           «Кино»: with_watch_providers + watch_region/region + дата + голоса).
+           Netflix 8/UA и Apple TV+ 350/UA — из «Кино»; Disney+ 337, Max 1899,
+           Prime Video 9 — стандартные TMDB; Okko 501/RU не подтверждён кодом
+           «Кино» и поиском — если категория пуста, первый подозреваемый. */
+        Array.prototype.forEach.call(document.querySelectorAll('.stream-item'), function(item){
+          item.addEventListener('click', function(){
+            var prov = item.getAttribute('data-prov');
+            var region = item.getAttribute('data-region') || 'UA';
+            var nameEl = item.querySelector('.stream-name');
+            var name = nameEl ? nameEl.textContent.trim() : 'Стриминг';
+            var today = new Date().toISOString().slice(0, 10);
+            var path = '/discover/movie?sort_by=primary_release_date.desc&with_watch_providers=' + prov +
+              '&watch_region=' + region + '&region=' + region +
+              '&primary_release_date.lte=' + today + '&vote_count.gte=3';
+            openCatGrid('Новинки на ' + name, path);
+          });
+        });
+
         /* ============ Источники и воспроизведение ============ */
-        var TS_DEFAULT = 'https://torrserver.flyugertdiana.workers.dev';
+        /* ============ Торренты: порт из «Кино» 1:1 ============
+           Поиск — JacRed-парсеры (jacSearch), воспроизведение — tsBase():
+           http-адрес едет в пути воркера (nip.io для голых IP), поэтому
+           воркер всегда знает цель. Свои поля pawflix → 'kino.*' → дефолты. */
+        var TS_PROXY = 'https://torrserver.flyugertdiana.workers.dev';
+        function kinoLS(key, def){
+          try {
+            var v = localStorage.getItem('kino.' + key);
+            if (v === null || v === undefined) return def;
+            return JSON.parse(v);
+          } catch (e) { return def; }
+        }
+        function jacConf(){
+          var url = (localStorage.getItem('pawflix.jac_url') || '').trim() ||
+                    kinoLS('jac_url', '') || '';
+          var key = (localStorage.getItem('pawflix.jac_key') || '').trim() ||
+                    kinoLS('jac_key', '') || '';
+          var url2 = (localStorage.getItem('pawflix.jac_url2') || '').trim() ||
+                     kinoLS('jac_url2', '') || '';
+          var key2 = (localStorage.getItem('pawflix.jac_key2') || '').trim() ||
+                     kinoLS('jac_key2', '') || '';
+          /* Старые поля pawflix.jackett — тот же Jackett-формат, не терять. */
+          if (!url) url = (localStorage.getItem('pawflix.jackett') || '').trim();
+          if (!key) key = (localStorage.getItem('pawflix.jackett_key') || '').trim();
+          if (!url) url = 'https://jac.red';
+          return { url: url, key: key, url2: url2, key2: key2 };
+        }
+        function jacQueryURL(base, key, q){
+          return base.replace(/\/+$/, '') + '/api/v2.0/indexers/all/results?Query=' + encodeURIComponent(q) + (key ? '&apikey=' + encodeURIComponent(key) : '');
+        }
+        function jacSearch(q){
+          var c = jacConf();
+          var parsers = [{ url: c.url, key: c.key }, { url: c.url2, key: c.key2 }].filter(function(p){ return p.url; });
+          var lastErr = null, idx = 0;
+          function next(){
+            if (idx >= parsers.length) return Promise.reject(lastErr || new Error('noresults'));
+            var p = parsers[idx++];
+            var isLast = idx >= parsers.length;
+            return fetch(jacQueryURL(p.url, p.key, q)).then(function(r){
+              if (!r.ok) throw new Error('HTTP ' + r.status);
+              return r.json();
+            }).then(function(j){
+              var res = (j.Results || []).filter(function(x){ return x.MagnetUri; });
+              if (res.length || isLast) return res;
+              return next();
+            }).catch(function(e){ lastErr = e; return next(); });
+          }
+          return next();
+        }
         var MITSU = 'https://beta.mitsu.tv/api';
         var TPB_TRACKERS = [
           'udp://tracker.opentrackr.org:1337/announce',
@@ -2969,11 +3106,23 @@
           }).catch(function(){ trailerKey = null; });
         }
 
+        function tsConf(){
+          var https = (localStorage.getItem('pawflix.ts_url') || '').trim() ||
+                      (localStorage.getItem('pawflix.torrserver') || '').trim() ||
+                      kinoLS('ts_url', '') || '';
+          var http = (localStorage.getItem('pawflix.ts_url_http') || '').trim() ||
+                     kinoLS('ts_url_http', '') || '';
+          return { https: https, http: http };
+        }
         function tsBase(){
-          var v = (localStorage.getItem('pawflix.torrserver') || '').trim().replace(/\/+$/, '');
-          if (!v) return TS_DEFAULT;
-          if (!/^https?:\/\//i.test(v)) v = 'http://' + v;
-          return v;
+          var h = tsConf().http.replace(/\/+$/, '');
+          if (h) {
+            if (/^https:\/\//i.test(h) || h.indexOf(TS_PROXY) === 0) return h;
+            /* Воркерам Cloudflare нельзя ходить на IP напрямую — обёртка nip.io. */
+            var u = h.replace(/^(https?:\/\/)(\d{1,3}(?:\.\d{1,3}){3})(:\d+)?/i, function(m, p, ip, port){ return p + ip + '.nip.io' + (port || ''); });
+            return TS_PROXY + '/' + u;
+          }
+          return tsConf().https.replace(/\/+$/, '') || 'http://127.0.0.1:8090';
         }
         function tsStreamURL(ts, link, idx, name){
           return ts + '/stream/' + encodeURIComponent(name || 'video') + '?link=' + encodeURIComponent(link) + '&index=' + idx + '&play';
@@ -3505,28 +3654,22 @@
           return parts.join(' ').trim();
         }
         function searchTor(query){
-          var jack = (localStorage.getItem('pawflix.jackett') || '').trim().replace(/\/+$/, '');
-          if (jack) {
-            var key = (localStorage.getItem('pawflix.jackett_key') || '').trim();
-            var url = jack + '/api/v2.0/indexers/all/results?Query=' + encodeURIComponent(query) + (key ? '&apikey=' + encodeURIComponent(key) : '');
-            return fetch(url).then(function(r){
+          return jacSearch(query).then(function(res){
+            return { items: res.map(function(x){
+              return { title: x.Title || '', magnet: x.MagnetUri, seeders: x.Seeders || 0, size: x.Size || 0, src: 'JacRed' };
+            }), src: 'JacRed' };
+          }).catch(function(){
+            /* Последний fallback — TPB через прокси «Кино» (cors.jacred.stream):
+               прямой apibay блокируется CORS на https-превью. */
+            return fetch('https://cors.jacred.stream/https://apibay.org/q.php?q=' + encodeURIComponent(query) + '&cat=0').then(function(r){
               if (!r.ok) throw new Error('http');
               return r.json();
-            }).then(function(j){
-              var res = (j.Results || []).filter(function(x){ return x.MagnetUri; }).map(function(x){
-                return { title: x.Title || '', magnet: x.MagnetUri, seeders: x.Seeders || 0, size: x.Size || 0, src: 'Jackett' };
+            }).then(function(arr){
+              var items = (Array.isArray(arr) ? arr : []).filter(function(x){ return x.info_hash; }).map(function(x){
+                return { title: x.name || '', magnet: tpbMagnet(x.info_hash, x.name), seeders: parseInt(x.seeders, 10) || 0, size: parseInt(x.size, 10) || 0, src: 'TPB' };
               });
-              return { items: res, src: 'Jackett' };
+              return { items: items, src: 'TPB' };
             });
-          }
-          return fetch('https://apibay.org/q.php?q=' + encodeURIComponent(query) + '&cat=0').then(function(r){
-            if (!r.ok) throw new Error('http');
-            return r.json();
-          }).then(function(arr){
-            var items = (Array.isArray(arr) ? arr : []).filter(function(x){ return x.info_hash; }).map(function(x){
-              return { title: x.name || '', magnet: tpbMagnet(x.info_hash, x.name), seeders: parseInt(x.seeders, 10) || 0, size: parseInt(x.size, 10) || 0, src: 'TPB' };
-            });
-            return { items: items, src: 'TPB' };
           });
         }
         function fetchTorrents(meta){
@@ -4152,34 +4295,52 @@
           }
         }
 
-        /* ---------- Настройки: TorrServer, Jackett, плеер ---------- */
-        var tsInput = document.getElementById('ts-input');
-        var tsSave = document.getElementById('ts-save');
-        tsInput.value = (localStorage.getItem('pawflix.torrserver') || '').trim();
-        function saveTs(){
-          var v = tsInput.value.trim();
-          localStorage.setItem('pawflix.torrserver', v);
-          toast(v ? 'Адрес TorrServer сохранён' : 'TorrServer: используется прокси по умолчанию');
+        /* ---------- Настройки: TorrServer (https/http, как в «Кино»),
+           JacRed-парсеры, плеер ---------- */
+        function saveField(id, key, msgOn, msgOff){
+          var v = document.getElementById(id).value.trim();
+          localStorage.setItem(key, v);
+          toast(v ? msgOn : msgOff);
         }
-        tsSave.addEventListener('click', saveTs);
-        var jackettInput = document.getElementById('jackett-input');
-        var jackettSave = document.getElementById('jackett-save');
-        jackettInput.value = (localStorage.getItem('pawflix.jackett') || '').trim();
-        function saveJackett(){
-          var v = jackettInput.value.trim();
-          localStorage.setItem('pawflix.jackett', v);
-          toast(v ? 'Поиск торрентов сохранён' : 'Поиск торрентов: используется TPB');
-        }
-        jackettSave.addEventListener('click', saveJackett);
-        var jackettKeyInput = document.getElementById('jackett-key-input');
-        var jackettKeySave = document.getElementById('jackett-key-save');
-        jackettKeyInput.value = (localStorage.getItem('pawflix.jackett_key') || '').trim();
-        function saveJackettKey(){
-          var v = jackettKeyInput.value.trim();
-          localStorage.setItem('pawflix.jackett_key', v);
-          toast(v ? 'Ключ Jackett сохранён' : 'Ключ Jackett удалён');
-        }
-        jackettKeySave.addEventListener('click', saveJackettKey);
+        var tsHttpsInput = document.getElementById('ts-https-input');
+        var tsHttpsSave = document.getElementById('ts-https-save');
+        tsHttpsInput.value = (localStorage.getItem('pawflix.ts_url') || '').trim() ||
+                             (localStorage.getItem('pawflix.torrserver') || '').trim() ||
+                             kinoLS('ts_url', '') || '';
+        function saveTsHttps(){ saveField('ts-https-input', 'pawflix.ts_url', 'TorrServer https сохранён', 'TorrServer https удалён'); }
+        tsHttpsSave.addEventListener('click', saveTsHttps);
+        var tsHttpInput = document.getElementById('ts-http-input');
+        var tsHttpSave = document.getElementById('ts-http-save');
+        tsHttpInput.value = (localStorage.getItem('pawflix.ts_url_http') || '').trim() ||
+                            kinoLS('ts_url_http', '') || '';
+        function saveTsHttp(){ saveField('ts-http-input', 'pawflix.ts_url_http', 'TorrServer http сохранён', 'TorrServer http удалён'); }
+        tsHttpSave.addEventListener('click', saveTsHttp);
+        var jacUrlInput = document.getElementById('jac-url-input');
+        var jacUrlSave = document.getElementById('jac-url-save');
+        jacUrlInput.value = (localStorage.getItem('pawflix.jac_url') || '').trim() ||
+                            kinoLS('jac_url', '') ||
+                            (localStorage.getItem('pawflix.jackett') || '').trim() || '';
+        function saveJacUrl(){ saveField('jac-url-input', 'pawflix.jac_url', 'Парсер JacRed сохранён', 'Парсер JacRed удалён (будет jac.red)'); }
+        jacUrlSave.addEventListener('click', saveJacUrl);
+        var jacKeyInput = document.getElementById('jac-key-input');
+        var jacKeySave = document.getElementById('jac-key-save');
+        jacKeyInput.value = (localStorage.getItem('pawflix.jac_key') || '').trim() ||
+                            kinoLS('jac_key', '') ||
+                            (localStorage.getItem('pawflix.jackett_key') || '').trim() || '';
+        function saveJacKey(){ saveField('jac-key-input', 'pawflix.jac_key', 'Ключ JacRed сохранён', 'Ключ JacRed удалён'); }
+        jacKeySave.addEventListener('click', saveJacKey);
+        var jacUrl2Input = document.getElementById('jac-url2-input');
+        var jacUrl2Save = document.getElementById('jac-url2-save');
+        jacUrl2Input.value = (localStorage.getItem('pawflix.jac_url2') || '').trim() ||
+                             kinoLS('jac_url2', '') || '';
+        function saveJacUrl2(){ saveField('jac-url2-input', 'pawflix.jac_url2', 'Парсер JacRed 2 сохранён', 'Парсер JacRed 2 удалён'); }
+        jacUrl2Save.addEventListener('click', saveJacUrl2);
+        var jacKey2Input = document.getElementById('jac-key2-input');
+        var jacKey2Save = document.getElementById('jac-key2-save');
+        jacKey2Input.value = (localStorage.getItem('pawflix.jac_key2') || '').trim() ||
+                             kinoLS('jac_key2', '') || '';
+        function saveJacKey2(){ saveField('jac-key2-input', 'pawflix.jac_key2', 'Ключ JacRed 2 сохранён', 'Ключ JacRed 2 удалён'); }
+        jacKey2Save.addEventListener('click', saveJacKey2);
         var filmixInput = document.getElementById('filmix-input');
         var filmixSave = document.getElementById('filmix-save');
         filmixInput.value = (localStorage.getItem('pawflix.filmix_token') || '').trim();
