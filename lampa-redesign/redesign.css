@@ -52,6 +52,7 @@ body.redesign .wrap__left {
     top: 0.7em !important;
     left: 50% !important;
     width: auto !important;
+    height: auto !important;
     max-width: 92vw !important;
     margin-left: 0 !important;
     padding-top: 0 !important;
@@ -87,6 +88,46 @@ body.redesign .wrap__left .scroll--mask {
 }
 body.redesign .wrap__left .menu {
     width: auto !important;
+    display: -webkit-box !important;
+    display: -webkit-flex !important;
+    display: -moz-box !important;
+    display: -ms-flexbox !important;
+    display: flex !important;
+    -webkit-box-orient: horizontal !important;
+    -webkit-box-direction: normal !important;
+    -webkit-flex-direction: row !important;
+    -moz-box-orient: horizontal !important;
+    -moz-box-direction: normal !important;
+    -ms-flex-direction: row !important;
+    flex-direction: row !important;
+    -webkit-box-align: center !important;
+    -webkit-align-items: center !important;
+    -moz-box-align: center !important;
+    -ms-flex-align: center !important;
+    align-items: center !important;
+}
+/* Секции меню — в одну строку, иначе пилюля вытягивается в овал */
+body.redesign .wrap__left .menu__case {
+    display: -webkit-box !important;
+    display: -webkit-flex !important;
+    display: -moz-box !important;
+    display: -ms-flexbox !important;
+    display: flex !important;
+    -webkit-box-orient: horizontal !important;
+    -webkit-box-direction: normal !important;
+    -webkit-flex-direction: row !important;
+    -moz-box-orient: horizontal !important;
+    -moz-box-direction: normal !important;
+    -ms-flex-direction: row !important;
+    flex-direction: row !important;
+    -webkit-box-align: center !important;
+    -webkit-align-items: center !important;
+    -moz-box-align: center !important;
+    -ms-flex-align: center !important;
+    align-items: center !important;
+    -webkit-flex-shrink: 0 !important;
+    -ms-flex-negative: 0 !important;
+    flex-shrink: 0 !important;
 }
 body.redesign .wrap__left .menu__list {
     display: -webkit-box !important;
