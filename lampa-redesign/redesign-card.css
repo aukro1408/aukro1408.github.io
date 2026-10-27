@@ -1,0 +1,56 @@
+/* ============================================================
+   redesign-card.css — ТОЛЬКО экран карточки фильма.
+   Подключается ПОСЛЕ redesign.css, поэтому его правила
+   побеждают при равной специфичности. Правь смело: всё,
+   что написано здесь, касается только карточки.
+   ВНИМАНИЕ: вёрстку не трогаем — только цвет и фон.
+   ============================================================ */
+
+body.redesign .full-start-new__title {
+    color: var(--light-ink);
+}
+body.redesign .full-start__pg, body.redesign .full-start__status {
+    border-color: var(--light-line);
+}
+body.redesign .full-start__rate, body.redesign .info__rate {
+    color: var(--light-accent-deep);
+}
+body.redesign .torrent-item {
+    background-color: var(--light-glass);
+    color: var(--light-ink);
+}
+body.redesign .full-start__background.loaded {
+    opacity: 0.14 !important;
+}
+body.redesign .full-start__background.dim {
+    opacity: 0.09 !important;
+}
+body.redesign .full-start-new__body, body.redesign .full-descr, body.redesign .full-person, body.redesign .full-episode {
+    color: var(--light-ink);
+}
+body.redesign .full-start-new__head, body.redesign .full-start-new__creator, body.redesign .full-episode__num {
+    color: var(--light-muted);
+}
+body.redesign .full-start-new__head span, body.redesign .full-start-new__tagline, body.redesign .full-start-new__details, body.redesign .full-start-new__description, body.redesign .full-descr__info-name, body.redesign .full-descr__info-body, body.redesign .full-descr__text, body.redesign .full-descr__line-name, body.redesign .full-descr__line-body, body.redesign .full-person__name, body.redesign .full-person__role, body.redesign .full-episode__name, body.redesign .full-episode__body, body.redesign .full-episode__date, body.redesign .full-start__pg, body.redesign .full-start__status {
+    color: var(--light-ink);
+}
+body.redesign .full-start__button.button--play, body.redesign .full-start__button.focus, body.redesign .full-descr__tag.focus, body.redesign .full-start__tag.focus {
+    background: var(--light-accent);
+    color: var(--light-accent-ink);
+}
+body.redesign .full-start__button:not(.button--play):not(.focus), body.redesign .full-start__tag, body.redesign .full-descr__tag, body.redesign .full-start .info__rate {
+    background: var(--light-glass);
+    color: var(--light-ink);
+    border-color: var(--light-line);
+}
+@media screen and (max-width: 400px) {
+body.redesign .full-start__poster {
+        opacity: 0.3 !important;
+    }
+}
+
+/* ============================================================
+   ТВОЁ МЕСТО — пиши свои правила для карточки ниже.
+   Пример: сделать подложку под заголовком светлее:
+   body.redesign .full-start-new__title { color: #000; }
+   ============================================================ */
