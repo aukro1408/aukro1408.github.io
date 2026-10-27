@@ -484,7 +484,8 @@ body.redesign .bell__item {
    Только эти три файла — остальные иконки (в т.ч. more.svg) не трогаем. */
 body.redesign .settings-folder__icon img[src*="player.svg"],
 body.redesign .settings-folder__icon img[src*="parser.svg"],
-body.redesign .settings-folder__icon img[src*="server.svg"] {
+body.redesign .settings-folder__icon img[src*="server.svg"],
+body.redesign .settings-folder__icon img[src*="more.svg"] {
     filter: brightness(0);
 }
 
