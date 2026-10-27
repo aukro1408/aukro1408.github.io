@@ -732,15 +732,24 @@
       #pl-video{ flex:1; width:100%; min-height:0; background:#000; outline:none; }
       #pl-yt{ flex:1; width:100%; min-height:0; border:0; background:#000; }
       /* ТЁМНЫЙ ЭКРАН ФИЛЬМА по референсу — только #screen-detail, остальные экраны светлые.
-         Фон — размытый постер как в «Кино» (blur 40px, цвет фона берётся из постера),
-         поверх — тёмные градиенты для читаемости. Резкого бэкдропа на странице нет. */
+         Порт «Кино» один в один: ambient — размытый постер (blur 40px, saturate 1.9,
+         brightness .92, scale 1.25) + градиент .mv-ambient::after, уводящий размытие
+         книзу в цвет фона страницы; сверху — резкий hero-арт с shade и маской
+         как .mv-backdrop.mv-hero в теме «Модерн». */
       #screen-detail .sidebar{ position:relative; z-index:2; }
+      #screen-detail .main{ background:#0b1220; }
       #screen-detail .detail-hero::after{ background:none; }
       #screen-detail #detail-bg{ position:fixed; inset:0; width:100vw; height:100vh;
         object-fit:cover; object-position:center;
-        filter:blur(40px) saturate(1.6) brightness(.55); transform:scale(1.25); z-index:0; }
+        filter:blur(40px) saturate(1.9) brightness(.92); transform:scale(1.25); z-index:0; }
       #screen-detail .detail-shade{ position:fixed; inset:0; z-index:0; pointer-events:none;
-        background:linear-gradient(180deg, rgba(0,0,0,.62) 0%, rgba(0,0,0,.28) 32%, rgba(0,0,0,.12) 55%, rgba(0,0,0,.78) 100%); }
+        background:linear-gradient(180deg, rgba(11,18,32,.18) 0%, rgba(11,18,32,.42) 42%, #0b1220 88%, #0b1220 100%); }
+      #screen-detail .detail-art{ position:relative; height:36vh; min-height:280px; max-height:460px; overflow:hidden;
+        -webkit-mask-image:linear-gradient(180deg,#000 68%,transparent 97%);
+        mask-image:linear-gradient(180deg,#000 68%,transparent 97%); }
+      #screen-detail .detail-art img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+      #screen-detail .detail-art-shade{ position:absolute; inset:0;
+        background:linear-gradient(180deg, rgba(8,12,24,.22) 0%, rgba(8,12,24,0) 35%, rgba(8,12,24,.30) 60%, rgba(11,18,32,.55) 100%); }
       #screen-detail .detail-topbar{ position:relative; z-index:3; }
       #screen-detail .detail-hero-in{ position:relative; z-index:1; }
       #screen-detail .detail-sourcesbar, #screen-detail .detail-similar{ position:relative; z-index:1; }
@@ -775,6 +784,12 @@
       #screen-detail .detail-similar .src-title{ color:#fff; }
       #screen-detail #similar-more{ background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.25); color:#fff; box-shadow:none; }
       #screen-detail .empty-note{ color:rgba(255,255,255,.7); }
+      /* Мобильная вёрстка экрана фильма (блок ПОСЛЕ тёмного — иначе тот перебьёт
+         его при равной специфичности): hero-арт — 16:9 на всю ширину main,
+         виден сразу при открытии, без скролла (как арт в мобильном «Кино»). */
+      @media (max-width:760px){
+        #screen-detail .detail-art{ height:auto; aspect-ratio:16/9; min-height:0; max-height:none; }
+      }
 
 </style>
 </head>
@@ -1219,6 +1234,7 @@
           </div>
 <div class="detail-hero"><img class="bg" id="detail-bg" src="" alt="" />
           <div class="detail-shade"></div>
+          <div class="detail-art" id="detail-art"><img id="detail-art-img" src="" alt="" /><div class="detail-art-shade"></div></div>
           <div class="detail-hero-in">
             <div class="detail-main">
               <h1 class="detail-title" id="detail-title">Выберите фильм или сериал</h1>
@@ -2439,6 +2455,9 @@
           document.getElementById('detail-rates').textContent = '';
           setGlass('', '', '', '');
           document.getElementById('glass-av').innerHTML = '';
+          document.getElementById('detail-bg').style.display = 'none';
+          document.getElementById('detail-art').style.display = 'none';
+          document.getElementById('detail-art-img').style.display = 'none';
           resetSources();
           resetSimilar();
           var extra = type === 'movie' ? 'credits,release_dates' : 'credits,content_ratings';
@@ -2462,9 +2481,14 @@
               if (cr && cr.rating) age = cr.rating;
             }
             var bg = document.getElementById('detail-bg');
-            var bgSrc = d.poster_path ? IMG + 'w780' + d.poster_path : (d.backdrop_path ? IMG + 'w1280' + d.backdrop_path : '');
+            var bgSrc = d.poster_path ? IMG + 'w500' + d.poster_path : (d.backdrop_path ? IMG + 'w780' + d.backdrop_path : '');
             if (bgSrc) { bg.src = bgSrc; bg.style.display = ''; }
             else bg.style.display = 'none';
+            var artBox = document.getElementById('detail-art');
+            var art = document.getElementById('detail-art-img');
+            var artSrc = d.backdrop_path ? IMG + 'w1280' + d.backdrop_path : (d.poster_path ? IMG + 'w500' + d.poster_path : '');
+            if (artSrc) { art.src = artSrc; art.style.display = ''; artBox.style.display = ''; }
+            else { art.style.display = 'none'; artBox.style.display = 'none'; }
             var poster = document.getElementById('detail-poster');
             if (d.poster_path) { poster.src = IMG + 'w500' + d.poster_path; poster.style.display = ''; }
             else poster.style.display = 'none';
