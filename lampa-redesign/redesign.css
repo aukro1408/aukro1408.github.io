@@ -505,3 +505,15 @@ body.redesign .head__action {
     -webkit-box-shadow: 0 0.2em 0.8em rgba(52, 78, 91, 0.14);
     box-shadow: 0 0.2em 0.8em rgba(52, 78, 91, 0.14);
 }
+
+/* Навбар: настоящее стекло — полупрозрачный, с блюром и светлой кромкой,
+   контент мягко просвечивает сквозь него, как в glassmorphism. */
+body.redesign .navigation-bar,
+body.redesign .navigation-bar__body {
+    background: rgba(255, 255, 255, 0.45) !important;
+    -webkit-backdrop-filter: blur(1.6em);
+    backdrop-filter: blur(1.6em);
+    border-color: rgba(255, 255, 255, 0.6);
+    -webkit-box-shadow: 0 -0.5em 1.5em rgba(52, 78, 91, 0.12);
+    box-shadow: 0 -0.5em 1.5em rgba(52, 78, 91, 0.12);
+}
