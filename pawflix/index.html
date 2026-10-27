@@ -834,26 +834,37 @@
       .prov-ambient-shade{ position:fixed; inset:0; z-index:0; pointer-events:none;
         background:linear-gradient(180deg, rgba(11,18,32,.18) 0%, rgba(11,18,32,.42) 42%, #0b1220 88%, #0b1220 100%); }
       body:not(.on-provider) #prov-bg, body:not(.on-provider) .prov-ambient-shade{ display:none !important; }
-      #screen-provider .main{ background:#0b1220; position:relative; }
+      #screen-provider .main{ position:relative; }
       #screen-provider .prov-hero{ position:static; }
       #screen-provider .prov-art{ position:fixed; top:0; left:0; right:0; z-index:1;
         height:58vh; min-height:400px; max-height:660px; overflow:hidden; }
       #screen-provider .prov-art img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 0; display:block; }
       #screen-provider .prov-shade{ position:absolute; inset:0; pointer-events:none;
         background:linear-gradient(180deg, rgba(8,12,24,.22) 0%, rgba(8,12,24,0) 35%, rgba(8,12,24,.30) 60%, rgba(11,18,32,.55) 100%); }
-      #screen-provider .prov-info{ position:relative; z-index:2; padding:21vh 2.4em 2.2em; color:#fff; }
+      /* Hero провайдера — зеркало detail-hero-in: та же высота от верха,
+         тот же flex-ряд (основное + стеклянная карточка справа), тот же
+         ритм заголовка/меты/рейтинга. Кнопки «Смотреть» здесь нет. */
+      #screen-provider .prov-hero-in{ position:relative; z-index:1; display:flex; gap:2em; align-items:flex-start;
+        padding:21vh 2.4em 2.2em; }
+      #screen-provider .prov-main{ flex:1 1 auto; min-width:0; }
       #screen-provider .prov-kicker{ font-size:.8em; font-weight:800; letter-spacing:.25em; text-transform:uppercase; color:#8cddff; margin-bottom:.5em; }
       #screen-provider .prov-logo{ display:block; max-width:22em; max-height:6em; width:auto; height:auto; object-fit:contain;
         filter:drop-shadow(0 4px 18px rgba(0,0,0,.55)); margin-bottom:.4em; }
-      #screen-provider .prov-htitle{ font-family:"Unbounded",sans-serif; font-size:1.9em; line-height:1.12; font-weight:700; text-shadow:0 2px 12px rgba(0,0,0,.7); }
-      #screen-provider .prov-badges{ display:flex; align-items:center; gap:.7em; margin-top:.7em; flex-wrap:wrap; }
-      #screen-provider .prov-q{ background:linear-gradient(135deg,#3b8cff,#7b5cff); color:#fff; font-size:.8em; font-weight:800; padding:.3em .8em; border-radius:.6em; letter-spacing:.05em; }
-      #screen-provider .prov-meta{ font-size:.95em; color:rgba(255,255,255,.88); font-weight:600; text-shadow:0 1px 6px rgba(0,0,0,.6); }
-      #screen-provider .prov-meta .star{ color:#ffb700; }
-      #screen-provider .prov-watch{ margin-top:1em; width:100%; padding:1em; border:none; border-radius:1.1em; cursor:pointer; background:#0d7bf2; color:#fff; font:inherit; font-size:1.05em; font-weight:800; display:flex; align-items:center; justify-content:center; gap:.6em; box-shadow:0 12px 30px rgba(13,123,242,.45), inset 0 1px 0 rgba(255,255,255,.25); text-shadow:0 1px 4px rgba(0,0,0,.35); }
-      #screen-provider .prov-sub{ margin-top:.8em; font-size:.95em; color:rgba(255,255,255,.85); text-shadow:0 1px 6px rgba(0,0,0,.6); line-height:1.5; }
+      #screen-provider .prov-htitle{ color:#fff; text-transform:uppercase; letter-spacing:.3em;
+        font-size:2.9em; line-height:1.18; text-shadow:0 2px 24px rgba(0,0,0,.5); overflow-wrap:break-word; }
+      #screen-provider .prov-meta{ color:rgba(255,255,255,.85); font-size:1em; font-weight:600; margin-bottom:.6em; }
+      #screen-provider .prov-rates{ font-size:1.15em; font-weight:800; color:#fff; margin-bottom:.7em; text-shadow:0 1px 12px rgba(0,0,0,.4); }
+      #screen-provider .prov-rates .star{ color:#f5a623; }
+      #screen-provider .prov-sub{ font-size:1em; color:rgba(255,255,255,.92); text-shadow:0 1px 12px rgba(0,0,0,.4); line-height:1.5; }
       #screen-provider .prov-sub b{ color:#fff; }
-      #screen-provider .prov-body{ position:relative; z-index:1; padding:0 2.4em 4.6em; }
+      #screen-provider .prov-glass{ flex:0 0 32%; display:flex; gap:1em;
+        background:linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.12));
+        border:1px solid rgba(255,255,255,.4); border-radius:1.1em; padding:1em;
+        box-shadow:0 24px 60px rgba(0,0,0,.35); backdrop-filter:blur(22px) saturate(1.5); }
+      #screen-provider .prov-glass .glass-poster{ width:9em; }
+      #screen-provider .glass-lab{ color:rgba(255,255,255,.6); }
+      #screen-provider .glass-val{ color:#fff; }
+      #screen-provider .prov-body{ position:relative; z-index:1; padding:0 2.4em 2em; }
       /* Тёмные строки списков поверх ambient (как секции карточки). */
       #screen-provider .prov-body .src{ background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.18); color:#fff; box-shadow:none; }
       #screen-provider .prov-body .src .file{ color:rgba(255,255,255,.88); }
@@ -923,7 +934,9 @@
         #screen-provider .prov-hero{ position:relative; }
         #screen-provider .prov-art{ position:relative; height:auto; aspect-ratio:16/9; min-height:0; max-height:none; }
         #screen-provider .prov-shade{ position:absolute; inset:0; }
-        #screen-provider .prov-info{ padding:1em 1.1em 1.6em; }
+        #screen-provider .prov-hero-in{ flex-direction:column; padding:1em 1.1em 1.6em; }
+        #screen-provider .prov-glass{ flex-basis:auto; width:100%; }
+        #screen-provider .main{ padding-top:0; }
         #screen-provider .prov-body{ padding:1em .7em 4.6em; }
         #screen-detail .detail-extra{ padding:0 1.1em 2em; }
       }
@@ -1811,16 +1824,24 @@
           <div class="main">
           <div class="prov-hero">
             <div class="prov-art" id="prov-art"><img id="prov-art-img" src="" alt=""><div class="prov-shade"></div></div>
-            <div class="prov-info">
-              <div class="prov-kicker" id="prov-title">Источники</div>
-              <img id="prov-logo" class="prov-logo" alt="" style="display:none">
-              <div class="prov-htitle" id="prov-head-title"></div>
-              <div class="prov-badges">
-                <span class="prov-q" id="prov-q" style="display:none"></span>
-                <span class="prov-meta" id="prov-meta"></span>
+            <div class="prov-hero-in">
+              <div class="prov-main">
+                <div class="prov-kicker" id="prov-title">Источники</div>
+                <img id="prov-logo" class="prov-logo" alt="" style="display:none">
+                <div class="prov-htitle" id="prov-head-title"></div>
+                <div class="prov-meta" id="prov-meta"></div>
+                <div class="prov-rates" id="prov-rates"></div>
+                <div class="prov-sub" id="prov-sub"></div>
               </div>
-              <button class="prov-watch focusable" id="prov-watch" type="button" style="display:none"><span>▶</span><span id="prov-watch-t">Смотреть</span></button>
-              <div class="prov-sub" id="prov-sub"></div>
+              <div class="prov-glass" id="prov-glass">
+                <div class="glass-poster"><img id="prov-poster" src="" alt=""></div>
+                <div class="glass-rows">
+                  <div class="glass-row"><span class="glass-lab">Режиссёр</span><span class="glass-val" id="prov-glass-director"></span></div>
+                  <div class="glass-row"><span class="glass-lab">В главных ролях</span><span class="glass-val" id="prov-glass-cast"></span></div>
+                  <div class="glass-row"><span class="glass-lab">Страна</span><span class="glass-val" id="prov-glass-country"></span></div>
+                  <div class="glass-row"><span class="glass-lab">Год</span><span class="glass-val" id="prov-glass-year"></span></div>
+                </div>
+              </div>
             </div>
           </div>
           <div class="prov-body">
@@ -3815,6 +3836,11 @@ var STUDIOS = [
               year: year,
               rate: rate,
               runtime: runtime,
+              genres: genres.join(', '),
+              age: age,
+              director: dir,
+              cast: castNames,
+              country: countries,
               backdrop: d.backdrop_path || '',
               poster: d.poster_path || '',
               logo: (logo && logo.file_path) ? logo.file_path : ''
@@ -4440,14 +4466,6 @@ var STUDIOS = [
            Esc-стек: каждый render ставит provEscBack на уровень выше (null —
            верх уровня провайдера, Esc уходит на карточку). */
         var provEscBack = null;
-        function provSetWatch(label, onclick){
-          var w = document.getElementById('prov-watch');
-          if (!w) return;
-          if (!label) { w.style.display = 'none'; w.onclick = null; return; }
-          w.style.display = 'flex';
-          document.getElementById('prov-watch-t').textContent = label;
-          w.onclick = onclick;
-        }
         function provSetQ(q){
           var e = document.getElementById('prov-q');
           if (!e) return;
@@ -4456,6 +4474,14 @@ var STUDIOS = [
         function provSetSub(html){
           var s = document.getElementById('prov-sub');
           if (s) s.innerHTML = html || '';
+        }
+        /* Строка стеклянной карточки провайдера — как setGlassRow карточки:
+           пустое значение прячет строку. */
+        function provGlassRow(valId, value){
+          var v = document.getElementById(valId);
+          if (!v) return;
+          v.textContent = value || '';
+          v.parentNode.style.display = value ? '' : 'none';
         }
         function provHead(){
           var m = currentDetailMeta;
@@ -4486,15 +4512,31 @@ var STUDIOS = [
             if (logoEl) logoEl.style.display = 'none';
             if (t) { t.style.display = ''; t.textContent = m ? (m.title || '') : ''; }
           }
+          /* Мета и рейтинг — как на карточке: год • жанры • длительность •
+             возраст, рейтинг отдельной строкой со звездой. */
           var meta = document.getElementById('prov-meta');
           if (meta) {
             var parts = [];
-            if (m && m.rate && m.rate !== '—') parts.push('<span class="star">★</span> ' + esc(m.rate));
             if (m && m.year) parts.push(esc(m.year));
+            if (m && m.genres) parts.push(esc(m.genres));
             if (m && m.runtime) parts.push(esc(m.runtime));
-            meta.innerHTML = parts.join(' · ');
+            if (m && m.age) parts.push(esc(m.age));
+            meta.textContent = parts.join(' • ');
           }
-          provSetQ(''); provSetWatch(null); provSetSub('');
+          var rates = document.getElementById('prov-rates');
+          if (rates) {
+            if (m && m.rate && m.rate !== '—') rates.innerHTML = '<span class="star">★</span> ' + esc(m.rate);
+            else rates.innerHTML = '';
+          }
+          /* Правая стеклянная карточка — как detail-glass, из тех же данных,
+             что и карточка (currentDetailMeta пополняется в openDetail). */
+          var pp = document.getElementById('prov-poster');
+          if (pp) { if (m && m.poster) { pp.src = IMG + 'w500' + m.poster; pp.style.display = ''; } else pp.style.display = 'none'; }
+          provGlassRow('prov-glass-director', m ? m.director : '');
+          provGlassRow('prov-glass-cast', m ? m.cast : '');
+          provGlassRow('prov-glass-country', m ? m.country : '');
+          provGlassRow('prov-glass-year', m ? m.year : '');
+          provSetQ(''); provSetSub('');
         }
         /* Строка выбора источника (аналог пилюли «Источник» в «Кино»):
            показывается всегда, когда источники есть, — и при пустом источнике,
@@ -4511,7 +4553,7 @@ var STUDIOS = [
         }
         function renderProvSrcPick(focusFirst){
           provEscBack = function(){ onl.srcPick = false; renderProvLumio(); };
-          provSetQ(''); provSetWatch(null); provSetSub('Lumio · выбор источника');
+          provSetQ(''); provSetSub('Lumio · выбор источника');
           provPillsHTML([]);
           var box = provListEl();
           box.innerHTML = '';
@@ -4547,14 +4589,14 @@ var STUDIOS = [
           else if (onl.level === 'seasons') renderProvSeasons(false);
           else if (onl.level === 'episodes') renderProvEps(false);
           else if (onl.level === 'empty') {
-            provEscBack = null; provSetQ(''); provSetWatch(null); provSetSub('Lumio');
+            provEscBack = null; provSetQ(''); provSetSub('Lumio');
             var box = provListEl();
             box.innerHTML = '';
             provPillsHTML(lumioSrcPill());
             box.appendChild(srcNote('Тут пусто.'));
           }
           else if (onl.level === 'error') {
-            provEscBack = null; provSetQ(''); provSetWatch(null); provSetSub('Lumio');
+            provEscBack = null; provSetQ(''); provSetSub('Lumio');
             var box2 = provListEl();
             box2.innerHTML = '';
             provPillsHTML(lumioSrcPill());
@@ -4592,11 +4634,6 @@ var STUDIOS = [
         function renderProvVoices(focusFirst){
           provEscBack = (onl.from === 'episodes') ? function(){ renderProvEps(true); } : null;
           provSetQ('');
-          /* Как в «Кино»: «Смотреть» — только у фильмов (первый голос);
-             у сериалов на уровне голосов кнопки нет — тап по голосу играет. */
-          if (onl.voices.length && onl.from !== 'episodes') {
-            provSetWatch('Смотреть', function(){ playLumioVoice(onl.voices[0], -1); });
-          } else provSetWatch(null);
           var epT = (onl.from === 'episodes' && onl.epIdx != null) ? (onl.epIdx + 1) : null;
           provSetSub('<b>' + esc(lumioSrcName()) + '</b>' + (epT ? ' · серия ' + epT : ''));
           var box = provListEl();
@@ -4620,7 +4657,7 @@ var STUDIOS = [
         }
         function renderProvSeasons(focusFirst){
           provEscBack = null;
-          provSetQ(''); provSetWatch(null);
+          provSetQ('');
           provSetSub('Lumio · ' + onl.seasons.length + ' ' + plural(onl.seasons.length, ['сезон', 'сезона', 'сезонов']));
           var box = provListEl();
           box.innerHTML = '';
@@ -4659,8 +4696,7 @@ var STUDIOS = [
             }
             if (target === -1) target = 0;
             var et = onlEpName(onl.eps[target], target);
-            provSetWatch('Смотреть · ' + et.num + ' серия', (function(ti){ return function(){ playLumioEp(ti, false); }; })(target));
-          } else { provSetWatch(null); provSetSub('Lumio'); }
+          } else { provSetSub('Lumio'); }
           var box = provListEl();
           box.innerHTML = '';
           provPillsHTML(lumioSrcPill());
@@ -4685,8 +4721,7 @@ var STUDIOS = [
         /* Как vwLumioPlayEp в «Кино»: method play — голоса из самой серии,
            иначе fetch страницы серии; 1 голос — сразу играть, несколько —
            список голосов; пусто — записка и возврат к сериям через 1200 мс.
-           fromPage=false (кнопка «Смотреть»): несколько голосов — открыть
-           страницу Lumio на уровне голосов. */
+           Вызовы — только тапом по строке серии (кнопка «Смотреть» удалена). */
         function playLumioEp(ei, fromPage){
           var tok = onl.token;
           var ep = onl.eps[ei];
@@ -4927,7 +4962,7 @@ var STUDIOS = [
           if (torSortPick) { renderTorSortPick(); return; }
           if (torQmodePick) { renderTorQmodePick(); return; }
           if (!torItems.length) {
-            provSetQ(''); provSetWatch(null); provSetSub('Торренты');
+            provSetQ(''); provSetSub('Торренты');
             provPillsHTML([]);
             var note = 'Ищу раздачи…';
             if (torSearched) {
@@ -4949,7 +4984,6 @@ var STUDIOS = [
           var sorted = torSorted(torItems);
           provSetQ('');
           provSetSub('Торренты · ' + sorted.length + ' ' + plural(sorted.length, ['раздача', 'раздачи', 'раздач']) + (torQueryText ? ' · ' + esc(torQueryText) : ''));
-          provSetWatch('Смотреть', function(){ playTorrent(sorted[0]); });
           provPillsHTML([
             { label: 'Сортировка', value: TOR_SORTS[torSort], onPick: function(){ torSortPick = true; renderProvTorrents(); } },
             { label: 'Запрос', value: torQmodeName(), onPick: function(){ torQmodePick = true; renderProvTorrents(); } }
@@ -5261,7 +5295,7 @@ var STUDIOS = [
         }
         function fxRenderSimilars(res, tok, maxQ){
           provEscBack = null;
-          provSetQ(''); provSetWatch(null); provSetSub('Уточните, что именно:');
+          provSetQ(''); provSetSub('Уточните, что именно:');
           provPillsHTML([]);
           var box = provListEl();
           box.innerHTML = '';
@@ -5325,7 +5359,6 @@ var STUDIOS = [
           provEscBack = null;
           var best = Math.max.apply(null, items.map(function(i){ return i.q; }));
           provSetQ(best + 'p');
-          provSetWatch('Смотреть', function(){ var it = items[0]; fxPlay(it.voice, it.q, fxFileUrl(it.link, it.q)); });
           provSetSub('Filmix 4k · ' + items.length + ' ' + plural(items.length, ['озвучка', 'озвучки', 'озвучек']) + ' · до ' + best + 'p');
           provPillsHTML([]);
           var box = provListEl();
@@ -5394,7 +5427,7 @@ var STUDIOS = [
         }
         function fxRenderSeasons(tok, maxQ, focusFirst){
           provEscBack = null;
-          provSetQ(''); provSetWatch(null);
+          provSetQ('');
           provSetSub('Filmix 4k · ' + fx.seasons.length + ' ' + plural(fx.seasons.length, ['сезон', 'сезона', 'сезонов']));
           provPillsHTML([]);
           var box = provListEl();
@@ -5477,15 +5510,7 @@ var STUDIOS = [
             }
             if (target === -1) target = 0;
             var te = eps[target];
-            provSetWatch('Смотреть · S' + te.sNum + 'E' + te.eNum, (function(e){
-              return function(){
-                var wk = 's' + e.sNum + 'e' + e.eNum;
-                var pick = fxPickVoice(e);
-                if (pick) { fxPlay(pick.voice, pick.q, pick.url, wk); return; }
-                fxRenderEpVoices(e, tok, maxQ);
-              };
-            })(te));
-          } else { provSetWatch(null); provSetSub('Filmix'); }
+          } else { provSetSub('Filmix'); }
           var box = provListEl();
           box.innerHTML = '';
           provPillsHTML([
