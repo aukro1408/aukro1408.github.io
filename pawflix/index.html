@@ -607,7 +607,7 @@
       .logo-word{ width:4.3em; height:auto; display:block; }
       /* Экран карточки по референсу: светлый hero, стеклянная карточка, полоса качества, похожие 16:9 */
       body.on-detail .tabs{ display:none; }
-      .detail{ overflow-y:auto; }
+      .detail{ overflow:hidden; }
       .detail-hero{ flex:0 0 auto; min-height:25em; overflow:visible; }
       .detail-hero::after{
         background:linear-gradient(180deg, rgba(255,255,255,.45) 0%, rgba(255,255,255,0) 30%),
@@ -651,16 +651,15 @@
       .glass-row{ display:flex; flex-direction:column; gap:.15em; }
       .glass-lab{ font-size:.78em; color:var(--muted); font-weight:600; }
       .glass-val{ font-size:.92em; font-weight:600; color:var(--ink); line-height:1.35; }
-      .detail-qualitybar{ display:flex; align-items:center; gap:.8em; margin:0 2.4em;
+      body.on-provider .tabs{ display:none; }
+      .detail-sourcesbar{ display:flex; align-items:center; gap:.8em; margin:0 2.4em;
         background:var(--panel); border:1px solid var(--line); border-radius:1em; padding:.8em 1.2em; }
-      .q-label{ font-weight:600; font-size:.95em; white-space:nowrap; }
-      .q-pill{ appearance:none; border:1px solid var(--line); background:var(--panel-2); color:var(--ink-soft);
-        font:700 .92em "Onest",sans-serif; padding:.5em 1.1em; border-radius:999px; cursor:pointer; }
-      .q-pill.on{ background:var(--accent); border-color:var(--accent); color:#fff; }
-      .q-sep{ width:1px; align-self:stretch; background:var(--line); margin:0 .4em; }
-      .q-online{ display:flex; align-items:center; gap:.5em; background:none; border:none;
-        font:600 .95em "Onest",sans-serif; color:var(--ink); cursor:pointer; white-space:nowrap; }
-      .q-dot{ width:.6em; height:.6em; border-radius:50%; background:#1fae5f; flex:0 0 auto; }
+      .src-label{ font-weight:600; font-size:.95em; white-space:nowrap; }
+      .src-btn{ appearance:none; border:1px solid var(--line); background:var(--panel-2); color:var(--ink);
+        font:700 .92em "Onest",sans-serif; padding:.5em 1.3em; border-radius:999px; cursor:pointer; }
+      .prov-body{ padding:0 2.4em 2em; }
+      .prov-body .src-list{ display:flex; flex-direction:column; gap:0; margin-top:.8em; }
+      .src.back-row{ appearance:none; font-family:inherit; font-size:1em; text-align:left; justify-content:flex-start; }
       .detail-body{ overflow:visible; }
       .src-list{ min-width:0; }
       .pset-btn.on{ background:var(--accent); border-color:var(--accent); color:#fff; }
@@ -687,9 +686,39 @@
         .detail-hero-in{ flex-direction:column; padding:1em 1.1em 1.6em; }
         .detail-glass{ flex-basis:auto; width:100%; }
         .detail-topbar{ padding:1em 1.1em .8em; }
-        .detail-qualitybar{ margin:0 1.1em; flex-wrap:wrap; }
+        .detail-sourcesbar{ margin:0 1.1em; flex-wrap:wrap; }
+        .prov-body{ padding:0 1.1em 4.6em; }
         .detail-similar{ padding:0 1.1em 4.6em; }
         .sim-card{ flex-basis:13em; }
+      }
+      /* Сайдбар на всех экранах (требование Denis): карточка, плагины,
+         настройки и провайдер получают ту же рейку, что и главная;
+         контент обёрнут в .main — раскладка как на главной, скроллится .main,
+         рейка остаётся на месте. Отступы секций переехали в .main, чтобы рейка
+         была от края до края. */
+      .detail{ flex-direction:row; }
+      .detail .main{ padding:0; gap:0; overflow-y:auto; }
+      .plugins{ flex-direction:row; padding:0; }
+      .plugins .main{ padding:1.7em 2.4em; gap:0; overflow-y:auto; }
+      .settings{ flex-direction:row; padding:0; }
+      .settings .main{ padding:1.7em 2.4em; gap:0; overflow-y:auto; }
+      #screen-provider .main{ padding:0; gap:0; overflow-y:auto; }
+      #screen-provider .screen-head{ padding:1.7em 2.4em 0; }
+      /* Анимации логотипа pawflix — из файла Denis (work/pawflix_logo.html),
+         один в один: блик shine по иконке, пульсация spark-искры вордмарка,
+         появление вордмарка. --smooth-easing подставлен значением из файла
+         (cubic-bezier(0.2,0.8,0.2,1)), новых анимаций не добавлено. */
+      .logo-word.anim-wordmark{ animation:wordmarkRiseFade 0.8s cubic-bezier(0.2,0.8,0.2,1) 0.65s both; }
+      .anim-shine{ animation:sweepShine 5s cubic-bezier(0.4,0,0.2,1) infinite; }
+      .anim-spark{ animation:glowSpark 2.4s ease-in-out infinite alternate; transform-origin:center; }
+      @keyframes wordmarkRiseFade{ 0%{ opacity:0; transform:translateY(18px); } 100%{ opacity:1; transform:translateY(0); } }
+      @keyframes sweepShine{ 0%,15%{ transform:translateX(-480px) rotate(25deg); } 45%,100%{ transform:translateX(520px) rotate(25deg); } }
+      @keyframes glowSpark{ 0%{ transform:scale(1); filter:drop-shadow(0 0 3px rgba(255,82,113,0.6)); } 100%{ transform:scale(1.18); filter:drop-shadow(0 0 10px rgba(255,82,113,1)); } }
+      @media (prefers-reduced-motion: reduce){
+        .anim-wordmark, .anim-shine, .anim-spark{ animation:none !important; opacity:1 !important; transform:none !important; }
+      }
+      @media (max-width:760px){
+        .detail .main, .plugins .main, .settings .main, #screen-provider .main{ padding:.7em .7em 4.6em; gap:1.15em; overflow:visible; }
       }
 
 </style>
@@ -926,7 +955,7 @@
           <g mask="url(#squircleMask)">
             <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
           </g>
-</svg><svg class="logo-word" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">          <text x="14" y="58"
+</svg><svg class="logo-word anim-wordmark" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">          <text x="14" y="58"
                 font-family="var(--font-stack)"
                 font-size="64"
                 font-weight="800"
@@ -1051,6 +1080,75 @@
 
         <!-- ============ ЭКРАН 2 · КАРТОЧКА ============ -->
         <section class="screen detail" id="screen-detail">
+<aside class="sidebar">
+            <div class="logo"><svg class="logo-icon" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">          <!-- Фон сквиркл -->
+          <use href="#squircle-shape" fill="url(#blueBaseGrad)" />
+          <use href="#squircle-shape" fill="url(#topCyanGlow)" />
+          <use href="#squircle-shape" fill="url(#botCoralGlow)" />
+          
+          <!-- Зернистая кинематографичная текстура -->
+          <use href="#squircle-shape" filter="url(#grainFilter)" opacity="0.6" />
+
+          <!-- Тонкая обводка сквиркла -->
+          <use href="#squircle-shape" fill="none" stroke="url(#squircleBorderGrad)" stroke-width="2" />
+
+          <!-- Подсветка за лапкой -->
+          <g filter="url(#pawAuraGlow)" opacity="0.75">
+            <use href="#paw-glass-artwork" />
+          </g>
+
+          <!-- Основная стеклянная лапка -->
+          <use href="#paw-glass-artwork" />
+
+          <!-- Верхний скользящий блик (обрезка маской сквиркла) -->
+          <g mask="url(#squircleMask)">
+            <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
+          </g>
+</svg><svg class="logo-word anim-wordmark" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">          <text x="14" y="58"
+                font-family="var(--font-stack)"
+                font-size="64"
+                font-weight="800"
+                letter-spacing="-0.035em"
+                fill="url(#textPawGradLight)">Paw</text>
+
+          <text x="148" y="58"
+                font-family="var(--font-stack)"
+                font-size="64"
+                font-weight="800"
+                letter-spacing="-0.035em"
+                fill="url(#textFlixGradLight)">fl&#305;x</text>
+
+          <path class="anim-spark"
+                d="M 238 18 C 236.5 17 234 18 234 20.2 L 234 30.8 C 234 33 236.5 34 238 33 L 246.5 27.7 C 248.5 26.5 248.5 24.5 246.5 23.3 Z"
+                fill="url(#sparkGrad)" />
+</svg></div>
+            <div class="nav-item focusable" data-nav="home" data-goto="home" title="Главная">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="search" data-goto="search" title="Поиск">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="categories" data-goto="categories" title="Фильмы">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M8 5v14M16 5v14"/></svg>
+            </div>
+            <div class="nav-item focusable" data-goto="categories" title="Сериалы">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="m8 3 3 3M15 3l3 3"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="library" data-goto="library" title="Избранное">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="plugins" data-goto="plugins" title="Плагины">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M5 8h14v3a7 7 0 0 1-14 0zM12 18v4"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="settings" data-goto="settings" title="Настройки">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.07-.4.1-.8.1-1.2z"/></svg>
+            </div>
+            <div class="spacer"></div>
+            <div class="profile focusable" data-nav title="Denis">
+              <div class="avatar">D</div>
+            </div>
+          </aside>
+          <div class="main">
                     <div class="detail-topbar">
             <button class="top-search focusable" id="detail-search" type="button">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -1102,30 +1200,13 @@
             </div>
           </div>
 </div>
-                    <div class="detail-qualitybar">
-            <span class="q-label">Выберите качество:</span>
-            <button class="q-pill focusable on" id="q-1080" type="button">1080p</button>
-            <button class="q-pill focusable" id="q-4k" type="button">4K</button>
-            <button class="q-pill focusable" id="q-hdr" type="button">HDR</button>
-            <span class="q-sep"></span>
-            <button class="q-online focusable" id="online-indicator" type="button"><span class="q-dot"></span><span id="online-indicator-text">Онлайн • загрузка…</span><span> ›</span></button>
+                    <div class="detail-sourcesbar">
+            <span class="src-label">Источники:</span>
+            <button class="src-btn focusable" id="src-lumio" type="button">Lumio</button>
+            <button class="src-btn focusable" id="src-filmix" type="button">Filmix</button>
+            <button class="src-btn focusable" id="src-torrents" type="button">Торренты</button>
           </div>
-<div class="detail-body">
-            <div>
-              <h3 class="src-title">Онлайн <span class="count" id="online-count"></span></h3>
-              <div class="src-list" id="online-list"><div class="empty-note">Откройте карточку — онлайн-источники появятся здесь.</div></div>
-              
-              
-              
-            </div>
-            <div>
-              <h3 class="src-title">Торренты <span class="count" id="tor-count"></span></h3>
-              <div class="src-list" id="tor-list"><div class="empty-note">Откройте карточку — раздачи появятся здесь.</div></div>
-              
-              
-              
-            </div>
-          </div>
+
                   <div class="detail-similar">
             <div class="sim-head">
               <h3 class="src-title" id="similar-title">Похожие фильмы</h3>
@@ -1134,10 +1215,163 @@
             <div class="sim-row" id="similar-row"><div class="empty-note">Откройте карточку — похожие появятся здесь.</div></div>
             <div class="sim-grid" id="similar-grid" style="display:none"></div>
           </div>
+          </div>
 </section>
+        <section class="screen" id="screen-provider">
+<aside class="sidebar">
+            <div class="logo"><svg class="logo-icon" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">          <!-- Фон сквиркл -->
+          <use href="#squircle-shape" fill="url(#blueBaseGrad)" />
+          <use href="#squircle-shape" fill="url(#topCyanGlow)" />
+          <use href="#squircle-shape" fill="url(#botCoralGlow)" />
+          
+          <!-- Зернистая кинематографичная текстура -->
+          <use href="#squircle-shape" filter="url(#grainFilter)" opacity="0.6" />
+
+          <!-- Тонкая обводка сквиркла -->
+          <use href="#squircle-shape" fill="none" stroke="url(#squircleBorderGrad)" stroke-width="2" />
+
+          <!-- Подсветка за лапкой -->
+          <g filter="url(#pawAuraGlow)" opacity="0.75">
+            <use href="#paw-glass-artwork" />
+          </g>
+
+          <!-- Основная стеклянная лапка -->
+          <use href="#paw-glass-artwork" />
+
+          <!-- Верхний скользящий блик (обрезка маской сквиркла) -->
+          <g mask="url(#squircleMask)">
+            <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
+          </g>
+</svg><svg class="logo-word anim-wordmark" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">          <text x="14" y="58"
+                font-family="var(--font-stack)"
+                font-size="64"
+                font-weight="800"
+                letter-spacing="-0.035em"
+                fill="url(#textPawGradLight)">Paw</text>
+
+          <text x="148" y="58"
+                font-family="var(--font-stack)"
+                font-size="64"
+                font-weight="800"
+                letter-spacing="-0.035em"
+                fill="url(#textFlixGradLight)">fl&#305;x</text>
+
+          <path class="anim-spark"
+                d="M 238 18 C 236.5 17 234 18 234 20.2 L 234 30.8 C 234 33 236.5 34 238 33 L 246.5 27.7 C 248.5 26.5 248.5 24.5 246.5 23.3 Z"
+                fill="url(#sparkGrad)" />
+</svg></div>
+            <div class="nav-item focusable" data-nav="home" data-goto="home" title="Главная">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="search" data-goto="search" title="Поиск">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="categories" data-goto="categories" title="Фильмы">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M8 5v14M16 5v14"/></svg>
+            </div>
+            <div class="nav-item focusable" data-goto="categories" title="Сериалы">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="m8 3 3 3M15 3l3 3"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="library" data-goto="library" title="Избранное">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="plugins" data-goto="plugins" title="Плагины">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M5 8h14v3a7 7 0 0 1-14 0zM12 18v4"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="settings" data-goto="settings" title="Настройки">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.07-.4.1-.8.1-1.2z"/></svg>
+            </div>
+            <div class="spacer"></div>
+            <div class="profile focusable" data-nav title="Denis">
+              <div class="avatar">D</div>
+            </div>
+          </aside>
+          <div class="main">
+          <div class="screen-head">
+            <div>
+              <h2 id="prov-title">Источники</h2>
+              <div class="sub" id="prov-sub"></div>
+            </div>
+          </div>
+          <div class="prov-body">
+            <button class="src back-row focusable" id="prov-back" type="button">‹ Назад</button>
+            <div class="src-list" id="prov-list"><div class="empty-note">Выберите источник на карточке.</div></div>
+          </div>
+          </div>
+        </section>
+
 
         <!-- ============ ЭКРАН 3 · ПЛАГИНЫ ============ -->
         <section class="screen plugins" id="screen-plugins">
+<aside class="sidebar">
+            <div class="logo"><svg class="logo-icon" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">          <!-- Фон сквиркл -->
+          <use href="#squircle-shape" fill="url(#blueBaseGrad)" />
+          <use href="#squircle-shape" fill="url(#topCyanGlow)" />
+          <use href="#squircle-shape" fill="url(#botCoralGlow)" />
+          
+          <!-- Зернистая кинематографичная текстура -->
+          <use href="#squircle-shape" filter="url(#grainFilter)" opacity="0.6" />
+
+          <!-- Тонкая обводка сквиркла -->
+          <use href="#squircle-shape" fill="none" stroke="url(#squircleBorderGrad)" stroke-width="2" />
+
+          <!-- Подсветка за лапкой -->
+          <g filter="url(#pawAuraGlow)" opacity="0.75">
+            <use href="#paw-glass-artwork" />
+          </g>
+
+          <!-- Основная стеклянная лапка -->
+          <use href="#paw-glass-artwork" />
+
+          <!-- Верхний скользящий блик (обрезка маской сквиркла) -->
+          <g mask="url(#squircleMask)">
+            <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
+          </g>
+</svg><svg class="logo-word anim-wordmark" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">          <text x="14" y="58"
+                font-family="var(--font-stack)"
+                font-size="64"
+                font-weight="800"
+                letter-spacing="-0.035em"
+                fill="url(#textPawGradLight)">Paw</text>
+
+          <text x="148" y="58"
+                font-family="var(--font-stack)"
+                font-size="64"
+                font-weight="800"
+                letter-spacing="-0.035em"
+                fill="url(#textFlixGradLight)">fl&#305;x</text>
+
+          <path class="anim-spark"
+                d="M 238 18 C 236.5 17 234 18 234 20.2 L 234 30.8 C 234 33 236.5 34 238 33 L 246.5 27.7 C 248.5 26.5 248.5 24.5 246.5 23.3 Z"
+                fill="url(#sparkGrad)" />
+</svg></div>
+            <div class="nav-item focusable" data-nav="home" data-goto="home" title="Главная">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="search" data-goto="search" title="Поиск">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="categories" data-goto="categories" title="Фильмы">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M8 5v14M16 5v14"/></svg>
+            </div>
+            <div class="nav-item focusable" data-goto="categories" title="Сериалы">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="m8 3 3 3M15 3l3 3"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="library" data-goto="library" title="Избранное">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="plugins" data-goto="plugins" title="Плагины">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M5 8h14v3a7 7 0 0 1-14 0zM12 18v4"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="settings" data-goto="settings" title="Настройки">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.07-.4.1-.8.1-1.2z"/></svg>
+            </div>
+            <div class="spacer"></div>
+            <div class="profile focusable" data-nav title="Denis">
+              <div class="avatar">D</div>
+            </div>
+          </aside>
+          <div class="main">
           <div class="screen-head">
             <div>
               <h2>Плагины</h2>
@@ -1204,10 +1438,80 @@
               <span class="status off">Выключен</span>
             </div>
           </div>
-        </section>
+                  </div>
+</section>
 
         <!-- ============ ЭКРАН 4 · НАСТРОЙКИ ============ -->
         <section class="screen settings" id="screen-settings">
+<aside class="sidebar">
+            <div class="logo"><svg class="logo-icon" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">          <!-- Фон сквиркл -->
+          <use href="#squircle-shape" fill="url(#blueBaseGrad)" />
+          <use href="#squircle-shape" fill="url(#topCyanGlow)" />
+          <use href="#squircle-shape" fill="url(#botCoralGlow)" />
+          
+          <!-- Зернистая кинематографичная текстура -->
+          <use href="#squircle-shape" filter="url(#grainFilter)" opacity="0.6" />
+
+          <!-- Тонкая обводка сквиркла -->
+          <use href="#squircle-shape" fill="none" stroke="url(#squircleBorderGrad)" stroke-width="2" />
+
+          <!-- Подсветка за лапкой -->
+          <g filter="url(#pawAuraGlow)" opacity="0.75">
+            <use href="#paw-glass-artwork" />
+          </g>
+
+          <!-- Основная стеклянная лапка -->
+          <use href="#paw-glass-artwork" />
+
+          <!-- Верхний скользящий блик (обрезка маской сквиркла) -->
+          <g mask="url(#squircleMask)">
+            <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
+          </g>
+</svg><svg class="logo-word anim-wordmark" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">          <text x="14" y="58"
+                font-family="var(--font-stack)"
+                font-size="64"
+                font-weight="800"
+                letter-spacing="-0.035em"
+                fill="url(#textPawGradLight)">Paw</text>
+
+          <text x="148" y="58"
+                font-family="var(--font-stack)"
+                font-size="64"
+                font-weight="800"
+                letter-spacing="-0.035em"
+                fill="url(#textFlixGradLight)">fl&#305;x</text>
+
+          <path class="anim-spark"
+                d="M 238 18 C 236.5 17 234 18 234 20.2 L 234 30.8 C 234 33 236.5 34 238 33 L 246.5 27.7 C 248.5 26.5 248.5 24.5 246.5 23.3 Z"
+                fill="url(#sparkGrad)" />
+</svg></div>
+            <div class="nav-item focusable" data-nav="home" data-goto="home" title="Главная">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="search" data-goto="search" title="Поиск">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="categories" data-goto="categories" title="Фильмы">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M8 5v14M16 5v14"/></svg>
+            </div>
+            <div class="nav-item focusable" data-goto="categories" title="Сериалы">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="m8 3 3 3M15 3l3 3"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="library" data-goto="library" title="Избранное">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="plugins" data-goto="plugins" title="Плагины">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M5 8h14v3a7 7 0 0 1-14 0zM12 18v4"/></svg>
+            </div>
+            <div class="nav-item focusable" data-nav="settings" data-goto="settings" title="Настройки">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.07-.4.1-.8.1-1.2z"/></svg>
+            </div>
+            <div class="spacer"></div>
+            <div class="profile focusable" data-nav title="Denis">
+              <div class="avatar">D</div>
+            </div>
+          </aside>
+          <div class="main">
           <div class="screen-head">
             <div>
               <h2>Настройки</h2>
@@ -1219,6 +1523,15 @@
               <div><span class="lab">TMDB-ключ</span><span class="hint">Ключ API themoviedb.org — хранится только на устройстве</span></div>
               <span class="val"><input id="tmdb-key-input" class="key-input focusable" type="text" placeholder="Вставьте ключ TMDB" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="tmdb-key-save" type="button">Сохранить</button></span>
             </div>
+            <div class="set-row">
+              <div><span class="lab">Токен Filmix</span><span class="hint">user_dev_token · хранится только на устройстве</span></div>
+              <span class="val"><input id="filmix-input" class="key-input focusable" type="text" placeholder="Вставьте токен Filmix" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="filmix-save" type="button">Сохранить</button></span>
+            </div>
+            <div class="set-row">
+              <div><span class="lab">Прокси Filmix</span><span class="hint">Обход CORS для filmixapp.vip · пусто = прямое подключение</span></div>
+              <span class="val"><input id="filmix-proxy-input" class="key-input focusable" type="text" placeholder="https://прокси/" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="filmix-proxy-save" type="button">Сохранить</button></span>
+            </div>
+
                         <div class="set-row">
               <div><span class="lab">TorrServer</span><span class="hint">Адрес сервера для торрентов · пусто = прокси по умолчанию</span></div>
               <span class="val"><input id="ts-input" class="key-input focusable" type="text" placeholder="https://torrserver.flyugertdiana.workers.dev" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="ts-save" type="button">Сохранить</button></span>
@@ -1254,7 +1567,8 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg></span>
             </div>
           </div>
-        </section>
+                  </div>
+</section>
 
         <!-- ============ ЭКРАН 5 · ПОИСК ============ -->
         <section class="screen" id="screen-search">
@@ -1282,7 +1596,7 @@
           <g mask="url(#squircleMask)">
             <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
           </g>
-</svg><svg class="logo-word" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">          <text x="14" y="58"
+</svg><svg class="logo-word anim-wordmark" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">          <text x="14" y="58"
                 font-family="var(--font-stack)"
                 font-size="64"
                 font-weight="800"
@@ -1382,7 +1696,7 @@
           <g mask="url(#squircleMask)">
             <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
           </g>
-</svg><svg class="logo-word" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">          <text x="14" y="58"
+</svg><svg class="logo-word anim-wordmark" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">          <text x="14" y="58"
                 font-family="var(--font-stack)"
                 font-size="64"
                 font-weight="800"
@@ -1472,7 +1786,7 @@
           <g mask="url(#squircleMask)">
             <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
           </g>
-</svg><svg class="logo-word" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">          <text x="14" y="58"
+</svg><svg class="logo-word anim-wordmark" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">          <text x="14" y="58"
                 font-family="var(--font-stack)"
                 font-size="64"
                 font-weight="800"
@@ -1607,7 +1921,8 @@
           settings: document.getElementById('screen-settings'),
           search: document.getElementById('screen-search'),
           library: document.getElementById('screen-library'),
-          categories: document.getElementById('screen-categories')
+          categories: document.getElementById('screen-categories'),
+          provider: document.getElementById('screen-provider')
         };
         var order = ['home','detail','plugins','settings','search','library','categories'];
         var current = 'home';
@@ -1634,7 +1949,8 @@
           if (lastFocus[current]) lastFocus[current] = document.querySelector('.focused') || lastFocus[current];
           current = name;
           document.body.classList.toggle('on-detail', name === 'detail');
-          order.forEach(function(k){ screens[k].classList.toggle('active', k === name); });
+          document.body.classList.toggle('on-provider', name === 'provider');
+          Object.keys(screens).forEach(function(k){ screens[k].classList.toggle('active', k === name); });
           Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(t){
             t.classList.toggle('active', t.getAttribute('data-goto') === name);
           });
@@ -1694,6 +2010,8 @@
             else if (k === 'Enter' && ae.id === 'ts-input') { saveTs(); e.preventDefault(); }
             else if (k === 'Enter' && ae.id === 'jackett-input') { saveJackett(); e.preventDefault(); }
             else if (k === 'Enter' && ae.id === 'jackett-key-input') { saveJackettKey(); e.preventDefault(); }
+            else if (k === 'Enter' && ae.id === 'filmix-input') { saveFilmix(); e.preventDefault(); }
+            else if (k === 'Enter' && ae.id === 'filmix-proxy-input') { saveFilmixProxy(); e.preventDefault(); }
             return;
           }
           if (k === 'Escape' && isDetailMenuOpen()) { closeDetailMenu(); e.preventDefault(); return; }
@@ -1716,7 +2034,8 @@
             if (cur) { cur.click(); e.preventDefault(); }
           }
           else if (k === 'Escape' || k === 'Backspace') {
-            if (current !== 'home') { show('home'); e.preventDefault(); }
+            if (current === 'provider') { backFromProvider(); e.preventDefault(); }
+            else if (current !== 'home') { show('home'); e.preventDefault(); }
           }
           else if (['1','2','3','4','5','6','7'].indexOf(k) !== -1) {
             show(order[parseInt(k,10)-1]);
@@ -1997,8 +2316,8 @@
         });
         detailTorrents.addEventListener('click', function(){
           closeDetailMenu();
-          if (!currentDetailCard) { toast('Откройте карточку фильма или сериала'); return; }
-          focusTorrents();
+          if (!currentDetailMeta) { toast('Откройте карточку фильма или сериала'); return; }
+          openProvider('torrents');
         });
         detailMore.addEventListener('click', function(){
           if (isDetailMenuOpen()) { closeDetailMenu(); return; }
@@ -2013,17 +2332,13 @@
         document.getElementById('detail-search').addEventListener('click', function(){ closeDetailMenu(); show('search'); });
         document.getElementById('detail-bell').addEventListener('click', function(){ toast('Уведомления появятся позже'); });
         document.getElementById('detail-gear').addEventListener('click', function(){ closeDetailMenu(); show('settings'); });
-        document.getElementById('online-indicator').addEventListener('click', function(){
-          var list = document.getElementById('online-list');
-          var first = list ? list.querySelector('.focusable') : null;
-          if (first) setFocus(first);
-          else toast('Онлайн-источников пока нет');
-        });
-        ['q-1080', 'q-4k', 'q-hdr'].forEach(function(id){
-          document.getElementById(id).addEventListener('click', function(){
-            setQuality(id === 'q-1080' ? '1080' : (id === 'q-4k' ? '4k' : 'hdr'));
+        ['lumio', 'filmix', 'torrents'].forEach(function(p){
+          document.getElementById('src-' + p).addEventListener('click', function(){
+            if (!currentDetailMeta) { toast('Откройте карточку фильма или сериала'); return; }
+            openProvider(p);
           });
         });
+        document.getElementById('prov-back').addEventListener('click', function(){ backFromProvider(); });
         document.getElementById('similar-more').addEventListener('click', function(){ toggleSimilar(); });
         function setGlassRow(valId, value){
           var v = document.getElementById(valId);
@@ -2046,7 +2361,6 @@
           currentDetailMeta = null;
           trailerKey = null;
           closeDetailMenu();
-          setQuality('1080', true);
           show('detail');
           document.getElementById('detail-title').textContent = 'Загрузка…';
           document.getElementById('detail-desc').textContent = '';
@@ -2113,7 +2427,7 @@
             updateDetailButtons();
             loadTrailer(type, id);
             loadSimilar(type, id);
-            loadSources(currentDetailMeta);
+            preloadSources(currentDetailMeta);
           }).catch(function(){
             document.getElementById('detail-title').textContent = 'Не удалось загрузить';
             document.getElementById('detail-desc').textContent = 'Проверьте TMDB-ключ в Настройках и подключение к сети.';
@@ -2317,22 +2631,6 @@
           if (m >= 1) return m.toFixed(0) + ' МБ';
           return Math.round(b / 1024) + ' КБ';
         }
-        function qTags(title){
-          var s = (title || '').toLowerCase(), tags = [];
-          if (/2160p|\b4k\b|uhd/.test(s)) tags.push('4k');
-          if (/1080p/.test(s)) tags.push('1080');
-          if (/720p/.test(s)) tags.push('720');
-          if (/hdr|dolby.?vision|\bdv\b/.test(s)) tags.push('hdr');
-          return tags;
-        }
-        function torRes(title){
-          var s = (title || '').toLowerCase();
-          if (/2160p|\b4k\b|uhd/.test(s)) return '2160p';
-          if (/1080p/.test(s)) return '1080p';
-          if (/720p/.test(s)) return '720p';
-          return '';
-        }
-
         function makeSrcRow(html, onClick){
           var d = document.createElement('div');
           d.className = 'src focusable';
@@ -2348,9 +2646,22 @@
           return d;
         }
 
-        /* ---------- Онлайн: Lumio через Mitsu API (без авторизации) ---------- */
-        var onl = { token: 0, level: null, srcName: '', seasons: [], seasonIdx: 0, eps: [], epIdx: -1, voices: [], from: null };
-        var onlPromise = null, torPromise = null, torLoading = false, torFocusAfter = false;
+        /* ---------- Онлайн: Lumio через Mitsu API (без авторизации) ----------
+           Данные грузятся в фоне при открытии карточки (preloadSources), а
+           показываются только на странице провайдера — на карточке списков нет. */
+                /* ---------- Онлайн: Lumio через Mitsu API (механика «Кино» один в один) ----------
+           Порт vwLumioInit/vwLumioLoad/vwLumioLoadSeason/vwLumioPlayEp из «Кино»,
+           адаптирован только технически: пилюли-переключатели «Кино» стали списком
+           страницы провайдера, шторка выбора источника — списком источников.
+           Данные грузятся в фоне при открытии карточки (preloadSources), а
+           показываются только на странице провайдера — на карточке списков нет.
+           Отличия от v0.4 (сознательно, по «Кино»): грузится ТОЛЬКО источник 0,
+           авто-цепочки «первый непустой» нет — пустой источник показывает
+           «Тут пусто», а переключение — строкой «Источник: … ›»;
+           голоса — БЕЗ бейджей качества (в «Кино» их нет);
+           просмотренные серии помечаются ✓, подзаголовок — «Просмотрено N из M». */
+        var onl = { token: 0, level: null, srcs: [], srcIdx: 0, srcPick: false, seasons: [], seasonIdx: 0, eps: [], epIdx: -1, voices: [], from: null, loading: false };
+        var onlPromise = null;
         function onlParams(meta){
           return 'id=' + encodeURIComponent(meta.id || '') +
             '&title=' + encodeURIComponent(meta.title || '') +
@@ -2374,214 +2685,410 @@
           });
           return out;
         }
-        function setOnlineCount(text){
-          var c = document.getElementById('online-count');
-          if (c) c.textContent = text;
+        function onlCleanName(s){ return String(s || '').replace(/<[^>]*>/g, '').trim(); }
+        function onlSrcName(s, i){ return onlCleanName(s.name) || ('Источник ' + (i + 1)); }
+        function onlSeasonName(sn, i){
+          var t = onlCleanName(sn.title || '');
+          var mm = t.match(/(\d+)/);
+          return mm ? mm[1] + ' сезон' : (t || ((i + 1) + ' сезон'));
         }
-        function setOnlineIndicator(text){
-          var t = document.getElementById('online-indicator-text');
-          if (t) t.textContent = text;
+        function onlEpName(ep, i){
+          var t = onlCleanName(ep.title || '');
+          var mm = t.match(/(\d+)/);
+          return { num: mm ? mm[1] : String(i + 1), title: t || ('Серия ' + (i + 1)) };
         }
-        function loadOnline(meta){
+        /* Загрузка одного источника (как vwLumioLoad в «Кино»): голоса — сразу,
+           иначе сезоны. Пустой источник — уровень 'empty', перехода к следующему нет. */
+        function fetchOnlineSource(tok, meta){
+          var s = onl.srcs[onl.srcIdx];
+          if (!s) { onl.level = 'empty'; return Promise.resolve(null); }
+          return fetch(s.url + (s.url.indexOf('?') === -1 ? '?' : '&') + onlParams(meta)).then(function(r){
+            if (!r.ok) throw new Error('http');
+            return r.text();
+          }).then(function(html){
+            if (tok !== onl.token) return null;
+            var items = onlParse(html);
+            if (!items.length) { onl.level = 'empty'; return null; }
+            if (items[0].method === 'play') { onl.voices = items; onl.level = 'voices'; onl.from = null; }
+            else { onl.seasons = items; onl.level = 'seasons'; }
+            return items;
+          });
+        }
+        function fetchOnlineSeason(tok, si){
+          var s = onl.seasons[si];
+          if (!s) return Promise.resolve(null);
+          return fetch(s.url).then(function(r){
+            if (!r.ok) throw new Error('http');
+            return r.text();
+          }).then(function(html){
+            if (tok !== onl.token) return null;
+            onl.eps = onlParse(html);
+            onl.seasonIdx = si;
+            onl.level = 'episodes';
+            return onl.eps;
+          });
+        }
+        function fetchOnline(meta){
           var tok = ++onl.token;
-          var box = document.getElementById('online-list');
-          box.innerHTML = '';
-          box.appendChild(srcNote('Загрузка онлайн-источников…'));
-          setOnlineCount('загрузка…');
-          setOnlineIndicator('Онлайн • загрузка…');
+          onl.level = null; onl.voices = []; onl.seasons = []; onl.eps = []; onl.from = null;
+          onl.srcs = []; onl.srcIdx = 0; onl.srcPick = false; onl.seasonIdx = 0; onl.epIdx = -1;
+          onl.loading = true;
           onlPromise = fetch(MITSU + '/lite/events?life=false&' + onlParams(meta)).then(function(r){
             if (!r.ok) throw new Error('http');
             return r.json();
           }).then(function(arr){
-            if (tok !== onl.token) return;
             var srcs = (Array.isArray(arr) ? arr : []).filter(function(s){ return s && s.show !== false && s.url; });
-            if (!srcs.length) {
-              box.innerHTML = '';
-              box.appendChild(srcNote('Онлайн-источников не нашлось.'));
-              setOnlineCount('не нашлось');
-              setOnlineIndicator('Онлайн • нет источников');
-              return;
-            }
-            var chain = Promise.resolve(null);
-            srcs.forEach(function(s){
-              chain = chain.then(function(found){
-                if (found) return found;
-                return fetch(s.url + (s.url.indexOf('?') === -1 ? '?' : '&') + onlParams(meta)).then(function(r){
-                  if (!r.ok) throw new Error('http');
-                  return r.text();
-                }).then(function(html){
-                  var items = onlParse(html);
-                  return items.length ? { src: s, items: items } : null;
-                }).catch(function(){ return null; });
-              });
-            });
-            return chain.then(function(found){
-              if (tok !== onl.token) return;
-              if (!found) {
-                box.innerHTML = '';
-                box.appendChild(srcNote('Онлайн-источников не нашлось.'));
-                setOnlineCount('не нашлось');
-                setOnlineIndicator('Онлайн • нет источников');
-                return;
-              }
-              onl.srcName = (found.src.name || '').replace(/<[^>]*>/g, '').trim() || 'Lumio';
-              if (found.items[0].method === 'play') {
-                onl.voices = found.items;
-                onl.level = 'voices';
-                onl.from = null;
-                renderOnlineVoices(false);
-              } else {
-                onl.seasons = found.items;
-                onl.level = 'seasons';
-                renderOnlineSeasons(false);
-              }
-            });
+            if (!srcs.length) { onl.level = 'empty'; return null; }
+            onl.srcs = srcs;
+            return fetchOnlineSource(tok, meta);
+          }).then(function(items){
+            /* Preload для сериалов доводит до эпизодов сезона 0 — как
+               vwLumioLoad + vwLumioLoadSeason(0) в «Кино»: тогда «Смотреть»
+               может выбрать первую непросмотренную серию. */
+            if (tok !== onl.token) return null;
+            if (onl.level === 'seasons' && onl.seasons.length) return fetchOnlineSeason(tok, 0);
+            return items;
+          }).then(function(){
+            onl.loading = false;
+            if (tok !== onl.token) return null;
+            if (!onl.level) onl.level = 'empty';
+            return null;
           }).catch(function(){
-            if (tok !== onl.token) return;
-            box.innerHTML = '';
-            box.appendChild(srcNote('Не получилось связаться с источником.'));
-            setOnlineCount('недоступен');
-            setOnlineIndicator('Онлайн • недоступен');
+            onl.loading = false;
+            if (tok !== onl.token) return null;
+            onl.level = 'error';
+            return null;
           });
           return onlPromise;
         }
-        function filteredVoices(){
-          return onl.voices.filter(function(v){
-            var tags = qTags(v.title);
-            if (!tags.length) return true;
-            return tags.indexOf(activeQ) !== -1;
-          });
+        /* Просмотренное — как vwGetW/vwMarkW/vwIsW/vwCountW в «Кино»:
+           ключ 'l'+id для Lumio, 'f'+id для Filmix; эпизод — 's'+сезон+'e'+эпизод
+           (у Lumio — индексы в списках, как в «Кино»; у Filmix — номера). */
+        function wGet(){
+          try { return JSON.parse(localStorage.getItem('pawflix.watched') || '{}') || {}; }
+          catch (e) { return {}; }
         }
-        function renderOnlineVoices(focusFirst){
-          var box = document.getElementById('online-list');
-          box.innerHTML = '';
-          if (onl.from === 'episodes') {
-            box.appendChild(makeSrcRow('<span class="file">‹ К сериям</span>', function(){
-              renderOnlineEps(true);
-            }));
-          }
-          var list = filteredVoices();
-          list.forEach(function(v){
-            var tags = qTags(v.title);
-            var badge = '';
-            if (tags.indexOf('4k') !== -1) badge = '<span class="badge q">4K</span>';
-            else if (tags.indexOf('1080') !== -1) badge = '<span class="badge q">1080p</span>';
-            else if (tags.indexOf('hdr') !== -1) badge = '<span class="badge q">HDR</span>';
-            var name = esc(v.title) + (v.voice && v.voice !== v.title ? ' · ' + esc(v.voice) : '');
-            box.appendChild(makeSrcRow('<span class="plugin">Lumio</span><span class="file">' + name + '</span>' + badge, function(){
-              if (currentDetailCard) addHist(currentDetailCard);
-              playViaBridge(v.url);
-            }));
-          });
-          if (!list.length) box.appendChild(srcNote('Нет источников под фильтр «' + (activeQ === '4k' ? '4K' : activeQ === 'hdr' ? 'HDR' : '1080p') + '».'));
-          setOnlineCount('Lumio · ' + onl.srcName + ' · ' + list.length);
-          setOnlineIndicator('Онлайн • ' + list.length + ' ' + plural(list.length, ['источник', 'источника', 'источников']));
-          if (focusFirst) {
-            var first = box.querySelector('.focusable');
-            if (first) setFocus(first);
+        function wMark(mid, key){
+          var w = wGet(); var a = w[mid] || [];
+          if (a.indexOf(key) === -1) {
+            a.push(key); w[mid] = a;
+            try { localStorage.setItem('pawflix.watched', JSON.stringify(w)); } catch (e) {}
           }
         }
-        function renderOnlineSeasons(focusFirst){
-          var box = document.getElementById('online-list');
+        function wIs(mid, key){ var w = wGet(); return (w[mid] || []).indexOf(key) !== -1; }
+        function wCount(mid, total){ var w = wGet(); return Math.min((w[mid] || []).length, total || 0); }
+        function provListEl(){ return document.getElementById('prov-list'); }
+        function provNote(text){
+          var box = provListEl();
           box.innerHTML = '';
-          onl.seasons.forEach(function(s, i){
-            var t = (s.title || '').replace(/<[^>]*>/g, '').trim() || ('Сезон ' + (i + 1));
-            box.appendChild(makeSrcRow('<span class="plugin">Lumio</span><span class="file">' + esc(t) + '</span>', function(){
-              var tok = onl.token;
-              box.innerHTML = '';
-              box.appendChild(srcNote('Загружаю серии…'));
-              fetch(s.url).then(function(r){
-                if (!r.ok) throw new Error('http');
-                return r.text();
-              }).then(function(html){
-                if (tok !== onl.token) return;
-                onl.eps = onlParse(html);
-                onl.seasonIdx = i;
-                onl.level = 'episodes';
-                renderOnlineEps(true);
-              }).catch(function(){
-                if (tok !== onl.token) return;
-                box.innerHTML = '';
-                box.appendChild(srcNote('Не получилось загрузить серии.'));
-              });
-            }));
-          });
-          setOnlineCount('Lumio · ' + onl.srcName + ' · сезонов: ' + onl.seasons.length);
-          setOnlineIndicator('Онлайн • ' + onl.seasons.length + ' ' + plural(onl.seasons.length, ['сезон', 'сезона', 'сезонов']));
-          if (focusFirst) {
-            var first = box.querySelector('.focusable');
-            if (first) setFocus(first);
-          }
+          box.appendChild(srcNote(text));
         }
-        function renderOnlineEps(focusFirst){
-          var box = document.getElementById('online-list');
-          box.innerHTML = '';
-          box.appendChild(makeSrcRow('<span class="file">‹ К сезонам</span>', function(){
-            renderOnlineSeasons(true);
+        /* Строка выбора источника (аналог пилюли «Источник» в «Кино»):
+           показывается всегда, когда источники есть, — и при пустом источнике,
+           иначе из «Тут пусто» некуда перейти. */
+        function appendLumioSrcRow(box){
+          if (!onl.srcs.length) return;
+          var cur = onl.srcs[onl.srcIdx];
+          var label = 'Источник: ' + onlSrcName(cur, onl.srcIdx) + (onl.srcs.length > 1 ? ' ›' : '');
+          box.appendChild(makeSrcRow('<span class="plugin">Lumio</span><span class="file">' + esc(label) + '</span>', function(){
+            if (onl.srcs.length <= 1) return;
+            onl.srcPick = true;
+            renderProvSrcPick(true);
           }));
-          onl.eps.forEach(function(e, i){
-            var t = (e.title || '').replace(/<[^>]*>/g, '').trim() || ('Серия ' + (i + 1));
-            box.appendChild(makeSrcRow('<span class="plugin">Lumio</span><span class="file">' + esc(t) + '</span>', function(){
+        }
+        function renderProvSrcPick(focusFirst){
+          var box = provListEl();
+          box.innerHTML = '';
+          box.appendChild(makeSrcRow('<span class="file">‹ Назад</span>', function(){ onl.srcPick = false; renderProvLumio(); }));
+          onl.srcs.forEach(function(s, i){
+            box.appendChild(makeSrcRow('<span class="plugin">Lumio</span><span class="file">' + esc(onlSrcName(s, i)) + (i === onl.srcIdx ? ' ✓' : '') + '</span>', function(){
               var tok = onl.token;
-              if (e.method === 'play') {
-                onl.voices = [{ title: e.title, voice: e.voice, url: e.url }];
-                onl.level = 'voices';
-                onl.from = 'episodes';
-                onl.epIdx = i;
-                renderOnlineVoices(true);
-                return;
-              }
-              box.innerHTML = '';
-              box.appendChild(srcNote('Загружаю озвучки…'));
-              fetch(e.url).then(function(r){
-                if (!r.ok) throw new Error('http');
-                return r.text();
-              }).then(function(html){
+              onl.srcIdx = i; onl.srcPick = false; onl.level = null;
+              box.innerHTML = ''; box.appendChild(srcNote('Загружаю источник…'));
+              fetchOnlineSource(tok, currentDetailMeta).then(function(){
+                if (tok !== onl.token) return null;
+                if (onl.level === 'seasons' && onl.seasons.length) return fetchOnlineSeason(tok, 0);
+                return null;
+              }).then(function(){
                 if (tok !== onl.token) return;
-                var voices = onlParse(html).filter(function(x){ return x.method === 'play'; });
-                if (!voices.length) {
-                  box.innerHTML = '';
-                  box.appendChild(srcNote('Озвучек не нашлось.'));
-                  return;
-                }
-                onl.voices = voices;
-                onl.level = 'voices';
-                onl.from = 'episodes';
-                onl.epIdx = i;
-                renderOnlineVoices(true);
+                if (current === 'provider' && prov.name === 'lumio') renderProvLumio();
               }).catch(function(){
                 if (tok !== onl.token) return;
-                box.innerHTML = '';
-                box.appendChild(srcNote('Не получилось загрузить озвучки.'));
+                onl.level = 'error';
+                if (current === 'provider' && prov.name === 'lumio') renderProvLumio();
               });
             }));
           });
-          setOnlineCount('Lumio · ' + onl.srcName + ' · серий: ' + onl.eps.length);
-          setOnlineIndicator('Онлайн • ' + onl.eps.length + ' ' + plural(onl.eps.length, ['серия', 'серии', 'серий']));
           if (focusFirst) {
             var first = box.querySelector('.focusable');
             if (first) setFocus(first);
           }
         }
-        function setQuality(q, silent){
-          activeQ = q;
-          ['q-1080', 'q-4k', 'q-hdr'].forEach(function(id){
-            var el = document.getElementById(id);
-            if (el) el.classList.toggle('on', (id === 'q-1080' && q === '1080') || (id === 'q-4k' && q === '4k') || (id === 'q-hdr' && q === 'hdr'));
+        function renderProvLumio(){
+          if (onl.srcPick) { renderProvSrcPick(false); return; }
+          if (onl.level === 'voices') renderProvVoices(false);
+          else if (onl.level === 'seasons') renderProvSeasons(false);
+          else if (onl.level === 'episodes') renderProvEps(false);
+          else if (onl.level === 'empty') {
+            var box = provListEl();
+            box.innerHTML = '';
+            appendLumioSrcRow(box);
+            box.appendChild(srcNote('Тут пусто.'));
+          }
+          else if (onl.level === 'error') {
+            var box2 = provListEl();
+            box2.innerHTML = '';
+            appendLumioSrcRow(box2);
+            box2.appendChild(srcNote('Не получилось связаться с источником.'));
+          }
+          else provNote('Загрузка онлайн-источников…');
+        }
+        function openLumioPage(){
+          if (!currentDetailMeta) { provNote('Откройте карточку фильма или сериала'); return; }
+          if (onl.loading) {
+            provNote('Загрузка онлайн-источников…');
+            if (onlPromise) onlPromise.then(function(){
+              if (current === 'provider' && prov.name === 'lumio') renderProvLumio();
+            });
+            return;
+          }
+          renderProvLumio();
+        }
+        function playLumioVoice(v, ei){
+          if (currentDetailCard) addHist(currentDetailCard);
+          var meta = currentDetailMeta;
+          if (meta && meta.type === 'tv' && ei >= 0) wMark('l' + meta.id, 's' + onl.seasonIdx + 'e' + ei);
+          playViaBridge(v.url);
+        }
+        function renderProvVoices(focusFirst){
+          var box = provListEl();
+          box.innerHTML = '';
+          appendLumioSrcRow(box);
+          if (onl.from === 'episodes') {
+            box.appendChild(makeSrcRow('<span class="file">‹ К сериям</span>', function(){ renderProvEps(true); }));
+          }
+          onl.voices.forEach(function(v){
+            var name = esc(v.title) + (v.voice && v.voice !== v.title ? ' · ' + esc(v.voice) : '');
+            box.appendChild(makeSrcRow('<span class="plugin">Lumio</span><span class="file">' + name + '</span>', function(){
+              playLumioVoice(v, onl.from === 'episodes' ? onl.epIdx : -1);
+            }));
           });
-          if (!silent && onl.level === 'voices') renderOnlineVoices(false);
+          if (!onl.voices.length) box.appendChild(srcNote('Озвучек не нашлось.'));
+          if (focusFirst) {
+            var first = box.querySelector('.focusable');
+            if (first) setFocus(first);
+          }
+        }
+        function renderProvSeasons(focusFirst){
+          var box = provListEl();
+          box.innerHTML = '';
+          appendLumioSrcRow(box);
+          onl.seasons.forEach(function(s, i){
+            box.appendChild(makeSrcRow('<span class="plugin">Lumio</span><span class="file">' + esc(onlSeasonName(s, i)) + '</span>', function(){
+              var tok = onl.token;
+              box.innerHTML = ''; box.appendChild(srcNote('Загружаю серии…'));
+              fetchOnlineSeason(tok, i).then(function(){
+                if (tok !== onl.token) return;
+                renderProvEps(true);
+              }).catch(function(){
+                if (tok !== onl.token) return;
+                box.innerHTML = ''; box.appendChild(srcNote('Не получилось загрузить серии.'));
+              });
+            }));
+          });
+          if (focusFirst) {
+            var first = box.querySelector('.focusable');
+            if (first) setFocus(first);
+          }
+        }
+        function renderProvEps(focusFirst){
+          var box = provListEl();
+          box.innerHTML = '';
+          appendLumioSrcRow(box);
+          box.appendChild(makeSrcRow('<span class="file">‹ К сезонам</span>', function(){ renderProvSeasons(true); }));
+          var meta = currentDetailMeta;
+          var mid = meta ? 'l' + meta.id : '';
+          var total = onl.eps.length;
+          if (total) {
+            var watched = meta ? wCount(mid, total) : 0;
+            var sub = document.createElement('div');
+            sub.className = 'empty-note';
+            sub.textContent = 'Просмотрено ' + watched + ' из ' + total + ' · осталось ' + (total - watched);
+            box.appendChild(sub);
+          }
+          onl.eps.forEach(function(e, i){
+            var et = onlEpName(e, i);
+            var w = meta ? wIs(mid, 's' + onl.seasonIdx + 'e' + i) : false;
+            var bare = et.title.replace(/\d+/g, '').replace(/серия/gi, '').trim();
+            var label = et.num + ' серия' + (bare ? ' · ' + et.title : '');
+            var vsub = e.voice ? esc(e.voice) : (e.method === 'play' ? 'смотреть' : '');
+            box.appendChild(makeSrcRow('<span class="plugin">Lumio</span><span class="file">' + esc(label) + (w ? ' ✓' : '') + '</span>' + (vsub ? '<span class="size">' + vsub + '</span>' : ''), function(){
+              playLumioEp(i, true);
+            }));
+          });
+          if (!total) box.appendChild(srcNote('Серий не нашлось.'));
+          if (focusFirst) {
+            var first = box.querySelector('.focusable');
+            if (first) setFocus(first);
+          }
+        }
+        /* Как vwLumioPlayEp в «Кино»: method play — голоса из самой серии,
+           иначе fetch страницы серии; 1 голос — сразу играть, несколько —
+           список голосов; пусто — записка и возврат к сериям через 1200 мс.
+           fromPage=false (кнопка «Смотреть»): несколько голосов — открыть
+           страницу Lumio на уровне голосов. */
+        function playLumioEp(ei, fromPage){
+          var tok = onl.token;
+          var ep = onl.eps[ei];
+          if (!ep) return;
+          function goVoices(voices){
+            if (tok !== onl.token) return;
+            if (!voices.length) {
+              if (fromPage) {
+                var box = provListEl();
+                box.innerHTML = ''; box.appendChild(srcNote('Озвучек не нашлось.'));
+                setTimeout(function(){
+                  if (tok === onl.token && current === 'provider' && prov.name === 'lumio') renderProvEps(false);
+                }, 1200);
+              }
+              return;
+            }
+            if (voices.length === 1) { playLumioVoice(voices[0], ei); return; }
+            onl.voices = voices; onl.level = 'voices'; onl.from = 'episodes'; onl.epIdx = ei;
+            if (fromPage) renderProvVoices(true);
+            else openProvider('lumio');
+          }
+          if (ep.method === 'play') {
+            goVoices([{ title: ep.title, voice: ep.voice, url: ep.url }]);
+            return;
+          }
+          if (fromPage) {
+            var box2 = provListEl();
+            box2.innerHTML = ''; box2.appendChild(srcNote('Загружаю озвучки…'));
+          }
+          fetch(ep.url).then(function(r){
+            if (!r.ok) throw new Error('http');
+            return r.text();
+          }).then(function(html){
+            if (tok !== onl.token) return;
+            goVoices(onlParse(html).filter(function(x){ return x.method === 'play'; }));
+          }).catch(function(){
+            if (tok !== onl.token) return;
+            if (fromPage) {
+              var box3 = provListEl();
+              box3.innerHTML = ''; box3.appendChild(srcNote('Не получилось загрузить озвучки.'));
+            }
+          });
         }
 
-        /* ---------- Торренты: Jackett (если задан) или TPB, стрим через TorrServer ---------- */
+/* ---------- Торренты: Jackett (если задан) или TPB, стрим через TorrServer ----------
+           Поиск идёт в фоне при открытии карточки (preloadSources), список
+           показывается только на странице провайдера. */
+                /* ---------- Торренты: Jackett (если задан) или TPB, стрим через TorrServer ----------
+           Механика «Кино» один в один: сортировка по умолчанию — 'top' (torScore),
+           название — torNiceTitle, бейджи — torPills, воспроизведение — playTorrent
+           (echo → add → опрос → выбор файла; недоступен API — magnet-фолбэк index 1).
+           Адаптации: meta.type вместо meta.media; поле поиска — из настроек pawflix;
+           ошибка TorrServer — «проверь адрес в Настройках» (в pawflix адрес там);
+           файл-лист рисуется в prov-list (в «Кино» — vwList).
+           Поиск идёт в фоне при открытии карточки (preloadSources), список
+           показывается только на странице провайдера. */
         var torItems = [];
+        var torPromise = null, torLoading = false, torSearched = false, torSort = 'top', torSortPick = false, torQueryText = '';
+        var TOR_SORTS = { top: 'Топ', seeds: 'Сиды', quality: 'Качество', size: 'Размер' };
         function tpbMagnet(hash, name){
           var m = 'magnet:?xt=urn:btih:' + hash + '&dn=' + encodeURIComponent(name || '');
           TPB_TRACKERS.forEach(function(tr){ m += '&tr=' + encodeURIComponent(tr); });
           return m;
         }
-        function torQuery(meta, alt){
-          var base = alt ? meta.title : (meta.orig || meta.title);
-          return ((base || '') + (meta.year ? ' ' + meta.year : '')).trim();
+        function torParse(title){
+          var s = title || '', sl = s.toLowerCase(), res = 0, hdr = null, audio = null;
+          if (/2160p|\b4k\b|uhd/.test(sl)) res = 2160;
+          else if (/1080p|\b1080i\b/.test(sl)) res = 1080;
+          else if (/720p/.test(sl)) res = 720;
+          if (/dolby.?vision|\bdv\b|dovi/.test(sl)) hdr = 'DV';
+          else if (/hdr10\+/.test(sl)) hdr = 'HDR10+';
+          else if (/(?<![\p{L}\p{N}])hdr(?![\p{L}\p{N}])/iu.test(s)) hdr = 'HDR10';
+          function tok(re){ return new RegExp('(?<![\\p{L}\\p{N}])' + re + '(?![\\p{L}\\p{N}])', 'iu').test(s); }
+          if (/дубляж/i.test(s) || tok('дб')) audio = 'Дубляж';
+          else if (/многоголос/i.test(s) || tok('пм')) audio = 'Многоголосый';
+          else if (/любитель/i.test(s)) audio = 'Любительский';
+          var subs = /субтитр/i.test(s) || tok('ст');
+          return { res: res, hdr: hdr, audio: audio, subs: subs };
+        }
+        function torScore(t){
+          var p = torParse(t.title);
+          var s = p.res === 2160 ? 100 : (p.res === 1080 ? 70 : (p.res === 720 ? 40 : 10));
+          if (p.hdr === 'DV') s += 30; else if (p.hdr) s += 18;
+          if (p.audio === 'Дубляж') s += 15; else if (p.audio === 'Многоголосый') s += 8;
+          if (p.subs) s += 5;
+          s += Math.min(t.seeders || 0, 200) * 0.2;
+          return Math.round(s);
+        }
+        function torNiceTitle(t, m){
+          var raw = t.title || '';
+          var name = ((m && m.title) || '').trim() || raw;
+          if (m && m.type === 'tv') {
+            var season = null, ep1 = null, ep2 = null, mm;
+            mm = raw.match(/[Ss](\d{1,2})[Ee](\d{1,3})/);
+            if (mm) { season = +mm[1]; ep1 = ep2 = +mm[2]; }
+            if (season == null) {
+              mm = raw.match(/\[s(\d{1,2})\]/i) || raw.match(/\bs(\d{1,2})\b/i)
+                || raw.match(/сезон\s*:\s*(\d{1,2})/i) || raw.match(/(\d{1,2})\s*сезон/i);
+              if (mm) season = +mm[1];
+            }
+            mm = raw.match(/\[(\d{1,3})\s*[-–]\s*(\d{1,3})\s*из\s*\d{1,3}\]/i)
+              || raw.match(/\((\d{1,3})\s*[-–]\s*(\d{1,3})\s*сери[яйи]/i)
+              || raw.match(/(\d{1,3})\s*[-–]\s*(\d{1,3})\s*сери[яйи]/i)
+              || raw.match(/серии\s*:\s*(\d{1,3})\s*[-–]\s*(\d{1,3})/i);
+            if (mm) { ep1 = +mm[1]; ep2 = +mm[2]; }
+            var s2 = name;
+            if (season != null) s2 += ' · Сезон ' + season;
+            if (ep1 != null) s2 += ep1 === ep2 ? ' · Серия ' + ep1 : ' · Серии ' + ep1 + '–' + ep2;
+            return s2;
+          }
+          var y = (m && m.year && m.year !== '—') ? m.year : ((raw.match(/\b((?:19|20)\d{2})\b/) || [])[1]);
+          return y ? name + ' (' + y + ')' : name;
+        }
+        function torIsSeriesTitle(t){
+          return /\[\s*\d{1,3}\s*-\s*\d{1,3}\s*из\s*\d{1,3}\s*\]/i.test(t)
+            || /\(\s*\d{1,2}\s*сезон[^)]*\)/i.test(t)
+            || /\[s\d{1,2}\]/i.test(t)
+            || /s\d{1,2}\s*e\d{1,3}/i.test(t)
+            || /\b\d{1,2}\s*сезон/i.test(t)
+            || /\d{1,3}\s*[-–]\s*\d{1,3}\s*сери[яйи]/i.test(t)
+            || /сериал/i.test(t);
+        }
+        function torYearOK(title, year){
+          if (!year || year === '—') return true;
+          var years = title.match(/\b(19|20)\d{2}\b/g) || [];
+          if (!years.length) return true;
+          return years.indexOf(year) !== -1;
+        }
+        function torPillsHTML(t, isTop){
+          var p = torParse(t.title), out = [];
+          if (isTop) out.push('<span class="badge top">★ Рекомендую</span>');
+          if (p.res) out.push('<span class="badge q">' + p.res + 'p</span>');
+          if (p.hdr) out.push('<span class="badge q">' + p.hdr + '</span>');
+          if (p.audio) out.push('<span class="badge seeds">' + p.audio + '</span>');
+          if (p.subs) out.push('<span class="badge seeds">Субтитры</span>');
+          return out.join(' ');
+        }
+        function torSorted(items){
+          var arr = items.slice();
+          if (torSort === 'seeds') arr.sort(function(a, b){ return (b.seeders || 0) - (a.seeders || 0); });
+          else if (torSort === 'quality') arr.sort(function(a, b){ return torParse(b.title).res - torParse(a.title).res; });
+          else if (torSort === 'size') arr.sort(function(a, b){ return (b.size || 0) - (a.size || 0); });
+          else arr.sort(function(a, b){ return torScore(b) - torScore(a); });
+          return arr;
+        }
+        /* Запрос — как дефолт TOR_QMODES в «Кино» (ru_orig_year):
+           русское + оригинал + год, без дублей, одним запросом. */
+        function torQuery(meta){
+          var parts = [];
+          [meta.title, meta.orig].forEach(function(n){ if (n && parts.indexOf(n) === -1) parts.push(n); });
+          if (meta.year) parts.push(meta.year);
+          return parts.join(' ').trim();
         }
         function searchTor(query){
           var jack = (localStorage.getItem('pawflix.jackett') || '').trim().replace(/\/+$/, '');
@@ -2608,141 +3115,481 @@
             return { items: items, src: 'TPB' };
           });
         }
-        function renderTorrents(items, src){
-          var box = document.getElementById('tor-list');
-          box.innerHTML = '';
-          torItems = items.slice().sort(function(a, b){
-            var ra = torRes(a.title), rb = torRes(b.title);
-            var qa = ra === '2160p' ? 3 : (ra === '1080p' ? 2 : (ra === '720p' ? 1 : 0));
-            var qb = rb === '2160p' ? 3 : (rb === '1080p' ? 2 : (rb === '720p' ? 1 : 0));
-            return (qb - qa) || ((b.seeders || 0) - (a.seeders || 0));
-          });
-          torItems.forEach(function(t){
-            var res = torRes(t.title);
-            var badge = res ? '<span class="badge q">' + res + '</span>' : '';
-            box.appendChild(makeSrcRow(
-              '<span class="plugin">' + esc(t.src) + '</span><span class="file">' + esc(t.title) + '</span>' + badge +
-              '<span class="size">' + fmtSize(t.size) + '</span><span class="badge seeds">↑ ' + (t.seeders || 0) + '</span>',
-              function(){
-                if (currentDetailCard) addHist(currentDetailCard);
-                playViaBridge(tsStreamURL(tsBase(), t.magnet, 1, t.title));
-              }));
-          });
-          var c = document.getElementById('tor-count');
-          if (c) c.textContent = src + ' · раздач: ' + torItems.length;
-          if (torFocusAfter) {
-            torFocusAfter = false;
-            var first = box.querySelector('.focusable');
-            if (first) setFocus(first);
-          }
-        }
-        function loadTorrents(meta){
-          var box = document.getElementById('tor-list');
-          box.innerHTML = '';
-          box.appendChild(srcNote('Ищу раздачи…'));
-          var c = document.getElementById('tor-count');
-          if (c) c.textContent = 'загрузка…';
+        function fetchTorrents(meta){
           torItems = [];
           torLoading = true;
-          torPromise = searchTor(torQuery(meta, false)).then(function(res){
-            if (res.items.length) return res;
-            if (meta.title && meta.orig && meta.title !== meta.orig) return searchTor(torQuery(meta, true));
-            return res;
-          }).then(function(res){
+          torSearched = false;
+          torSortPick = false;
+          torQueryText = torQuery(meta);
+          torPromise = searchTor(torQueryText).then(function(res){
             torLoading = false;
-            if (!res.items.length) {
-              box.innerHTML = '';
-              box.appendChild(srcNote('Раздач не нашлось.'));
-              if (c) c.textContent = res.src + ' · не нашлось';
-              return;
+            torSearched = true;
+            var items = res.items;
+            /* Как в «Кино»: для фильмов — отрезать сериальные названия и
+               проверить год из названия. */
+            if (meta.type === 'movie') {
+              items = items.filter(function(t){
+                return !torIsSeriesTitle(t.title) && torYearOK(t.title, meta.year);
+              });
             }
-            renderTorrents(res.items, res.src);
+            torItems = items;
+            return res;
           }).catch(function(){
             torLoading = false;
-            box.innerHTML = '';
-            box.appendChild(srcNote('Не получилось связаться с поиском торрентов.'));
-            if (c) c.textContent = 'недоступен';
+            torSearched = true;
+            torItems = [];
+            return null;
           });
           return torPromise;
         }
-        function focusTorrents(){
-          var box = document.getElementById('tor-list');
-          var first = box ? box.querySelector('.focusable') : null;
-          if (first) { setFocus(first); return; }
-          if (torLoading) { torFocusAfter = true; return; }
-          if (currentDetailMeta) {
-            torFocusAfter = true;
-            toast('Ищу раздачи…');
-            loadTorrents(currentDetailMeta);
-          } else {
-            toast('Раздач пока нет');
-          }
-        }
-
-        /* ---------- Координация источников и кнопка «Смотреть» ---------- */
-        function resetSources(){
-          onl.token++;
-          onl.level = null;
-          onl.voices = [];
-          onl.seasons = [];
-          onl.eps = [];
-          onl.from = null;
-          torItems = [];
-          torFocusAfter = false;
-          var ob = document.getElementById('online-list');
-          if (ob) { ob.innerHTML = ''; ob.appendChild(srcNote('Загрузка онлайн-источников…')); }
-          var tb = document.getElementById('tor-list');
-          if (tb) { tb.innerHTML = ''; tb.appendChild(srcNote('Ищу раздачи…')); }
-          setOnlineCount('загрузка…');
-          setOnlineIndicator('Онлайн • загрузка…');
-          var tc = document.getElementById('tor-count');
-          if (tc) tc.textContent = 'загрузка…';
-        }
-        function setSourcesError(){
-          var ob = document.getElementById('online-list');
-          if (ob) { ob.innerHTML = ''; ob.appendChild(srcNote('Карточка не загрузилась — источники недоступны.')); }
-          var tb = document.getElementById('tor-list');
-          if (tb) { tb.innerHTML = ''; tb.appendChild(srcNote('Карточка не загрузилась — источники недоступны.')); }
-          setOnlineCount('недоступен');
-          setOnlineIndicator('Онлайн • недоступен');
-          var tc = document.getElementById('tor-count');
-          if (tc) tc.textContent = 'недоступен';
-        }
-        function loadSources(meta){
-          loadOnline(meta);
-          loadTorrents(meta);
-        }
-        function playBest(){
-          var voices = (onl.level === 'voices') ? filteredVoices() : [];
-          if (voices.length) { playViaBridge(voices[0].url); return; }
-          if (torItems.length) {
-            var t = torItems[0];
-            playViaBridge(tsStreamURL(tsBase(), t.magnet, 1, t.title));
+        function renderProvTorrents(){
+          var box = provListEl();
+          box.innerHTML = '';
+          if (torSortPick) { renderTorSortPick(); return; }
+          if (!torItems.length) {
+            box.appendChild(srcNote(torSearched ? 'Раздач не нашлось.' : 'Ищу раздачи…'));
             return;
           }
+          var sorted = torSorted(torItems);
+          box.appendChild(makeSrcRow('<span class="plugin">Торренты</span><span class="file">Сортировка: ' + TOR_SORTS[torSort] + ' ›</span><span class="size">' + sorted.length + ' раздач · ' + esc(torQueryText) + '</span>', function(){
+            torSortPick = true; renderProvTorrents();
+          }));
+          sorted.forEach(function(t, i){
+            box.appendChild(makeSrcRow(
+              '<span class="plugin">' + esc(t.src) + '</span><span class="file">' + esc(torNiceTitle(t, currentDetailMeta)) + '</span>' + torPillsHTML(t, i === 0 && torSort === 'top') +
+              '<span class="size">' + fmtSize(t.size) + ' · ↑ ' + (t.seeders || 0) + '</span>',
+              function(){ playTorrent(t); }));
+          });
+        }
+        function renderTorSortPick(){
+          var box = provListEl();
+          box.innerHTML = '';
+          box.appendChild(makeSrcRow('<span class="file">‹ К раздачам</span>', function(){ torSortPick = false; renderProvTorrents(); }));
+          ['top', 'seeds', 'quality', 'size'].forEach(function(k){
+            box.appendChild(makeSrcRow('<span class="file">' + TOR_SORTS[k] + (torSort === k ? ' ✓' : '') + '</span>', function(){
+              torSort = k; torSortPick = false; renderProvTorrents();
+            }));
+          });
+        }
+        function openTorrentsPage(){
+          if (!currentDetailMeta) { provNote('Откройте карточку фильма или сериала'); return; }
+          if (torLoading) {
+            provNote('Ищу раздачи…');
+            if (torPromise) torPromise.then(function(){
+              if (current === 'provider' && prov.name === 'torrents') renderProvTorrents();
+            });
+            return;
+          }
+          renderProvTorrents();
+        }
+        /* TorrServer API — как tsAPI в «Кино»: POST /torrents, Content-Type text/plain. */
+        function tsAPI(body){
+          return fetch(tsBase() + '/torrents', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) }).then(function(r){
+            if (!r.ok) throw new Error('http');
+            return r.json();
+          });
+        }
+        function isVideoName(n){
+          return /\.(mp4|mkv|avi|mov|webm|m4v|ts|m2ts|wmv|flv)$/i.test(n || '');
+        }
+        function shortName(p){
+          var s = String(p || '').split('/').pop();
+          return s || p;
+        }
+        /* Как playTorrent в «Кино»: echo → add → опрос get до 20 раз × 1.5 сек →
+           1 файл — играть, >1 — список файлов по убыванию размера;
+           API недоступен (ожидаемо при file:// CORS без allowUniversalAccessFromFileURLs) —
+           фолбэк: magnet-стрим первого файла. */
+        async function playTorrent(t){
+          var ts = tsBase();
+          toast('Подключаюсь к TorrServer…');
+          try {
+            var e = await fetch(ts + '/echo', { cache: 'no-store' });
+            if (!e.ok) throw 0;
+          } catch (err) {
+            toast('TorrServer не отвечает · проверь адрес в Настройках');
+            return;
+          }
+          var files = null, hash = null;
+          try {
+            var added = await tsAPI({ action: 'add', link: t.magnet });
+            var th = added && (added.hash || (added.torrent && added.torrent.hash));
+            if (th) hash = String(th).toLowerCase();
+            for (var i = 0; i < 20 && hash; i++) {
+              var tor = null;
+              try {
+                var g = await tsAPI({ action: 'get', hash: hash });
+                tor = (g && g.torrent) || g || {};
+              } catch (e2) { break; }
+              var fs = tor.file_stats || tor.files || [];
+              var vids = fs.filter(function(f){ return isVideoName(f.path || f.name); })
+                .map(function(f){ return { id: f.id, path: f.path || f.name, size: f.length || f.size || 0 }; })
+                .filter(function(f){ return f.id; });
+              if (vids.length) { files = vids; break; }
+              await new Promise(function(r){ setTimeout(r, 1500); });
+            }
+          } catch (e3) { /* ниже — прямой фолбэк */ }
+          if (files && files.length === 1) {
+            if (currentDetailCard) addHist(currentDetailCard);
+            playViaBridge(tsStreamURL(ts, hash, files[0].id, t.title));
+            return;
+          }
+          if (files && files.length > 1) {
+            if (current !== 'provider' || prov.name !== 'torrents') openProvider('torrents');
+            var sorted = files.slice().sort(function(a, b){ return b.size - a.size; });
+            var box = provListEl();
+            if (box) {
+              box.innerHTML = '';
+              box.appendChild(makeSrcRow('<span class="file">‹ Раздачи</span>', function(){ renderProvTorrents(); }));
+              sorted.forEach(function(f){
+                box.appendChild(makeSrcRow('<span class="file">' + esc(shortName(f.path)) + '</span><span class="size">' + fmtSize(f.size) + '</span>', function(){
+                  if (currentDetailCard) addHist(currentDetailCard);
+                  playViaBridge(tsStreamURL(ts, hash, f.id, t.title));
+                }));
+              });
+              return;
+            }
+          }
+          if (currentDetailCard) addHist(currentDetailCard);
+          playViaBridge(tsStreamURL(ts, t.magnet, 1, t.title));
+        }
+
+        /* ---------- Координация источников и кнопка «Смотреть» ----------
+           При открытии карточки оба поиска стартуют в фоне; списки живут
+           только на страницах провайдеров, «Смотреть» играет первое готовое. */
+        function resetSources(){
+          onl.token++;
+          onl.level = null; onl.voices = []; onl.seasons = []; onl.eps = []; onl.from = null;
+          onl.srcs = []; onl.srcIdx = 0; onl.srcPick = false; onl.seasonIdx = 0; onl.epIdx = -1;
+          onl.loading = false; onlPromise = null;
+          torItems = []; torPromise = null; torLoading = false; torSearched = false; torSortPick = false;
+          fx.token++;
+          fx.level = null; fx.playlist = null; fx.seasons = []; fx.eps = [];
+        }
+        function setSourcesError(){
+          onl.level = 'error';
+          torSearched = true; torItems = [];
+          fx.level = 'error';
+        }
+        function preloadSources(meta){
+          fetchOnline(meta);
+          fetchTorrents(meta);
+        }
+        /* «Смотреть» — по логике «Кино» (кнопки watch внутри провайдеров):
+           фильмы — первый голос Lumio; сериалы — первая непросмотренная серия
+           (1 голос — сразу играть, несколько — страница Lumio на голосах);
+           иначе — лучшая раздача (top-сортировка) через playTorrent;
+           источники ещё грузятся — дождаться и повторить. */
+        function playBestLumio(){
+          if (onl.level === 'voices' && onl.voices.length) {
+            playLumioVoice(onl.voices[0], onl.from === 'episodes' ? onl.epIdx : -1);
+            return true;
+          }
+          var meta = currentDetailMeta;
+          if (meta && meta.type === 'tv' && onl.level === 'episodes' && onl.eps.length) {
+            var mid = 'l' + meta.id, target = -1;
+            for (var i = 0; i < onl.eps.length; i++) {
+              if (!wIs(mid, 's' + onl.seasonIdx + 'e' + i)) { target = i; break; }
+            }
+            if (target === -1) target = 0;
+            playLumioEp(target, false);
+            return true;
+          }
+          return false;
+        }
+        function playBest(){
+          if (playBestLumio()) return;
+          if (torItems.length) { playTorrent(torSorted(torItems)[0]); return; }
           if (!currentDetailMeta) { toast('Источников не нашлось'); return; }
           toast('Ищу источники…');
           var ps = [];
           if (onlPromise) ps.push(onlPromise.catch(function(){}));
           if (torPromise) ps.push(torPromise.catch(function(){}));
           if (!ps.length) {
-            loadSources(currentDetailMeta);
+            preloadSources(currentDetailMeta);
             if (onlPromise) ps.push(onlPromise.catch(function(){}));
             if (torPromise) ps.push(torPromise.catch(function(){}));
           }
           Promise.all(ps).then(function(){
-            var v2 = (onl.level === 'voices') ? filteredVoices() : [];
-            if (v2.length) { playViaBridge(v2[0].url); return; }
-            if (torItems.length) {
-              var t2 = torItems[0];
-              playViaBridge(tsStreamURL(tsBase(), t2.magnet, 1, t2.title));
-              return;
-            }
-            toast('Источников не нашлось — выберите серию в «Онлайн» или раздачу ниже');
+            if (playBestLumio()) return;
+            if (torItems.length) { playTorrent(torSorted(torItems)[0]); return; }
+            toast('Источников не нашлось — откройте Lumio или Торренты');
           });
         }
 
-        /* ---------- Похожие (TMDB /similar, карточки 16:9) ---------- */
+        /* ---------- Страница провайдера (drill-in с карточки) ---------- */
+        var prov = { name: null };
+        var PROV_TITLES = { lumio: 'Lumio', filmix: 'Filmix', torrents: 'Торренты' };
+        function openProvider(name){
+          if (!currentDetailMeta) { toast('Откройте карточку фильма или сериала'); return; }
+          prov.name = name;
+          document.getElementById('prov-title').textContent = PROV_TITLES[name] || 'Источники';
+          var m = currentDetailMeta;
+          document.getElementById('prov-sub').textContent = (m.title || '') + (m.year ? ' · ' + m.year : '');
+          show('provider');
+          var back = document.getElementById('prov-back');
+          if (back) setFocus(back);
+          if (name === 'lumio') openLumioPage();
+          else if (name === 'filmix') openFilmixPage();
+          else if (name === 'torrents') openTorrentsPage();
+        }
+        function backFromProvider(){
+          show('detail');
+        }
+
+        /* ---------- Filmix: механика из «Кино» (токен + прокси Denis) ----------
+           API: {прокси}http://filmixapp.vip/api/v2/{path}?{tokenQS}.
+           Без прокси — прямое https-подключение (CORS может не дать ответ:
+           тогда экран честно скажет проверить токен и прокси).
+           Прокси по умолчанию НЕ подставляется: дефолт «Кино» cors.jacred.stream мёртв. */
+        var fx = { token: 0, level: null, maxQ: 720, playlist: null, seasons: [], seasonIdx: 0, eps: [], cardTitle: '' };
+        function fxToken(){ return (localStorage.getItem('pawflix.filmix_token') || '').trim(); }
+        function fxProxyBase(){
+          return (localStorage.getItem('pawflix.filmix_proxy') || '').trim().replace(/\/+$/, '');
+        }
+        function fxUid(){
+          var u = (localStorage.getItem('pawflix.fx_uid') || '').trim();
+          if (!u) {
+            u = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+            localStorage.setItem('pawflix.fx_uid', u);
+          }
+          return u;
+        }
+        function fxTokenQS(){
+          return 'app_lang=ru_RU&user_dev_apk=2.2.13&user_dev_id=' + encodeURIComponent(fxUid()) +
+            '&user_dev_name=Xiaomi+24069PC21G&user_dev_os=12&user_dev_token=' + encodeURIComponent(fxToken()) +
+            '&user_dev_vendor=Xiaomi';
+        }
+        function fxGet(path, extra){
+          var proxy = fxProxyBase();
+          var base = proxy ? proxy + '/' : '';
+          var host = proxy ? 'http://filmixapp.vip/api/v2/' : 'https://filmixapp.vip/api/v2/';
+          var url = base + host + path + '?' + fxTokenQS() + (extra ? '&' + extra : '');
+          return fetch(url).then(function(r){
+            if (!r.ok) throw new Error('http ' + r.status);
+            return r.json();
+          });
+        }
+        function fxNorm(s){ return String(s || '').toLowerCase().replace(/[^a-zа-я0-9]/g, ''); }
+        function fxQualities(link, maxQ){
+          var m = String(link || '').match(/\[([\d,\s]*)\]/);
+          if (!m) return [];
+          return m[1].split(',').map(function(q){ return parseInt(q, 10); }).filter(function(q){ return q > 0 && q <= maxQ; });
+        }
+        function fxFileUrl(link, q){
+          return String(link).replace(/_\[([\d,\s]*)\]\.mp4/i, '_' + q + '.mp4')
+            .replace('%s.mp4', q + '.mp4')
+            .replace(/^http:\/\//i, 'https://');
+        }
+        function fxBlocked(name){ return typeof name === 'string' && name.toLowerCase().indexOf('заблокировано ') === 0; }
+        function fxIsSerial(pl){
+          return pl && pl.playlist && typeof pl.playlist === 'object' && !Array.isArray(pl.playlist) && Object.keys(pl.playlist).length > 0;
+        }
+        function fxMatch(json, meta){
+          if (!Array.isArray(json) || !json.length) return null;
+          var year = parseInt(String(meta.year || '').slice(0, 4)) || 0;
+          var orig = meta.orig || '';
+          var cards = json.filter(function(c){
+            var y = parseInt(c.year || String(c.alt_name || '').split('-').pop());
+            return y > year - 2 && y < year + 2;
+          });
+          var card = null;
+          for (var i = 0; i < cards.length; i++) {
+            if (cards[i].year == year && fxNorm(cards[i].original_title) === fxNorm(orig)) { card = cards[i]; break; }
+          }
+          if (!card) {
+            for (var j = 0; j < cards.length; j++) {
+              if (fxNorm(cards[j].original_title) === fxNorm(orig)) { card = cards[j]; break; }
+            }
+          }
+          if (!card && cards.length === 1) card = cards[0];
+          return card;
+        }
+        function fxSeasonLabel(sKey){ return String(sKey) === '-1' ? '1' : String(sKey); }
+        function fxPlay(voice, q, url, wkey){
+          if (wkey && currentDetailMeta) wMark('f' + currentDetailMeta.id, wkey);
+          if (currentDetailCard) addHist(currentDetailCard);
+          playViaBridge(url);
+        }
+        function openFilmixPage(){
+          if (!currentDetailMeta) { provNote('Откройте карточку фильма или сериала'); return; }
+          if (!fxToken()) {
+            var box = provListEl();
+            box.innerHTML = '';
+            box.appendChild(srcNote('Введите токен Filmix в Настройках — без него Filmix не работает.'));
+            var b = document.createElement('button');
+            b.className = 'btn focusable';
+            b.type = 'button';
+            b.textContent = 'В Настройки';
+            b.addEventListener('click', function(){ show('settings'); });
+            b.addEventListener('mouseenter', function(){ setFocus(b); });
+            box.appendChild(b);
+            return;
+          }
+          var tok = ++fx.token;
+          fx.level = 'loading';
+          provNote('Проверяю подписку Filmix…');
+          var maxQ = 720;
+          fxGet('user_profile').then(function(prof){
+            var ud = prof && prof.user_data;
+            if (ud) { if (ud.is_pro_plus) maxQ = 2160; else if (ud.is_pro) maxQ = 1080; }
+          }).catch(function(){}).then(function(){
+            if (tok !== fx.token) return;
+            provNote('Ищу на Filmix…');
+            return fxGet('search', 'story=' + encodeURIComponent(currentDetailMeta.orig || currentDetailMeta.title || ''));
+          }).then(function(res){
+            if (tok !== fx.token) return;
+            var card = fxMatch(res, currentDetailMeta);
+            if (card) { fxOpenCard(card.id, tok, maxQ); return; }
+            if (Array.isArray(res) && res.length) { fxRenderSimilars(res, tok, maxQ); return; }
+            provNote('На Filmix ничего не нашлось.');
+          }).catch(function(){
+            if (tok !== fx.token) return;
+            fxErrNote('Не получилось связаться с Filmix. Проверьте токен и прокси в Настройках.', function(){ openFilmixPage(); });
+          });
+        }
+        function fxErrNote(text, retry){
+          var box = provListEl();
+          box.innerHTML = '';
+          box.appendChild(srcNote(text));
+          var b = document.createElement('button');
+          b.className = 'btn focusable';
+          b.type = 'button';
+          b.textContent = 'Попробовать снова';
+          b.addEventListener('click', retry);
+          b.addEventListener('mouseenter', function(){ setFocus(b); });
+          box.appendChild(b);
+        }
+        function fxRenderSimilars(res, tok, maxQ){
+          var box = provListEl();
+          box.innerHTML = '';
+          box.appendChild(srcNote('Уточните, что именно:'));
+          res.slice(0, 12).forEach(function(c){
+            box.appendChild(makeSrcRow('<span class="file">' + esc(c.title || c.original_title || 'Вариант') + (c.year ? ' · ' + c.year : '') + '</span>', function(){
+              fxOpenCard(c.id, tok, maxQ);
+            }));
+          });
+        }
+        function fxOpenCard(fid, tok, maxQ){
+          provNote('Загружаю…');
+          fxGet('post/' + fid).then(function(data){
+            if (tok !== fx.token) return;
+            var pl = data && data.player_links;
+            if (pl && pl.movie && pl.movie.length) { fxRenderMovie(pl.movie, maxQ); return; }
+            if (fxIsSerial(pl)) {
+              fx.playlist = pl.playlist;
+              fx.seasons = Object.keys(pl.playlist).sort(function(a, b){ return parseInt(a, 10) - parseInt(b, 10); });
+              fx.seasonIdx = 0;
+              fx.level = 'seasons';
+              fxRenderSeasons(tok, maxQ, false);
+              return;
+            }
+            provNote('Видео не найдено.');
+          }).catch(function(){
+            if (tok !== fx.token) return;
+            provNote('Ошибка загрузки.');
+          });
+        }
+        function fxRenderMovie(list, maxQ){
+          var box = provListEl();
+          box.innerHTML = '';
+          var items = [];
+          list.forEach(function(f){
+            if (!f || !f.link || fxBlocked(f.translation)) return;
+            var qs = fxQualities(f.link, maxQ);
+            if (!qs.length) return;
+            var q = Math.max.apply(null, qs);
+            items.push({ voice: f.translation || 'Озвучка', q: q, url: fxFileUrl(f.link, q) });
+          });
+          if (!items.length) { provNote('Видео не найдено.'); return; }
+          items.forEach(function(it){
+            box.appendChild(makeSrcRow('<span class="plugin">Filmix</span><span class="file">' + esc(it.voice) + '</span><span class="badge q">' + it.q + 'p</span>', function(){
+              fxPlay(it.voice, it.q, it.url);
+            }));
+          });
+        }
+        function fxSeasonEps(maxQ){
+          var sKey = fx.seasons[fx.seasonIdx];
+          var seasonObj = fx.playlist[sKey] || {};
+          var eps = {};
+          Object.keys(seasonObj).forEach(function(vName){
+            if (fxBlocked(vName)) return;
+            var vm = seasonObj[vName];
+            if (Array.isArray(vm)) {
+              var m2 = {};
+              vm.forEach(function(v, i){ m2[String(i + 1)] = v; });
+              vm = m2;
+            }
+            Object.keys(vm).forEach(function(id){
+              var f = vm[id];
+              if (!f || !f.link) return;
+              var qArr = (Array.isArray(f.qualities) && f.qualities.length) ? f.qualities : fxQualities(f.link, maxQ);
+              var qs = qArr.map(function(q){ return parseInt(q, 10); }).filter(function(q){ return q > 0 && q <= maxQ; });
+              if (!qs.length) return;
+              var q = Math.max.apply(null, qs);
+              var url = fxFileUrl(f.link, q);
+              var sNum = fxSeasonLabel(sKey), eNum = parseInt(id, 10);
+              var mSe = url.match(/s(\d+)e(\d+?)_\d+\.mp4/i);
+              if (mSe) { sNum = mSe[1]; eNum = parseInt(mSe[2], 10); }
+              if (isNaN(eNum)) return;
+              var key = sNum + 'x' + eNum;
+              if (!eps[key]) eps[key] = { sNum: sNum, eNum: eNum, voices: [] };
+              eps[key].voices.push({ voice: vName, q: q, url: url });
+            });
+          });
+          return Object.keys(eps).sort(function(a, b){
+            var pa = a.split('x').map(Number), pb = b.split('x').map(Number);
+            return (pa[0] - pb[0]) || (pa[1] - pb[1]);
+          }).map(function(k){ return eps[k]; });
+        }
+        function fxRenderSeasons(tok, maxQ, focusFirst){
+          var box = provListEl();
+          box.innerHTML = '';
+          fx.seasons.forEach(function(sKey, i){
+            box.appendChild(makeSrcRow('<span class="plugin">Filmix</span><span class="file">' + esc(fxSeasonLabel(sKey)) + ' сезон</span>', function(){
+              fx.seasonIdx = i;
+              fx.level = 'episodes';
+              fxRenderEps(tok, maxQ, true);
+            }));
+          });
+          if (focusFirst) {
+            var first = box.querySelector('.focusable');
+            if (first) setFocus(first);
+          }
+        }
+        function fxRenderEps(tok, maxQ, focusFirst){
+          var box = provListEl();
+          box.innerHTML = '';
+          box.appendChild(makeSrcRow('<span class="file">‹ К сезонам</span>', function(){ fxRenderSeasons(tok, maxQ, true); }));
+          var eps = fxSeasonEps(maxQ);
+          fx.eps = eps;
+          eps.forEach(function(e){
+            var vn = e.voices.slice(0, 2).map(function(v){ return v.voice; }).join(' · ') + (e.voices.length > 2 ? ' · …' : '');
+            var wk = 's' + e.sNum + 'e' + e.eNum;
+            var w = currentDetailMeta ? wIs('f' + currentDetailMeta.id, wk) : false;
+            box.appendChild(makeSrcRow('<span class="file">' + e.eNum + ' серия' + (w ? ' ✓' : '') + '</span><span class="size">' + esc(vn) + '</span>', function(){
+              if (e.voices.length === 1) { fxPlay(e.voices[0].voice, e.voices[0].q, e.voices[0].url, wk); return; }
+              fxRenderEpVoices(e, tok, maxQ);
+            }));
+          });
+          if (!eps.length) box.appendChild(srcNote('Серий не нашлось.'));
+          if (focusFirst) {
+            var first = box.querySelector('.focusable');
+            if (first) setFocus(first);
+          }
+        }
+        function fxRenderEpVoices(e, tok, maxQ){
+          var box = provListEl();
+          box.innerHTML = '';
+          box.appendChild(makeSrcRow('<span class="file">‹ К сериям</span>', function(){ fxRenderEps(tok, maxQ, true); }));
+          e.voices.forEach(function(v){
+            box.appendChild(makeSrcRow('<span class="plugin">Filmix</span><span class="file">' + esc(v.voice) + '</span><span class="badge q">' + v.q + 'p</span>', function(){
+              fxPlay(v.voice, v.q, v.url, 's' + e.sNum + 'e' + e.eNum);
+            }));
+          });
+        }
+
+/* ---------- Похожие (TMDB /similar, карточки 16:9) ---------- */
         var similarItems = [], similarExpanded = false;
         function resetSimilar(){
           similarItems = [];
@@ -2843,6 +3690,24 @@
           toast(v ? 'Ключ Jackett сохранён' : 'Ключ Jackett удалён');
         }
         jackettKeySave.addEventListener('click', saveJackettKey);
+        var filmixInput = document.getElementById('filmix-input');
+        var filmixSave = document.getElementById('filmix-save');
+        filmixInput.value = (localStorage.getItem('pawflix.filmix_token') || '').trim();
+        function saveFilmix(){
+          var v = filmixInput.value.trim();
+          localStorage.setItem('pawflix.filmix_token', v);
+          toast(v ? 'Токен Filmix сохранён' : 'Токен Filmix удалён');
+        }
+        filmixSave.addEventListener('click', saveFilmix);
+        var filmixProxyInput = document.getElementById('filmix-proxy-input');
+        var filmixProxySave = document.getElementById('filmix-proxy-save');
+        filmixProxyInput.value = (localStorage.getItem('pawflix.filmix_proxy') || '').trim();
+        function saveFilmixProxy(){
+          var v = filmixProxyInput.value.trim();
+          localStorage.setItem('pawflix.filmix_proxy', v);
+          toast(v ? 'Прокси Filmix сохранён' : 'Прокси Filmix удалён');
+        }
+        filmixProxySave.addEventListener('click', saveFilmixProxy);
         function refreshPlayerUI(){
           var p = playerSetting();
           ['potok', 'vlc', 'ask'].forEach(function(k){
