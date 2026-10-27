@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>pawflix</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
 <style>
 
       :root{
@@ -720,6 +721,16 @@
       @media (max-width:760px){
         .detail .main, .plugins .main, .settings .main, #screen-provider .main{ padding:.7em .7em 4.6em; gap:1.15em; overflow:visible; }
       }
+      /* Встроенный плеер страницы (ПК/браузер): тёмный оверлей поверх всего. */
+      .pl-overlay{ position:fixed; inset:0; z-index:100; background:#000; display:none; flex-direction:column; }
+      .pl-overlay.open{ display:flex; }
+      .pl-top{ display:flex; align-items:center; gap:1em; padding:.8em 1em; color:#fff; background:rgba(0,0,0,.65); }
+      .pl-title{ flex:1; font-weight:700; font-size:1.05em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .pl-q{ color:#8cddff; font-weight:700; font-size:.9em; white-space:nowrap; }
+      .pl-close{ background:rgba(255,255,255,.14); border:0; color:#fff; width:2.2em; height:2.2em; border-radius:50%; font-size:1.1em; cursor:pointer; flex:0 0 auto; }
+      .pl-close:hover{ background:rgba(255,255,255,.28); }
+      #pl-video{ flex:1; width:100%; min-height:0; background:#000; outline:none; }
+      #pl-yt{ flex:1; width:100%; min-height:0; border:0; background:#000; }
 
 </style>
 </head>
@@ -1910,6 +1921,11 @@
     </div>
 
 <div class="toast" id="toast"></div>
+<div class="pl-overlay" id="pl-overlay">
+<div class="pl-top"><span class="pl-title" id="pl-title"></span><span class="pl-q" id="pl-q"></span><button class="pl-close" id="pl-close" type="button" aria-label="Закрыть">✕</button></div>
+<video id="pl-video" controls autoplay playsinline></video>
+<iframe id="pl-yt" hidden allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
 <script>
       (function(){
         /* ============ Навигация и клавиатура — как в макете ============ */
@@ -2001,6 +2017,12 @@
 
         document.addEventListener('keydown', function(e){
           var k = e.key;
+          // Открытый плеер перехватывает клавиши первым: Esc/Backspace закрывают
+          // его, остальные клавиши за ним в навигацию не проваливаются.
+          if (isPagePlayerOpen()) {
+            if (k === 'Escape' || k === 'Backspace') { closePagePlayer(); }
+            e.preventDefault(); return;
+          }
           // Ввод в текстовом поле (TMDB-ключ): клавиши идут в поле,
           // стрелки двигают каретку, Enter — сохранить, Esc — убрать фокус.
           var ae = document.activeElement;
@@ -2588,24 +2610,112 @@
           var p = (localStorage.getItem('pawflix.player') || '').trim();
           return (p === 'vlc' || p === 'ask') ? p : 'potok';
         }
-        function playViaBridge(url){
+        /* Единая точка воспроизведения: с мостом (APK на MiBox) — мост и
+           настройка плеера, без моста (браузер/ПК) — встроенный плеер страницы. */
+        function playViaBridge(url, title){
           var b = window.Pawflix;
-          if (!b) { toast('Воспроизведение доступно только в приложении на приставке'); return false; }
-          try {
-            var p = playerSetting();
-            if (p === 'vlc' && b.openVlc) b.openVlc(url);
-            else if (p === 'potok' && b.openPotok) b.openPotok(url);
-            else b.openVideo(url);
-          } catch (e) { toast('Не удалось открыть плеер'); return false; }
+          if (b) {
+            try {
+              var p = playerSetting();
+              if (p === 'vlc' && b.openVlc) b.openVlc(url);
+              else if (p === 'potok' && b.openPotok) b.openPotok(url);
+              else b.openVideo(url);
+            } catch (e) { toast('Не удалось открыть плеер'); return false; }
+            return true;
+          }
+          openPagePlayer(url, title);
           return true;
         }
         function playTrailer(){
           if (!trailerKey) { toast('Трейлер не найден'); return; }
           var b = window.Pawflix;
-          if (!b) { toast('Воспроизведение доступно только в приложении на приставке'); return; }
-          try { b.openVideo('https://www.youtube.com/watch?v=' + trailerKey); }
-          catch (e) { toast('Не удалось открыть трейлер'); }
+          if (b) {
+            try { b.openVideo('https://www.youtube.com/watch?v=' + trailerKey); }
+            catch (e) { toast('Не удалось открыть трейлер'); }
+            return;
+          }
+          openPageTrailer(trailerKey);
         }
+
+        /* ============ Встроенный плеер страницы (ПК/браузер, без моста) ============
+           Логика — из «Кино»: mp4 напрямую, m3u8 через hls.js, фатальная
+           ошибка Hls → тост и закрытие. */
+        var pageHls = null;
+        function isPagePlayerOpen(){
+          var ov = document.getElementById('pl-overlay');
+          return !!(ov && ov.classList.contains('open'));
+        }
+        function plQLabel(w, h){
+          if (!w || !h) return '';
+          if (w >= 3800 || h >= 2100) return '4K';
+          if (w >= 1900 || h >= 1050) return '1080p';
+          if (w >= 1400 || h >= 700) return '720p';
+          if (w >= 1100 || h >= 470) return '480p';
+          return h + 'p';
+        }
+        function closePagePlayer(){
+          var ov = document.getElementById('pl-overlay');
+          if (!ov) return;
+          if (pageHls) { try { pageHls.destroy(); } catch (e) {} pageHls = null; }
+          var v = document.getElementById('pl-video');
+          if (v) { try { v.pause(); } catch (e) {} v.removeAttribute('src'); v.load(); v.style.display = ''; }
+          var yt = document.getElementById('pl-yt');
+          if (yt) { yt.src = ''; yt.hidden = true; }
+          ov.classList.remove('open');
+        }
+        function openPagePlayer(url, title){
+          closePagePlayer();
+          var ov = document.getElementById('pl-overlay');
+          var v = document.getElementById('pl-video');
+          if (!ov || !v) { toast('Плеер недоступен'); return; }
+          var t = title || (currentDetailMeta && currentDetailMeta.title) || '';
+          document.getElementById('pl-title').textContent = t;
+          document.getElementById('pl-q').textContent = '';
+          v.style.display = '';
+          document.getElementById('pl-yt').hidden = true;
+          ov.classList.add('open');
+          v.onloadedmetadata = function(){
+            if (v.videoWidth && v.videoHeight) document.getElementById('pl-q').textContent = plQLabel(v.videoWidth, v.videoHeight);
+          };
+          if (/\.m3u8($|\?)/i.test(url) && window.Hls && Hls.isSupported()) {
+            pageHls = new Hls({maxBufferLength: 30});
+            pageHls.loadSource(url);
+            pageHls.attachMedia(v);
+            pageHls.on(Hls.Events.LEVEL_SWITCHED, function(ev, data){
+              var lv = pageHls.levels && pageHls.levels[data.level];
+              if (lv) document.getElementById('pl-q').textContent = plQLabel(lv.width, lv.height) || (lv.bitrate ? Math.round(lv.bitrate/1000) + ' кбит/с' : '');
+            });
+            pageHls.on(Hls.Events.ERROR, function(ev, data){
+              if (!data.fatal) return;
+              closePagePlayer();
+              toast('Поток недоступен — попробуйте другой источник');
+            });
+          } else {
+            v.src = url;
+            if (/\.m3u8($|\?)/i.test(url) && !v.canPlayType('application/vnd.apple.mpegurl')) {
+              toast('Браузер не играет HLS без hls.js — попробуйте другой источник');
+            }
+          }
+          v.play().catch(function(){});
+        }
+        function openPageTrailer(key){
+          closePagePlayer();
+          var ov = document.getElementById('pl-overlay');
+          var v = document.getElementById('pl-video');
+          var yt = document.getElementById('pl-yt');
+          if (!ov || !v || !yt) { toast('Плеер недоступен'); return; }
+          document.getElementById('pl-title').textContent = (currentDetailMeta && currentDetailMeta.title ? currentDetailMeta.title + ' — ' : '') + 'Трейлер';
+          document.getElementById('pl-q').textContent = '';
+          try { v.pause(); } catch (e) {}
+          v.style.display = 'none';
+          yt.hidden = false;
+          yt.src = 'https://www.youtube.com/embed/' + key + '?autoplay=1';
+          ov.classList.add('open');
+        }
+        (function(){
+          var b = document.getElementById('pl-close');
+          if (b) b.addEventListener('click', closePagePlayer);
+        })();
         function loadTrailer(type, id){
           tmdb('/' + type + '/' + id + '/videos').then(function(j){
             var list = (j.results || []).filter(function(v){ return v.site === 'YouTube' && v.type === 'Trailer' && v.key; });
@@ -2858,7 +2968,7 @@
           if (currentDetailCard) addHist(currentDetailCard);
           var meta = currentDetailMeta;
           if (meta && meta.type === 'tv' && ei >= 0) wMark('l' + meta.id, 's' + onl.seasonIdx + 'e' + ei);
-          playViaBridge(v.url);
+          playViaBridge(v.url, (meta && meta.title ? meta.title : '') + (v.title && (!meta || v.title !== meta.title) ? ' · ' + v.title : ''));
         }
         function renderProvVoices(focusFirst){
           var box = provListEl();
@@ -3231,7 +3341,7 @@
           } catch (e3) { /* ниже — прямой фолбэк */ }
           if (files && files.length === 1) {
             if (currentDetailCard) addHist(currentDetailCard);
-            playViaBridge(tsStreamURL(ts, hash, files[0].id, t.title));
+            playViaBridge(tsStreamURL(ts, hash, files[0].id, t.title), t.title);
             return;
           }
           if (files && files.length > 1) {
@@ -3244,14 +3354,14 @@
               sorted.forEach(function(f){
                 box.appendChild(makeSrcRow('<span class="file">' + esc(shortName(f.path)) + '</span><span class="size">' + fmtSize(f.size) + '</span>', function(){
                   if (currentDetailCard) addHist(currentDetailCard);
-                  playViaBridge(tsStreamURL(ts, hash, f.id, t.title));
+                  playViaBridge(tsStreamURL(ts, hash, f.id, t.title), shortName(f.path) || t.title);
                 }));
               });
               return;
             }
           }
           if (currentDetailCard) addHist(currentDetailCard);
-          playViaBridge(tsStreamURL(ts, t.magnet, 1, t.title));
+          playViaBridge(tsStreamURL(ts, t.magnet, 1, t.title), t.title);
         }
 
         /* ---------- Координация источников и кнопка «Смотреть» ----------
@@ -3409,7 +3519,7 @@
         function fxPlay(voice, q, url, wkey){
           if (wkey && currentDetailMeta) wMark('f' + currentDetailMeta.id, wkey);
           if (currentDetailCard) addHist(currentDetailCard);
-          playViaBridge(url);
+          playViaBridge(url, (voice ? voice + (q ? ' ' + q : '') : ''));
         }
         function openFilmixPage(){
           if (!currentDetailMeta) { provNote('Откройте карточку фильма или сериала'); return; }
