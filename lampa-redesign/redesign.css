@@ -1,9 +1,9 @@
 /* ============================================================
-   LAMPA REDESIGN — светлая frosted-glass тема (утверждена 2026-10-27)
-   Подключается ПОСЛЕ css/app.css. Оригинальные app.min.js и app.css
-   не меняются: весь редизайн — этот файл + redesign.js.
-   Откат: убрать две строки из index.html.
-   Единицы — em (Lampa масштабирует шрифт под высоту экрана ТВ).
+   LAMPA GLASS v4 — ТОЛЬКО ЦВЕТОВАЯ СХЕМА (решение Denis 2026-10-27)
+   Вёрстка Lampa НЕ меняется: боковое меню, ряды, карточки, настройки —
+   всё на штатных местах и штатных размеров. Меняется только цвет:
+   светлый голубовато-серый фон, тёмный текст, оранжевый акцент,
+   полупрозрачное стекло на панелях. Никаких перестроек DOM.
    ============================================================ */
 
 /* ---------- База ---------- */
@@ -11,7 +11,6 @@ body.redesign {
     background: #c9d3e0 !important;
     background: linear-gradient(180deg, #c9d3e0 0%, #dde4ec 45%, #eef1f5 100%) !important;
     color: #14161a;
-    font-family: 'Onest', 'Inter', system-ui, sans-serif;
 }
 body.redesign .background,
 body.redesign .background__one,
@@ -24,280 +23,71 @@ body.redesign .activity {
     background: transparent !important;
 }
 
-/* ---------- Контент на всю ширину (колонка меню уезжает в пилюлю сверху) ---------- */
-body.redesign .wrap__content {
-    padding-top: 0 !important;
-    width: 100% !important;
-    -webkit-transform: none !important;
-    -moz-transform: none !important;
-    transform: none !important;
-}
-body.redesign.menu--open .wrap__content,
-body.redesign.menu--always .wrap__content,
-body.redesign.menu--always.menu--open .wrap__content {
-    -webkit-transform: none !important;
-    -moz-transform: none !important;
-    transform: none !important;
-}
-
-/* ---------- Пилюля-навигация сверху (v2: чистый CSS, без переезда DOM) ----------
-   Родная колонка меню .wrap__left становится фиксированной чёрной пилюлей
-   по центру сверху. Пункты остаются в своём контейнере — клики и фокус
-   Lampa продолжают работать. Слева остаётся логотип/часы из .head,
-   справа — кнопки действий: как в референсе Flix.id. */
-body.redesign .wrap__left {
-    display: block !important;
-    visibility: visible !important;
-    position: fixed !important;
-    top: 0.7em !important;
-    left: 50% !important;
-    width: auto !important;
-    height: auto !important;
-    max-width: 92vw !important;
-    margin-left: 0 !important;
-    padding-top: 0 !important;
-    -webkit-transform: translateX(-50%) !important;
-    -moz-transform: translateX(-50%) !important;
-    transform: translateX(-50%) !important;
-    z-index: 100 !important;
-    background: #101114 !important;
-    -webkit-border-radius: 999px !important;
-    -moz-border-radius: 999px !important;
-    border-radius: 999px !important;
-    -webkit-box-shadow: 0 0.6em 1.8em rgba(16, 17, 20, 0.35) !important;
-    -moz-box-shadow: 0 0.6em 1.8em rgba(16, 17, 20, 0.35) !important;
-    box-shadow: 0 0.6em 1.8em rgba(16, 17, 20, 0.35) !important;
-    overflow-x: auto !important;
-    scrollbar-width: none !important;
-    -webkit-flex-shrink: 0 !important;
-    -ms-flex-negative: 0 !important;
-    flex-shrink: 0 !important;
-}
-body.redesign .wrap__left::-webkit-scrollbar {
-    display: none !important;
-}
-body.redesign .wrap__left .scroll,
-body.redesign .wrap__left .scroll__content {
-    overflow: visible !important;
-    height: auto !important;
-    padding: 0 !important;
-}
-body.redesign .wrap__left .scroll--mask {
-    -webkit-mask-image: none !important;
-    mask-image: none !important;
-}
-body.redesign .wrap__left .menu {
-    width: auto !important;
-    display: -webkit-box !important;
-    display: -webkit-flex !important;
-    display: -moz-box !important;
-    display: -ms-flexbox !important;
-    display: flex !important;
-    -webkit-box-orient: horizontal !important;
-    -webkit-box-direction: normal !important;
-    -webkit-flex-direction: row !important;
-    -moz-box-orient: horizontal !important;
-    -moz-box-direction: normal !important;
-    -ms-flex-direction: row !important;
-    flex-direction: row !important;
-    -webkit-box-align: center !important;
-    -webkit-align-items: center !important;
-    -moz-box-align: center !important;
-    -ms-flex-align: center !important;
-    align-items: center !important;
-}
-/* Секции меню — в одну строку, иначе пилюля вытягивается в овал */
-body.redesign .wrap__left .menu__case {
-    display: -webkit-box !important;
-    display: -webkit-flex !important;
-    display: -moz-box !important;
-    display: -ms-flexbox !important;
-    display: flex !important;
-    -webkit-box-orient: horizontal !important;
-    -webkit-box-direction: normal !important;
-    -webkit-flex-direction: row !important;
-    -moz-box-orient: horizontal !important;
-    -moz-box-direction: normal !important;
-    -ms-flex-direction: row !important;
-    flex-direction: row !important;
-    -webkit-box-align: center !important;
-    -webkit-align-items: center !important;
-    -moz-box-align: center !important;
-    -ms-flex-align: center !important;
-    align-items: center !important;
-    -webkit-flex-shrink: 0 !important;
-    -ms-flex-negative: 0 !important;
-    flex-shrink: 0 !important;
-}
-body.redesign .wrap__left .menu__list {
-    display: -webkit-box !important;
-    display: -webkit-flex !important;
-    display: -moz-box !important;
-    display: -ms-flexbox !important;
-    display: flex !important;
-    margin: 0 !important;
-    padding: 0.35em 0.5em !important;
-    -webkit-flex-wrap: nowrap !important;
-    -ms-flex-wrap: nowrap !important;
-    flex-wrap: nowrap !important;
-}
-body.redesign .wrap__left .menu__item {
-    color: rgba(255, 255, 255, 0.75) !important;
-    padding: 0.55em 1.1em !important;
-    -webkit-border-radius: 999px !important;
-    -moz-border-radius: 999px !important;
-    border-radius: 999px !important;
-    margin: 0 !important;
-    -webkit-flex-shrink: 0 !important;
-    -ms-flex-negative: 0 !important;
-    flex-shrink: 0 !important;
-}
-body.redesign .wrap__left .menu__item .menu__ico {
-    display: none !important;
-}
-body.redesign .wrap__left .menu__item .menu__text {
-    font-size: 0.95em !important;
-    font-weight: 600 !important;
-    white-space: nowrap !important;
-}
-body.redesign .wrap__left .menu__item.focus,
-body.redesign .wrap__left .menu__item.traverse,
-body.redesign .wrap__left .menu__item.hover {
-    background: #fff !important;
-    color: #101114 !important;
-}
-body.redesign .wrap__left .menu__item.focus .menu__text {
-    color: #101114 !important;
-}
-body.redesign .wrap__left .menu__split {
-    display: none !important;
-}
-
-/* Отступ контента под фиксированную пилюлю */
-body.redesign .activity__body {
-    padding-top: 5.2em !important;
-}
-
-/* ---------- Hero-баннеры ---------- */
-#rd-hero {
-    display: -webkit-box;
-    display: -webkit-flex;
-    display: -moz-box;
-    display: -ms-flexbox;
-    display: flex;
-    gap: 1.2em;
-    padding: 0 1.5em 1.6em;
-}
-.rd-hero-card {
-    position: relative;
-    -webkit-box-flex: 1;
-    -webkit-flex: 1;
-    -moz-box-flex: 1;
-    -ms-flex: 1;
-    flex: 1;
-    height: 11em;
-    -webkit-border-radius: 1.4em;
-    -moz-border-radius: 1.4em;
-    border-radius: 1.4em;
-    overflow: hidden;
-    cursor: pointer;
-    -webkit-box-shadow: 0 0.8em 2em rgba(20, 30, 50, 0.25);
-    -moz-box-shadow: 0 0.8em 2em rgba(20, 30, 50, 0.25);
-    box-shadow: 0 0.8em 2em rgba(20, 30, 50, 0.25);
-}
-.rd-hero-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center 20%;
-    display: block;
-}
-.rd-hero-card::after {
-    content: '';
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: 70%;
-    background: -webkit-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.75) 100%);
-    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.75) 100%);
-}
-.rd-hero-card__info {
-    position: absolute;
-    left: 1.4em;
-    right: 1.4em;
-    bottom: 1.2em;
-    z-index: 2;
-    color: #fff;
-}
-.rd-hero-card__title {
-    font-size: 1.5em;
-    font-weight: 800;
-    line-height: 1.15;
-    margin-bottom: 0.25em;
-}
-.rd-hero-card__meta {
-    font-size: 0.95em;
-    color: rgba(255, 255, 255, 0.85);
-}
-.rd-hero-card__meta b {
-    color: #ff8a3c;
-}
-.rd-hero-card__play {
-    display: inline-block;
-    margin-top: 0.7em;
-    background: #fff;
-    color: #101114;
-    font-weight: 700;
-    font-size: 0.9em;
-    padding: 0.45em 1.2em;
-    -webkit-border-radius: 999px;
-    -moz-border-radius: 999px;
-    border-radius: 999px;
-}
-
-/* ---------- Пилюли-категории (быстрый переход к рядам) ---------- */
-#rd-cats {
-    display: -webkit-box;
-    display: -webkit-flex;
-    display: -moz-box;
-    display: -ms-flexbox;
-    display: flex;
-    gap: 0.6em;
-    padding: 0 1.5em 1.4em;
-    -webkit-flex-wrap: wrap;
-    -ms-flex-wrap: wrap;
-    flex-wrap: wrap;
-}
-.rd-cat {
-    background: rgba(255, 255, 255, 0.65);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+/* ---------- Шапка: тёмный текст и иконки ---------- */
+body.redesign .head__time,
+body.redesign .head__time-now,
+body.redesign .head__time-date,
+body.redesign .head__time-week {
     color: #14161a;
-    font-weight: 600;
-    font-size: 0.95em;
-    padding: 0.55em 1.2em;
-    -webkit-border-radius: 999px;
-    -moz-border-radius: 999px;
-    border-radius: 999px;
-    cursor: pointer;
-    -webkit-box-shadow: 0 0.3em 0.9em rgba(20, 30, 50, 0.08);
-    -moz-box-shadow: 0 0.3em 0.9em rgba(20, 30, 50, 0.08);
-    box-shadow: 0 0.3em 0.9em rgba(20, 30, 50, 0.08);
 }
-.rd-cat.focus, .rd-cat:hover {
-    background: #101114;
+body.redesign .head__action [stroke] {
+    stroke: #14161a;
+}
+body.redesign .head__action path[fill],
+body.redesign .head__action rect[fill],
+body.redesign .head__action circle[fill] {
+    fill: #14161a;
+}
+
+/* ---------- Боковое меню: тёмный текст, тёмные иконки, чёрный фокус ---------- */
+body.redesign .menu__item {
+    color: #14161a;
+}
+body.redesign .menu__item .menu__ico [stroke] {
+    stroke: #14161a;
+}
+body.redesign .menu__item .menu__ico path[fill],
+body.redesign .menu__item .menu__ico rect[fill],
+body.redesign .menu__item .menu__ico circle[fill] {
+    fill: #14161a;
+}
+body.redesign .menu__item.focus,
+body.redesign .menu__item.traverse,
+body.redesign .menu__item.hover {
+    background-color: #101114;
     color: #fff;
+}
+body.redesign .menu__item.focus .menu__ico [stroke] {
+    stroke: #fff;
+}
+body.redesign .menu__item.focus .menu__ico path[fill],
+body.redesign .menu__item.focus .menu__ico rect[fill],
+body.redesign .menu__item.focus .menu__ico circle[fill] {
+    fill: #fff;
+}
+body.redesign .menu__split {
+    border-color: rgba(20, 22, 26, 0.12);
+}
+
+/* ---------- Нижняя панель навигации (мобильная) ---------- */
+body.redesign .navigation-bar {
+    background: rgba(255, 255, 255, 0.7) !important;
+}
+body.redesign .navigation-bar__label {
+    color: #14161a;
+}
+body.redesign .navigation-bar__icon [stroke] {
+    stroke: #14161a;
+}
+body.redesign .navigation-bar__icon path[fill],
+body.redesign .navigation-bar__icon rect[fill],
+body.redesign .navigation-bar__icon circle[fill] {
+    fill: #14161a;
 }
 
 /* ---------- Ряды и карточки ---------- */
-body.redesign .items-line {
-    padding-bottom: 2.2em;
-}
-body.redesign .items-line__head {
-    padding: 0 1.5em;
-    margin-bottom: 1em;
-}
 body.redesign .items-line__title {
     color: #14161a;
-    font-weight: 700;
 }
 body.redesign .items-line__more {
     background: rgba(255, 255, 255, 0.7);
@@ -307,119 +97,74 @@ body.redesign .items-line__more.focus {
     background: #101114;
     color: #fff;
 }
-body.redesign .card__view {
-    -webkit-border-radius: 1em;
-    -moz-border-radius: 1em;
-    border-radius: 1em;
-    overflow: hidden;
-    -webkit-box-shadow: 0 0.4em 1.2em rgba(20, 30, 50, 0.15);
-    -moz-box-shadow: 0 0.4em 1.2em rgba(20, 30, 50, 0.15);
-    box-shadow: 0 0.4em 1.2em rgba(20, 30, 50, 0.15);
-}
 body.redesign .card__title {
     color: #14161a;
 }
 body.redesign .card__vote {
     color: #ff6a1a;
 }
-body.redesign .card.focus .card__view,
-body.redesign .card.focus {
+body.redesign .card__view {
+    -webkit-box-shadow: 0 0.4em 1.2em rgba(20, 30, 50, 0.15);
+    -moz-box-shadow: 0 0.4em 1.2em rgba(20, 30, 50, 0.15);
+    box-shadow: 0 0.4em 1.2em rgba(20, 30, 50, 0.15);
+}
+body.redesign .card.focus .card__view {
     -webkit-box-shadow: 0 0 0 0.2em #101114, 0 0.8em 2em rgba(20, 30, 50, 0.3);
     -moz-box-shadow: 0 0 0 0.2em #101114, 0 0.8em 2em rgba(20, 30, 50, 0.3);
     box-shadow: 0 0 0 0.2em #101114, 0 0.8em 2em rgba(20, 30, 50, 0.3);
 }
 
-/* ---------- Карточка фильма (экран full) ---------- */
-body.redesign .full-start-new {
-    color: #14161a;
-}
+/* ---------- Карточка фильма ---------- */
 body.redesign .full-start-new__title {
     color: #14161a;
 }
-body.redesign .full-start__button {
-    -webkit-border-radius: 999px;
-    -moz-border-radius: 999px;
-    border-radius: 999px;
+body.redesign .full-start__rate {
+    color: #ff6a1a;
 }
 body.redesign .full-start__button.button--play {
     background: #101114;
     color: #fff;
 }
-body.redesign .full-start__rate {
-    color: #ff6a1a;
-}
 
-/* ---------- Настройки: светлая шторка, белые карточки ---------- */
+/* ---------- Настройки: полупрозрачное стекло ---------- */
 body.redesign .settings__content {
-    background: rgba(255, 255, 255, 0.88) !important;
+    background: rgba(255, 255, 255, 0.85) !important;
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
-    -webkit-border-radius: 1em;
-    -moz-border-radius: 1em;
-    border-radius: 1em;
-}
-body.redesign .settings__head {
-    color: #14161a;
 }
 body.redesign .settings__title {
-    color: #14161a !important;
+    color: #14161a;
 }
-body.redesign .settings-folder {
-    background: rgba(255, 255, 255, 0.65);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    -webkit-border-radius: 1em;
-    -moz-border-radius: 1em;
-    border-radius: 1em;
-    margin: 0 1em 0.5em;
-}
-body.redesign .settings-folder__name {
-    color: #14161a !important;
-}
-/* Иконки папок — в тёмном кружке, чтобы светлые и цветные значки читались */
-body.redesign .settings-folder__icon {
-    background: #101114;
-    -webkit-border-radius: 100%;
-    -moz-border-radius: 100%;
-    border-radius: 100%;
-    width: 2.8em !important;
-    height: 2.8em !important;
-    -webkit-box-align: center;
-    -webkit-align-items: center;
-    -moz-box-align: center;
-    -ms-flex-align: center;
-    align-items: center;
-    -webkit-box-pack: center;
-    -webkit-justify-content: center;
-    -moz-box-pack: center;
-    -ms-flex-pack: center;
-    justify-content: center;
-}
-body.redesign .settings-folder__icon > * {
-    width: 1.6em !important;
-    height: 1.6em !important;
-}
-body.redesign .settings-folder.focus {
-    background: #101114 !important;
-}
-body.redesign .settings-folder.focus .settings-folder__name {
-    color: #fff !important;
-}
-body.redesign .settings-param__value,
-body.redesign .settings-param__descr {
-    color: #5a6472 !important;
-}
-body.redesign .settings-param {
-    background: rgba(255, 255, 255, 0.65);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    margin-bottom: 0.5em;
-}
+body.redesign .settings-folder__name,
 body.redesign .settings-param__name {
     color: #14161a;
 }
-body.redesign .settings-param.focus {
-    background: #101114;
+body.redesign .settings-param__value,
+body.redesign .settings-param__descr {
+    color: #5a6472;
 }
+body.redesign .settings-folder.focus,
+body.redesign .settings-param.focus {
+    background-color: #101114;
+}
+body.redesign .settings-folder.focus .settings-folder__name,
 body.redesign .settings-param.focus .settings-param__name,
 body.redesign .settings-param.focus .settings-param__value {
     color: #fff;
+}
+body.redesign .settings-folder__icon [stroke] {
+    stroke: #14161a;
+}
+body.redesign .settings-folder__icon path[fill],
+body.redesign .settings-folder__icon rect[fill],
+body.redesign .settings-folder__icon circle[fill] {
+    fill: #14161a;
+}
+body.redesign .settings-folder.focus .settings-folder__icon [stroke] {
+    stroke: #fff;
+}
+body.redesign .settings-folder.focus .settings-folder__icon path[fill],
+body.redesign .settings-folder.focus .settings-folder__icon rect[fill],
+body.redesign .settings-folder.focus .settings-folder__icon circle[fill] {
+    fill: #fff;
 }

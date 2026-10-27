@@ -1,146 +1,24 @@
 /* ============================================================
-   LAMPA REDESIGN — перестройка DOM (утверждена 2026-10-27)
-   Логику Lampa НЕ трогает: только перемещает существующие узлы
-   и строит витрину (пилюля-навигация, hero, категории) из DOM рядов.
-   Оригинальные app.min.js и app.css не меняются.
+   LAMPA GLASS v4 — только цветовая схема, без перестроек DOM.
+   Этот скрипт лишь включает классы темы на body; вся работа —
+   в redesign.css (или во встроенном CSS плагина).
    ============================================================ */
 (function () {
     'use strict';
 
-    var REBUILT = false;
-    var rebuildTimer = null;
-
-    function $(sel, root) { return (root || document).querySelector(sel); }
-    function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
-
-    function applyClasses() {
+    function apply() {
         document.body.classList.add('redesign');
         document.body.classList.add('light--version');
         document.body.style.background = '';
     }
 
-    /* ---------- Пилюля-навигация: v2 — НЕ трогаем DOM меню вообще.
-       Пункты остаются в своём контейнере (иначе Lampa теряет клики),
-       а в пилюлю сверху колонка превращается чистым CSS (см. redesign.css).
-       Здесь только классы на body. ---------- */
-
-    /* ---------- Hero: первые 2 карточки первого ряда ---------- */
-    function buildHero() {
-        if ($('#rd-hero')) return;
-        var lines = $$('.items-line');
-        if (!lines.length) return;
-        var cards = $$('.card', lines[0]);
-        if (cards.length < 2) return;
-
-        var hero = document.createElement('div');
-        hero.id = 'rd-hero';
-
-        cards.slice(0, 2).forEach(function (card) {
-            var img = $('.card__img', card);
-            var title = $('.card__title', card);
-            var vote = $('.card__vote', card);
-            var src = img ? (img.getAttribute('src') || img.dataset.src || '') : '';
-            if (!src) return;
-
-            var b = document.createElement('div');
-            b.className = 'rd-hero-card selector';
-            b.innerHTML =
-                '<img src="' + src + '" alt="">' +
-                '<div class="rd-hero-card__info">' +
-                    '<div class="rd-hero-card__title">' + (title ? title.textContent : '') + '</div>' +
-                    '<div class="rd-hero-card__meta">' + (vote ? '<b>★ ' + vote.textContent.trim() + '</b>' : '') + '</div>' +
-                    '<span class="rd-hero-card__play">▶ Смотреть</span>' +
-                '</div>';
-            b.addEventListener('click', function () { card.click(); });
-            hero.appendChild(b);
-        });
-
-        if (!hero.children.length) return;
-        lines[0].parentNode.insertBefore(hero, lines[0]);
-    }
-
-    /* ---------- Пилюли-категории: быстрый переход к рядам ---------- */
-    function buildCats() {
-        if ($('#rd-cats')) return;
-        var lines = $$('.items-line');
-        if (!lines.length) return;
-
-        var cats = document.createElement('div');
-        cats.id = 'rd-cats';
-        lines.forEach(function (line) {
-            var t = $('.items-line__title', line);
-            var name = t ? t.textContent.trim() : '';
-            if (!name) return;
-            var p = document.createElement('div');
-            p.className = 'rd-cat';
-            p.textContent = name;
-            p.addEventListener('click', function () {
-                line.scrollIntoView({ block: 'start', behavior: 'smooth' });
-            });
-            cats.appendChild(p);
-        });
-
-        if (!cats.children.length) return;
-        var hero = $('#rd-hero');
-        if (hero && hero.parentNode) hero.parentNode.insertBefore(cats, hero.nextSibling);
-        else lines[0].parentNode.insertBefore(cats, lines[0]);
-    }
-
-    function buildAll() {
-        applyClasses();
-        buildHero();
-        buildCats();
-    }
-
-    /* Пересборка при перерисовках Lampa (возвраты, смена активности,
-       догрузка постеров — поэтому следим и за атрибутами img[src]) */
-    function scheduleRebuild() {
-        clearTimeout(rebuildTimer);
-        rebuildTimer = setTimeout(function () {
-            var hero = $('#rd-hero');
-            var cats = $('#rd-cats');
-            /* hero и категории живут внутри активности: если активности
-               больше нет на экране — убираем, при возврате пересоберём */
-            var onMain = !!$('.items-line') && !$('.full-start-new');
-            if (!onMain) {
-                if (hero) hero.remove();
-                if (cats) cats.remove();
-                return;
-            }
-            if (!hero) buildHero();
-            if (!cats) buildCats();
-        }, 300);
-    }
-
-    function start() {
-        buildAll();
-        var app = $('#app');
-        if (app && window.MutationObserver) {
-            new MutationObserver(scheduleRebuild).observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
-        }
-    }
-
-    /* Старт по готовности Lampa (штатный механизм плагинов) + фолбэки */
-    var started = false;
-    function tryStart() {
-        if (started) return;
-        if ($('.menu__list') || $('.items-line')) {
-            started = true;
-            start();
-        }
-    }
+    apply();
 
     try {
         if (window.Lampa && Lampa.Listener) {
             Lampa.Listener.follow('app', function (e) {
-                if (e.type === 'ready') tryStart();
+                if (e.type === 'ready') apply();
             });
         }
     } catch (e) {}
-
-    var tries = 0;
-    var poll = setInterval(function () {
-        tryStart();
-        if (started || ++tries > 40) clearInterval(poll);
-    }, 300);
 })();
