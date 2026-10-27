@@ -19,23 +19,10 @@
         document.body.style.background = '';
     }
 
-    /* ---------- Пилюля-навигация: ПЕРЕМЕЩАЕМ пункты меню (не клонируем),
-       чтобы сохранились классы .selector, data-action и обработчики ---------- */
-    function buildPillNav() {
-        if ($('#rd-pillnav')) return;
-        var list = $('.menu__list');
-        if (!list) return;
-        var items = $$('.menu__item', list);
-        if (!items.length) return;
-
-        var nav = document.createElement('div');
-        nav.id = 'rd-pillnav';
-        var ul = document.createElement('ul');
-        ul.className = 'menu__list';
-        items.forEach(function (li) { ul.appendChild(li); });
-        nav.appendChild(ul);
-        document.body.appendChild(nav);
-    }
+    /* ---------- Пилюля-навигация: v2 — НЕ трогаем DOM меню вообще.
+       Пункты остаются в своём контейнере (иначе Lampa теряет клики),
+       а в пилюлю сверху колонка превращается чистым CSS (см. redesign.css).
+       Здесь только классы на body. ---------- */
 
     /* ---------- Hero: первые 2 карточки первого ряда ---------- */
     function buildHero() {
@@ -101,12 +88,12 @@
 
     function buildAll() {
         applyClasses();
-        buildPillNav();
         buildHero();
         buildCats();
     }
 
-    /* Пересборка при перерисовках Lampa (возвраты, смена активности) */
+    /* Пересборка при перерисовках Lampa (возвраты, смена активности,
+       догрузка постеров — поэтому следим и за атрибутами img[src]) */
     function scheduleRebuild() {
         clearTimeout(rebuildTimer);
         rebuildTimer = setTimeout(function () {
@@ -122,7 +109,6 @@
             }
             if (!hero) buildHero();
             if (!cats) buildCats();
-            if (!$('#rd-pillnav')) buildPillNav();
         }, 300);
     }
 
@@ -130,7 +116,7 @@
         buildAll();
         var app = $('#app');
         if (app && window.MutationObserver) {
-            new MutationObserver(scheduleRebuild).observe(app, { childList: true, subtree: true });
+            new MutationObserver(scheduleRebuild).observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
         }
     }
 
