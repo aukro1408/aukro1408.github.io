@@ -6,51 +6,157 @@
    ВНИМАНИЕ: вёрстку не трогаем — только цвет и фон.
    ============================================================ */
 
+/* Палитра в стиле референса Flix.id (Glassmorphism + Slate Blue) */
+body.redesign {
+    --flix-bg-glass: rgba(145, 160, 170, 0.35);
+    --flix-card-glass: rgba(255, 255, 255, 0.14);
+    --flix-card-glass-hover: rgba(255, 255, 255, 0.24);
+    --flix-border-light: rgba(255, 255, 255, 0.28);
+    --flix-border-focus: rgba(255, 255, 255, 0.65);
+    --flix-ink-white: #ffffff;
+    --flix-ink-soft: rgba(255, 255, 255, 0.85);
+    --flix-ink-muted: rgba(255, 255, 255, 0.60);
+    --flix-dark-pill: #0b131e;
+    --flix-gold-rate: #f5b942;
+}
+
+/* Заголовок фильма — чистый белый с лёгкой мягкой тенью для читаемости */
 body.redesign .full-start-new__title {
-    color: var(--light-ink);
+    color: var(--flix-ink-white);
+    text-shadow: 0 2px 12px rgba(11, 19, 30, 0.25);
 }
-body.redesign .full-start__pg, body.redesign .full-start__status {
-    border-color: var(--light-line);
+
+/* Рамки возрастного рейтинга и статуса */
+body.redesign .full-start__pg,
+body.redesign .full-start__status {
+    border-color: var(--flix-border-light);
+    background-color: var(--flix-card-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
-body.redesign .full-start__rate, body.redesign .info__rate {
-    color: var(--light-accent-deep);
+
+/* Рейтинги — тёплый золотисто-жёлтый, как звёздочки и цифры на макете */
+body.redesign .full-start__rate,
+body.redesign .info__rate {
+    color: var(--flix-gold-rate);
 }
+
+/* Элементы торрентов / списков — полупрозрачное матовое стекло */
 body.redesign .torrent-item {
-    background-color: var(--light-glass);
-    color: var(--light-ink);
+    background-color: var(--flix-card-glass);
+    color: var(--flix-ink-white);
+    border: 1px solid var(--flix-border-light);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
 }
+
+body.redesign .torrent-item.focus {
+    background-color: var(--flix-card-glass-hover);
+    border-color: var(--flix-border-focus);
+    box-shadow: 0 8px 24px rgba(11, 19, 30, 0.2);
+}
+
+/* Фон карточки — приглушённый, чтобы создавался эффект матового серо-голубого стекла */
 body.redesign .full-start__background.loaded {
+    opacity: 0.22 !important;
+    filter: saturate(0.85) contrast(0.95) blur(18px);
+}
+
+body.redesign .full-start__background.dim {
     opacity: 0.14 !important;
 }
-body.redesign .full-start__background.dim {
-    opacity: 0.09 !important;
+
+/* Основной текст блоков */
+body.redesign .full-start-new__body,
+body.redesign .full-descr,
+body.redesign .full-person,
+body.redesign .full-episode {
+    color: var(--flix-ink-white);
 }
-body.redesign .full-start-new__body, body.redesign .full-descr, body.redesign .full-person, body.redesign .full-episode {
-    color: var(--light-ink);
+
+/* Второстепенные подписи и заголовки секций */
+body.redesign .full-start-new__head,
+body.redesign .full-start-new__creator,
+body.redesign .full-episode__num {
+    color: var(--flix-ink-muted);
 }
-body.redesign .full-start-new__head, body.redesign .full-start-new__creator, body.redesign .full-episode__num {
-    color: var(--light-muted);
+
+/* Детали описания, актёры, эпизоды, теги */
+body.redesign .full-start-new__head span,
+body.redesign .full-start-new__tagline,
+body.redesign .full-start-new__details,
+body.redesign .full-start-new__description,
+body.redesign .full-descr__info-name,
+body.redesign .full-descr__info-body,
+body.redesign .full-descr__text,
+body.redesign .full-descr__line-name,
+body.redesign .full-descr__line-body,
+body.redesign .full-person__name,
+body.redesign .full-person__role,
+body.redesign .full-episode__name,
+body.redesign .full-episode__body,
+body.redesign .full-episode__date,
+body.redesign .full-start__pg,
+body.redesign .full-start__status {
+    color: var(--flix-ink-soft);
 }
-body.redesign .full-start-new__head span, body.redesign .full-start-new__tagline, body.redesign .full-start-new__details, body.redesign .full-start-new__description, body.redesign .full-descr__info-name, body.redesign .full-descr__info-body, body.redesign .full-descr__text, body.redesign .full-descr__line-name, body.redesign .full-descr__line-body, body.redesign .full-person__name, body.redesign .full-person__role, body.redesign .full-episode__name, body.redesign .full-episode__body, body.redesign .full-episode__date, body.redesign .full-start__pg, body.redesign .full-start__status {
-    color: var(--light-ink);
+
+/* Имена актёров и названия серий чуть ярче ролей и дат */
+body.redesign .full-person__name,
+body.redesign .full-episode__name {
+    color: var(--flix-ink-white);
 }
-body.redesign .full-start__button.button--play, body.redesign .full-start__button.focus, body.redesign .full-descr__tag.focus, body.redesign .full-start__tag.focus {
-    background: var(--light-accent);
-    color: var(--light-accent-ink);
+
+/* Кнопка Play и элементы в фокусе — контрастные тёмно-синие/угольные капсулы (как верхнее меню и кнопка Play на скриншоте) */
+body.redesign .full-start__button.button--play,
+body.redesign .full-start__button.focus,
+body.redesign .full-descr__tag.focus,
+body.redesign .full-start__tag.focus {
+    background: var(--flix-dark-pill);
+    color: var(--flix-ink-white);
+    border-color: var(--flix-border-focus);
+    box-shadow: 0 6px 20px rgba(11, 19, 30, 0.35);
 }
-body.redesign .full-start__button:not(.button--play):not(.focus), body.redesign .full-start__tag, body.redesign .full-descr__tag, body.redesign .full-start .info__rate {
-    background: var(--light-glass);
-    color: var(--light-ink);
-    border-color: var(--light-line);
+
+/* Неактивные кнопки и теги жанров — светлое полупрозрачное стекло с тонкой белой обводкой (как кнопки Trending, Action, Animation на фото) */
+body.redesign .full-start__button:not(.button--play):not(.focus),
+body.redesign .full-start__tag,
+body.redesign .full-descr__tag,
+body.redesign .full-start .info__rate {
+    background: var(--flix-card-glass);
+    color: var(--flix-ink-white);
+    border-color: var(--flix-border-light);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
 }
+
 @media screen and (max-width: 400px) {
-body.redesign .full-start__poster {
+    body.redesign .full-start__poster {
         opacity: 0.3 !important;
     }
 }
 
 /* ============================================================
-   ТВОЁ МЕСТО — пиши свои правила для карточки ниже.
-   Пример: сделать подложку под заголовком светлее:
-   body.redesign .full-start-new__title { color: #000; }
+   ДОПОЛНИТЕЛЬНАЯ СТИЛИЗАЦИЯ ПОД GLASSMORPHISM (Flix.id)
    ============================================================ */
+
+/* Мягкое свечение и тень для постера, как у карточек на макете */
+body.redesign .full-start-new__poster,
+body.redesign .full-start__poster {
+    box-shadow: 0 14px 32px rgba(11, 19, 30, 0.28);
+}
+
+/* Стеклянные подложки для карточек эпизодов и персон */
+body.redesign .full-episode,
+body.redesign .full-person {
+    background-color: var(--flix-card-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+body.redesign .full-episode.focus,
+body.redesign .full-person.focus {
+    background-color: var(--flix-card-glass-hover);
+    box-shadow: 0 6px 20px rgba(11, 19, 30, 0.22);
+}
