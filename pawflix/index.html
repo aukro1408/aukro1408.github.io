@@ -4,6 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>pawflix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
 <style>
 
@@ -940,8 +943,8 @@
         #screen-provider .prov-body{ padding:1em .7em 4.6em; }
         #screen-detail .detail-extra{ padding:0 1.1em 2em; }
       }
-      /* Ряд кнопок карточки: провайдеры встали рядом со «Смотреть»,
-         плашка источников удалена; на узких экранах кнопки переносятся. */
+      /* Ряд кнопок карточки: слайдер источников рядом с «Трейлером» и
+         закладкой; на узких экранах кнопки переносятся. */
       .detail-actions2{ flex-wrap:wrap; }
       /* Логотип фильма вместо текстового названия (паттерн «Кино»: m.logo). */
       .detail-logo{ display:block; max-width:22em; max-height:6em; width:auto; height:auto; object-fit:contain;
@@ -953,7 +956,7 @@
          огромным. Ряд растягивает детей на высоту строки, а круг через
          aspect-ratio берёт эту высоту как диаметр: ровно высота трейлера. */
       #screen-detail .detail-actions2{ align-items:stretch; }
-      #screen-detail #detail-bookmark{ font-size:1em; width:auto; height:auto; aspect-ratio:1/1; padding:0; }
+      #screen-detail #detail-bookmark{ font-size:1em; width:2.6em; height:2.6em; aspect-ratio:1/1; padding:0; align-self:center; }
       /* Плитка «Ещё» в конце ряда главной + кнопка «Показать ещё» в сетке категории. */
       .row-more .mimg{ display:flex; align-items:center; justify-content:center; }
       .row-more .mimg span{ font-size:2.4em; font-weight:800; color:var(--accent); }
@@ -969,6 +972,49 @@
       @media (min-width:761px){
         #screen-detail .sidebar{ background:rgba(255,255,255,.6); }
       }
+      /* ---------- Слайдер источников Denis (вариант A, файл один в один) ----------
+         Структура, CSS, squish, цвета, иконки, mobile ≤480px — из файла Denis
+         pawflix_source_buttons_glass_v2_3_piw5.html (вариант A). Демо-обвязка
+         файла (.panel/.wrap/h1/p/note/tools, кнопка «Анимации») НЕ переносится.
+         Отличия интеграции (не редизайн): id thumb → seg-thumb; селекторы
+         .thumb ограничены .seg (класс общий); кнопкам добавлены type="button"
+         и .focusable (D-pad); --mut задан на .seg (в app.css его нет, в файле
+         он в :root); guard'ы margin/box-shadow — иначе app.css .src протекает
+         в кнопки; align-self:center — иначе stretch-ряд растягивал бы .seg;
+         reduced-motion ограничен слайдером (глобальное правило файла убило бы
+         анимации приложения). Позиция bwa: надпись «bwa», иконка и фиолетовый
+         градиент — от прежней позиции lumio (своих Denis не дал). */
+      .filmix{--a:#3aa0ff;--b:#1a6cf5}.bwa{--a:#a98bff;--b:#7b4dff}.torrent{--a:#3fd6a3;--b:#0fa57a}
+      .seg{--a:#3aa0ff;--b:#1a6cf5;--mut:#7b879f;position:relative;isolation:isolate;display:inline-flex;gap:2px;padding:6px;border-radius:24px;
+      background:linear-gradient(180deg,#ffffff70,#ffffffb0);border:1px solid #fff;box-shadow:0 0 0 1px #d3deF3,inset 0 3px 8px #9fb6e02e}
+      .seg .thumb{position:absolute;z-index:-1;top:6px;bottom:6px;left:0;width:0;border-radius:18px;
+      background:linear-gradient(135deg,var(--a),var(--b));
+      box-shadow:0 12px 26px -8px color-mix(in srgb,var(--b) 75%,transparent),0 0 0 4px color-mix(in srgb,var(--a) 20%,transparent),inset 0 1px #ffffff80;
+      transition:left .5s cubic-bezier(.3,1.35,.5,1),width .5s cubic-bezier(.3,1.35,.5,1),background .4s,box-shadow .4s}
+      .seg .thumb:after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,#ffffff55,transparent 55%)}
+      .seg .thumb.move{animation:squish .5s}
+      @keyframes squish{40%{transform:scale(1.07,.9)}}
+      .seg .src{position:relative;display:inline-flex;align-items:center;gap:9px;height:50px;padding:0 22px;border:0;border-radius:18px;background:none;
+      color:var(--mut);font:600 15px Poppins,system-ui,sans-serif;cursor:pointer;transition:color .3s,transform .2s;-webkit-tap-highlight-color:transparent}
+      .seg .src svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .4s cubic-bezier(.2,.9,.3,1.5)}
+      .seg .src:hover{color:var(--b)}
+      .seg .src:hover svg{transform:scale(1.18) rotate(-8deg)}
+      .seg .src:active{transform:scale(.95)}
+      .seg .src.on,.seg .src.on:hover{color:#fff}
+      .seg .src:focus-visible{outline:3px solid #1a7cf555;outline-offset:2px}
+      .seg .src{margin:0;box-shadow:none}
+      .detail-actions2 .seg{align-self:center}
+      @media (max-width:480px){.seg{display:flex;width:100%}.seg .src{flex:1;justify-content:center;padding:0 8px;font-size:0}.seg .src svg{width:22px;height:22px}}
+      @media (prefers-reduced-motion:reduce){.seg .thumb,.seg .src,.seg .src svg{transition:none!important;animation:none!important}}
+      /* Fade низа hero провайдера — ровно маска карточки (detail-art):
+         у провайдера был только .prov-shade без маски, поэтому арт обрывался
+         кромкой контейнера на 58vh. Маска по прозрачности — от яркости
+         постера не зависит (тёмный и светлый — одинаково). */
+      #screen-provider .prov-art{-webkit-mask-image:linear-gradient(180deg,#000 68%,transparent 97%);mask-image:linear-gradient(180deg,#000 68%,transparent 97%)}
+      /* Закладка — КВАДРАТ (Denis, фото 2): сторона = высота трейлера уже
+         даётся stretch-рядом + aspect-ratio 1/1; меняем только форму —
+         с 50% (.icon-btn) на небольшое скругление. */
+      #screen-detail #detail-bookmark{border-radius:.5em}
 
 
     :root {
@@ -1571,9 +1617,12 @@
               <div class="detail-rates" id="detail-rates"></div>
               <p class="detail-desc" id="detail-desc">Откройте карточку из рядов, поиска, библиотеки или категорий — здесь появятся описание, актёры и источники.</p>
               <div class="detail-actions2">
-                <button class="btn primary focusable" id="src-filmix" type="button">filmix</button>
-                <button class="btn primary focusable" id="src-lumio" type="button">lumio</button>
-                <button class="btn primary focusable" id="src-torrents" type="button">torrent</button>
+                <div class="seg" id="seg">
+                  <span class="thumb" id="seg-thumb"></span>
+                  <button class="src filmix on focusable" data-name="filmix" type="button"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M8 4.5v15M16 4.5v15M3.5 9h4.5m-4.5 6h4.5m7.5-6H20m-4.5 6H20"/></svg>filmix</button>
+                  <button class="src bwa focusable" data-name="bwa" type="button"><svg viewBox="0 0 24 24"><path d="m12 2.5 2.5 6.5 7 3-7 3-2.5 6.5L9.5 15l-7-3 7-3z"/><path d="m18.5 3 .7 2 2 .7-2 .8-.7 2-.8-2-2-.8 2-.7z"/></svg>bwa</button>
+                  <button class="src torrent focusable" data-name="torrent" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 2.5v19M4.5 7l15 10M4.5 17l15-10"/></svg>torrent</button>
+                </div>
                 <button class="btn focusable" id="detail-trailer" type="button">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="3.5"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor" stroke="none"/></svg>
                   Трейлер
@@ -2349,6 +2398,15 @@
               <div><span class="lab">Прокси Filmix</span><span class="hint">Обход CORS для filmixapp.vip · пусто = прокси по умолчанию (cors.jacred.stream)</span></div>
               <span class="val"><input id="filmix-proxy-input" class="key-input focusable" type="text" placeholder="https://прокси/" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="filmix-proxy-save" type="button">Сохранить</button></span>
             </div>
+            <div class="set-row">
+              <div><span class="lab">BWA · база</span><span class="hint">Воркер-прокси BWA · пусто = воркер по умолчанию</span></div>
+              <span class="val"><input id="bwa-base-input" class="key-input focusable" type="text" placeholder="https://…" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="bwa-base-save" type="button">Сохранить</button></span>
+            </div>
+            <div class="set-row">
+              <div><span class="lab">BWA · kit-ключ</span><span class="hint">Заголовок x-kit-key · хранится только на устройстве</span></div>
+              <span class="val"><input id="bwa-key-input" class="key-input focusable" type="text" placeholder="Ключ BWA" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="bwa-key-save" type="button">Сохранить</button></span>
+            </div>
+
 
                         <div class="set-row">
               <div><span class="lab">TorrServer · https</span><span class="hint">Прямой https-адрес твоего сервера</span></div>
@@ -3212,6 +3270,7 @@
           });
           fit();
           if (name === 'library') renderLibrary();
+          if (name === 'detail' && typeof segPlace === 'function') requestAnimationFrame(segPlace);
           if (!keepFocus) {
             var target = lastFocus[name] || focusables()[0];
             setFocus(target);
@@ -3313,6 +3372,8 @@ var STUDIOS = [
             else if (k === 'Enter' && ae.id === 'jac-key2-input') { saveJacKey2(); e.preventDefault(); }
             else if (k === 'Enter' && ae.id === 'filmix-input') { saveFilmix(); e.preventDefault(); }
             else if (k === 'Enter' && ae.id === 'filmix-proxy-input') { saveFilmixProxy(); e.preventDefault(); }
+            else if (k === 'Enter' && ae.id === 'bwa-base-input') { saveBwaBase(); e.preventDefault(); }
+            else if (k === 'Enter' && ae.id === 'bwa-key-input') { saveBwaKey(); e.preventDefault(); }
             return;
           }
           if (k === 'Escape' && isBookmarkSheetOpen()) { closeBookmarkSheet(); e.preventDefault(); return; }
@@ -3666,12 +3727,43 @@ var STUDIOS = [
         }
         updateDetailClock();
         setInterval(updateDetailClock, 60000);
-        ['lumio', 'filmix', 'torrents'].forEach(function(p){
-          document.getElementById('src-' + p).addEventListener('click', function(){
-            if (!currentDetailMeta) { toast('Откройте карточку фильма или сериала'); return; }
-            openProvider(p);
+        /* Слайдер источников Denis (вариант A из файла, один в один):
+           place() — дословно из файла (thumb по offsetLeft/offsetWidth
+           кнопки .on, --a/--b из вычисленного стиля кнопки); pick() —
+           та же логика + openProvider. data-name — как в файле
+           (filmix/bwa/torrent), ключ провайдера — через PROV_BY_SEG
+           (torrent → torrents). Позиция bwa: надпись «bwa», иконка и
+           фиолетовый градиент — от прежней позиции lumio (своих иконки
+           и цвета BWA Denis не дал). */
+        var PROV_BY_SEG = { filmix: 'filmix', bwa: 'bwa', torrent: 'torrents' };
+        function segPlace(){
+          var seg = document.getElementById('seg'), thumb = document.getElementById('seg-thumb');
+          if (!seg || !thumb) return;
+          var b = seg.querySelector('.src.on');
+          if (!b) return;
+          thumb.style.left = b.offsetLeft + 'px';
+          thumb.style.width = b.offsetWidth + 'px';
+          var cs = getComputedStyle(b);
+          seg.style.setProperty('--a', cs.getPropertyValue('--a'));
+          seg.style.setProperty('--b', cs.getPropertyValue('--b'));
+        }
+        (function(){
+          var seg = document.getElementById('seg');
+          if (!seg) return;
+          var thumb = document.getElementById('seg-thumb');
+          Array.prototype.forEach.call(seg.querySelectorAll('.src'), function(btn){
+            btn.addEventListener('click', function(){
+              Array.prototype.forEach.call(seg.querySelectorAll('.src'), function(x){ x.classList.toggle('on', x === btn); });
+              if (thumb) { thumb.classList.remove('move'); void thumb.offsetWidth; thumb.classList.add('move'); }
+              segPlace();
+              if (!currentDetailMeta) { toast('Откройте карточку фильма или сериала'); return; }
+              openProvider(PROV_BY_SEG[btn.getAttribute('data-name')] || btn.getAttribute('data-name'));
+            });
           });
-        });
+          if (document.fonts && document.fonts.ready) document.fonts.ready.then(segPlace);
+          window.addEventListener('resize', segPlace);
+          segPlace();
+        })();
         document.getElementById('prov-back').addEventListener('click', function(){ backFromProvider(); });
         document.getElementById('similar-more').addEventListener('click', function(){ toggleSimilar(); });
         function setGlassRow(valId, value){
@@ -4108,7 +4200,6 @@ var STUDIOS = [
           }
           return next();
         }
-        var MITSU = 'https://beta.mitsu.tv/api';
         var currentDetailMeta = null;
         var trailerKey = null;
         var activeQ = '1080';
@@ -4275,124 +4366,10 @@ var STUDIOS = [
           return d;
         }
 
-        /* ---------- Онлайн: Lumio через Mitsu API (без авторизации) ----------
-           Данные грузятся в фоне при открытии карточки (preloadSources), а
-           показываются только на странице провайдера — на карточке списков нет. */
-                /* ---------- Онлайн: Lumio через Mitsu API (механика «Кино» один в один) ----------
-           Порт vwLumioInit/vwLumioLoad/vwLumioLoadSeason/vwLumioPlayEp из «Кино»,
-           адаптирован только технически: пилюли-переключатели «Кино» стали списком
-           страницы провайдера, шторка выбора источника — списком источников.
-           Данные грузятся в фоне при открытии карточки (preloadSources), а
-           показываются только на странице провайдера — на карточке списков нет.
-           Отличия от v0.4 (сознательно, по «Кино»): грузится ТОЛЬКО источник 0,
-           авто-цепочки «первый непустой» нет — пустой источник показывает
-           «Тут пусто», а переключение — строкой «Источник: … ›»;
-           голоса — БЕЗ бейджей качества (в «Кино» их нет);
-           просмотренные серии помечаются ✓, подзаголовок — «Просмотрено N из M». */
-        var onl = { token: 0, level: null, srcs: [], srcIdx: 0, srcPick: false, seasons: [], seasonIdx: 0, eps: [], epIdx: -1, voices: [], from: null, loading: false };
-        var onlPromise = null;
-        function onlParams(meta){
-          return 'id=' + encodeURIComponent(meta.id || '') +
-            '&title=' + encodeURIComponent(meta.title || '') +
-            '&original_title=' + encodeURIComponent(meta.orig || '') +
-            '&serial=' + (meta.type === 'tv' ? 1 : 0) +
-            '&year=' + encodeURIComponent(meta.year || '') + '&source=tmdb&rchtype=';
-        }
-        function onlParse(html){
-          var dom = new DOMParser().parseFromString(html, 'text/html');
-          var out = [];
-          dom.querySelectorAll('.videos__item[data-json]').forEach(function(el){
-            var j = null;
-            try { j = JSON.parse(el.getAttribute('data-json')); } catch (e) {}
-            if (!j || !j.url) return;
-            var t = el.querySelector('.videos__item-title');
-            out.push({
-              method: j.method || 'play', url: j.url,
-              title: (t ? t.textContent.trim() : '') || j.translate || j.title || 'Смотреть',
-              voice: j.translate || ''
-            });
-          });
-          return out;
-        }
-        function onlCleanName(s){ return String(s || '').replace(/<[^>]*>/g, '').trim(); }
-        function onlSrcName(s, i){ return onlCleanName(s.name) || ('Источник ' + (i + 1)); }
-        function onlSeasonName(sn, i){
-          var t = onlCleanName(sn.title || '');
-          var mm = t.match(/(\d+)/);
-          return mm ? mm[1] + ' сезон' : (t || ((i + 1) + ' сезон'));
-        }
-        function onlEpName(ep, i){
-          var t = onlCleanName(ep.title || '');
-          var mm = t.match(/(\d+)/);
-          return { num: mm ? mm[1] : String(i + 1), title: t || ('Серия ' + (i + 1)) };
-        }
-        /* Загрузка одного источника (как vwLumioLoad в «Кино»): голоса — сразу,
+                /* Загрузка одного источника (как vwLumioLoad в «Кино»): голоса — сразу,
            иначе сезоны. Пустой источник — уровень 'empty', перехода к следующему нет. */
-        function fetchOnlineSource(tok, meta){
-          var s = onl.srcs[onl.srcIdx];
-          if (!s) { onl.level = 'empty'; return Promise.resolve(null); }
-          return fetch(s.url + (s.url.indexOf('?') === -1 ? '?' : '&') + onlParams(meta)).then(function(r){
-            if (!r.ok) throw new Error('http');
-            return r.text();
-          }).then(function(html){
-            if (tok !== onl.token) return null;
-            var items = onlParse(html);
-            if (!items.length) { onl.level = 'empty'; return null; }
-            if (items[0].method === 'play') { onl.voices = items; onl.level = 'voices'; onl.from = null; }
-            else { onl.seasons = items; onl.level = 'seasons'; }
-            return items;
-          });
-        }
-        function fetchOnlineSeason(tok, si){
-          var s = onl.seasons[si];
-          if (!s) return Promise.resolve(null);
-          return fetch(s.url).then(function(r){
-            if (!r.ok) throw new Error('http');
-            return r.text();
-          }).then(function(html){
-            if (tok !== onl.token) return null;
-            onl.eps = onlParse(html);
-            onl.seasonIdx = si;
-            onl.level = 'episodes';
-            return onl.eps;
-          });
-        }
-        function fetchOnline(meta){
-          var tok = ++onl.token;
-          onl.level = null; onl.voices = []; onl.seasons = []; onl.eps = []; onl.from = null;
-          onl.srcs = []; onl.srcIdx = 0; onl.srcPick = false; onl.seasonIdx = 0; onl.epIdx = -1;
-          onl.loading = true;
-          onlPromise = fetch(MITSU + '/lite/events?life=false&' + onlParams(meta)).then(function(r){
-            if (!r.ok) throw new Error('http');
-            return r.json();
-          }).then(function(arr){
-            var srcs = (Array.isArray(arr) ? arr : []).filter(function(s){ return s && s.show !== false && s.url; });
-            if (!srcs.length) { onl.level = 'empty'; return null; }
-            onl.srcs = srcs;
-            return fetchOnlineSource(tok, meta);
-          }).then(function(items){
-            /* Preload для сериалов доводит до эпизодов сезона 0 — как
-               vwLumioLoad + vwLumioLoadSeason(0) в «Кино»: тогда «Смотреть»
-               может выбрать первую непросмотренную серию. */
-            if (tok !== onl.token) return null;
-            if (onl.level === 'seasons' && onl.seasons.length) return fetchOnlineSeason(tok, 0);
-            return items;
-          }).then(function(){
-            onl.loading = false;
-            if (tok !== onl.token) return null;
-            if (!onl.level) onl.level = 'empty';
-            return null;
-          }).catch(function(){
-            onl.loading = false;
-            if (tok !== onl.token) return null;
-            onl.level = 'error';
-            return null;
-          });
-          return onlPromise;
-        }
         /* Просмотренное — как vwGetW/vwMarkW/vwIsW/vwCountW в «Кино»:
-           ключ 'l'+id для Lumio, 'f'+id для Filmix; эпизод — 's'+сезон+'e'+эпизод
-           (у Lumio — индексы в списках, как в «Кино»; у Filmix — номера). */
+           ключ 'f'+id для Filmix; эпизод — 's'+сезон+'e'+эпизод (номера). */
         function wGet(){
           try { return JSON.parse(localStorage.getItem('pawflix.watched') || '{}') || {}; }
           catch (e) { return {}; }
@@ -4541,230 +4518,12 @@ var STUDIOS = [
         /* Строка выбора источника (аналог пилюли «Источник» в «Кино»):
            показывается всегда, когда источники есть, — и при пустом источнике,
            иначе из «Тут пусто» некуда перейти. */
-        function appendLumioSrcRow(box){
-          if (!onl.srcs.length) return;
-          var cur = onl.srcs[onl.srcIdx];
-          var label = 'Источник: ' + onlSrcName(cur, onl.srcIdx) + (onl.srcs.length > 1 ? ' ›' : '');
-          box.appendChild(makeSrcRow('<span class="plugin">Lumio</span><span class="file">' + esc(label) + '</span>', function(){
-            if (onl.srcs.length <= 1) return;
-            onl.srcPick = true;
-            renderProvSrcPick(true);
-          }));
-        }
-        function renderProvSrcPick(focusFirst){
-          provEscBack = function(){ onl.srcPick = false; renderProvLumio(); };
-          provSetQ(''); provSetSub('Lumio · выбор источника');
-          provPillsHTML([]);
-          var box = provListEl();
-          box.innerHTML = '';
-          box.appendChild(vwBacklineRow('‹ Назад', function(){ onl.srcPick = false; renderProvLumio(); }));
-          box.appendChild(vwSecT('Источники · ' + onl.srcs.length));
-          onl.srcs.forEach(function(s, i){
-            box.appendChild(vwVoiceRow(esc(onlSrcName(s, i)) + (i === onl.srcIdx ? ' ✓' : ''), '', function(){
-              var tok = onl.token;
-              onl.srcIdx = i; onl.srcPick = false; onl.level = null;
-              box.innerHTML = ''; box.appendChild(srcNote('Загружаю источник…'));
-              fetchOnlineSource(tok, currentDetailMeta).then(function(){
-                if (tok !== onl.token) return null;
-                if (onl.level === 'seasons' && onl.seasons.length) return fetchOnlineSeason(tok, 0);
-                return null;
-              }).then(function(){
-                if (tok !== onl.token) return;
-                if (current === 'provider' && prov.name === 'lumio') renderProvLumio();
-              }).catch(function(){
-                if (tok !== onl.token) return;
-                onl.level = 'error';
-                if (current === 'provider' && prov.name === 'lumio') renderProvLumio();
-              });
-            }));
-          });
-          if (focusFirst) {
-            var first = box.querySelector('.focusable');
-            if (first) setFocus(first);
-          }
-        }
-        function renderProvLumio(){
-          if (onl.srcPick) { renderProvSrcPick(false); return; }
-          if (onl.level === 'voices') renderProvVoices(false);
-          else if (onl.level === 'seasons') renderProvSeasons(false);
-          else if (onl.level === 'episodes') renderProvEps(false);
-          else if (onl.level === 'empty') {
-            provEscBack = null; provSetQ(''); provSetSub('Lumio');
-            var box = provListEl();
-            box.innerHTML = '';
-            provPillsHTML(lumioSrcPill());
-            box.appendChild(srcNote('Тут пусто.'));
-          }
-          else if (onl.level === 'error') {
-            provEscBack = null; provSetQ(''); provSetSub('Lumio');
-            var box2 = provListEl();
-            box2.innerHTML = '';
-            provPillsHTML(lumioSrcPill());
-            box2.appendChild(srcNote('Не получилось связаться с источником.'));
-          }
-          else provNote('Загрузка онлайн-источников…');
-        }
-        function openLumioPage(){
-          if (!currentDetailMeta) { provNote('Откройте карточку фильма или сериала'); return; }
-          if (onl.loading) {
-            provNote('Загрузка онлайн-источников…');
-            if (onlPromise) onlPromise.then(function(){
-              if (current === 'provider' && prov.name === 'lumio') renderProvLumio();
-            });
-            return;
-          }
-          renderProvLumio();
-        }
-        function playLumioVoice(v, ei){
-          if (currentDetailCard) addHist(currentDetailCard);
-          var meta = currentDetailMeta;
-          if (meta && meta.type === 'tv' && ei >= 0) wMark('l' + meta.id, 's' + onl.seasonIdx + 'e' + ei);
-          playViaBridge(v.url, (meta && meta.title ? meta.title : '') + (v.title && (!meta || v.title !== meta.title) ? ' · ' + v.title : ''));
-        }
         /* Пилюля «Источник» — как vwLumioPills в «Кино»: тап открывает
            выбор источника. На уровнях голосов/сезонов/серий и в пусто/ошибке. */
-        function lumioSrcName(){
-          var s = (onl.srcs && onl.srcs.length) ? onl.srcs[onl.srcIdx] : null;
-          return s ? onlSrcName(s, onl.srcIdx) : 'Lumio';
-        }
-        function lumioSrcPill(){
-          if (!onl.srcs || !onl.srcs.length) return [];
-          return [{ label: 'Источник', value: lumioSrcName(), onPick: function(){ onl.srcPick = true; renderProvLumio(); } }];
-        }
-        function renderProvVoices(focusFirst){
-          provEscBack = (onl.from === 'episodes') ? function(){ renderProvEps(true); } : null;
-          provSetQ('');
-          var epT = (onl.from === 'episodes' && onl.epIdx != null) ? (onl.epIdx + 1) : null;
-          provSetSub('<b>' + esc(lumioSrcName()) + '</b>' + (epT ? ' · серия ' + epT : ''));
-          var box = provListEl();
-          box.innerHTML = '';
-          provPillsHTML(lumioSrcPill());
-          if (onl.from === 'episodes') {
-            box.appendChild(vwBacklineRow('‹ Серии', function(){ renderProvEps(true); }));
-          }
-          box.appendChild(vwSecT('Озвучка' + (epT ? ' · серия ' + epT : '')));
-          onl.voices.forEach(function(v){
-            var sub = (v.voice && v.voice !== v.title) ? esc(v.voice) : '';
-            box.appendChild(vwVoiceRow(esc(v.title), sub, function(){
-              playLumioVoice(v, onl.from === 'episodes' ? onl.epIdx : -1);
-            }));
-          });
-          if (!onl.voices.length) box.appendChild(srcNote('Озвучек не нашлось.'));
-          if (focusFirst) {
-            var first = box.querySelector('.focusable');
-            if (first) setFocus(first);
-          }
-        }
-        function renderProvSeasons(focusFirst){
-          provEscBack = null;
-          provSetQ('');
-          provSetSub('Lumio · ' + onl.seasons.length + ' ' + plural(onl.seasons.length, ['сезон', 'сезона', 'сезонов']));
-          var box = provListEl();
-          box.innerHTML = '';
-          provPillsHTML(lumioSrcPill());
-          box.appendChild(vwSecT('Сезоны · ' + onl.seasons.length));
-          onl.seasons.forEach(function(s, i){
-            box.appendChild(vwVoiceRow(esc(onlSeasonName(s, i)), '', function(){
-              var tok = onl.token;
-              box.innerHTML = ''; box.appendChild(srcNote('Загружаю серии…'));
-              fetchOnlineSeason(tok, i).then(function(){
-                if (tok !== onl.token) return;
-                renderProvEps(true);
-              }).catch(function(){
-                if (tok !== onl.token) return;
-                box.innerHTML = ''; box.appendChild(srcNote('Не получилось загрузить серии.'));
-              });
-            }));
-          });
-          if (focusFirst) {
-            var first = box.querySelector('.focusable');
-            if (first) setFocus(first);
-          }
-        }
-        function renderProvEps(focusFirst){
-          provEscBack = function(){ renderProvSeasons(true); };
-          provSetQ('');
-          var meta = currentDetailMeta;
-          var mid = meta ? 'l' + meta.id : '';
-          var total = onl.eps.length;
-          if (total) {
-            var watched = meta ? wCount(mid, total) : 0;
-            provSetSub('<b>' + esc(lumioSrcName()) + '</b> · ' + esc(onlSeasonName(onl.seasons[onl.seasonIdx], onl.seasonIdx)) + '<br>Просмотрено ' + watched + ' из ' + total + ' · осталось ' + (total - watched));
-            var target = -1;
-            for (var i = 0; i < total; i++) {
-              if (!wIs(mid, 's' + onl.seasonIdx + 'e' + i)) { target = i; break; }
-            }
-            if (target === -1) target = 0;
-            var et = onlEpName(onl.eps[target], target);
-          } else { provSetSub('Lumio'); }
-          var box = provListEl();
-          box.innerHTML = '';
-          provPillsHTML(lumioSrcPill());
-          box.appendChild(vwBacklineRow('‹ К сезонам', function(){ renderProvSeasons(true); }));
-          box.appendChild(vwSecT('Серии · ' + total));
-          onl.eps.forEach(function(e, i){
-            var et = onlEpName(e, i);
-            var w = meta ? wIs(mid, 's' + onl.seasonIdx + 'e' + i) : false;
-            var bare = et.title.replace(/\d+/g, '').replace(/серия/gi, '').trim();
-            var label = et.num + ' серия' + (bare ? ' · ' + et.title : '');
-            var vsub = e.voice ? esc(e.voice) : (e.method === 'play' ? 'смотреть' : '');
-            box.appendChild(vwEpRow(et.num, esc(label), vsub, w, function(){
-              playLumioEp(i, true);
-            }));
-          });
-          if (!total) box.appendChild(srcNote('Серий не нашлось.'));
-          if (focusFirst) {
-            var first = box.querySelector('.focusable');
-            if (first) setFocus(first);
-          }
-        }
         /* Как vwLumioPlayEp в «Кино»: method play — голоса из самой серии,
            иначе fetch страницы серии; 1 голос — сразу играть, несколько —
            список голосов; пусто — записка и возврат к сериям через 1200 мс.
            Вызовы — только тапом по строке серии (кнопка «Смотреть» удалена). */
-        function playLumioEp(ei, fromPage){
-          var tok = onl.token;
-          var ep = onl.eps[ei];
-          if (!ep) return;
-          function goVoices(voices){
-            if (tok !== onl.token) return;
-            if (!voices.length) {
-              if (fromPage) {
-                var box = provListEl();
-                box.innerHTML = ''; box.appendChild(srcNote('Озвучек не нашлось.'));
-                setTimeout(function(){
-                  if (tok === onl.token && current === 'provider' && prov.name === 'lumio') renderProvEps(false);
-                }, 1200);
-              }
-              return;
-            }
-            if (voices.length === 1) { playLumioVoice(voices[0], ei); return; }
-            onl.voices = voices; onl.level = 'voices'; onl.from = 'episodes'; onl.epIdx = ei;
-            if (fromPage) renderProvVoices(true);
-            else openProvider('lumio');
-          }
-          if (ep.method === 'play') {
-            goVoices([{ title: ep.title, voice: ep.voice, url: ep.url }]);
-            return;
-          }
-          if (fromPage) {
-            var box2 = provListEl();
-            box2.innerHTML = ''; box2.appendChild(srcNote('Загружаю озвучки…'));
-          }
-          fetch(ep.url).then(function(r){
-            if (!r.ok) throw new Error('http');
-            return r.text();
-          }).then(function(html){
-            if (tok !== onl.token) return;
-            goVoices(onlParse(html).filter(function(x){ return x.method === 'play'; }));
-          }).catch(function(){
-            if (tok !== onl.token) return;
-            if (fromPage) {
-              var box3 = provListEl();
-              box3.innerHTML = ''; box3.appendChild(srcNote('Не получилось загрузить озвучки.'));
-            }
-          });
-        }
 
 /* ---------- Торренты: Jackett (если задан) или TPB, стрим через TorrServer ----------
            Поиск идёт в фоне при открытии карточки (preloadSources), список
@@ -5112,35 +4871,91 @@ var STUDIOS = [
           playViaBridge(tsStreamURL(ts, t.magnet, 1, t.title), t.title);
         }
 
-        /* ---------- Координация источников и кнопка «Смотреть» ----------
-           При открытии карточки оба поиска стартуют в фоне; списки живут
-           только на страницах провайдеров, «Смотреть» играет первое готовое. */
+        /* ---------- Координация источников ----------
+           При открытии карточки поиск торрентов стартует в фоне; списки
+           живут только на страницах провайдеров. */
         function resetSources(){
-          onl.token++;
-          onl.level = null; onl.voices = []; onl.seasons = []; onl.eps = []; onl.from = null;
-          onl.srcs = []; onl.srcIdx = 0; onl.srcPick = false; onl.seasonIdx = 0; onl.epIdx = -1;
-          onl.loading = false; onlPromise = null;
           torItems = []; torPromise = null; torLoading = false; torSearched = false; torSortPick = false; torQmodePick = false;
           fx.token++;
           fx.level = null; fx.playlist = null; fx.seasons = []; fx.eps = [];
         }
         function setSourcesError(){
-          onl.level = 'error';
           torSearched = true; torItems = [];
           fx.level = 'error';
         }
         function preloadSources(meta){
-          fetchOnline(meta);
           fetchTorrents(meta);
         }
-        /* «Смотреть» — по логике «Кино» (кнопки watch внутри провайдеров):
-           фильмы — первый голос Lumio; сериалы — первая непросмотренная серия
-           (1 голос — сразу играть, несколько — страница Lumio на голосах);
-           иначе — лучшая раздача (top-сортировка) через playTorrent;
-           источники ещё грузятся — дождаться и повторить. */
         /* ---------- Страница провайдера (drill-in с карточки) ---------- */
         var prov = { name: null };
-        var PROV_TITLES = { lumio: 'Lumio', filmix: 'Filmix 4k', torrents: 'Торренты' };
+        /* ---------- BWA через прокси-воркер (замена Lumio) ----------
+           База — воркер Denis (online.js BWA + bootstrap): /online.js отдаёт
+           оригинал app.bwa.ad/online.js и ставит bwa_server на origin воркера.
+           Диагностика воркера: GET {base}/kit/kinopub/watch?title=..&year=..
+           с заголовком x-kit-key (только если ключ задан). Успешный формат
+           (схема источников/озвучек) по online.js не определяется — плагин
+           обфусцирован: ok:true рендерится только generic-списком записей
+           с http(s)-ссылкой, иначе — честная записка. ok:false: not_bound =
+           устройство не привязано (нужен kit-ключ в Настройках). Сериалы
+           BWA пока — как фильмы (сезоны/серии из ответа не разобраны). */
+        var BWA_DEFAULT = 'https://jolly-resonance-a7b5.flyugertdiana.workers.dev';
+        function bwaBase(){ var v = (localStorage.getItem('pawflix.bwa_base') || '').trim().replace(/\/+$/, ''); return v || BWA_DEFAULT; }
+        function bwaKey(){ return (localStorage.getItem('pawflix.bwa_key') || '').trim(); }
+        function bwaPickEntries(j){
+          var out = [];
+          function scan(arr){
+            if (!Array.isArray(arr)) return;
+            arr.forEach(function(it){
+              if (!it || typeof it !== 'object') return;
+              var url = it.url || it.file || it.href || it.stream || it.play || '';
+              if (typeof url === 'string' && /^https?:\/\//.test(url)) {
+                out.push({ url: url, title: it.title || it.name || it.voice || it.label || 'Смотреть', sub: it.quality || it.resolution || it.voice || '' });
+              } else {
+                Object.keys(it).forEach(function(k){ scan(it[k]); });
+              }
+            });
+          }
+          ['results', 'items', 'sources', 'streams', 'data', 'voices', 'episodes'].forEach(function(k){ scan(j[k]); });
+          if (!out.length) Object.keys(j).forEach(function(k){ scan(j[k]); });
+          return out;
+        }
+        function openBwaPage(){
+          provSetSub('BWA');
+          provPillsHTML([]);
+          provEscBack = backFromProvider;
+          var box = provListEl(); if (!box) return;
+          box.innerHTML = ''; box.appendChild(srcNote('Загружаю BWA…'));
+          var m = currentDetailMeta || {};
+          var q = 'title=' + encodeURIComponent(m.orig || m.title || '') + '&year=' + encodeURIComponent(m.year || '');
+          var headers = {};
+          if (bwaKey()) headers['x-kit-key'] = bwaKey();
+          fetch(bwaBase() + '/kit/kinopub/watch?' + q, { headers: headers }).then(function(r){
+            if (!r.ok) throw new Error('http' + r.status);
+            return r.json();
+          }).then(function(j){
+            box.innerHTML = '';
+            if (!j || j.ok === false) {
+              var why = (j && j.why) || '';
+              box.appendChild(srcNote(why === 'not_bound'
+                ? 'BWA: устройство не привязано — для работы источника нужна привязка BWA (kit-ключ — поле в Настройках).'
+                : 'BWA: источник не ответил (' + (why || 'нет данных') + '). Проверь базу BWA в Настройках.'));
+              return;
+            }
+            var entries = bwaPickEntries(j);
+            if (!entries.length) {
+              box.appendChild(srcNote('BWA ответил, но формат ответа пока не разобран — записи с прямой ссылкой не найдены.'));
+              return;
+            }
+            entries.forEach(function(e){
+              box.appendChild(vwVoiceRow(esc(e.title), esc(e.sub || ''), function(){ playViaBridge(e.url, e.title); }));
+            });
+            var first = box.querySelector('.focusable'); if (first) setFocus(first);
+          }).catch(function(){
+            box.innerHTML = '';
+            box.appendChild(srcNote('Не получилось связаться с источником. Проверь базу BWA в Настройках.'));
+          });
+        }
+        var PROV_TITLES = { filmix: 'Filmix 4k', bwa: 'BWA', torrents: 'Торренты' };
         function openProvider(name){
           if (!currentDetailMeta) { toast('Откройте карточку фильма или сериала'); return; }
           prov.name = name;
@@ -5150,7 +4965,7 @@ var STUDIOS = [
           show('provider');
           var back = document.getElementById('prov-back');
           if (back) setFocus(back);
-          if (name === 'lumio') openLumioPage();
+          if (name === 'bwa') openBwaPage();
           else if (name === 'filmix') openFilmixPage();
           else if (name === 'torrents') openTorrentsPage();
         }
@@ -5690,6 +5505,24 @@ var STUDIOS = [
           toast(v ? 'Прокси Filmix сохранён' : 'Прокси Filmix удалён');
         }
         filmixProxySave.addEventListener('click', saveFilmixProxy);
+        var bwaBaseInput = document.getElementById('bwa-base-input');
+        var bwaBaseSave = document.getElementById('bwa-base-save');
+        bwaBaseInput.value = (localStorage.getItem('pawflix.bwa_base') || '').trim();
+        function saveBwaBase(){
+          var v = bwaBaseInput.value.trim();
+          localStorage.setItem('pawflix.bwa_base', v);
+          toast(v ? 'База BWA сохранена' : 'База BWA сброшена на воркер по умолчанию');
+        }
+        bwaBaseSave.addEventListener('click', saveBwaBase);
+        var bwaKeyInput = document.getElementById('bwa-key-input');
+        var bwaKeySave = document.getElementById('bwa-key-save');
+        bwaKeyInput.value = (localStorage.getItem('pawflix.bwa_key') || '').trim();
+        function saveBwaKey(){
+          var v = bwaKeyInput.value.trim();
+          localStorage.setItem('pawflix.bwa_key', v);
+          toast(v ? 'Ключ BWA сохранён' : 'Ключ BWA удалён');
+        }
+        bwaKeySave.addEventListener('click', saveBwaKey);
         function refreshPlayerUI(){
           var p = playerSetting();
           ['potok', 'vlc', 'ask'].forEach(function(k){
