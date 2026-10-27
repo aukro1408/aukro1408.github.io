@@ -837,11 +837,9 @@
       #screen-provider .main{ background:#0b1220; position:relative; }
       #screen-provider .prov-hero{ position:static; }
       #screen-provider .prov-art{ position:fixed; top:0; left:0; right:0; z-index:1;
-        height:58vh; min-height:400px; max-height:660px; object-fit:cover; object-position:50% 0; display:block;
-        -webkit-mask-image:linear-gradient(180deg,#000 68%,transparent 97%);
-        mask-image:linear-gradient(180deg,#000 68%,transparent 97%); }
-      #screen-provider .prov-shade{ position:fixed; top:0; left:0; right:0; z-index:1;
-        height:58vh; min-height:400px; max-height:660px; pointer-events:none;
+        height:58vh; min-height:400px; max-height:660px; overflow:hidden; }
+      #screen-provider .prov-art img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 0; display:block; }
+      #screen-provider .prov-shade{ position:absolute; inset:0; pointer-events:none;
         background:linear-gradient(180deg, rgba(8,12,24,.22) 0%, rgba(8,12,24,0) 35%, rgba(8,12,24,.30) 60%, rgba(11,18,32,.55) 100%); }
       #screen-provider .prov-info{ position:relative; z-index:2; padding:21vh 2.4em 2.2em; color:#fff; }
       #screen-provider .prov-kicker{ font-size:.8em; font-weight:800; letter-spacing:.25em; text-transform:uppercase; color:#8cddff; margin-bottom:.5em; }
@@ -852,7 +850,7 @@
       #screen-provider .prov-q{ background:linear-gradient(135deg,#3b8cff,#7b5cff); color:#fff; font-size:.8em; font-weight:800; padding:.3em .8em; border-radius:.6em; letter-spacing:.05em; }
       #screen-provider .prov-meta{ font-size:.95em; color:rgba(255,255,255,.88); font-weight:600; text-shadow:0 1px 6px rgba(0,0,0,.6); }
       #screen-provider .prov-meta .star{ color:#ffb700; }
-      #screen-provider .prov-watch{ margin-top:1em; width:100%; padding:1em; border:none; border-radius:1.1em; cursor:pointer; background:linear-gradient(135deg,#3b8cff,#7b5cff); color:#fff; font:inherit; font-size:1.05em; font-weight:800; display:flex; align-items:center; justify-content:center; gap:.6em; box-shadow:0 12px 30px rgba(70,110,255,.40), inset 0 1px 0 rgba(255,255,255,.25); }
+      #screen-provider .prov-watch{ margin-top:1em; width:100%; padding:1em; border:none; border-radius:1.1em; cursor:pointer; background:#0d7bf2; color:#fff; font:inherit; font-size:1.05em; font-weight:800; display:flex; align-items:center; justify-content:center; gap:.6em; box-shadow:0 12px 30px rgba(13,123,242,.45), inset 0 1px 0 rgba(255,255,255,.25); text-shadow:0 1px 4px rgba(0,0,0,.35); }
       #screen-provider .prov-sub{ margin-top:.8em; font-size:.95em; color:rgba(255,255,255,.85); text-shadow:0 1px 6px rgba(0,0,0,.6); line-height:1.5; }
       #screen-provider .prov-sub b{ color:#fff; }
       #screen-provider .prov-body{ position:relative; z-index:1; padding:0 2.4em 4.6em; }
@@ -924,7 +922,7 @@
       @media (max-width:760px){
         #screen-provider .prov-hero{ position:relative; }
         #screen-provider .prov-art{ position:relative; height:auto; aspect-ratio:16/9; min-height:0; max-height:none; }
-        #screen-provider .prov-shade{ position:absolute; inset:0; height:auto; min-height:0; max-height:none; }
+        #screen-provider .prov-shade{ position:absolute; inset:0; }
         #screen-provider .prov-info{ padding:1em 1.1em 1.6em; }
         #screen-provider .prov-body{ padding:1em .7em 4.6em; }
         #screen-detail .detail-extra{ padding:0 1.1em 2em; }
@@ -1812,8 +1810,7 @@
           </aside>
           <div class="main">
           <div class="prov-hero">
-            <img id="prov-art" alt="">
-            <div class="prov-shade"></div>
+            <div class="prov-art" id="prov-art"><img id="prov-art-img" src="" alt=""><div class="prov-shade"></div></div>
             <div class="prov-info">
               <div class="prov-kicker" id="prov-title">Источники</div>
               <img id="prov-logo" class="prov-logo" alt="" style="display:none">
@@ -4462,9 +4459,19 @@ var STUDIOS = [
         }
         function provHead(){
           var m = currentDetailMeta;
-          var art = document.getElementById('prov-art');
+          /* Арт — ровно как detail-art (контейнер-div + img внутри): fixed-img
+             сам по себе не растягивался на всю ширину и терялся за blur'ом. */
+          var artBox = document.getElementById('prov-art');
+          var art = document.getElementById('prov-art-img');
           var src = m ? (m.backdrop ? IMG + 'w1280' + m.backdrop : (m.poster ? IMG + 'w500' + m.poster : '')) : '';
-          if (art) { if (src) { art.src = src; art.style.display = ''; } else art.style.display = 'none'; }
+          if (art) {
+            if (src) {
+              art.onerror = null;
+              if (m && m.backdrop && m.poster) { art.onerror = function(){ art.onerror = null; art.src = IMG + 'w500' + m.poster; }; }
+              art.src = src; art.style.display = '';
+            } else art.style.display = 'none';
+          }
+          if (artBox) artBox.style.display = src ? '' : 'none';
           /* Ambient провайдера — как detail-bg: постер первым, иначе бэкдроп. */
           var bg = document.getElementById('prov-bg');
           var bgSrc = m ? (m.poster ? IMG + 'w500' + m.poster : (m.backdrop ? IMG + 'w780' + m.backdrop : '')) : '';
