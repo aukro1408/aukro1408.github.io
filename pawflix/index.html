@@ -823,6 +823,49 @@
         #screen-detail .detail-hero-in{ padding:1em 1.1em 1.6em; }
         #screen-detail .detail-glass{ flex-basis:auto; width:100%; }
       }
+      /* Шапка экрана провайдера как в «Кино» (vw-hero): арт + shade,
+         лейбл, название, бейдж качества, мета, кнопка «Смотреть», подстрока. */
+      #screen-provider .prov-hero{ position:relative; height:15em; min-height:280px; overflow:hidden; background:#0b1220; flex:0 0 auto; }
+      #screen-provider .prov-hero img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+      #screen-provider .prov-shade{ position:absolute; inset:0; background:linear-gradient(to bottom, rgba(11,18,32,.30) 0%, rgba(11,18,32,.12) 35%, rgba(11,18,32,.90) 76%, var(--bg) 100%); }
+      #screen-provider .prov-info{ position:absolute; left:2.4em; right:2.4em; bottom:0; z-index:2; padding-bottom:1.2em; color:#fff; }
+      #screen-provider .prov-kicker{ font-size:.8em; font-weight:800; letter-spacing:.25em; text-transform:uppercase; color:#8cddff; margin-bottom:.5em; }
+      #screen-provider .prov-htitle{ font-family:"Unbounded",sans-serif; font-size:1.9em; line-height:1.12; font-weight:700; text-shadow:0 2px 12px rgba(0,0,0,.7); }
+      #screen-provider .prov-badges{ display:flex; align-items:center; gap:.7em; margin-top:.7em; flex-wrap:wrap; }
+      #screen-provider .prov-q{ background:linear-gradient(135deg,#3b8cff,#7b5cff); color:#fff; font-size:.8em; font-weight:800; padding:.3em .8em; border-radius:.6em; letter-spacing:.05em; }
+      #screen-provider .prov-meta{ font-size:.95em; color:rgba(255,255,255,.88); font-weight:600; text-shadow:0 1px 6px rgba(0,0,0,.6); }
+      #screen-provider .prov-meta .star{ color:#ffb700; }
+      #screen-provider .prov-watch{ margin-top:1em; width:100%; padding:1em; border:none; border-radius:1.1em; cursor:pointer; background:linear-gradient(135deg,#3b8cff,#7b5cff); color:#fff; font:inherit; font-size:1.05em; font-weight:800; display:flex; align-items:center; justify-content:center; gap:.6em; box-shadow:0 12px 30px rgba(70,110,255,.40), inset 0 1px 0 rgba(255,255,255,.25); }
+      #screen-provider .prov-sub{ margin-top:.8em; font-size:.95em; color:rgba(255,255,255,.85); text-shadow:0 1px 6px rgba(0,0,0,.6); }
+      #screen-provider .prov-body{ padding:1.2em 2.4em 4.6em; }
+      /* Секции «О фильме» / «Режиссёр» / «В ролях» на тёмном экране фильма. */
+      #screen-detail .detail-extra{ position:relative; z-index:1; padding:0 2.4em 2em; display:flex; flex-direction:column; gap:1.6em; }
+      #screen-detail .detail-extra .src-title{ color:#fff; }
+      #screen-detail .detail-about-text{ color:rgba(255,255,255,.92); font-size:.94em; line-height:1.55; margin:0 0 .7em; text-shadow:0 1px 12px rgba(0,0,0,.4); }
+      #screen-detail .detail-about-text.clamped{ display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+      #screen-detail .people-row{ display:flex; gap:1em; overflow-x:auto; padding-bottom:.5em; }
+      #screen-detail .person-card{ flex:0 0 8em; min-width:0; }
+      #screen-detail .person-photo{ width:100%; aspect-ratio:2/3; border-radius:.8em; overflow:hidden; background:rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.6); font-size:2em; font-weight:800; }
+      #screen-detail .person-photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+      #screen-detail .person-name{ color:#fff; font-weight:700; font-size:.9em; margin-top:.4em; line-height:1.25; }
+      #screen-detail .person-role{ color:rgba(255,255,255,.65); font-size:.82em; line-height:1.25; }
+      /* Пилюля поиска в топбаре экрана фильма — ровно то же стекло, что
+         боковая карточка (значения один в один, не «похоже»). */
+      #screen-detail .top-search{ background:linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.12)); border:1px solid rgba(255,255,255,.4); box-shadow:0 24px 60px rgba(0,0,0,.35); backdrop-filter:blur(22px) saturate(1.5); }
+      /* Плавающая боковая панель как на рефе (только TV/ПК): зазоры сверху,
+         снизу и слева, скруглённые углы. Рейка — flex-элемент, поэтому левый
+         зазор сам сдвигает контент: отступ контента = ширина рейки 4.9em +
+         левый зазор .5em, наезжаний нет. Ширина, иконки, логотип, цвет — без
+         изменений; мобильный нижний навбар не тронут. */
+      @media (min-width:761px){
+        .sidebar{ margin:.5em 0 .5em .5em; border:none; border-radius:1em; box-shadow:0 8px 30px rgba(23,52,110,.14); }
+      }
+      @media (max-width:760px){
+        #screen-provider .prov-info{ left:1em; right:1em; }
+        #screen-provider .prov-hero{ height:auto; min-height:240px; }
+        #screen-provider .prov-body{ padding:1em .7em 4.6em; }
+        #screen-detail .detail-extra{ padding:0 1.1em 2em; }
+      }
 
 </style>
 </head>
@@ -1309,7 +1352,22 @@
             <button class="src-btn focusable" id="src-torrents" type="button">torrent</button>
           </div>
 
-                  <div class="detail-similar">
+                  <div class="detail-extra">
+            <div class="detail-about">
+              <h3 class="src-title">О фильме</h3>
+              <p class="detail-about-text clamped" id="detail-about-text"></p>
+              <button class="btn small focusable" id="detail-about-more" type="button" style="display:none">Читать полностью ▾</button>
+            </div>
+            <div class="detail-people" id="detail-directors-sec" style="display:none">
+              <h3 class="src-title">Режиссёр</h3>
+              <div class="people-row" id="directors-row"></div>
+            </div>
+            <div class="detail-people" id="detail-cast-sec" style="display:none">
+              <h3 class="src-title">В ролях</h3>
+              <div class="people-row" id="cast-row"></div>
+            </div>
+          </div>
+          <div class="detail-similar">
             <div class="sim-head">
               <h3 class="src-title" id="similar-title">Похожие фильмы</h3>
               <button class="btn small focusable" id="similar-more" type="button">Ещё ›</button>
@@ -1389,10 +1447,18 @@
             </div>
           </aside>
           <div class="main">
-          <div class="screen-head">
-            <div>
-              <h2 id="prov-title">Источники</h2>
-              <div class="sub" id="prov-sub"></div>
+          <div class="prov-hero">
+            <img id="prov-art" alt="">
+            <div class="prov-shade"></div>
+            <div class="prov-info">
+              <div class="prov-kicker" id="prov-title">Источники</div>
+              <div class="prov-htitle" id="prov-head-title"></div>
+              <div class="prov-badges">
+                <span class="prov-q" id="prov-q" style="display:none"></span>
+                <span class="prov-meta" id="prov-meta"></span>
+              </div>
+              <button class="prov-watch focusable" id="prov-watch" type="button" style="display:none"><span>▶</span><span id="prov-watch-t">Смотреть</span></button>
+              <div class="prov-sub" id="prov-sub"></div>
             </div>
           </div>
           <div class="prov-body">
@@ -1630,7 +1696,7 @@
               <span class="val"><input id="filmix-input" class="key-input focusable" type="text" placeholder="Вставьте токен Filmix" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="filmix-save" type="button">Сохранить</button></span>
             </div>
             <div class="set-row">
-              <div><span class="lab">Прокси Filmix</span><span class="hint">Обход CORS для filmixapp.vip · пусто = прямое подключение</span></div>
+              <div><span class="lab">Прокси Filmix</span><span class="hint">Обход CORS для filmixapp.vip · пусто = прокси по умолчанию (cors.jacred.stream)</span></div>
               <span class="val"><input id="filmix-proxy-input" class="key-input focusable" type="text" placeholder="https://прокси/" autocomplete="off" spellcheck="false" /><button class="btn small focusable" id="filmix-proxy-save" type="button">Сохранить</button></span>
             </div>
 
@@ -2147,7 +2213,11 @@
             if (cur) { cur.click(); e.preventDefault(); }
           }
           else if (k === 'Escape' || k === 'Backspace') {
-            if (current === 'provider') { backFromProvider(); e.preventDefault(); }
+            if (current === 'provider') {
+              if (provEscBack) { var pf = provEscBack; provEscBack = null; pf(); }
+              else backFromProvider();
+              e.preventDefault();
+            }
             else if (current !== 'home') { show('home'); e.preventDefault(); }
           }
           else if (['1','2','3','4','5','6','7'].indexOf(k) !== -1) {
@@ -2414,6 +2484,12 @@
           addHist(currentDetailCard);
           playBest();
         });
+        var detailAboutMore = document.getElementById('detail-about-more');
+        detailAboutMore.addEventListener('click', function(){
+          var t = document.getElementById('detail-about-text');
+          var clamped = t.classList.toggle('clamped');
+          detailAboutMore.textContent = clamped ? 'Читать полностью ▾' : 'Свернуть ▴';
+        });
         detailFav.addEventListener('click', function(){
           if (!currentDetailCard) { toast('Откройте карточку фильма или сериала'); return; }
           var added = toggleList('fav', currentDetailCard);
@@ -2471,6 +2547,35 @@
           setGlassRow('glass-country', country);
           setGlassRow('glass-year', year);
         }
+        /* Карточка персоны для секций «Режиссёр»/«В ролях»: display-only —
+           экрана персоны в pawflix нет, поэтому не .focusable и без click. */
+        function personCard(p, role){
+          var d = document.createElement('div');
+          d.className = 'person-card';
+          var photo = document.createElement('div');
+          photo.className = 'person-photo';
+          if (p.profile_path) {
+            var img = document.createElement('img');
+            img.src = IMG + 'w185' + p.profile_path;
+            img.alt = p.name || '';
+            img.loading = 'lazy';
+            photo.appendChild(img);
+          } else {
+            photo.textContent = (p.name || '?').charAt(0);
+          }
+          d.appendChild(photo);
+          var nm = document.createElement('div');
+          nm.className = 'person-name';
+          nm.textContent = p.name || '';
+          d.appendChild(nm);
+          if (role) {
+            var rl = document.createElement('div');
+            rl.className = 'person-role';
+            rl.textContent = role;
+            d.appendChild(rl);
+          }
+          return d;
+        }
         function flagEmoji(code){
           if (!code || code.length !== 2) return '';
           return String.fromCodePoint(0x1F1E6 + code.charCodeAt(0) - 65) + String.fromCodePoint(0x1F1E6 + code.charCodeAt(1) - 65);
@@ -2488,6 +2593,14 @@
           document.getElementById('detail-rates').textContent = '';
           setGlass('', '', '', '');
           document.getElementById('glass-av').innerHTML = '';
+          document.getElementById('detail-about-text').textContent = '';
+          document.getElementById('detail-about-text').classList.add('clamped');
+          document.getElementById('detail-about-more').textContent = 'Читать полностью ▾';
+          document.getElementById('detail-about-more').style.display = 'none';
+          document.getElementById('directors-row').innerHTML = '';
+          document.getElementById('cast-row').innerHTML = '';
+          document.getElementById('detail-directors-sec').style.display = 'none';
+          document.getElementById('detail-cast-sec').style.display = 'none';
           document.getElementById('detail-bg').style.display = 'none';
           document.getElementById('detail-art').style.display = 'none';
           document.getElementById('detail-art-img').style.display = 'none';
@@ -2542,6 +2655,27 @@
             var castNames = ((d.credits && d.credits.cast) || []).slice(0, 4).map(function(p){ return p.name; }).join(', ');
             var countries = (d.production_countries || []).map(function(c){ return flagEmoji(c.iso_3166_1) + ' ' + c.name; }).join(', ');
             setGlass(dir, castNames, countries, year);
+            /* Секции «О фильме» / «Режиссёр» / «В ролях» как в «Кино». */
+            var aboutText = document.getElementById('detail-about-text');
+            var aboutMore = document.getElementById('detail-about-more');
+            aboutText.textContent = d.overview || 'Описание отсутствует.';
+            aboutText.classList.add('clamped');
+            aboutMore.textContent = 'Читать полностью ▾';
+            var syncAboutMore = function(){
+              aboutMore.style.display = (aboutText.scrollHeight > aboutText.clientHeight + 2) ? '' : 'none';
+            };
+            requestAnimationFrame(syncAboutMore);
+            setTimeout(syncAboutMore, 300);
+            var directors = ((d.credits && d.credits.crew) || []).filter(function(p){ return p.job === 'Director'; });
+            var dRow = document.getElementById('directors-row');
+            dRow.innerHTML = '';
+            directors.forEach(function(p){ dRow.appendChild(personCard(p, '')); });
+            document.getElementById('detail-directors-sec').style.display = directors.length ? '' : 'none';
+            var cast = (d.credits && d.credits.cast) || [];
+            var cRow = document.getElementById('cast-row');
+            cRow.innerHTML = '';
+            cast.forEach(function(p){ cRow.appendChild(personCard(p, p.character || '')); });
+            document.getElementById('detail-cast-sec').style.display = cast.length ? '' : 'none';
             currentDetailCard = {
               id: d.id, type: type, t: d.title || d.name || '', y: year,
               g: genres[0] || '', r: rate,
@@ -2551,7 +2685,11 @@
               id: d.id, type: type,
               title: d.title || d.name || '',
               orig: d.original_title || d.original_name || '',
-              year: year
+              year: year,
+              rate: rate,
+              runtime: runtime,
+              backdrop: d.backdrop_path || '',
+              poster: d.poster_path || ''
             };
             updateDetailButtons();
             loadTrailer(type, id);
@@ -2999,6 +3137,46 @@
           var box = provListEl();
           box.innerHTML = '';
           box.appendChild(srcNote(text));
+          provEscBack = null;
+        }
+        /* Шапка экрана провайдера как в «Кино» (vwShellHTML): арт, лейбл,
+           название, бейдж качества, мета, кнопка «Смотреть», подстрока.
+           Esc-стек: каждый render ставит provEscBack на уровень выше (null —
+           верх уровня провайдера, Esc уходит на карточку). */
+        var provEscBack = null;
+        function provSetWatch(label, onclick){
+          var w = document.getElementById('prov-watch');
+          if (!w) return;
+          if (!label) { w.style.display = 'none'; w.onclick = null; return; }
+          w.style.display = 'flex';
+          document.getElementById('prov-watch-t').textContent = label;
+          w.onclick = onclick;
+        }
+        function provSetQ(q){
+          var e = document.getElementById('prov-q');
+          if (!e) return;
+          if (q) { e.style.display = ''; e.textContent = q; } else e.style.display = 'none';
+        }
+        function provSetSub(html){
+          var s = document.getElementById('prov-sub');
+          if (s) s.innerHTML = html || '';
+        }
+        function provHead(){
+          var m = currentDetailMeta;
+          var art = document.getElementById('prov-art');
+          var src = m ? (m.backdrop ? IMG + 'w1280' + m.backdrop : (m.poster ? IMG + 'w500' + m.poster : '')) : '';
+          if (art) { if (src) { art.src = src; art.style.display = ''; } else art.style.display = 'none'; }
+          var t = document.getElementById('prov-head-title');
+          if (t) t.textContent = m ? (m.title || '') : '';
+          var meta = document.getElementById('prov-meta');
+          if (meta) {
+            var parts = [];
+            if (m && m.rate && m.rate !== '—') parts.push('<span class="star">★</span> ' + esc(m.rate));
+            if (m && m.year) parts.push(esc(m.year));
+            if (m && m.runtime) parts.push(esc(m.runtime));
+            meta.innerHTML = parts.join(' · ');
+          }
+          provSetQ(''); provSetWatch(null); provSetSub('');
         }
         /* Строка выбора источника (аналог пилюли «Источник» в «Кино»):
            показывается всегда, когда источники есть, — и при пустом источнике,
@@ -3014,6 +3192,8 @@
           }));
         }
         function renderProvSrcPick(focusFirst){
+          provEscBack = function(){ onl.srcPick = false; renderProvLumio(); };
+          provSetQ(''); provSetWatch(null); provSetSub('Lumio · выбор источника');
           var box = provListEl();
           box.innerHTML = '';
           box.appendChild(makeSrcRow('<span class="file">‹ Назад</span>', function(){ onl.srcPick = false; renderProvLumio(); }));
@@ -3047,12 +3227,14 @@
           else if (onl.level === 'seasons') renderProvSeasons(false);
           else if (onl.level === 'episodes') renderProvEps(false);
           else if (onl.level === 'empty') {
+            provEscBack = null; provSetQ(''); provSetWatch(null); provSetSub('Lumio');
             var box = provListEl();
             box.innerHTML = '';
             appendLumioSrcRow(box);
             box.appendChild(srcNote('Тут пусто.'));
           }
           else if (onl.level === 'error') {
+            provEscBack = null; provSetQ(''); provSetWatch(null); provSetSub('Lumio');
             var box2 = provListEl();
             box2.innerHTML = '';
             appendLumioSrcRow(box2);
@@ -3078,6 +3260,12 @@
           playViaBridge(v.url, (meta && meta.title ? meta.title : '') + (v.title && (!meta || v.title !== meta.title) ? ' · ' + v.title : ''));
         }
         function renderProvVoices(focusFirst){
+          provEscBack = (onl.from === 'episodes') ? function(){ renderProvEps(true); } : null;
+          provSetQ('');
+          if (onl.voices.length) {
+            provSetWatch('Смотреть', function(){ playLumioVoice(onl.voices[0], onl.from === 'episodes' ? onl.epIdx : -1); });
+          } else provSetWatch(null);
+          provSetSub('Lumio · ' + onl.voices.length + ' ' + plural(onl.voices.length, ['озвучка', 'озвучки', 'озвучек']));
           var box = provListEl();
           box.innerHTML = '';
           appendLumioSrcRow(box);
@@ -3086,7 +3274,7 @@
           }
           onl.voices.forEach(function(v){
             var name = esc(v.title) + (v.voice && v.voice !== v.title ? ' · ' + esc(v.voice) : '');
-            box.appendChild(makeSrcRow('<span class="plugin">Lumio</span><span class="file">' + name + '</span>', function(){
+            box.appendChild(makeSrcRow('<span class="plugin">Lumio</span><span class="file">' + name + '</span><span style="color:var(--muted)">›</span>', function(){
               playLumioVoice(v, onl.from === 'episodes' ? onl.epIdx : -1);
             }));
           });
@@ -3097,6 +3285,9 @@
           }
         }
         function renderProvSeasons(focusFirst){
+          provEscBack = null;
+          provSetQ(''); provSetWatch(null);
+          provSetSub('Lumio · ' + onl.seasons.length + ' ' + plural(onl.seasons.length, ['сезон', 'сезона', 'сезонов']));
           var box = provListEl();
           box.innerHTML = '';
           appendLumioSrcRow(box);
@@ -3119,20 +3310,26 @@
           }
         }
         function renderProvEps(focusFirst){
-          var box = provListEl();
-          box.innerHTML = '';
-          appendLumioSrcRow(box);
-          box.appendChild(makeSrcRow('<span class="file">‹ К сезонам</span>', function(){ renderProvSeasons(true); }));
+          provEscBack = function(){ renderProvSeasons(true); };
+          provSetQ('');
           var meta = currentDetailMeta;
           var mid = meta ? 'l' + meta.id : '';
           var total = onl.eps.length;
           if (total) {
             var watched = meta ? wCount(mid, total) : 0;
-            var sub = document.createElement('div');
-            sub.className = 'empty-note';
-            sub.textContent = 'Просмотрено ' + watched + ' из ' + total + ' · осталось ' + (total - watched);
-            box.appendChild(sub);
-          }
+            provSetSub('Lumio · ' + esc(onlSeasonName(onl.seasons[onl.seasonIdx], onl.seasonIdx)) + '<br>Просмотрено ' + watched + ' из ' + total + ' · осталось ' + (total - watched));
+            var target = -1;
+            for (var i = 0; i < total; i++) {
+              if (!wIs(mid, 's' + onl.seasonIdx + 'e' + i)) { target = i; break; }
+            }
+            if (target === -1) target = 0;
+            var et = onlEpName(onl.eps[target], target);
+            provSetWatch('Смотреть · ' + et.num + ' серия', (function(ti){ return function(){ playLumioEp(ti, false); }; })(target));
+          } else { provSetWatch(null); provSetSub('Lumio'); }
+          var box = provListEl();
+          box.innerHTML = '';
+          appendLumioSrcRow(box);
+          box.appendChild(makeSrcRow('<span class="file">‹ К сезонам</span>', function(){ renderProvSeasons(true); }));
           onl.eps.forEach(function(e, i){
             var et = onlEpName(e, i);
             var w = meta ? wIs(mid, 's' + onl.seasonIdx + 'e' + i) : false;
@@ -3360,14 +3557,19 @@
           return torPromise;
         }
         function renderProvTorrents(){
+          provEscBack = null;
           var box = provListEl();
           box.innerHTML = '';
           if (torSortPick) { renderTorSortPick(); return; }
           if (!torItems.length) {
+            provSetQ(''); provSetWatch(null); provSetSub('Торренты');
             box.appendChild(srcNote(torSearched ? 'Раздач не нашлось.' : 'Ищу раздачи…'));
             return;
           }
           var sorted = torSorted(torItems);
+          provSetQ('');
+          provSetSub('Торренты · ' + sorted.length + ' ' + plural(sorted.length, ['раздача', 'раздачи', 'раздач']) + (torQueryText ? ' · ' + esc(torQueryText) : ''));
+          provSetWatch('Смотреть', function(){ playTorrent(sorted[0]); });
           box.appendChild(makeSrcRow('<span class="plugin">Торренты</span><span class="file">Сортировка: ' + TOR_SORTS[torSort] + ' ›</span><span class="size">' + sorted.length + ' раздач · ' + esc(torQueryText) + '</span>', function(){
             torSortPick = true; renderProvTorrents();
           }));
@@ -3379,6 +3581,7 @@
           });
         }
         function renderTorSortPick(){
+          provEscBack = function(){ torSortPick = false; renderProvTorrents(); };
           var box = provListEl();
           box.innerHTML = '';
           box.appendChild(makeSrcRow('<span class="file">‹ К раздачам</span>', function(){ torSortPick = false; renderProvTorrents(); }));
@@ -3456,6 +3659,7 @@
             var sorted = files.slice().sort(function(a, b){ return b.size - a.size; });
             var box = provListEl();
             if (box) {
+              provEscBack = function(){ renderProvTorrents(); };
               box.innerHTML = '';
               box.appendChild(makeSrcRow('<span class="file">‹ Раздачи</span>', function(){ renderProvTorrents(); }));
               sorted.forEach(function(f){
@@ -3536,13 +3740,13 @@
 
         /* ---------- Страница провайдера (drill-in с карточки) ---------- */
         var prov = { name: null };
-        var PROV_TITLES = { lumio: 'Lumio', filmix: 'Filmix', torrents: 'Торренты' };
+        var PROV_TITLES = { lumio: 'Lumio', filmix: 'Filmix 4k', torrents: 'Торренты' };
         function openProvider(name){
           if (!currentDetailMeta) { toast('Откройте карточку фильма или сериала'); return; }
           prov.name = name;
           document.getElementById('prov-title').textContent = PROV_TITLES[name] || 'Источники';
-          var m = currentDetailMeta;
-          document.getElementById('prov-sub').textContent = (m.title || '') + (m.year ? ' · ' + m.year : '');
+          provEscBack = null;
+          provHead();
           show('provider');
           var back = document.getElementById('prov-back');
           if (back) setFocus(back);
@@ -3559,14 +3763,13 @@
            префиксного прокси (как cors.jacred.stream в «Кино») или
            {прокси}{urlencoded target} для query-прокси (...?quest= / ...?url=).
            filmixapp.vip не отдаёт CORS-заголовки: с https-страницы (ПК-превью)
-           прямой fetch браузер блокирует, поэтому без прокси запрос уходит
-           напрямую только как fallback — в WebView APK он проходит
-           (universal access), а в превью нужен прокси.
-           Публичный прокси по умолчанию НЕ подставлен: проверенные curl'ом
-           api.codetabs.com (таймаут CONNECT), api.allorigins.win (520/522
-           по filmix) и corsproxy.io (401, нужен API-ключ) — не работают.
-           Свой прокси: поднять work/filmix-proxy-worker.js как Cloudflare
-           Worker и вписать его URL в Настройки → Filmix → Прокси. */
+           прямой fetch браузер блокирует, поэтому прокси по умолчанию — как
+           в «Кино»: https://cors.jacred.stream (проверено curl'ом 2026-10-27:
+           отдаёт HTTP 400 {"message":null} — ровно то же, что прямое
+           подключение, т. е. прокси жив и форвардит; припаркованный jacred.xyz
+           — другой домен). Пустое поле прокси = дефолт jacred, а НЕ прямое
+           подключение. Свой прокси (поле в Настройках) переопределяет дефолт;
+           work/filmix-proxy-worker.js остаётся запасным вариантом. */
         var fx = { token: 0, level: null, maxQ: 720, playlist: null, seasons: [], seasonIdx: 0, eps: [], cardTitle: '' };
         function fxToken(){ return (localStorage.getItem('pawflix.filmix_token') || '').trim(); }
         function fxProxyBase(){
@@ -3587,8 +3790,7 @@
         }
         function fxBuildUrl(path, extra){
           var qs = fxTokenQS() + (extra ? '&' + extra : '');
-          var proxy = fxProxyBase();
-          if (!proxy) return 'https://filmixapp.vip/api/v2/' + path + '?' + qs;
+          var proxy = fxProxyBase() || 'https://cors.jacred.stream';
           var target = 'http://filmixapp.vip/api/v2/' + path + '?' + qs;
           if (/[?&](quest|url)=$/.test(proxy)) return proxy + encodeURIComponent(target);
           return proxy + '/' + target;
@@ -3678,6 +3880,7 @@
           });
         }
         function fxErrNote(text, retry){
+          provEscBack = null;
           var box = provListEl();
           box.innerHTML = '';
           box.appendChild(srcNote(text));
@@ -3690,9 +3893,10 @@
           box.appendChild(b);
         }
         function fxRenderSimilars(res, tok, maxQ){
+          provEscBack = null;
+          provSetQ(''); provSetWatch(null); provSetSub('Уточните, что именно:');
           var box = provListEl();
           box.innerHTML = '';
-          box.appendChild(srcNote('Уточните, что именно:'));
           res.slice(0, 12).forEach(function(c){
             box.appendChild(makeSrcRow('<span class="file">' + esc(c.title || c.original_title || 'Вариант') + (c.year ? ' · ' + c.year : '') + '</span>', function(){
               fxOpenCard(c.id, tok, maxQ);
@@ -3720,22 +3924,53 @@
           });
         }
         function fxRenderMovie(list, maxQ){
-          var box = provListEl();
-          box.innerHTML = '';
           var items = [];
           list.forEach(function(f){
             if (!f || !f.link || fxBlocked(f.translation)) return;
             var qs = fxQualities(f.link, maxQ);
             if (!qs.length) return;
-            var q = Math.max.apply(null, qs);
-            items.push({ voice: f.translation || 'Озвучка', q: q, url: fxFileUrl(f.link, q) });
+            items.push({ voice: f.translation || 'Озвучка', link: f.link, qs: qs, q: Math.max.apply(null, qs) });
           });
           if (!items.length) { provNote('Видео не найдено.'); return; }
+          fxRenderMovieItems(items, maxQ);
+        }
+        function fxRenderMovieItems(items, maxQ){
+          provEscBack = null;
+          var best = Math.max.apply(null, items.map(function(i){ return i.q; }));
+          provSetQ(best + 'p');
+          provSetWatch('Смотреть', function(){ var it = items[0]; fxPlay(it.voice, it.q, fxFileUrl(it.link, it.q)); });
+          provSetSub('Filmix · ' + items.length + ' ' + plural(items.length, ['озвучка', 'озвучки', 'озвучек']) + ' · до ' + best + 'p');
+          var box = provListEl();
+          box.innerHTML = '';
+          var sec = document.createElement('div');
+          sec.className = 'src-title';
+          sec.textContent = 'Озвучка';
+          box.appendChild(sec);
           items.forEach(function(it){
-            box.appendChild(makeSrcRow('<span class="plugin">Filmix</span><span class="file">' + esc(it.voice) + '</span><span class="badge q">' + it.q + 'p</span>', function(){
-              fxPlay(it.voice, it.q, it.url);
+            box.appendChild(makeSrcRow('<span class="plugin">Filmix</span><span class="file">' + esc(it.voice) + '</span><span class="badge q">' + it.q + 'p</span><span style="color:var(--muted)">›</span>', function(){
+              if (it.qs.length <= 1) { fxPlay(it.voice, it.q, fxFileUrl(it.link, it.q)); return; }
+              fxRenderQualities(it, null, function(){ fxRenderMovieItems(items, maxQ); });
             }));
           });
+        }
+        /* Выбор качества озвучки Filmix: список качеств из link/qualities,
+           тап — играть. Одно качество — шаг пропускается (игра сразу). */
+        function fxRenderQualities(it, wkey, backFn){
+          provEscBack = backFn || null;
+          var box = provListEl();
+          box.innerHTML = '';
+          box.appendChild(makeSrcRow('<span class="file">‹ К озвучкам</span>', function(){ if (backFn) backFn(); }));
+          var sec = document.createElement('div');
+          sec.className = 'src-title';
+          sec.textContent = it.voice + ' — качество';
+          box.appendChild(sec);
+          it.qs.slice().sort(function(a, b){ return b - a; }).forEach(function(q){
+            box.appendChild(makeSrcRow('<span class="plugin">Filmix</span><span class="file">' + q + 'p</span>', function(){
+              fxPlay(it.voice, q, fxFileUrl(it.link, q), wkey);
+            }));
+          });
+          var first = box.querySelector('.focusable');
+          if (first) setFocus(first);
         }
         function fxSeasonEps(maxQ){
           var sKey = fx.seasons[fx.seasonIdx];
@@ -3763,7 +3998,7 @@
               if (isNaN(eNum)) return;
               var key = sNum + 'x' + eNum;
               if (!eps[key]) eps[key] = { sNum: sNum, eNum: eNum, voices: [] };
-              eps[key].voices.push({ voice: vName, q: q, url: url });
+              eps[key].voices.push({ voice: vName, q: q, url: url, link: f.link, qs: qs });
             });
           });
           return Object.keys(eps).sort(function(a, b){
@@ -3772,6 +4007,9 @@
           }).map(function(k){ return eps[k]; });
         }
         function fxRenderSeasons(tok, maxQ, focusFirst){
+          provEscBack = null;
+          provSetQ(''); provSetWatch(null);
+          provSetSub('Filmix · ' + fx.seasons.length + ' ' + plural(fx.seasons.length, ['сезон', 'сезона', 'сезонов']));
           var box = provListEl();
           box.innerHTML = '';
           fx.seasons.forEach(function(sKey, i){
@@ -3787,11 +4025,31 @@
           }
         }
         function fxRenderEps(tok, maxQ, focusFirst){
+          provEscBack = function(){ fxRenderSeasons(tok, maxQ, true); };
+          provSetQ('');
+          var eps = fxSeasonEps(maxQ);
+          fx.eps = eps;
+          if (eps.length) {
+            var mid = currentDetailMeta ? 'f' + currentDetailMeta.id : '';
+            var watched = mid ? wCount(mid, eps.length) : 0;
+            provSetSub('Filmix · ' + esc(fxSeasonLabel(fx.seasons[fx.seasonIdx])) + ' сезон<br>Просмотрено ' + watched + ' из ' + eps.length + ' · осталось ' + (eps.length - watched));
+            var target = -1;
+            for (var i = 0; i < eps.length; i++) {
+              if (!wIs(mid, 's' + eps[i].sNum + 'e' + eps[i].eNum)) { target = i; break; }
+            }
+            if (target === -1) target = 0;
+            var te = eps[target];
+            provSetWatch('Смотреть · S' + te.sNum + 'E' + te.eNum, (function(e){
+              return function(){
+                var wk = 's' + e.sNum + 'e' + e.eNum;
+                if (e.voices.length === 1) { fxPlay(e.voices[0].voice, e.voices[0].q, e.voices[0].url, wk); return; }
+                fxRenderEpVoices(e, tok, maxQ);
+              };
+            })(te));
+          } else { provSetWatch(null); provSetSub('Filmix'); }
           var box = provListEl();
           box.innerHTML = '';
           box.appendChild(makeSrcRow('<span class="file">‹ К сезонам</span>', function(){ fxRenderSeasons(tok, maxQ, true); }));
-          var eps = fxSeasonEps(maxQ);
-          fx.eps = eps;
           eps.forEach(function(e){
             var vn = e.voices.slice(0, 2).map(function(v){ return v.voice; }).join(' · ') + (e.voices.length > 2 ? ' · …' : '');
             var wk = 's' + e.sNum + 'e' + e.eNum;
@@ -3808,12 +4066,15 @@
           }
         }
         function fxRenderEpVoices(e, tok, maxQ){
+          provEscBack = function(){ fxRenderEps(tok, maxQ, true); };
           var box = provListEl();
           box.innerHTML = '';
           box.appendChild(makeSrcRow('<span class="file">‹ К сериям</span>', function(){ fxRenderEps(tok, maxQ, true); }));
           e.voices.forEach(function(v){
-            box.appendChild(makeSrcRow('<span class="plugin">Filmix</span><span class="file">' + esc(v.voice) + '</span><span class="badge q">' + v.q + 'p</span>', function(){
-              fxPlay(v.voice, v.q, v.url, 's' + e.sNum + 'e' + e.eNum);
+            box.appendChild(makeSrcRow('<span class="plugin">Filmix</span><span class="file">' + esc(v.voice) + '</span><span class="badge q">' + v.q + 'p</span><span style="color:var(--muted)">›</span>', function(){
+              var wk = 's' + e.sNum + 'e' + e.eNum;
+              if (!v.qs || v.qs.length <= 1) { fxPlay(v.voice, v.q, v.url, wk); return; }
+              fxRenderQualities({ voice: v.voice, link: v.link, qs: v.qs, q: v.q }, wk, function(){ fxRenderEpVoices(e, tok, maxQ); });
             }));
           });
         }
