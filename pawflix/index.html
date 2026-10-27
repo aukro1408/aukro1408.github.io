@@ -796,7 +796,7 @@
       #screen-detail .detail-topbar{ position:absolute; top:0; left:0; right:0; z-index:5; }
       /* Фон теперь на уровне body и идёт ПОЗЖЕ в дереве: hero-арт поднят
          на z-index:1, иначе размытый фон лёг бы поверх резкого арта. */
-      #screen-detail .detail-art{ position:absolute; top:0; left:0; right:0; z-index:1;
+      #screen-detail .detail-art{ position:fixed; top:0; left:0; right:0; z-index:1;
         height:58vh; min-height:400px; max-height:660px; }
       #screen-detail .detail-art img{ object-position:50% 0; }
       #screen-detail .detail-hero-in{ padding:21vh 2.4em 2.2em; }
@@ -824,21 +824,81 @@
         #screen-detail .detail-hero-in{ padding:1em 1.1em 1.6em; }
         #screen-detail .detail-glass{ flex-basis:auto; width:100%; }
       }
-      /* Шапка экрана провайдера как в «Кино» (vw-hero): арт + shade,
-         лейбл, название, бейдж качества, мета, кнопка «Смотреть», подстрока. */
-      #screen-provider .prov-hero{ position:relative; height:15em; min-height:280px; overflow:hidden; background:#0b1220; flex:0 0 auto; }
-      #screen-provider .prov-hero img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
-      #screen-provider .prov-shade{ position:absolute; inset:0; background:linear-gradient(to bottom, rgba(11,18,32,.30) 0%, rgba(11,18,32,.12) 35%, rgba(11,18,32,.90) 76%, var(--bg) 100%); }
-      #screen-provider .prov-info{ position:absolute; left:2.4em; right:2.4em; bottom:0; z-index:2; padding-bottom:1.2em; color:#fff; }
+      /* Экран провайдера — как страница фильма (требование Denis):
+         hero на всю ширину (арт fixed от верха вьюпорта, как detail-art),
+         ambient poster-blur на весь вьюпорт, списки — секциями поверх фона.
+         Тёмный экран, как карточка. */
+      #prov-bg{ position:fixed; inset:0; width:100vw; height:100vh;
+        object-fit:cover; object-position:center;
+        filter:blur(40px) saturate(1.9) brightness(.92); transform:scale(1.25); z-index:0; }
+      .prov-ambient-shade{ position:fixed; inset:0; z-index:0; pointer-events:none;
+        background:linear-gradient(180deg, rgba(11,18,32,.18) 0%, rgba(11,18,32,.42) 42%, #0b1220 88%, #0b1220 100%); }
+      body:not(.on-provider) #prov-bg, body:not(.on-provider) .prov-ambient-shade{ display:none !important; }
+      #screen-provider .main{ background:#0b1220; position:relative; }
+      #screen-provider .prov-hero{ position:static; }
+      #screen-provider .prov-art{ position:fixed; top:0; left:0; right:0; z-index:1;
+        height:58vh; min-height:400px; max-height:660px; object-fit:cover; object-position:50% 0; display:block;
+        -webkit-mask-image:linear-gradient(180deg,#000 68%,transparent 97%);
+        mask-image:linear-gradient(180deg,#000 68%,transparent 97%); }
+      #screen-provider .prov-shade{ position:fixed; top:0; left:0; right:0; z-index:1;
+        height:58vh; min-height:400px; max-height:660px; pointer-events:none;
+        background:linear-gradient(180deg, rgba(8,12,24,.22) 0%, rgba(8,12,24,0) 35%, rgba(8,12,24,.30) 60%, rgba(11,18,32,.55) 100%); }
+      #screen-provider .prov-info{ position:relative; z-index:2; padding:21vh 2.4em 2.2em; color:#fff; }
       #screen-provider .prov-kicker{ font-size:.8em; font-weight:800; letter-spacing:.25em; text-transform:uppercase; color:#8cddff; margin-bottom:.5em; }
+      #screen-provider .prov-logo{ display:block; max-width:22em; max-height:6em; width:auto; height:auto; object-fit:contain;
+        filter:drop-shadow(0 4px 18px rgba(0,0,0,.55)); margin-bottom:.4em; }
       #screen-provider .prov-htitle{ font-family:"Unbounded",sans-serif; font-size:1.9em; line-height:1.12; font-weight:700; text-shadow:0 2px 12px rgba(0,0,0,.7); }
       #screen-provider .prov-badges{ display:flex; align-items:center; gap:.7em; margin-top:.7em; flex-wrap:wrap; }
       #screen-provider .prov-q{ background:linear-gradient(135deg,#3b8cff,#7b5cff); color:#fff; font-size:.8em; font-weight:800; padding:.3em .8em; border-radius:.6em; letter-spacing:.05em; }
       #screen-provider .prov-meta{ font-size:.95em; color:rgba(255,255,255,.88); font-weight:600; text-shadow:0 1px 6px rgba(0,0,0,.6); }
       #screen-provider .prov-meta .star{ color:#ffb700; }
       #screen-provider .prov-watch{ margin-top:1em; width:100%; padding:1em; border:none; border-radius:1.1em; cursor:pointer; background:linear-gradient(135deg,#3b8cff,#7b5cff); color:#fff; font:inherit; font-size:1.05em; font-weight:800; display:flex; align-items:center; justify-content:center; gap:.6em; box-shadow:0 12px 30px rgba(70,110,255,.40), inset 0 1px 0 rgba(255,255,255,.25); }
-      #screen-provider .prov-sub{ margin-top:.8em; font-size:.95em; color:rgba(255,255,255,.85); text-shadow:0 1px 6px rgba(0,0,0,.6); }
-      #screen-provider .prov-body{ padding:1.2em 2.4em 4.6em; }
+      #screen-provider .prov-sub{ margin-top:.8em; font-size:.95em; color:rgba(255,255,255,.85); text-shadow:0 1px 6px rgba(0,0,0,.6); line-height:1.5; }
+      #screen-provider .prov-sub b{ color:#fff; }
+      #screen-provider .prov-body{ position:relative; z-index:1; padding:0 2.4em 4.6em; }
+      /* Тёмные строки списков поверх ambient (как секции карточки). */
+      #screen-provider .prov-body .src{ background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.18); color:#fff; box-shadow:none; }
+      #screen-provider .prov-body .src .file{ color:rgba(255,255,255,.88); }
+      #screen-provider .prov-body .src .plugin{ color:#fff; }
+      #screen-provider .prov-body .src .size{ color:rgba(255,255,255,.65); }
+      #screen-provider .prov-body .src-title{ color:#fff; }
+      #screen-provider .prov-body .empty-note{ color:rgba(255,255,255,.7); }
+      #screen-provider .prov-body .back-row{ background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.25); color:#fff; }
+      /* Строки выбора как в «Кино» (vw-voice / vw-sec-t / vw-backline / vw-ep / vw-pill). */
+      #screen-provider .vw-sec-t{ font-size:.8em; font-weight:800; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.09em; margin:.6em .15em .8em; }
+      #screen-provider .vw-voice{ display:flex; align-items:center; justify-content:space-between; gap:.7em; width:100%;
+        padding:.95em 1em; border-radius:1em; cursor:pointer; text-align:left; margin-bottom:.6em;
+        border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.08); color:#fff; font:inherit; font-size:.9em; font-weight:700; }
+      #screen-provider .vw-voice:active{ transform:scale(.98); }
+      #screen-provider .vw-voice .vs{ font-size:.85em; color:rgba(255,255,255,.6); font-weight:600; margin-top:2px; }
+      #screen-provider .vw-voice .vw-chev{ color:rgba(255,255,255,.55); font-size:1.2em; flex:0 0 auto; }
+      #screen-provider .vw-backline{ display:inline-flex; align-items:center; gap:.4em; margin:0 0 .8em; padding:.55em .95em;
+        border-radius:999px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.08);
+        color:#fff; font:inherit; font-size:.85em; font-weight:700; cursor:pointer; }
+      #screen-provider .vw-backline:active{ transform:scale(.97); }
+      #screen-provider .vw-ep{ display:flex; gap:.85em; align-items:center; padding:.65em; border-radius:1.1em; cursor:pointer; text-align:left; width:100%;
+        background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); color:#fff; font:inherit; margin-bottom:.6em; }
+      #screen-provider .vw-ep:active{ transform:scale(.98); border-color:rgba(77,163,255,.4); }
+      #screen-provider .vw-thumb{ position:relative; width:6.5em; height:4.5em; flex:0 0 auto; border-radius:.75em; overflow:hidden;
+        background:linear-gradient(135deg,#1d2f55,#31497e); display:flex; align-items:center; justify-content:center; }
+      #screen-provider .vw-num{ font-size:1.9em; font-weight:800; color:rgba(255,255,255,.92); text-shadow:0 2px 8px rgba(0,0,0,.4); }
+      #screen-provider .vw-epbody{ flex:1; min-width:0; }
+      #screen-provider .vw-ept{ display:block; font-size:.9em; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      #screen-provider .vw-eps{ display:block; font-size:.78em; color:rgba(255,255,255,.6); font-weight:600; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      #screen-provider .vw-prog{ height:3px; border-radius:2px; background:rgba(255,255,255,.10); margin-top:8px; overflow:hidden; }
+      #screen-provider .vw-prog i{ display:block; height:100%; background:linear-gradient(90deg,#3b8cff,#7b5cff); border-radius:2px; }
+      #screen-provider .vw-side{ display:flex; flex-direction:column; align-items:flex-end; gap:7px; flex:0 0 auto; }
+      #screen-provider .vw-done{ color:#7ee2a8; font-size:.8em; font-weight:800; }
+      #screen-provider .vw-qb{ font-size:.68em; font-weight:800; color:#8dbcff; background:rgba(77,163,255,.14);
+        border:1px solid rgba(77,163,255,.35); padding:3px 8px; border-radius:7px; white-space:nowrap; }
+      #screen-provider .prov-pills{ display:flex; gap:.5em; overflow-x:auto; padding:.25em 0 .9em; scrollbar-width:none; }
+      #screen-provider .prov-pills::-webkit-scrollbar{ display:none; }
+      #screen-provider .vw-pill{ flex:0 0 auto; display:flex; align-items:center; gap:.5em; padding:.7em .95em; border-radius:.9em;
+        background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); color:#fff;
+        font:inherit; font-size:.85em; font-weight:700; cursor:pointer; max-width:15em; }
+      #screen-provider .vw-pill:active{ transform:scale(.96); }
+      #screen-provider .vw-pill .pv{ color:#8dbcff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      #screen-provider .vw-pill .pd{ color:rgba(255,255,255,.55); font-size:.8em; flex:0 0 auto; }
       /* Секции «О фильме» / «Режиссёр» / «В ролях» на тёмном экране фильма. */
       #screen-detail .detail-extra{ position:relative; z-index:1; padding:0 2.4em 2em; display:flex; flex-direction:column; gap:1.6em; }
       #screen-detail .detail-extra .src-title{ color:#fff; }
@@ -862,8 +922,10 @@
         .sidebar{ margin:.5em 0 .5em .5em; border:none; border-radius:1em; box-shadow:0 8px 30px rgba(23,52,110,.14); }
       }
       @media (max-width:760px){
-        #screen-provider .prov-info{ left:1em; right:1em; }
-        #screen-provider .prov-hero{ height:auto; min-height:240px; }
+        #screen-provider .prov-hero{ position:relative; }
+        #screen-provider .prov-art{ position:relative; height:auto; aspect-ratio:16/9; min-height:0; max-height:none; }
+        #screen-provider .prov-shade{ position:absolute; inset:0; height:auto; min-height:0; max-height:none; }
+        #screen-provider .prov-info{ padding:1em 1.1em 1.6em; }
         #screen-provider .prov-body{ padding:1em .7em 4.6em; }
         #screen-detail .detail-extra{ padding:0 1.1em 2em; }
       }
@@ -875,6 +937,12 @@
         filter:drop-shadow(0 4px 18px rgba(0,0,0,.55)); }
       /* Закладка: заполненная, когда фильм в избранном или «смотреть позже». */
       #screen-detail .icon-btn.bk-on{ color:#8cddff; border-color:rgba(140,221,255,.55); }
+      /* Закладка — по высоте как пилюля «Трейлер»: .icon-btn был 3em при
+         font-size 1.3em (≈3.9em в ряду) против пилюли ≈2.6em — круг казался
+         огромным. Ряд растягивает детей на высоту строки, а круг через
+         aspect-ratio берёт эту высоту как диаметр: ровно высота трейлера. */
+      #screen-detail .detail-actions2{ align-items:stretch; }
+      #screen-detail #detail-bookmark{ font-size:1em; width:auto; height:auto; aspect-ratio:1/1; padding:0; }
       /* Плитка «Ещё» в конце ряда главной + кнопка «Показать ещё» в сетке категории. */
       .row-more .mimg{ display:flex; align-items:center; justify-content:center; }
       .row-more .mimg span{ font-size:2.4em; font-weight:800; color:var(--accent); }
@@ -883,6 +951,12 @@
          фон едва просвечивает сквозь рейку, стеклом она не становится. */
       @media (min-width:761px){
         .sidebar{ background:rgba(255,255,255,.85); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+      }
+      /* На карточке — прозрачнее (.6 вместо .85): для СВЕТЛЫХ постеров
+         blur сквозь .85 не читался и казался светлой полосой; на остальных
+         экранах .85 не тронута. Повторный блюр рейки на карточке уже убран. */
+      @media (min-width:761px){
+        #screen-detail .sidebar{ background:rgba(255,255,255,.6); }
       }
 
 
@@ -1010,7 +1084,7 @@
             <div class="pawflix-logo"><svg class="pawflix-icon" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <!-- Форма суперэллипса (Squircle) -->
-        <path id="squircle-shape" d="
+        <path id="squircle-shape-lg1" d="
           M 160 32
           C 75 32, 32 75, 32 160
           C 32 245, 32 267, 32 352
@@ -1022,19 +1096,19 @@
           Z" />
 
         <!-- Стеклянная лапка с Play-вырезом -->
-        <g id="paw-glass-artwork">
+        <g id="paw-glass-artwork-lg1">
           <path class="anim-toe anim-toe-1"
                 d="M 148 186 C 132 172, 134 140, 152 126 C 170 112, 192 124, 198 144 C 204 164, 192 192, 172 196 C 160 198, 154 192, 148 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg1)" stroke="url(#glassStrokeGrad-lg1)" stroke-width="2" />
           <path class="anim-toe anim-toe-2"
                 d="M 208 136 C 198 116, 208 84, 230 76 C 250 68, 272 84, 276 108 C 280 132, 264 158, 242 160 C 224 162, 214 150, 208 136 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg1)" stroke="url(#glassStrokeGrad-lg1)" stroke-width="2" />
           <path class="anim-toe anim-toe-3"
                 d="M 298 138 C 294 114, 308 86, 330 80 C 352 74, 370 96, 370 120 C 370 144, 350 166, 328 164 C 312 162, 300 152, 298 138 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg1)" stroke="url(#glassStrokeGrad-lg1)" stroke-width="2" />
           <path class="anim-toe anim-toe-4"
                 d="M 374 186 C 362 170, 368 140, 386 130 C 404 120, 424 136, 428 156 C 432 176, 416 200, 396 200 C 384 200, 378 192, 374 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg1)" stroke="url(#glassStrokeGrad-lg1)" stroke-width="2" />
           <path class="anim-pad"
                 fill-rule="evenodd"
                 d="
@@ -1052,56 +1126,56 @@
                   L 278 297
                   C 283 294, 283 286, 278 283
                   Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2.2" />
+                fill="url(#glassGradient-lg1)" stroke="url(#glassStrokeGrad-lg1)" stroke-width="2.2" />
           <path class="anim-play-core"
                 d="M 240 262 C 236 259, 230 262, 230 269 L 230 311 C 230 318, 236 321, 240 318 L 278 297 C 283 294, 283 286, 278 283 Z"
-                fill="url(#playCutGlowGrad)" />
+                fill="url(#playCutGlowGrad-lg1)" />
         </g>
 
         <!-- Градиенты иконки -->
-        <linearGradient id="blueBaseGrad" x1="0.1" y1="0" x2="0.9" y2="1">
+        <linearGradient id="blueBaseGrad-lg1" x1="0.1" y1="0" x2="0.9" y2="1">
           <stop offset="0%" stop-color="#2ca1ff" />
           <stop offset="35%" stop-color="#0d7bf2" />
           <stop offset="75%" stop-color="#0553c7" />
           <stop offset="100%" stop-color="#032a75" />
         </linearGradient>
 
-        <radialGradient id="topCyanGlow" cx="0.25" cy="0.2" r="0.65">
+        <radialGradient id="topCyanGlow-lg1" cx="0.25" cy="0.2" r="0.65">
           <stop offset="0%" stop-color="#9ce6ff" stop-opacity="0.65" />
           <stop offset="45%" stop-color="#38b6ff" stop-opacity="0.30" />
           <stop offset="100%" stop-color="#0d7bf2" stop-opacity="0" />
         </radialGradient>
 
-        <radialGradient id="botCoralGlow" cx="0.85" cy="0.85" r="0.6">
+        <radialGradient id="botCoralGlow-lg1" cx="0.85" cy="0.85" r="0.6">
           <stop offset="0%" stop-color="#ff5470" stop-opacity="0.32" />
           <stop offset="50%" stop-color="#a62657" stop-opacity="0.15" />
           <stop offset="100%" stop-color="#0549b3" stop-opacity="0" />
         </radialGradient>
 
-        <linearGradient id="glassGradient" x1="0.2" y1="0" x2="0.8" y2="1">
+        <linearGradient id="glassGradient-lg1" x1="0.2" y1="0" x2="0.8" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98" />
           <stop offset="45%" stop-color="#edf6ff" stop-opacity="0.85" />
           <stop offset="100%" stop-color="#bfe0ff" stop-opacity="0.65" />
         </linearGradient>
 
-        <linearGradient id="glassStrokeGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="glassStrokeGrad-lg1" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="100%" stop-color="#93c5fd" stop-opacity="0.25" />
         </linearGradient>
 
-        <linearGradient id="squircleBorderGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="squircleBorderGrad-lg1" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="35%" stop-color="#70b9ff" stop-opacity="0.3" />
           <stop offset="100%" stop-color="#002b66" stop-opacity="0.5" />
         </linearGradient>
 
-        <linearGradient id="playCutGlowGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="playCutGlowGrad-lg1" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#05439c" stop-opacity="0.9" />
           <stop offset="100%" stop-color="#021c47" stop-opacity="0.95" />
         </linearGradient>
 
-        <linearGradient id="shineGrad" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="shineGrad-lg1" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
           <stop offset="45%" stop-color="#ffffff" stop-opacity="0.04" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.32" />
@@ -1109,11 +1183,11 @@
           <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
         </linearGradient>
 
-        <mask id="squircleMask">
-          <use href="#squircle-shape" fill="#ffffff" />
+        <mask id="squircleMask-lg1">
+          <use href="#squircle-shape-lg1" fill="#ffffff" />
         </mask>
 
-        <filter id="pawAuraGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <filter id="pawAuraGlow-lg1" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="blur" />
           <feColorMatrix type="matrix" values="0 0 0 0 0.55  0 0 0 0 0.85  0 0 0 0 1  0 0 0 0.65 0" />
           <feMerge>
@@ -1122,7 +1196,7 @@
           </feMerge>
         </filter>
 
-        <filter id="grainFilter">
+        <filter id="grainFilter-lg1">
           <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" result="noise" />
           <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0" />
           <feComposite operator="in" in2="SourceGraphic" />
@@ -1130,34 +1204,34 @@
       </defs>
 
       <!-- Отрисовка слоев иконки -->
-      <use href="#squircle-shape" fill="url(#blueBaseGrad)" />
-      <use href="#squircle-shape" fill="url(#topCyanGlow)" />
-      <use href="#squircle-shape" fill="url(#botCoralGlow)" />
-      <use href="#squircle-shape" filter="url(#grainFilter)" opacity="0.6" />
-      <use href="#squircle-shape" fill="none" stroke="url(#squircleBorderGrad)" stroke-width="2" />
+      <use href="#squircle-shape-lg1" fill="url(#blueBaseGrad-lg1)" />
+      <use href="#squircle-shape-lg1" fill="url(#topCyanGlow-lg1)" />
+      <use href="#squircle-shape-lg1" fill="url(#botCoralGlow-lg1)" />
+      <use href="#squircle-shape-lg1" filter="url(#grainFilter-lg1)" opacity="0.6" />
+      <use href="#squircle-shape-lg1" fill="none" stroke="url(#squircleBorderGrad-lg1)" stroke-width="2" />
 
-      <g filter="url(#pawAuraGlow)" opacity="0.75">
-        <use href="#paw-glass-artwork" />
+      <g filter="url(#pawAuraGlow-lg1)" opacity="0.75">
+        <use href="#paw-glass-artwork-lg1" />
       </g>
 
-      <use href="#paw-glass-artwork" />
+      <use href="#paw-glass-artwork-lg1" />
 
-      <g mask="url(#squircleMask)">
-        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
+      <g mask="url(#squircleMask-lg1)">
+        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad-lg1)" />
       </g>
     </svg><svg class="pawflix-wordmark anim-wordmark" viewBox="6 0 254 76" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="textPawGradDark" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="textPawGradDark-lg1" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" />
           <stop offset="100%" stop-color="#d6e8ff" />
         </linearGradient>
 
-        <linearGradient id="textFlixGradDark" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="textFlixGradDark-lg1" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#38a5ff" />
           <stop offset="100%" stop-color="#0d7bf2" />
         </linearGradient>
 
-        <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="sparkGrad-lg1" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#ff7b94" />
           <stop offset="100%" stop-color="#ff3358" />
         </linearGradient>
@@ -1168,18 +1242,18 @@
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textPawGradDark)">Paw</text>
+            fill="url(#textPawGradDark-lg1)">Paw</text>
 
       <text x="148" y="58"
             font-family="var(--font-stack)"
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textFlixGradDark)">fl&#305;x</text>
+            fill="url(#textFlixGradDark-lg1)">fl&#305;x</text>
 
       <path class="anim-spark"
             d="M 238 18 C 236.5 17 234 18 234 20.2 L 234 30.8 C 234 33 236.5 34 238 33 L 246.5 27.7 C 248.5 26.5 248.5 24.5 246.5 23.3 Z"
-            fill="url(#sparkGrad)" />
+            fill="url(#sparkGrad-lg1)" />
     </svg></div>
             <div class="nav-item current focusable" data-nav="home" data-goto="home" title="Главная">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
@@ -1267,7 +1341,7 @@
             <div class="pawflix-logo"><svg class="pawflix-icon" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <!-- Форма суперэллипса (Squircle) -->
-        <path id="squircle-shape" d="
+        <path id="squircle-shape-lg6" d="
           M 160 32
           C 75 32, 32 75, 32 160
           C 32 245, 32 267, 32 352
@@ -1279,19 +1353,19 @@
           Z" />
 
         <!-- Стеклянная лапка с Play-вырезом -->
-        <g id="paw-glass-artwork">
+        <g id="paw-glass-artwork-lg6">
           <path class="anim-toe anim-toe-1"
                 d="M 148 186 C 132 172, 134 140, 152 126 C 170 112, 192 124, 198 144 C 204 164, 192 192, 172 196 C 160 198, 154 192, 148 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg6)" stroke="url(#glassStrokeGrad-lg6)" stroke-width="2" />
           <path class="anim-toe anim-toe-2"
                 d="M 208 136 C 198 116, 208 84, 230 76 C 250 68, 272 84, 276 108 C 280 132, 264 158, 242 160 C 224 162, 214 150, 208 136 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg6)" stroke="url(#glassStrokeGrad-lg6)" stroke-width="2" />
           <path class="anim-toe anim-toe-3"
                 d="M 298 138 C 294 114, 308 86, 330 80 C 352 74, 370 96, 370 120 C 370 144, 350 166, 328 164 C 312 162, 300 152, 298 138 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg6)" stroke="url(#glassStrokeGrad-lg6)" stroke-width="2" />
           <path class="anim-toe anim-toe-4"
                 d="M 374 186 C 362 170, 368 140, 386 130 C 404 120, 424 136, 428 156 C 432 176, 416 200, 396 200 C 384 200, 378 192, 374 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg6)" stroke="url(#glassStrokeGrad-lg6)" stroke-width="2" />
           <path class="anim-pad"
                 fill-rule="evenodd"
                 d="
@@ -1309,56 +1383,56 @@
                   L 278 297
                   C 283 294, 283 286, 278 283
                   Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2.2" />
+                fill="url(#glassGradient-lg6)" stroke="url(#glassStrokeGrad-lg6)" stroke-width="2.2" />
           <path class="anim-play-core"
                 d="M 240 262 C 236 259, 230 262, 230 269 L 230 311 C 230 318, 236 321, 240 318 L 278 297 C 283 294, 283 286, 278 283 Z"
-                fill="url(#playCutGlowGrad)" />
+                fill="url(#playCutGlowGrad-lg6)" />
         </g>
 
         <!-- Градиенты иконки -->
-        <linearGradient id="blueBaseGrad" x1="0.1" y1="0" x2="0.9" y2="1">
+        <linearGradient id="blueBaseGrad-lg6" x1="0.1" y1="0" x2="0.9" y2="1">
           <stop offset="0%" stop-color="#2ca1ff" />
           <stop offset="35%" stop-color="#0d7bf2" />
           <stop offset="75%" stop-color="#0553c7" />
           <stop offset="100%" stop-color="#032a75" />
         </linearGradient>
 
-        <radialGradient id="topCyanGlow" cx="0.25" cy="0.2" r="0.65">
+        <radialGradient id="topCyanGlow-lg6" cx="0.25" cy="0.2" r="0.65">
           <stop offset="0%" stop-color="#9ce6ff" stop-opacity="0.65" />
           <stop offset="45%" stop-color="#38b6ff" stop-opacity="0.30" />
           <stop offset="100%" stop-color="#0d7bf2" stop-opacity="0" />
         </radialGradient>
 
-        <radialGradient id="botCoralGlow" cx="0.85" cy="0.85" r="0.6">
+        <radialGradient id="botCoralGlow-lg6" cx="0.85" cy="0.85" r="0.6">
           <stop offset="0%" stop-color="#ff5470" stop-opacity="0.32" />
           <stop offset="50%" stop-color="#a62657" stop-opacity="0.15" />
           <stop offset="100%" stop-color="#0549b3" stop-opacity="0" />
         </radialGradient>
 
-        <linearGradient id="glassGradient" x1="0.2" y1="0" x2="0.8" y2="1">
+        <linearGradient id="glassGradient-lg6" x1="0.2" y1="0" x2="0.8" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98" />
           <stop offset="45%" stop-color="#edf6ff" stop-opacity="0.85" />
           <stop offset="100%" stop-color="#bfe0ff" stop-opacity="0.65" />
         </linearGradient>
 
-        <linearGradient id="glassStrokeGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="glassStrokeGrad-lg6" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="100%" stop-color="#93c5fd" stop-opacity="0.25" />
         </linearGradient>
 
-        <linearGradient id="squircleBorderGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="squircleBorderGrad-lg6" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="35%" stop-color="#70b9ff" stop-opacity="0.3" />
           <stop offset="100%" stop-color="#002b66" stop-opacity="0.5" />
         </linearGradient>
 
-        <linearGradient id="playCutGlowGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="playCutGlowGrad-lg6" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#05439c" stop-opacity="0.9" />
           <stop offset="100%" stop-color="#021c47" stop-opacity="0.95" />
         </linearGradient>
 
-        <linearGradient id="shineGrad" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="shineGrad-lg6" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
           <stop offset="45%" stop-color="#ffffff" stop-opacity="0.04" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.32" />
@@ -1366,11 +1440,11 @@
           <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
         </linearGradient>
 
-        <mask id="squircleMask">
-          <use href="#squircle-shape" fill="#ffffff" />
+        <mask id="squircleMask-lg6">
+          <use href="#squircle-shape-lg6" fill="#ffffff" />
         </mask>
 
-        <filter id="pawAuraGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <filter id="pawAuraGlow-lg6" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="blur" />
           <feColorMatrix type="matrix" values="0 0 0 0 0.55  0 0 0 0 0.85  0 0 0 0 1  0 0 0 0.65 0" />
           <feMerge>
@@ -1379,7 +1453,7 @@
           </feMerge>
         </filter>
 
-        <filter id="grainFilter">
+        <filter id="grainFilter-lg6">
           <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" result="noise" />
           <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0" />
           <feComposite operator="in" in2="SourceGraphic" />
@@ -1387,34 +1461,34 @@
       </defs>
 
       <!-- Отрисовка слоев иконки -->
-      <use href="#squircle-shape" fill="url(#blueBaseGrad)" />
-      <use href="#squircle-shape" fill="url(#topCyanGlow)" />
-      <use href="#squircle-shape" fill="url(#botCoralGlow)" />
-      <use href="#squircle-shape" filter="url(#grainFilter)" opacity="0.6" />
-      <use href="#squircle-shape" fill="none" stroke="url(#squircleBorderGrad)" stroke-width="2" />
+      <use href="#squircle-shape-lg6" fill="url(#blueBaseGrad-lg6)" />
+      <use href="#squircle-shape-lg6" fill="url(#topCyanGlow-lg6)" />
+      <use href="#squircle-shape-lg6" fill="url(#botCoralGlow-lg6)" />
+      <use href="#squircle-shape-lg6" filter="url(#grainFilter-lg6)" opacity="0.6" />
+      <use href="#squircle-shape-lg6" fill="none" stroke="url(#squircleBorderGrad-lg6)" stroke-width="2" />
 
-      <g filter="url(#pawAuraGlow)" opacity="0.75">
-        <use href="#paw-glass-artwork" />
+      <g filter="url(#pawAuraGlow-lg6)" opacity="0.75">
+        <use href="#paw-glass-artwork-lg6" />
       </g>
 
-      <use href="#paw-glass-artwork" />
+      <use href="#paw-glass-artwork-lg6" />
 
-      <g mask="url(#squircleMask)">
-        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
+      <g mask="url(#squircleMask-lg6)">
+        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad-lg6)" />
       </g>
     </svg><svg class="pawflix-wordmark anim-wordmark" viewBox="6 0 254 76" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="textPawGradDark" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="textPawGradDark-lg6" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" />
           <stop offset="100%" stop-color="#d6e8ff" />
         </linearGradient>
 
-        <linearGradient id="textFlixGradDark" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="textFlixGradDark-lg6" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#38a5ff" />
           <stop offset="100%" stop-color="#0d7bf2" />
         </linearGradient>
 
-        <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="sparkGrad-lg6" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#ff7b94" />
           <stop offset="100%" stop-color="#ff3358" />
         </linearGradient>
@@ -1425,18 +1499,18 @@
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textPawGradDark)">Paw</text>
+            fill="url(#textPawGradDark-lg6)">Paw</text>
 
       <text x="148" y="58"
             font-family="var(--font-stack)"
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textFlixGradDark)">fl&#305;x</text>
+            fill="url(#textFlixGradDark-lg6)">fl&#305;x</text>
 
       <path class="anim-spark"
             d="M 238 18 C 236.5 17 234 18 234 20.2 L 234 30.8 C 234 33 236.5 34 238 33 L 246.5 27.7 C 248.5 26.5 248.5 24.5 246.5 23.3 Z"
-            fill="url(#sparkGrad)" />
+            fill="url(#sparkGrad-lg6)" />
     </svg></div>
             <div class="nav-item focusable" data-nav="home" data-goto="home" title="Главная">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
@@ -1539,7 +1613,7 @@
             <div class="pawflix-logo"><svg class="pawflix-icon" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <!-- Форма суперэллипса (Squircle) -->
-        <path id="squircle-shape" d="
+        <path id="squircle-shape-lg5" d="
           M 160 32
           C 75 32, 32 75, 32 160
           C 32 245, 32 267, 32 352
@@ -1551,19 +1625,19 @@
           Z" />
 
         <!-- Стеклянная лапка с Play-вырезом -->
-        <g id="paw-glass-artwork">
+        <g id="paw-glass-artwork-lg5">
           <path class="anim-toe anim-toe-1"
                 d="M 148 186 C 132 172, 134 140, 152 126 C 170 112, 192 124, 198 144 C 204 164, 192 192, 172 196 C 160 198, 154 192, 148 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg5)" stroke="url(#glassStrokeGrad-lg5)" stroke-width="2" />
           <path class="anim-toe anim-toe-2"
                 d="M 208 136 C 198 116, 208 84, 230 76 C 250 68, 272 84, 276 108 C 280 132, 264 158, 242 160 C 224 162, 214 150, 208 136 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg5)" stroke="url(#glassStrokeGrad-lg5)" stroke-width="2" />
           <path class="anim-toe anim-toe-3"
                 d="M 298 138 C 294 114, 308 86, 330 80 C 352 74, 370 96, 370 120 C 370 144, 350 166, 328 164 C 312 162, 300 152, 298 138 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg5)" stroke="url(#glassStrokeGrad-lg5)" stroke-width="2" />
           <path class="anim-toe anim-toe-4"
                 d="M 374 186 C 362 170, 368 140, 386 130 C 404 120, 424 136, 428 156 C 432 176, 416 200, 396 200 C 384 200, 378 192, 374 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg5)" stroke="url(#glassStrokeGrad-lg5)" stroke-width="2" />
           <path class="anim-pad"
                 fill-rule="evenodd"
                 d="
@@ -1581,56 +1655,56 @@
                   L 278 297
                   C 283 294, 283 286, 278 283
                   Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2.2" />
+                fill="url(#glassGradient-lg5)" stroke="url(#glassStrokeGrad-lg5)" stroke-width="2.2" />
           <path class="anim-play-core"
                 d="M 240 262 C 236 259, 230 262, 230 269 L 230 311 C 230 318, 236 321, 240 318 L 278 297 C 283 294, 283 286, 278 283 Z"
-                fill="url(#playCutGlowGrad)" />
+                fill="url(#playCutGlowGrad-lg5)" />
         </g>
 
         <!-- Градиенты иконки -->
-        <linearGradient id="blueBaseGrad" x1="0.1" y1="0" x2="0.9" y2="1">
+        <linearGradient id="blueBaseGrad-lg5" x1="0.1" y1="0" x2="0.9" y2="1">
           <stop offset="0%" stop-color="#2ca1ff" />
           <stop offset="35%" stop-color="#0d7bf2" />
           <stop offset="75%" stop-color="#0553c7" />
           <stop offset="100%" stop-color="#032a75" />
         </linearGradient>
 
-        <radialGradient id="topCyanGlow" cx="0.25" cy="0.2" r="0.65">
+        <radialGradient id="topCyanGlow-lg5" cx="0.25" cy="0.2" r="0.65">
           <stop offset="0%" stop-color="#9ce6ff" stop-opacity="0.65" />
           <stop offset="45%" stop-color="#38b6ff" stop-opacity="0.30" />
           <stop offset="100%" stop-color="#0d7bf2" stop-opacity="0" />
         </radialGradient>
 
-        <radialGradient id="botCoralGlow" cx="0.85" cy="0.85" r="0.6">
+        <radialGradient id="botCoralGlow-lg5" cx="0.85" cy="0.85" r="0.6">
           <stop offset="0%" stop-color="#ff5470" stop-opacity="0.32" />
           <stop offset="50%" stop-color="#a62657" stop-opacity="0.15" />
           <stop offset="100%" stop-color="#0549b3" stop-opacity="0" />
         </radialGradient>
 
-        <linearGradient id="glassGradient" x1="0.2" y1="0" x2="0.8" y2="1">
+        <linearGradient id="glassGradient-lg5" x1="0.2" y1="0" x2="0.8" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98" />
           <stop offset="45%" stop-color="#edf6ff" stop-opacity="0.85" />
           <stop offset="100%" stop-color="#bfe0ff" stop-opacity="0.65" />
         </linearGradient>
 
-        <linearGradient id="glassStrokeGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="glassStrokeGrad-lg5" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="100%" stop-color="#93c5fd" stop-opacity="0.25" />
         </linearGradient>
 
-        <linearGradient id="squircleBorderGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="squircleBorderGrad-lg5" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="35%" stop-color="#70b9ff" stop-opacity="0.3" />
           <stop offset="100%" stop-color="#002b66" stop-opacity="0.5" />
         </linearGradient>
 
-        <linearGradient id="playCutGlowGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="playCutGlowGrad-lg5" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#05439c" stop-opacity="0.9" />
           <stop offset="100%" stop-color="#021c47" stop-opacity="0.95" />
         </linearGradient>
 
-        <linearGradient id="shineGrad" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="shineGrad-lg5" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
           <stop offset="45%" stop-color="#ffffff" stop-opacity="0.04" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.32" />
@@ -1638,11 +1712,11 @@
           <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
         </linearGradient>
 
-        <mask id="squircleMask">
-          <use href="#squircle-shape" fill="#ffffff" />
+        <mask id="squircleMask-lg5">
+          <use href="#squircle-shape-lg5" fill="#ffffff" />
         </mask>
 
-        <filter id="pawAuraGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <filter id="pawAuraGlow-lg5" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="blur" />
           <feColorMatrix type="matrix" values="0 0 0 0 0.55  0 0 0 0 0.85  0 0 0 0 1  0 0 0 0.65 0" />
           <feMerge>
@@ -1651,7 +1725,7 @@
           </feMerge>
         </filter>
 
-        <filter id="grainFilter">
+        <filter id="grainFilter-lg5">
           <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" result="noise" />
           <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0" />
           <feComposite operator="in" in2="SourceGraphic" />
@@ -1659,34 +1733,34 @@
       </defs>
 
       <!-- Отрисовка слоев иконки -->
-      <use href="#squircle-shape" fill="url(#blueBaseGrad)" />
-      <use href="#squircle-shape" fill="url(#topCyanGlow)" />
-      <use href="#squircle-shape" fill="url(#botCoralGlow)" />
-      <use href="#squircle-shape" filter="url(#grainFilter)" opacity="0.6" />
-      <use href="#squircle-shape" fill="none" stroke="url(#squircleBorderGrad)" stroke-width="2" />
+      <use href="#squircle-shape-lg5" fill="url(#blueBaseGrad-lg5)" />
+      <use href="#squircle-shape-lg5" fill="url(#topCyanGlow-lg5)" />
+      <use href="#squircle-shape-lg5" fill="url(#botCoralGlow-lg5)" />
+      <use href="#squircle-shape-lg5" filter="url(#grainFilter-lg5)" opacity="0.6" />
+      <use href="#squircle-shape-lg5" fill="none" stroke="url(#squircleBorderGrad-lg5)" stroke-width="2" />
 
-      <g filter="url(#pawAuraGlow)" opacity="0.75">
-        <use href="#paw-glass-artwork" />
+      <g filter="url(#pawAuraGlow-lg5)" opacity="0.75">
+        <use href="#paw-glass-artwork-lg5" />
       </g>
 
-      <use href="#paw-glass-artwork" />
+      <use href="#paw-glass-artwork-lg5" />
 
-      <g mask="url(#squircleMask)">
-        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
+      <g mask="url(#squircleMask-lg5)">
+        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad-lg5)" />
       </g>
     </svg><svg class="pawflix-wordmark anim-wordmark" viewBox="6 0 254 76" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="textPawGradDark" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="textPawGradDark-lg5" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" />
           <stop offset="100%" stop-color="#d6e8ff" />
         </linearGradient>
 
-        <linearGradient id="textFlixGradDark" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="textFlixGradDark-lg5" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#38a5ff" />
           <stop offset="100%" stop-color="#0d7bf2" />
         </linearGradient>
 
-        <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="sparkGrad-lg5" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#ff7b94" />
           <stop offset="100%" stop-color="#ff3358" />
         </linearGradient>
@@ -1697,18 +1771,18 @@
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textPawGradDark)">Paw</text>
+            fill="url(#textPawGradDark-lg5)">Paw</text>
 
       <text x="148" y="58"
             font-family="var(--font-stack)"
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textFlixGradDark)">fl&#305;x</text>
+            fill="url(#textFlixGradDark-lg5)">fl&#305;x</text>
 
       <path class="anim-spark"
             d="M 238 18 C 236.5 17 234 18 234 20.2 L 234 30.8 C 234 33 236.5 34 238 33 L 246.5 27.7 C 248.5 26.5 248.5 24.5 246.5 23.3 Z"
-            fill="url(#sparkGrad)" />
+            fill="url(#sparkGrad-lg5)" />
     </svg></div>
             <div class="nav-item focusable" data-nav="home" data-goto="home" title="Главная">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
@@ -1742,6 +1816,7 @@
             <div class="prov-shade"></div>
             <div class="prov-info">
               <div class="prov-kicker" id="prov-title">Источники</div>
+              <img id="prov-logo" class="prov-logo" alt="" style="display:none">
               <div class="prov-htitle" id="prov-head-title"></div>
               <div class="prov-badges">
                 <span class="prov-q" id="prov-q" style="display:none"></span>
@@ -1753,6 +1828,7 @@
           </div>
           <div class="prov-body">
             <button class="src back-row focusable" id="prov-back" type="button">‹ Назад</button>
+            <div class="prov-pills" id="prov-pills"></div>
             <div class="src-list" id="prov-list"><div class="empty-note">Выберите источник на карточке.</div></div>
           </div>
           </div>
@@ -1765,7 +1841,7 @@
             <div class="pawflix-logo"><svg class="pawflix-icon" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <!-- Форма суперэллипса (Squircle) -->
-        <path id="squircle-shape" d="
+        <path id="squircle-shape-lg7" d="
           M 160 32
           C 75 32, 32 75, 32 160
           C 32 245, 32 267, 32 352
@@ -1777,19 +1853,19 @@
           Z" />
 
         <!-- Стеклянная лапка с Play-вырезом -->
-        <g id="paw-glass-artwork">
+        <g id="paw-glass-artwork-lg7">
           <path class="anim-toe anim-toe-1"
                 d="M 148 186 C 132 172, 134 140, 152 126 C 170 112, 192 124, 198 144 C 204 164, 192 192, 172 196 C 160 198, 154 192, 148 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg7)" stroke="url(#glassStrokeGrad-lg7)" stroke-width="2" />
           <path class="anim-toe anim-toe-2"
                 d="M 208 136 C 198 116, 208 84, 230 76 C 250 68, 272 84, 276 108 C 280 132, 264 158, 242 160 C 224 162, 214 150, 208 136 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg7)" stroke="url(#glassStrokeGrad-lg7)" stroke-width="2" />
           <path class="anim-toe anim-toe-3"
                 d="M 298 138 C 294 114, 308 86, 330 80 C 352 74, 370 96, 370 120 C 370 144, 350 166, 328 164 C 312 162, 300 152, 298 138 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg7)" stroke="url(#glassStrokeGrad-lg7)" stroke-width="2" />
           <path class="anim-toe anim-toe-4"
                 d="M 374 186 C 362 170, 368 140, 386 130 C 404 120, 424 136, 428 156 C 432 176, 416 200, 396 200 C 384 200, 378 192, 374 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg7)" stroke="url(#glassStrokeGrad-lg7)" stroke-width="2" />
           <path class="anim-pad"
                 fill-rule="evenodd"
                 d="
@@ -1807,56 +1883,56 @@
                   L 278 297
                   C 283 294, 283 286, 278 283
                   Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2.2" />
+                fill="url(#glassGradient-lg7)" stroke="url(#glassStrokeGrad-lg7)" stroke-width="2.2" />
           <path class="anim-play-core"
                 d="M 240 262 C 236 259, 230 262, 230 269 L 230 311 C 230 318, 236 321, 240 318 L 278 297 C 283 294, 283 286, 278 283 Z"
-                fill="url(#playCutGlowGrad)" />
+                fill="url(#playCutGlowGrad-lg7)" />
         </g>
 
         <!-- Градиенты иконки -->
-        <linearGradient id="blueBaseGrad" x1="0.1" y1="0" x2="0.9" y2="1">
+        <linearGradient id="blueBaseGrad-lg7" x1="0.1" y1="0" x2="0.9" y2="1">
           <stop offset="0%" stop-color="#2ca1ff" />
           <stop offset="35%" stop-color="#0d7bf2" />
           <stop offset="75%" stop-color="#0553c7" />
           <stop offset="100%" stop-color="#032a75" />
         </linearGradient>
 
-        <radialGradient id="topCyanGlow" cx="0.25" cy="0.2" r="0.65">
+        <radialGradient id="topCyanGlow-lg7" cx="0.25" cy="0.2" r="0.65">
           <stop offset="0%" stop-color="#9ce6ff" stop-opacity="0.65" />
           <stop offset="45%" stop-color="#38b6ff" stop-opacity="0.30" />
           <stop offset="100%" stop-color="#0d7bf2" stop-opacity="0" />
         </radialGradient>
 
-        <radialGradient id="botCoralGlow" cx="0.85" cy="0.85" r="0.6">
+        <radialGradient id="botCoralGlow-lg7" cx="0.85" cy="0.85" r="0.6">
           <stop offset="0%" stop-color="#ff5470" stop-opacity="0.32" />
           <stop offset="50%" stop-color="#a62657" stop-opacity="0.15" />
           <stop offset="100%" stop-color="#0549b3" stop-opacity="0" />
         </radialGradient>
 
-        <linearGradient id="glassGradient" x1="0.2" y1="0" x2="0.8" y2="1">
+        <linearGradient id="glassGradient-lg7" x1="0.2" y1="0" x2="0.8" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98" />
           <stop offset="45%" stop-color="#edf6ff" stop-opacity="0.85" />
           <stop offset="100%" stop-color="#bfe0ff" stop-opacity="0.65" />
         </linearGradient>
 
-        <linearGradient id="glassStrokeGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="glassStrokeGrad-lg7" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="100%" stop-color="#93c5fd" stop-opacity="0.25" />
         </linearGradient>
 
-        <linearGradient id="squircleBorderGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="squircleBorderGrad-lg7" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="35%" stop-color="#70b9ff" stop-opacity="0.3" />
           <stop offset="100%" stop-color="#002b66" stop-opacity="0.5" />
         </linearGradient>
 
-        <linearGradient id="playCutGlowGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="playCutGlowGrad-lg7" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#05439c" stop-opacity="0.9" />
           <stop offset="100%" stop-color="#021c47" stop-opacity="0.95" />
         </linearGradient>
 
-        <linearGradient id="shineGrad" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="shineGrad-lg7" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
           <stop offset="45%" stop-color="#ffffff" stop-opacity="0.04" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.32" />
@@ -1864,11 +1940,11 @@
           <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
         </linearGradient>
 
-        <mask id="squircleMask">
-          <use href="#squircle-shape" fill="#ffffff" />
+        <mask id="squircleMask-lg7">
+          <use href="#squircle-shape-lg7" fill="#ffffff" />
         </mask>
 
-        <filter id="pawAuraGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <filter id="pawAuraGlow-lg7" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="blur" />
           <feColorMatrix type="matrix" values="0 0 0 0 0.55  0 0 0 0 0.85  0 0 0 0 1  0 0 0 0.65 0" />
           <feMerge>
@@ -1877,7 +1953,7 @@
           </feMerge>
         </filter>
 
-        <filter id="grainFilter">
+        <filter id="grainFilter-lg7">
           <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" result="noise" />
           <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0" />
           <feComposite operator="in" in2="SourceGraphic" />
@@ -1885,34 +1961,34 @@
       </defs>
 
       <!-- Отрисовка слоев иконки -->
-      <use href="#squircle-shape" fill="url(#blueBaseGrad)" />
-      <use href="#squircle-shape" fill="url(#topCyanGlow)" />
-      <use href="#squircle-shape" fill="url(#botCoralGlow)" />
-      <use href="#squircle-shape" filter="url(#grainFilter)" opacity="0.6" />
-      <use href="#squircle-shape" fill="none" stroke="url(#squircleBorderGrad)" stroke-width="2" />
+      <use href="#squircle-shape-lg7" fill="url(#blueBaseGrad-lg7)" />
+      <use href="#squircle-shape-lg7" fill="url(#topCyanGlow-lg7)" />
+      <use href="#squircle-shape-lg7" fill="url(#botCoralGlow-lg7)" />
+      <use href="#squircle-shape-lg7" filter="url(#grainFilter-lg7)" opacity="0.6" />
+      <use href="#squircle-shape-lg7" fill="none" stroke="url(#squircleBorderGrad-lg7)" stroke-width="2" />
 
-      <g filter="url(#pawAuraGlow)" opacity="0.75">
-        <use href="#paw-glass-artwork" />
+      <g filter="url(#pawAuraGlow-lg7)" opacity="0.75">
+        <use href="#paw-glass-artwork-lg7" />
       </g>
 
-      <use href="#paw-glass-artwork" />
+      <use href="#paw-glass-artwork-lg7" />
 
-      <g mask="url(#squircleMask)">
-        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
+      <g mask="url(#squircleMask-lg7)">
+        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad-lg7)" />
       </g>
     </svg><svg class="pawflix-wordmark anim-wordmark" viewBox="6 0 254 76" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="textPawGradDark" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="textPawGradDark-lg7" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" />
           <stop offset="100%" stop-color="#d6e8ff" />
         </linearGradient>
 
-        <linearGradient id="textFlixGradDark" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="textFlixGradDark-lg7" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#38a5ff" />
           <stop offset="100%" stop-color="#0d7bf2" />
         </linearGradient>
 
-        <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="sparkGrad-lg7" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#ff7b94" />
           <stop offset="100%" stop-color="#ff3358" />
         </linearGradient>
@@ -1923,18 +1999,18 @@
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textPawGradDark)">Paw</text>
+            fill="url(#textPawGradDark-lg7)">Paw</text>
 
       <text x="148" y="58"
             font-family="var(--font-stack)"
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textFlixGradDark)">fl&#305;x</text>
+            fill="url(#textFlixGradDark-lg7)">fl&#305;x</text>
 
       <path class="anim-spark"
             d="M 238 18 C 236.5 17 234 18 234 20.2 L 234 30.8 C 234 33 236.5 34 238 33 L 246.5 27.7 C 248.5 26.5 248.5 24.5 246.5 23.3 Z"
-            fill="url(#sparkGrad)" />
+            fill="url(#sparkGrad-lg7)" />
     </svg></div>
             <div class="nav-item focusable" data-nav="home" data-goto="home" title="Главная">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
@@ -2038,7 +2114,7 @@
             <div class="pawflix-logo"><svg class="pawflix-icon" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <!-- Форма суперэллипса (Squircle) -->
-        <path id="squircle-shape" d="
+        <path id="squircle-shape-lg8" d="
           M 160 32
           C 75 32, 32 75, 32 160
           C 32 245, 32 267, 32 352
@@ -2050,19 +2126,19 @@
           Z" />
 
         <!-- Стеклянная лапка с Play-вырезом -->
-        <g id="paw-glass-artwork">
+        <g id="paw-glass-artwork-lg8">
           <path class="anim-toe anim-toe-1"
                 d="M 148 186 C 132 172, 134 140, 152 126 C 170 112, 192 124, 198 144 C 204 164, 192 192, 172 196 C 160 198, 154 192, 148 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg8)" stroke="url(#glassStrokeGrad-lg8)" stroke-width="2" />
           <path class="anim-toe anim-toe-2"
                 d="M 208 136 C 198 116, 208 84, 230 76 C 250 68, 272 84, 276 108 C 280 132, 264 158, 242 160 C 224 162, 214 150, 208 136 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg8)" stroke="url(#glassStrokeGrad-lg8)" stroke-width="2" />
           <path class="anim-toe anim-toe-3"
                 d="M 298 138 C 294 114, 308 86, 330 80 C 352 74, 370 96, 370 120 C 370 144, 350 166, 328 164 C 312 162, 300 152, 298 138 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg8)" stroke="url(#glassStrokeGrad-lg8)" stroke-width="2" />
           <path class="anim-toe anim-toe-4"
                 d="M 374 186 C 362 170, 368 140, 386 130 C 404 120, 424 136, 428 156 C 432 176, 416 200, 396 200 C 384 200, 378 192, 374 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg8)" stroke="url(#glassStrokeGrad-lg8)" stroke-width="2" />
           <path class="anim-pad"
                 fill-rule="evenodd"
                 d="
@@ -2080,56 +2156,56 @@
                   L 278 297
                   C 283 294, 283 286, 278 283
                   Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2.2" />
+                fill="url(#glassGradient-lg8)" stroke="url(#glassStrokeGrad-lg8)" stroke-width="2.2" />
           <path class="anim-play-core"
                 d="M 240 262 C 236 259, 230 262, 230 269 L 230 311 C 230 318, 236 321, 240 318 L 278 297 C 283 294, 283 286, 278 283 Z"
-                fill="url(#playCutGlowGrad)" />
+                fill="url(#playCutGlowGrad-lg8)" />
         </g>
 
         <!-- Градиенты иконки -->
-        <linearGradient id="blueBaseGrad" x1="0.1" y1="0" x2="0.9" y2="1">
+        <linearGradient id="blueBaseGrad-lg8" x1="0.1" y1="0" x2="0.9" y2="1">
           <stop offset="0%" stop-color="#2ca1ff" />
           <stop offset="35%" stop-color="#0d7bf2" />
           <stop offset="75%" stop-color="#0553c7" />
           <stop offset="100%" stop-color="#032a75" />
         </linearGradient>
 
-        <radialGradient id="topCyanGlow" cx="0.25" cy="0.2" r="0.65">
+        <radialGradient id="topCyanGlow-lg8" cx="0.25" cy="0.2" r="0.65">
           <stop offset="0%" stop-color="#9ce6ff" stop-opacity="0.65" />
           <stop offset="45%" stop-color="#38b6ff" stop-opacity="0.30" />
           <stop offset="100%" stop-color="#0d7bf2" stop-opacity="0" />
         </radialGradient>
 
-        <radialGradient id="botCoralGlow" cx="0.85" cy="0.85" r="0.6">
+        <radialGradient id="botCoralGlow-lg8" cx="0.85" cy="0.85" r="0.6">
           <stop offset="0%" stop-color="#ff5470" stop-opacity="0.32" />
           <stop offset="50%" stop-color="#a62657" stop-opacity="0.15" />
           <stop offset="100%" stop-color="#0549b3" stop-opacity="0" />
         </radialGradient>
 
-        <linearGradient id="glassGradient" x1="0.2" y1="0" x2="0.8" y2="1">
+        <linearGradient id="glassGradient-lg8" x1="0.2" y1="0" x2="0.8" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98" />
           <stop offset="45%" stop-color="#edf6ff" stop-opacity="0.85" />
           <stop offset="100%" stop-color="#bfe0ff" stop-opacity="0.65" />
         </linearGradient>
 
-        <linearGradient id="glassStrokeGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="glassStrokeGrad-lg8" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="100%" stop-color="#93c5fd" stop-opacity="0.25" />
         </linearGradient>
 
-        <linearGradient id="squircleBorderGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="squircleBorderGrad-lg8" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="35%" stop-color="#70b9ff" stop-opacity="0.3" />
           <stop offset="100%" stop-color="#002b66" stop-opacity="0.5" />
         </linearGradient>
 
-        <linearGradient id="playCutGlowGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="playCutGlowGrad-lg8" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#05439c" stop-opacity="0.9" />
           <stop offset="100%" stop-color="#021c47" stop-opacity="0.95" />
         </linearGradient>
 
-        <linearGradient id="shineGrad" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="shineGrad-lg8" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
           <stop offset="45%" stop-color="#ffffff" stop-opacity="0.04" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.32" />
@@ -2137,11 +2213,11 @@
           <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
         </linearGradient>
 
-        <mask id="squircleMask">
-          <use href="#squircle-shape" fill="#ffffff" />
+        <mask id="squircleMask-lg8">
+          <use href="#squircle-shape-lg8" fill="#ffffff" />
         </mask>
 
-        <filter id="pawAuraGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <filter id="pawAuraGlow-lg8" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="blur" />
           <feColorMatrix type="matrix" values="0 0 0 0 0.55  0 0 0 0 0.85  0 0 0 0 1  0 0 0 0.65 0" />
           <feMerge>
@@ -2150,7 +2226,7 @@
           </feMerge>
         </filter>
 
-        <filter id="grainFilter">
+        <filter id="grainFilter-lg8">
           <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" result="noise" />
           <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0" />
           <feComposite operator="in" in2="SourceGraphic" />
@@ -2158,34 +2234,34 @@
       </defs>
 
       <!-- Отрисовка слоев иконки -->
-      <use href="#squircle-shape" fill="url(#blueBaseGrad)" />
-      <use href="#squircle-shape" fill="url(#topCyanGlow)" />
-      <use href="#squircle-shape" fill="url(#botCoralGlow)" />
-      <use href="#squircle-shape" filter="url(#grainFilter)" opacity="0.6" />
-      <use href="#squircle-shape" fill="none" stroke="url(#squircleBorderGrad)" stroke-width="2" />
+      <use href="#squircle-shape-lg8" fill="url(#blueBaseGrad-lg8)" />
+      <use href="#squircle-shape-lg8" fill="url(#topCyanGlow-lg8)" />
+      <use href="#squircle-shape-lg8" fill="url(#botCoralGlow-lg8)" />
+      <use href="#squircle-shape-lg8" filter="url(#grainFilter-lg8)" opacity="0.6" />
+      <use href="#squircle-shape-lg8" fill="none" stroke="url(#squircleBorderGrad-lg8)" stroke-width="2" />
 
-      <g filter="url(#pawAuraGlow)" opacity="0.75">
-        <use href="#paw-glass-artwork" />
+      <g filter="url(#pawAuraGlow-lg8)" opacity="0.75">
+        <use href="#paw-glass-artwork-lg8" />
       </g>
 
-      <use href="#paw-glass-artwork" />
+      <use href="#paw-glass-artwork-lg8" />
 
-      <g mask="url(#squircleMask)">
-        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
+      <g mask="url(#squircleMask-lg8)">
+        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad-lg8)" />
       </g>
     </svg><svg class="pawflix-wordmark anim-wordmark" viewBox="6 0 254 76" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="textPawGradDark" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="textPawGradDark-lg8" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" />
           <stop offset="100%" stop-color="#d6e8ff" />
         </linearGradient>
 
-        <linearGradient id="textFlixGradDark" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="textFlixGradDark-lg8" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#38a5ff" />
           <stop offset="100%" stop-color="#0d7bf2" />
         </linearGradient>
 
-        <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="sparkGrad-lg8" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#ff7b94" />
           <stop offset="100%" stop-color="#ff3358" />
         </linearGradient>
@@ -2196,18 +2272,18 @@
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textPawGradDark)">Paw</text>
+            fill="url(#textPawGradDark-lg8)">Paw</text>
 
       <text x="148" y="58"
             font-family="var(--font-stack)"
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textFlixGradDark)">fl&#305;x</text>
+            fill="url(#textFlixGradDark-lg8)">fl&#305;x</text>
 
       <path class="anim-spark"
             d="M 238 18 C 236.5 17 234 18 234 20.2 L 234 30.8 C 234 33 236.5 34 238 33 L 246.5 27.7 C 248.5 26.5 248.5 24.5 246.5 23.3 Z"
-            fill="url(#sparkGrad)" />
+            fill="url(#sparkGrad-lg8)" />
     </svg></div>
             <div class="nav-item focusable" data-nav="home" data-goto="home" title="Главная">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
@@ -2312,7 +2388,7 @@
             <div class="pawflix-logo"><svg class="pawflix-icon" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <!-- Форма суперэллипса (Squircle) -->
-        <path id="squircle-shape" d="
+        <path id="squircle-shape-lg2" d="
           M 160 32
           C 75 32, 32 75, 32 160
           C 32 245, 32 267, 32 352
@@ -2324,19 +2400,19 @@
           Z" />
 
         <!-- Стеклянная лапка с Play-вырезом -->
-        <g id="paw-glass-artwork">
+        <g id="paw-glass-artwork-lg2">
           <path class="anim-toe anim-toe-1"
                 d="M 148 186 C 132 172, 134 140, 152 126 C 170 112, 192 124, 198 144 C 204 164, 192 192, 172 196 C 160 198, 154 192, 148 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg2)" stroke="url(#glassStrokeGrad-lg2)" stroke-width="2" />
           <path class="anim-toe anim-toe-2"
                 d="M 208 136 C 198 116, 208 84, 230 76 C 250 68, 272 84, 276 108 C 280 132, 264 158, 242 160 C 224 162, 214 150, 208 136 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg2)" stroke="url(#glassStrokeGrad-lg2)" stroke-width="2" />
           <path class="anim-toe anim-toe-3"
                 d="M 298 138 C 294 114, 308 86, 330 80 C 352 74, 370 96, 370 120 C 370 144, 350 166, 328 164 C 312 162, 300 152, 298 138 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg2)" stroke="url(#glassStrokeGrad-lg2)" stroke-width="2" />
           <path class="anim-toe anim-toe-4"
                 d="M 374 186 C 362 170, 368 140, 386 130 C 404 120, 424 136, 428 156 C 432 176, 416 200, 396 200 C 384 200, 378 192, 374 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg2)" stroke="url(#glassStrokeGrad-lg2)" stroke-width="2" />
           <path class="anim-pad"
                 fill-rule="evenodd"
                 d="
@@ -2354,56 +2430,56 @@
                   L 278 297
                   C 283 294, 283 286, 278 283
                   Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2.2" />
+                fill="url(#glassGradient-lg2)" stroke="url(#glassStrokeGrad-lg2)" stroke-width="2.2" />
           <path class="anim-play-core"
                 d="M 240 262 C 236 259, 230 262, 230 269 L 230 311 C 230 318, 236 321, 240 318 L 278 297 C 283 294, 283 286, 278 283 Z"
-                fill="url(#playCutGlowGrad)" />
+                fill="url(#playCutGlowGrad-lg2)" />
         </g>
 
         <!-- Градиенты иконки -->
-        <linearGradient id="blueBaseGrad" x1="0.1" y1="0" x2="0.9" y2="1">
+        <linearGradient id="blueBaseGrad-lg2" x1="0.1" y1="0" x2="0.9" y2="1">
           <stop offset="0%" stop-color="#2ca1ff" />
           <stop offset="35%" stop-color="#0d7bf2" />
           <stop offset="75%" stop-color="#0553c7" />
           <stop offset="100%" stop-color="#032a75" />
         </linearGradient>
 
-        <radialGradient id="topCyanGlow" cx="0.25" cy="0.2" r="0.65">
+        <radialGradient id="topCyanGlow-lg2" cx="0.25" cy="0.2" r="0.65">
           <stop offset="0%" stop-color="#9ce6ff" stop-opacity="0.65" />
           <stop offset="45%" stop-color="#38b6ff" stop-opacity="0.30" />
           <stop offset="100%" stop-color="#0d7bf2" stop-opacity="0" />
         </radialGradient>
 
-        <radialGradient id="botCoralGlow" cx="0.85" cy="0.85" r="0.6">
+        <radialGradient id="botCoralGlow-lg2" cx="0.85" cy="0.85" r="0.6">
           <stop offset="0%" stop-color="#ff5470" stop-opacity="0.32" />
           <stop offset="50%" stop-color="#a62657" stop-opacity="0.15" />
           <stop offset="100%" stop-color="#0549b3" stop-opacity="0" />
         </radialGradient>
 
-        <linearGradient id="glassGradient" x1="0.2" y1="0" x2="0.8" y2="1">
+        <linearGradient id="glassGradient-lg2" x1="0.2" y1="0" x2="0.8" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98" />
           <stop offset="45%" stop-color="#edf6ff" stop-opacity="0.85" />
           <stop offset="100%" stop-color="#bfe0ff" stop-opacity="0.65" />
         </linearGradient>
 
-        <linearGradient id="glassStrokeGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="glassStrokeGrad-lg2" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="100%" stop-color="#93c5fd" stop-opacity="0.25" />
         </linearGradient>
 
-        <linearGradient id="squircleBorderGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="squircleBorderGrad-lg2" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="35%" stop-color="#70b9ff" stop-opacity="0.3" />
           <stop offset="100%" stop-color="#002b66" stop-opacity="0.5" />
         </linearGradient>
 
-        <linearGradient id="playCutGlowGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="playCutGlowGrad-lg2" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#05439c" stop-opacity="0.9" />
           <stop offset="100%" stop-color="#021c47" stop-opacity="0.95" />
         </linearGradient>
 
-        <linearGradient id="shineGrad" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="shineGrad-lg2" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
           <stop offset="45%" stop-color="#ffffff" stop-opacity="0.04" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.32" />
@@ -2411,11 +2487,11 @@
           <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
         </linearGradient>
 
-        <mask id="squircleMask">
-          <use href="#squircle-shape" fill="#ffffff" />
+        <mask id="squircleMask-lg2">
+          <use href="#squircle-shape-lg2" fill="#ffffff" />
         </mask>
 
-        <filter id="pawAuraGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <filter id="pawAuraGlow-lg2" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="blur" />
           <feColorMatrix type="matrix" values="0 0 0 0 0.55  0 0 0 0 0.85  0 0 0 0 1  0 0 0 0.65 0" />
           <feMerge>
@@ -2424,7 +2500,7 @@
           </feMerge>
         </filter>
 
-        <filter id="grainFilter">
+        <filter id="grainFilter-lg2">
           <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" result="noise" />
           <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0" />
           <feComposite operator="in" in2="SourceGraphic" />
@@ -2432,34 +2508,34 @@
       </defs>
 
       <!-- Отрисовка слоев иконки -->
-      <use href="#squircle-shape" fill="url(#blueBaseGrad)" />
-      <use href="#squircle-shape" fill="url(#topCyanGlow)" />
-      <use href="#squircle-shape" fill="url(#botCoralGlow)" />
-      <use href="#squircle-shape" filter="url(#grainFilter)" opacity="0.6" />
-      <use href="#squircle-shape" fill="none" stroke="url(#squircleBorderGrad)" stroke-width="2" />
+      <use href="#squircle-shape-lg2" fill="url(#blueBaseGrad-lg2)" />
+      <use href="#squircle-shape-lg2" fill="url(#topCyanGlow-lg2)" />
+      <use href="#squircle-shape-lg2" fill="url(#botCoralGlow-lg2)" />
+      <use href="#squircle-shape-lg2" filter="url(#grainFilter-lg2)" opacity="0.6" />
+      <use href="#squircle-shape-lg2" fill="none" stroke="url(#squircleBorderGrad-lg2)" stroke-width="2" />
 
-      <g filter="url(#pawAuraGlow)" opacity="0.75">
-        <use href="#paw-glass-artwork" />
+      <g filter="url(#pawAuraGlow-lg2)" opacity="0.75">
+        <use href="#paw-glass-artwork-lg2" />
       </g>
 
-      <use href="#paw-glass-artwork" />
+      <use href="#paw-glass-artwork-lg2" />
 
-      <g mask="url(#squircleMask)">
-        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
+      <g mask="url(#squircleMask-lg2)">
+        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad-lg2)" />
       </g>
     </svg><svg class="pawflix-wordmark anim-wordmark" viewBox="6 0 254 76" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="textPawGradDark" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="textPawGradDark-lg2" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" />
           <stop offset="100%" stop-color="#d6e8ff" />
         </linearGradient>
 
-        <linearGradient id="textFlixGradDark" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="textFlixGradDark-lg2" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#38a5ff" />
           <stop offset="100%" stop-color="#0d7bf2" />
         </linearGradient>
 
-        <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="sparkGrad-lg2" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#ff7b94" />
           <stop offset="100%" stop-color="#ff3358" />
         </linearGradient>
@@ -2470,18 +2546,18 @@
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textPawGradDark)">Paw</text>
+            fill="url(#textPawGradDark-lg2)">Paw</text>
 
       <text x="148" y="58"
             font-family="var(--font-stack)"
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textFlixGradDark)">fl&#305;x</text>
+            fill="url(#textFlixGradDark-lg2)">fl&#305;x</text>
 
       <path class="anim-spark"
             d="M 238 18 C 236.5 17 234 18 234 20.2 L 234 30.8 C 234 33 236.5 34 238 33 L 246.5 27.7 C 248.5 26.5 248.5 24.5 246.5 23.3 Z"
-            fill="url(#sparkGrad)" />
+            fill="url(#sparkGrad-lg2)" />
     </svg></div>
             <div class="nav-item focusable" data-nav="home" data-goto="home" title="Главная">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
@@ -2545,7 +2621,7 @@
             <div class="pawflix-logo"><svg class="pawflix-icon" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <!-- Форма суперэллипса (Squircle) -->
-        <path id="squircle-shape" d="
+        <path id="squircle-shape-lg3" d="
           M 160 32
           C 75 32, 32 75, 32 160
           C 32 245, 32 267, 32 352
@@ -2557,19 +2633,19 @@
           Z" />
 
         <!-- Стеклянная лапка с Play-вырезом -->
-        <g id="paw-glass-artwork">
+        <g id="paw-glass-artwork-lg3">
           <path class="anim-toe anim-toe-1"
                 d="M 148 186 C 132 172, 134 140, 152 126 C 170 112, 192 124, 198 144 C 204 164, 192 192, 172 196 C 160 198, 154 192, 148 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg3)" stroke="url(#glassStrokeGrad-lg3)" stroke-width="2" />
           <path class="anim-toe anim-toe-2"
                 d="M 208 136 C 198 116, 208 84, 230 76 C 250 68, 272 84, 276 108 C 280 132, 264 158, 242 160 C 224 162, 214 150, 208 136 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg3)" stroke="url(#glassStrokeGrad-lg3)" stroke-width="2" />
           <path class="anim-toe anim-toe-3"
                 d="M 298 138 C 294 114, 308 86, 330 80 C 352 74, 370 96, 370 120 C 370 144, 350 166, 328 164 C 312 162, 300 152, 298 138 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg3)" stroke="url(#glassStrokeGrad-lg3)" stroke-width="2" />
           <path class="anim-toe anim-toe-4"
                 d="M 374 186 C 362 170, 368 140, 386 130 C 404 120, 424 136, 428 156 C 432 176, 416 200, 396 200 C 384 200, 378 192, 374 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg3)" stroke="url(#glassStrokeGrad-lg3)" stroke-width="2" />
           <path class="anim-pad"
                 fill-rule="evenodd"
                 d="
@@ -2587,56 +2663,56 @@
                   L 278 297
                   C 283 294, 283 286, 278 283
                   Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2.2" />
+                fill="url(#glassGradient-lg3)" stroke="url(#glassStrokeGrad-lg3)" stroke-width="2.2" />
           <path class="anim-play-core"
                 d="M 240 262 C 236 259, 230 262, 230 269 L 230 311 C 230 318, 236 321, 240 318 L 278 297 C 283 294, 283 286, 278 283 Z"
-                fill="url(#playCutGlowGrad)" />
+                fill="url(#playCutGlowGrad-lg3)" />
         </g>
 
         <!-- Градиенты иконки -->
-        <linearGradient id="blueBaseGrad" x1="0.1" y1="0" x2="0.9" y2="1">
+        <linearGradient id="blueBaseGrad-lg3" x1="0.1" y1="0" x2="0.9" y2="1">
           <stop offset="0%" stop-color="#2ca1ff" />
           <stop offset="35%" stop-color="#0d7bf2" />
           <stop offset="75%" stop-color="#0553c7" />
           <stop offset="100%" stop-color="#032a75" />
         </linearGradient>
 
-        <radialGradient id="topCyanGlow" cx="0.25" cy="0.2" r="0.65">
+        <radialGradient id="topCyanGlow-lg3" cx="0.25" cy="0.2" r="0.65">
           <stop offset="0%" stop-color="#9ce6ff" stop-opacity="0.65" />
           <stop offset="45%" stop-color="#38b6ff" stop-opacity="0.30" />
           <stop offset="100%" stop-color="#0d7bf2" stop-opacity="0" />
         </radialGradient>
 
-        <radialGradient id="botCoralGlow" cx="0.85" cy="0.85" r="0.6">
+        <radialGradient id="botCoralGlow-lg3" cx="0.85" cy="0.85" r="0.6">
           <stop offset="0%" stop-color="#ff5470" stop-opacity="0.32" />
           <stop offset="50%" stop-color="#a62657" stop-opacity="0.15" />
           <stop offset="100%" stop-color="#0549b3" stop-opacity="0" />
         </radialGradient>
 
-        <linearGradient id="glassGradient" x1="0.2" y1="0" x2="0.8" y2="1">
+        <linearGradient id="glassGradient-lg3" x1="0.2" y1="0" x2="0.8" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98" />
           <stop offset="45%" stop-color="#edf6ff" stop-opacity="0.85" />
           <stop offset="100%" stop-color="#bfe0ff" stop-opacity="0.65" />
         </linearGradient>
 
-        <linearGradient id="glassStrokeGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="glassStrokeGrad-lg3" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="100%" stop-color="#93c5fd" stop-opacity="0.25" />
         </linearGradient>
 
-        <linearGradient id="squircleBorderGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="squircleBorderGrad-lg3" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="35%" stop-color="#70b9ff" stop-opacity="0.3" />
           <stop offset="100%" stop-color="#002b66" stop-opacity="0.5" />
         </linearGradient>
 
-        <linearGradient id="playCutGlowGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="playCutGlowGrad-lg3" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#05439c" stop-opacity="0.9" />
           <stop offset="100%" stop-color="#021c47" stop-opacity="0.95" />
         </linearGradient>
 
-        <linearGradient id="shineGrad" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="shineGrad-lg3" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
           <stop offset="45%" stop-color="#ffffff" stop-opacity="0.04" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.32" />
@@ -2644,11 +2720,11 @@
           <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
         </linearGradient>
 
-        <mask id="squircleMask">
-          <use href="#squircle-shape" fill="#ffffff" />
+        <mask id="squircleMask-lg3">
+          <use href="#squircle-shape-lg3" fill="#ffffff" />
         </mask>
 
-        <filter id="pawAuraGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <filter id="pawAuraGlow-lg3" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="blur" />
           <feColorMatrix type="matrix" values="0 0 0 0 0.55  0 0 0 0 0.85  0 0 0 0 1  0 0 0 0.65 0" />
           <feMerge>
@@ -2657,7 +2733,7 @@
           </feMerge>
         </filter>
 
-        <filter id="grainFilter">
+        <filter id="grainFilter-lg3">
           <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" result="noise" />
           <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0" />
           <feComposite operator="in" in2="SourceGraphic" />
@@ -2665,34 +2741,34 @@
       </defs>
 
       <!-- Отрисовка слоев иконки -->
-      <use href="#squircle-shape" fill="url(#blueBaseGrad)" />
-      <use href="#squircle-shape" fill="url(#topCyanGlow)" />
-      <use href="#squircle-shape" fill="url(#botCoralGlow)" />
-      <use href="#squircle-shape" filter="url(#grainFilter)" opacity="0.6" />
-      <use href="#squircle-shape" fill="none" stroke="url(#squircleBorderGrad)" stroke-width="2" />
+      <use href="#squircle-shape-lg3" fill="url(#blueBaseGrad-lg3)" />
+      <use href="#squircle-shape-lg3" fill="url(#topCyanGlow-lg3)" />
+      <use href="#squircle-shape-lg3" fill="url(#botCoralGlow-lg3)" />
+      <use href="#squircle-shape-lg3" filter="url(#grainFilter-lg3)" opacity="0.6" />
+      <use href="#squircle-shape-lg3" fill="none" stroke="url(#squircleBorderGrad-lg3)" stroke-width="2" />
 
-      <g filter="url(#pawAuraGlow)" opacity="0.75">
-        <use href="#paw-glass-artwork" />
+      <g filter="url(#pawAuraGlow-lg3)" opacity="0.75">
+        <use href="#paw-glass-artwork-lg3" />
       </g>
 
-      <use href="#paw-glass-artwork" />
+      <use href="#paw-glass-artwork-lg3" />
 
-      <g mask="url(#squircleMask)">
-        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
+      <g mask="url(#squircleMask-lg3)">
+        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad-lg3)" />
       </g>
     </svg><svg class="pawflix-wordmark anim-wordmark" viewBox="6 0 254 76" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="textPawGradDark" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="textPawGradDark-lg3" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" />
           <stop offset="100%" stop-color="#d6e8ff" />
         </linearGradient>
 
-        <linearGradient id="textFlixGradDark" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="textFlixGradDark-lg3" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#38a5ff" />
           <stop offset="100%" stop-color="#0d7bf2" />
         </linearGradient>
 
-        <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="sparkGrad-lg3" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#ff7b94" />
           <stop offset="100%" stop-color="#ff3358" />
         </linearGradient>
@@ -2703,18 +2779,18 @@
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textPawGradDark)">Paw</text>
+            fill="url(#textPawGradDark-lg3)">Paw</text>
 
       <text x="148" y="58"
             font-family="var(--font-stack)"
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textFlixGradDark)">fl&#305;x</text>
+            fill="url(#textFlixGradDark-lg3)">fl&#305;x</text>
 
       <path class="anim-spark"
             d="M 238 18 C 236.5 17 234 18 234 20.2 L 234 30.8 C 234 33 236.5 34 238 33 L 246.5 27.7 C 248.5 26.5 248.5 24.5 246.5 23.3 Z"
-            fill="url(#sparkGrad)" />
+            fill="url(#sparkGrad-lg3)" />
     </svg></div>
             <div class="nav-item focusable" data-nav="home" data-goto="home" title="Главная">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
@@ -2768,7 +2844,7 @@
             <div class="pawflix-logo"><svg class="pawflix-icon" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <!-- Форма суперэллипса (Squircle) -->
-        <path id="squircle-shape" d="
+        <path id="squircle-shape-lg4" d="
           M 160 32
           C 75 32, 32 75, 32 160
           C 32 245, 32 267, 32 352
@@ -2780,19 +2856,19 @@
           Z" />
 
         <!-- Стеклянная лапка с Play-вырезом -->
-        <g id="paw-glass-artwork">
+        <g id="paw-glass-artwork-lg4">
           <path class="anim-toe anim-toe-1"
                 d="M 148 186 C 132 172, 134 140, 152 126 C 170 112, 192 124, 198 144 C 204 164, 192 192, 172 196 C 160 198, 154 192, 148 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg4)" stroke="url(#glassStrokeGrad-lg4)" stroke-width="2" />
           <path class="anim-toe anim-toe-2"
                 d="M 208 136 C 198 116, 208 84, 230 76 C 250 68, 272 84, 276 108 C 280 132, 264 158, 242 160 C 224 162, 214 150, 208 136 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg4)" stroke="url(#glassStrokeGrad-lg4)" stroke-width="2" />
           <path class="anim-toe anim-toe-3"
                 d="M 298 138 C 294 114, 308 86, 330 80 C 352 74, 370 96, 370 120 C 370 144, 350 166, 328 164 C 312 162, 300 152, 298 138 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg4)" stroke="url(#glassStrokeGrad-lg4)" stroke-width="2" />
           <path class="anim-toe anim-toe-4"
                 d="M 374 186 C 362 170, 368 140, 386 130 C 404 120, 424 136, 428 156 C 432 176, 416 200, 396 200 C 384 200, 378 192, 374 186 Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2" />
+                fill="url(#glassGradient-lg4)" stroke="url(#glassStrokeGrad-lg4)" stroke-width="2" />
           <path class="anim-pad"
                 fill-rule="evenodd"
                 d="
@@ -2810,56 +2886,56 @@
                   L 278 297
                   C 283 294, 283 286, 278 283
                   Z"
-                fill="url(#glassGradient)" stroke="url(#glassStrokeGrad)" stroke-width="2.2" />
+                fill="url(#glassGradient-lg4)" stroke="url(#glassStrokeGrad-lg4)" stroke-width="2.2" />
           <path class="anim-play-core"
                 d="M 240 262 C 236 259, 230 262, 230 269 L 230 311 C 230 318, 236 321, 240 318 L 278 297 C 283 294, 283 286, 278 283 Z"
-                fill="url(#playCutGlowGrad)" />
+                fill="url(#playCutGlowGrad-lg4)" />
         </g>
 
         <!-- Градиенты иконки -->
-        <linearGradient id="blueBaseGrad" x1="0.1" y1="0" x2="0.9" y2="1">
+        <linearGradient id="blueBaseGrad-lg4" x1="0.1" y1="0" x2="0.9" y2="1">
           <stop offset="0%" stop-color="#2ca1ff" />
           <stop offset="35%" stop-color="#0d7bf2" />
           <stop offset="75%" stop-color="#0553c7" />
           <stop offset="100%" stop-color="#032a75" />
         </linearGradient>
 
-        <radialGradient id="topCyanGlow" cx="0.25" cy="0.2" r="0.65">
+        <radialGradient id="topCyanGlow-lg4" cx="0.25" cy="0.2" r="0.65">
           <stop offset="0%" stop-color="#9ce6ff" stop-opacity="0.65" />
           <stop offset="45%" stop-color="#38b6ff" stop-opacity="0.30" />
           <stop offset="100%" stop-color="#0d7bf2" stop-opacity="0" />
         </radialGradient>
 
-        <radialGradient id="botCoralGlow" cx="0.85" cy="0.85" r="0.6">
+        <radialGradient id="botCoralGlow-lg4" cx="0.85" cy="0.85" r="0.6">
           <stop offset="0%" stop-color="#ff5470" stop-opacity="0.32" />
           <stop offset="50%" stop-color="#a62657" stop-opacity="0.15" />
           <stop offset="100%" stop-color="#0549b3" stop-opacity="0" />
         </radialGradient>
 
-        <linearGradient id="glassGradient" x1="0.2" y1="0" x2="0.8" y2="1">
+        <linearGradient id="glassGradient-lg4" x1="0.2" y1="0" x2="0.8" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98" />
           <stop offset="45%" stop-color="#edf6ff" stop-opacity="0.85" />
           <stop offset="100%" stop-color="#bfe0ff" stop-opacity="0.65" />
         </linearGradient>
 
-        <linearGradient id="glassStrokeGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="glassStrokeGrad-lg4" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="100%" stop-color="#93c5fd" stop-opacity="0.25" />
         </linearGradient>
 
-        <linearGradient id="squircleBorderGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="squircleBorderGrad-lg4" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5" />
           <stop offset="35%" stop-color="#70b9ff" stop-opacity="0.3" />
           <stop offset="100%" stop-color="#002b66" stop-opacity="0.5" />
         </linearGradient>
 
-        <linearGradient id="playCutGlowGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="playCutGlowGrad-lg4" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#05439c" stop-opacity="0.9" />
           <stop offset="100%" stop-color="#021c47" stop-opacity="0.95" />
         </linearGradient>
 
-        <linearGradient id="shineGrad" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="shineGrad-lg4" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
           <stop offset="45%" stop-color="#ffffff" stop-opacity="0.04" />
           <stop offset="50%" stop-color="#ffffff" stop-opacity="0.32" />
@@ -2867,11 +2943,11 @@
           <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
         </linearGradient>
 
-        <mask id="squircleMask">
-          <use href="#squircle-shape" fill="#ffffff" />
+        <mask id="squircleMask-lg4">
+          <use href="#squircle-shape-lg4" fill="#ffffff" />
         </mask>
 
-        <filter id="pawAuraGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <filter id="pawAuraGlow-lg4" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="blur" />
           <feColorMatrix type="matrix" values="0 0 0 0 0.55  0 0 0 0 0.85  0 0 0 0 1  0 0 0 0.65 0" />
           <feMerge>
@@ -2880,7 +2956,7 @@
           </feMerge>
         </filter>
 
-        <filter id="grainFilter">
+        <filter id="grainFilter-lg4">
           <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" result="noise" />
           <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0" />
           <feComposite operator="in" in2="SourceGraphic" />
@@ -2888,34 +2964,34 @@
       </defs>
 
       <!-- Отрисовка слоев иконки -->
-      <use href="#squircle-shape" fill="url(#blueBaseGrad)" />
-      <use href="#squircle-shape" fill="url(#topCyanGlow)" />
-      <use href="#squircle-shape" fill="url(#botCoralGlow)" />
-      <use href="#squircle-shape" filter="url(#grainFilter)" opacity="0.6" />
-      <use href="#squircle-shape" fill="none" stroke="url(#squircleBorderGrad)" stroke-width="2" />
+      <use href="#squircle-shape-lg4" fill="url(#blueBaseGrad-lg4)" />
+      <use href="#squircle-shape-lg4" fill="url(#topCyanGlow-lg4)" />
+      <use href="#squircle-shape-lg4" fill="url(#botCoralGlow-lg4)" />
+      <use href="#squircle-shape-lg4" filter="url(#grainFilter-lg4)" opacity="0.6" />
+      <use href="#squircle-shape-lg4" fill="none" stroke="url(#squircleBorderGrad-lg4)" stroke-width="2" />
 
-      <g filter="url(#pawAuraGlow)" opacity="0.75">
-        <use href="#paw-glass-artwork" />
+      <g filter="url(#pawAuraGlow-lg4)" opacity="0.75">
+        <use href="#paw-glass-artwork-lg4" />
       </g>
 
-      <use href="#paw-glass-artwork" />
+      <use href="#paw-glass-artwork-lg4" />
 
-      <g mask="url(#squircleMask)">
-        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad)" />
+      <g mask="url(#squircleMask-lg4)">
+        <rect class="anim-shine" x="-150" y="-100" width="160" height="700" fill="url(#shineGrad-lg4)" />
       </g>
     </svg><svg class="pawflix-wordmark anim-wordmark" viewBox="6 0 254 76" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="textPawGradDark" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="textPawGradDark-lg4" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#ffffff" />
           <stop offset="100%" stop-color="#d6e8ff" />
         </linearGradient>
 
-        <linearGradient id="textFlixGradDark" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="textFlixGradDark-lg4" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#38a5ff" />
           <stop offset="100%" stop-color="#0d7bf2" />
         </linearGradient>
 
-        <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="sparkGrad-lg4" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="#ff7b94" />
           <stop offset="100%" stop-color="#ff3358" />
         </linearGradient>
@@ -2926,18 +3002,18 @@
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textPawGradDark)">Paw</text>
+            fill="url(#textPawGradDark-lg4)">Paw</text>
 
       <text x="148" y="58"
             font-family="var(--font-stack)"
             font-size="64"
             font-weight="800"
             letter-spacing="-0.035em"
-            fill="url(#textFlixGradDark)">fl&#305;x</text>
+            fill="url(#textFlixGradDark-lg4)">fl&#305;x</text>
 
       <path class="anim-spark"
             d="M 238 18 C 236.5 17 234 18 234 20.2 L 234 30.8 C 234 33 236.5 34 238 33 L 246.5 27.7 C 248.5 26.5 248.5 24.5 246.5 23.3 Z"
-            fill="url(#sparkGrad)" />
+            fill="url(#sparkGrad-lg4)" />
     </svg></div>
             <div class="nav-item focusable" data-nav="home" data-goto="home" title="Главная">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
@@ -3047,6 +3123,9 @@
 <button class="btn focusable" id="detail-bk-fav" type="button">В избранное</button>
 <button class="btn focusable" id="detail-bk-later" type="button">Смотреть позже</button>
 </div>
+
+<img class="bg" id="prov-bg" src="" alt="" />
+<div class="prov-ambient-shade"></div>
 
 <div class="toast" id="toast"></div>
 <div class="pl-overlay" id="pl-overlay">
@@ -3740,7 +3819,8 @@ var STUDIOS = [
               rate: rate,
               runtime: runtime,
               backdrop: d.backdrop_path || '',
-              poster: d.poster_path || ''
+              poster: d.poster_path || '',
+              logo: (logo && logo.file_path) ? logo.file_path : ''
             };
             updateDetailButtons();
             loadTrailer(type, id);
@@ -3943,15 +4023,19 @@ var STUDIOS = [
           } catch (e) { return def; }
         }
         function jacConf(){
+          /* Значения kino.* тоже триммим: пробел в сохранённом адресе ломал
+             URL целиком (fetch падал на всех парсерах разом). */
+          function s(v){ return (typeof v === 'string' ? v.trim() : (v || '')); }
           var url = (localStorage.getItem('pawflix.jac_url') || '').trim() ||
-                    kinoLS('jac_url', '') || '';
+                    s(kinoLS('jac_url', '')) || '';
           var key = (localStorage.getItem('pawflix.jac_key') || '').trim() ||
-                    kinoLS('jac_key', '') || '';
+                    s(kinoLS('jac_key', '')) || '';
           var url2 = (localStorage.getItem('pawflix.jac_url2') || '').trim() ||
-                     kinoLS('jac_url2', '') || '';
+                     s(kinoLS('jac_url2', '')) || '';
           var key2 = (localStorage.getItem('pawflix.jac_key2') || '').trim() ||
-                     kinoLS('jac_key2', '') || '';
-          /* Старые поля pawflix.jackett — тот же Jackett-формат, не терять. */
+                     s(kinoLS('jac_key2', '')) || '';
+          /* Старые поля pawflix.jackett — тот же Jackett-формат, не терять.
+             Они НЕ затеняют kino.*: читаются только если своих и kino.* нет. */
           if (!url) url = (localStorage.getItem('pawflix.jackett') || '').trim();
           if (!key) key = (localStorage.getItem('pawflix.jackett_key') || '').trim();
           if (!url) url = 'https://jac.red';
@@ -3960,14 +4044,30 @@ var STUDIOS = [
         function jacQueryURL(base, key, q){
           return base.replace(/\/+$/, '') + '/api/v2.0/indexers/all/results?Query=' + encodeURIComponent(q) + (key ? '&apikey=' + encodeURIComponent(key) : '');
         }
+        /* Диагностика парсеров: какой хост с какой причиной упал (только
+           хост, без ключа и пути). Показывается в записке торрентов, чтобы
+           «Парсеры не отвечают» не было глухим: HTTP-статус, сеть/CORS или
+           mixed-content (http-адрес на https-странице браузер блокирует сам,
+           такой парсер даже не дёргается). */
+        var jacDiag = [];
+        function jacHost(u){
+          try { return String(u).replace(/^https?:\/\//i, '').split('/')[0] || String(u); }
+          catch (e) { return String(u); }
+        }
         function jacSearch(q){
           var c = jacConf();
           var parsers = [{ url: c.url, key: c.key }, { url: c.url2, key: c.key2 }].filter(function(p){ return p.url; });
+          jacDiag = [];
           var lastErr = null, idx = 0;
           function next(){
             if (idx >= parsers.length) return Promise.reject(lastErr || new Error('noresults'));
             var p = parsers[idx++];
             var isLast = idx >= parsers.length;
+            if (typeof location !== 'undefined' && location.protocol === 'https:' && /^http:\/\//i.test(p.url)) {
+              jacDiag.push({ host: jacHost(p.url), reason: 'mixed-content' });
+              lastErr = new Error('mixed-content');
+              return next();
+            }
             return fetch(jacQueryURL(p.url, p.key, q)).then(function(r){
               if (!r.ok) throw new Error('HTTP ' + r.status);
               return r.json();
@@ -3975,7 +4075,13 @@ var STUDIOS = [
               var res = (j.Results || []).filter(function(x){ return x.MagnetUri; });
               if (res.length || isLast) return res;
               return next();
-            }).catch(function(e){ lastErr = e; return next(); });
+            }).catch(function(e){
+              lastErr = e;
+              var msg = (e && e.message) || '';
+              var reason = /^HTTP \d+/.test(msg) ? msg : 'network';
+              jacDiag.push({ host: jacHost(p.url), reason: reason });
+              return next();
+            });
           }
           return next();
         }
@@ -4283,6 +4389,54 @@ var STUDIOS = [
           box.innerHTML = '';
           box.appendChild(srcNote(text));
           provEscBack = null;
+          provPillsHTML([]);
+        }
+        /* Строки и пилюли как в «Кино» (vw-voice / vw-sec-t / vw-backline /
+           vw-ep / vw-pill): название + подстрока (vs) + ›; эпизод — миниатюра
+           с номером, название, подстрока, прогресс и ✓ просмотренного. */
+        function vwVoiceRow(titleHtml, subHtml, onClick){
+          var b = document.createElement('button');
+          b.className = 'vw-voice focusable'; b.type = 'button';
+          b.innerHTML = '<span>' + titleHtml + (subHtml ? '<div class="vs">' + subHtml + '</div>' : '') + '</span><span class="vw-chev">›</span>';
+          if (onClick) b.addEventListener('click', onClick);
+          b.addEventListener('mouseenter', function(){ setFocus(b); });
+          return b;
+        }
+        function vwSecT(text){
+          var d = document.createElement('div');
+          d.className = 'vw-sec-t'; d.textContent = text;
+          return d;
+        }
+        function vwBacklineRow(text, onClick){
+          var b = document.createElement('button');
+          b.className = 'vw-backline focusable'; b.type = 'button'; b.textContent = text;
+          if (onClick) b.addEventListener('click', onClick);
+          b.addEventListener('mouseenter', function(){ setFocus(b); });
+          return b;
+        }
+        function vwEpRow(num, titleHtml, subHtml, watched, onClick){
+          var b = document.createElement('button');
+          b.className = 'vw-ep focusable'; b.type = 'button';
+          b.innerHTML = '<span class="vw-thumb"><span class="vw-num">' + num + '</span></span>' +
+            '<span class="vw-epbody"><span class="vw-ept">' + titleHtml + '</span><span class="vw-eps">' + subHtml + '</span>' +
+            '<span class="vw-prog"><i style="width:' + (watched ? 100 : 0) + '%"></i></span></span>' +
+            (watched ? '<span class="vw-side"><span class="vw-done">✓</span></span>' : '');
+          if (onClick) b.addEventListener('click', onClick);
+          b.addEventListener('mouseenter', function(){ setFocus(b); });
+          return b;
+        }
+        function provPillsHTML(pills){
+          var el = document.getElementById('prov-pills');
+          if (!el) return;
+          el.innerHTML = '';
+          (pills || []).forEach(function(p){
+            var b = document.createElement('button');
+            b.className = 'vw-pill focusable'; b.type = 'button';
+            b.innerHTML = esc(p.label) + ' <span class="pv">' + esc(p.value) + '</span><span class="pd">▾</span>';
+            b.addEventListener('click', p.onPick);
+            b.addEventListener('mouseenter', function(){ setFocus(b); });
+            el.appendChild(b);
+          });
         }
         /* Шапка экрана провайдера как в «Кино» (vwShellHTML): арт, лейбл,
            название, бейдж качества, мета, кнопка «Смотреть», подстрока.
@@ -4311,8 +4465,20 @@ var STUDIOS = [
           var art = document.getElementById('prov-art');
           var src = m ? (m.backdrop ? IMG + 'w1280' + m.backdrop : (m.poster ? IMG + 'w500' + m.poster : '')) : '';
           if (art) { if (src) { art.src = src; art.style.display = ''; } else art.style.display = 'none'; }
+          /* Ambient провайдера — как detail-bg: постер первым, иначе бэкдроп. */
+          var bg = document.getElementById('prov-bg');
+          var bgSrc = m ? (m.poster ? IMG + 'w500' + m.poster : (m.backdrop ? IMG + 'w780' + m.backdrop : '')) : '';
+          if (bg) { if (bgSrc) { bg.src = bgSrc; bg.style.display = ''; } else bg.style.display = 'none'; }
+          /* Логотип вместо названия, как на карточке (ru → en → первый в openDetail). */
+          var logoEl = document.getElementById('prov-logo');
           var t = document.getElementById('prov-head-title');
-          if (t) t.textContent = m ? (m.title || '') : '';
+          if (m && m.logo) {
+            if (logoEl) { logoEl.src = IMG + 'w500' + m.logo; logoEl.style.display = ''; }
+            if (t) t.style.display = 'none';
+          } else {
+            if (logoEl) logoEl.style.display = 'none';
+            if (t) { t.style.display = ''; t.textContent = m ? (m.title || '') : ''; }
+          }
           var meta = document.getElementById('prov-meta');
           if (meta) {
             var parts = [];
@@ -4339,11 +4505,13 @@ var STUDIOS = [
         function renderProvSrcPick(focusFirst){
           provEscBack = function(){ onl.srcPick = false; renderProvLumio(); };
           provSetQ(''); provSetWatch(null); provSetSub('Lumio · выбор источника');
+          provPillsHTML([]);
           var box = provListEl();
           box.innerHTML = '';
-          box.appendChild(makeSrcRow('<span class="file">‹ Назад</span>', function(){ onl.srcPick = false; renderProvLumio(); }));
+          box.appendChild(vwBacklineRow('‹ Назад', function(){ onl.srcPick = false; renderProvLumio(); }));
+          box.appendChild(vwSecT('Источники · ' + onl.srcs.length));
           onl.srcs.forEach(function(s, i){
-            box.appendChild(makeSrcRow('<span class="plugin">Lumio</span><span class="file">' + esc(onlSrcName(s, i)) + (i === onl.srcIdx ? ' ✓' : '') + '</span>', function(){
+            box.appendChild(vwVoiceRow(esc(onlSrcName(s, i)) + (i === onl.srcIdx ? ' ✓' : ''), '', function(){
               var tok = onl.token;
               onl.srcIdx = i; onl.srcPick = false; onl.level = null;
               box.innerHTML = ''; box.appendChild(srcNote('Загружаю источник…'));
@@ -4375,14 +4543,14 @@ var STUDIOS = [
             provEscBack = null; provSetQ(''); provSetWatch(null); provSetSub('Lumio');
             var box = provListEl();
             box.innerHTML = '';
-            appendLumioSrcRow(box);
+            provPillsHTML(lumioSrcPill());
             box.appendChild(srcNote('Тут пусто.'));
           }
           else if (onl.level === 'error') {
             provEscBack = null; provSetQ(''); provSetWatch(null); provSetSub('Lumio');
             var box2 = provListEl();
             box2.innerHTML = '';
-            appendLumioSrcRow(box2);
+            provPillsHTML(lumioSrcPill());
             box2.appendChild(srcNote('Не получилось связаться с источником.'));
           }
           else provNote('Загрузка онлайн-источников…');
@@ -4404,22 +4572,36 @@ var STUDIOS = [
           if (meta && meta.type === 'tv' && ei >= 0) wMark('l' + meta.id, 's' + onl.seasonIdx + 'e' + ei);
           playViaBridge(v.url, (meta && meta.title ? meta.title : '') + (v.title && (!meta || v.title !== meta.title) ? ' · ' + v.title : ''));
         }
+        /* Пилюля «Источник» — как vwLumioPills в «Кино»: тап открывает
+           выбор источника. На уровнях голосов/сезонов/серий и в пусто/ошибке. */
+        function lumioSrcName(){
+          var s = (onl.srcs && onl.srcs.length) ? onl.srcs[onl.srcIdx] : null;
+          return s ? onlSrcName(s, onl.srcIdx) : 'Lumio';
+        }
+        function lumioSrcPill(){
+          if (!onl.srcs || !onl.srcs.length) return [];
+          return [{ label: 'Источник', value: lumioSrcName(), onPick: function(){ onl.srcPick = true; renderProvLumio(); } }];
+        }
         function renderProvVoices(focusFirst){
           provEscBack = (onl.from === 'episodes') ? function(){ renderProvEps(true); } : null;
           provSetQ('');
-          if (onl.voices.length) {
-            provSetWatch('Смотреть', function(){ playLumioVoice(onl.voices[0], onl.from === 'episodes' ? onl.epIdx : -1); });
+          /* Как в «Кино»: «Смотреть» — только у фильмов (первый голос);
+             у сериалов на уровне голосов кнопки нет — тап по голосу играет. */
+          if (onl.voices.length && onl.from !== 'episodes') {
+            provSetWatch('Смотреть', function(){ playLumioVoice(onl.voices[0], -1); });
           } else provSetWatch(null);
-          provSetSub('Lumio · ' + onl.voices.length + ' ' + plural(onl.voices.length, ['озвучка', 'озвучки', 'озвучек']));
+          var epT = (onl.from === 'episodes' && onl.epIdx != null) ? (onl.epIdx + 1) : null;
+          provSetSub('<b>' + esc(lumioSrcName()) + '</b>' + (epT ? ' · серия ' + epT : ''));
           var box = provListEl();
           box.innerHTML = '';
-          appendLumioSrcRow(box);
+          provPillsHTML(lumioSrcPill());
           if (onl.from === 'episodes') {
-            box.appendChild(makeSrcRow('<span class="file">‹ К сериям</span>', function(){ renderProvEps(true); }));
+            box.appendChild(vwBacklineRow('‹ Серии', function(){ renderProvEps(true); }));
           }
+          box.appendChild(vwSecT('Озвучка' + (epT ? ' · серия ' + epT : '')));
           onl.voices.forEach(function(v){
-            var name = esc(v.title) + (v.voice && v.voice !== v.title ? ' · ' + esc(v.voice) : '');
-            box.appendChild(makeSrcRow('<span class="plugin">Lumio</span><span class="file">' + name + '</span><span style="color:var(--muted)">›</span>', function(){
+            var sub = (v.voice && v.voice !== v.title) ? esc(v.voice) : '';
+            box.appendChild(vwVoiceRow(esc(v.title), sub, function(){
               playLumioVoice(v, onl.from === 'episodes' ? onl.epIdx : -1);
             }));
           });
@@ -4435,9 +4617,10 @@ var STUDIOS = [
           provSetSub('Lumio · ' + onl.seasons.length + ' ' + plural(onl.seasons.length, ['сезон', 'сезона', 'сезонов']));
           var box = provListEl();
           box.innerHTML = '';
-          appendLumioSrcRow(box);
+          provPillsHTML(lumioSrcPill());
+          box.appendChild(vwSecT('Сезоны · ' + onl.seasons.length));
           onl.seasons.forEach(function(s, i){
-            box.appendChild(makeSrcRow('<span class="plugin">Lumio</span><span class="file">' + esc(onlSeasonName(s, i)) + '</span>', function(){
+            box.appendChild(vwVoiceRow(esc(onlSeasonName(s, i)), '', function(){
               var tok = onl.token;
               box.innerHTML = ''; box.appendChild(srcNote('Загружаю серии…'));
               fetchOnlineSeason(tok, i).then(function(){
@@ -4462,7 +4645,7 @@ var STUDIOS = [
           var total = onl.eps.length;
           if (total) {
             var watched = meta ? wCount(mid, total) : 0;
-            provSetSub('Lumio · ' + esc(onlSeasonName(onl.seasons[onl.seasonIdx], onl.seasonIdx)) + '<br>Просмотрено ' + watched + ' из ' + total + ' · осталось ' + (total - watched));
+            provSetSub('<b>' + esc(lumioSrcName()) + '</b> · ' + esc(onlSeasonName(onl.seasons[onl.seasonIdx], onl.seasonIdx)) + '<br>Просмотрено ' + watched + ' из ' + total + ' · осталось ' + (total - watched));
             var target = -1;
             for (var i = 0; i < total; i++) {
               if (!wIs(mid, 's' + onl.seasonIdx + 'e' + i)) { target = i; break; }
@@ -4473,15 +4656,16 @@ var STUDIOS = [
           } else { provSetWatch(null); provSetSub('Lumio'); }
           var box = provListEl();
           box.innerHTML = '';
-          appendLumioSrcRow(box);
-          box.appendChild(makeSrcRow('<span class="file">‹ К сезонам</span>', function(){ renderProvSeasons(true); }));
+          provPillsHTML(lumioSrcPill());
+          box.appendChild(vwBacklineRow('‹ К сезонам', function(){ renderProvSeasons(true); }));
+          box.appendChild(vwSecT('Серии · ' + total));
           onl.eps.forEach(function(e, i){
             var et = onlEpName(e, i);
             var w = meta ? wIs(mid, 's' + onl.seasonIdx + 'e' + i) : false;
             var bare = et.title.replace(/\d+/g, '').replace(/серия/gi, '').trim();
             var label = et.num + ' серия' + (bare ? ' · ' + et.title : '');
             var vsub = e.voice ? esc(e.voice) : (e.method === 'play' ? 'смотреть' : '');
-            box.appendChild(makeSrcRow('<span class="plugin">Lumio</span><span class="file">' + esc(label) + (w ? ' ✓' : '') + '</span>' + (vsub ? '<span class="size">' + vsub + '</span>' : ''), function(){
+            box.appendChild(vwEpRow(et.num, esc(label), vsub, w, function(){
               playLumioEp(i, true);
             }));
           });
@@ -4553,7 +4737,7 @@ var STUDIOS = [
            Поиск идёт в фоне при открытии карточки (preloadSources), список
            показывается только на странице провайдера. */
         var torItems = [];
-        var torPromise = null, torLoading = false, torSearched = false, torFailed = false, torSort = 'top', torSortPick = false, torQueryText = '';
+        var torPromise = null, torLoading = false, torSearched = false, torFailed = false, torSort = 'top', torSortPick = false, torQmodePick = false, torQueryText = '';
         var TOR_SORTS = { top: 'Топ', seeds: 'Сиды', quality: 'Качество', size: 'Размер' };
         function torParse(title){
           var s = title || '', sl = s.toLowerCase(), res = 0, hdr = null, audio = null;
@@ -4636,12 +4820,45 @@ var STUDIOS = [
           else arr.sort(function(a, b){ return torScore(b) - torScore(a); });
           return arr;
         }
-        /* Запрос — как дефолт TOR_QMODES в «Кино» (ru_orig_year):
-           русское + оригинал + год, без дублей, одним запросом. */
+        /* Режимы запроса — TOR_QMODES «Кино» один в один; дефолт «Кино» —
+           orig_ru_year (Оригинал + Русский + Год). Раньше pawflix собирал
+           запрос как ru_orig_year (русское первым) — отклонение от «Кино». */
+        var TOR_QMODES = [
+          { id: 'orig', t: 'Оригинал' },
+          { id: 'orig_year', t: 'Оригинал + Год' },
+          { id: 'orig_ru', t: 'Оригинал + Русский' },
+          { id: 'orig_ru_year', t: 'Оригинал + Русский + Год' },
+          { id: 'ru', t: 'Русский' },
+          { id: 'ru_year', t: 'Русский + Год' },
+          { id: 'ru_orig', t: 'Русский + Оригинал' },
+          { id: 'ru_orig_year', t: 'Русский + Оригинал + Год' }
+        ];
+        function torQmode(){ return localStorage.getItem('pawflix.tor_qmode') || 'orig_ru_year'; }
+        function torQmodeName(){
+          var f = null;
+          for (var i = 0; i < TOR_QMODES.length; i++) if (TOR_QMODES[i].id === torQmode()) f = TOR_QMODES[i];
+          return f ? f.t : TOR_QMODES[3].t;
+        }
         function torQuery(meta){
+          var ru = (meta.title || '').trim(), orig = (meta.orig || '').trim();
+          var y = (meta.year && meta.year !== '—') ? meta.year : '';
           var parts = [];
-          [meta.title, meta.orig].forEach(function(n){ if (n && parts.indexOf(n) === -1) parts.push(n); });
-          if (meta.year) parts.push(meta.year);
+          function push(){
+            for (var i = 0; i < arguments.length; i++){
+              var x = (arguments[i] || '').trim();
+              if (x && parts.indexOf(x) === -1) parts.push(x);
+            }
+          }
+          switch (torQmode()){
+            case 'orig': push(orig, ru); break;
+            case 'orig_year': push(orig, y, ru); break;
+            case 'orig_ru': push(orig, ru); break;
+            case 'orig_ru_year': push(orig, ru, y); break;
+            case 'ru': push(ru); break;
+            case 'ru_year': push(ru, y); break;
+            case 'ru_orig': push(ru, orig); break;
+            default: push(ru, orig, y);
+          }
           return parts.join(' ').trim();
         }
         /* TPB-fallback удалён: cors.jacred.stream — allowlist только для
@@ -4701,26 +4918,35 @@ var STUDIOS = [
           var box = provListEl();
           box.innerHTML = '';
           if (torSortPick) { renderTorSortPick(); return; }
+          if (torQmodePick) { renderTorQmodePick(); return; }
           if (!torItems.length) {
             provSetQ(''); provSetWatch(null); provSetSub('Торренты');
+            provPillsHTML([]);
             var note = 'Ищу раздачи…';
             if (torSearched) {
               /* Три разных состояния вместо одной записки: не настроены /
-                 не отвечают (текст «Кино» один в один) / пусто. */
+                 не отвечают / пусто. У «не отвечают» — диагностика по парсерам
+                 (хост + причина, без ключа): иначе причину не найти. */
               note = torFailed
-                ? (jacConfigured() ? 'Парсеры не отвечают · проверь адреса в Профиле' : 'Парсеры не настроены · добавь адрес и ключ в Настройках')
+                ? (jacConfigured() ? 'Парсеры не отвечают · проверь адреса в Настройках' : 'Парсеры не настроены · добавь адрес и ключ в Настройках')
                 : 'Раздач не нашлось.';
             }
             box.appendChild(srcNote(note));
+            if (torFailed && jacDiag.length) {
+              box.appendChild(srcNote('Парсеры: ' + jacDiag.map(function(d){
+                return d.host + ' — ' + (d.reason === 'mixed-content' ? 'http-адрес заблокирован на https-странице' : (d.reason === 'network' ? 'нет ответа (сеть/CORS)' : d.reason));
+              }).join(' · ')));
+            }
             return;
           }
           var sorted = torSorted(torItems);
           provSetQ('');
           provSetSub('Торренты · ' + sorted.length + ' ' + plural(sorted.length, ['раздача', 'раздачи', 'раздач']) + (torQueryText ? ' · ' + esc(torQueryText) : ''));
           provSetWatch('Смотреть', function(){ playTorrent(sorted[0]); });
-          box.appendChild(makeSrcRow('<span class="plugin">Торренты</span><span class="file">Сортировка: ' + TOR_SORTS[torSort] + ' ›</span><span class="size">' + sorted.length + ' раздач · ' + esc(torQueryText) + '</span>', function(){
-            torSortPick = true; renderProvTorrents();
-          }));
+          provPillsHTML([
+            { label: 'Сортировка', value: TOR_SORTS[torSort], onPick: function(){ torSortPick = true; renderProvTorrents(); } },
+            { label: 'Запрос', value: torQmodeName(), onPick: function(){ torQmodePick = true; renderProvTorrents(); } }
+          ]);
           sorted.forEach(function(t, i){
             box.appendChild(makeSrcRow(
               '<span class="plugin">' + esc(t.src) + '</span><span class="file">' + esc(torNiceTitle(t, currentDetailMeta)) + '</span>' + torPillsHTML(t, i === 0 && torSort === 'top') +
@@ -4730,12 +4956,32 @@ var STUDIOS = [
         }
         function renderTorSortPick(){
           provEscBack = function(){ torSortPick = false; renderProvTorrents(); };
+          provPillsHTML([]);
           var box = provListEl();
           box.innerHTML = '';
-          box.appendChild(makeSrcRow('<span class="file">‹ К раздачам</span>', function(){ torSortPick = false; renderProvTorrents(); }));
+          box.appendChild(vwBacklineRow('‹ К раздачам', function(){ torSortPick = false; renderProvTorrents(); }));
+          box.appendChild(vwSecT('Сортировка'));
           ['top', 'seeds', 'quality', 'size'].forEach(function(k){
-            box.appendChild(makeSrcRow('<span class="file">' + TOR_SORTS[k] + (torSort === k ? ' ✓' : '') + '</span>', function(){
+            box.appendChild(vwVoiceRow(esc(TOR_SORTS[k]) + (torSort === k ? ' ✓' : ''), '', function(){
               torSort = k; torSortPick = false; renderProvTorrents();
+            }));
+          });
+        }
+        function renderTorQmodePick(){
+          provEscBack = function(){ torQmodePick = false; renderProvTorrents(); };
+          provPillsHTML([]);
+          var box = provListEl();
+          box.innerHTML = '';
+          box.appendChild(vwBacklineRow('‹ К раздачам', function(){ torQmodePick = false; renderProvTorrents(); }));
+          box.appendChild(vwSecT('Режим запроса'));
+          TOR_QMODES.forEach(function(o){
+            box.appendChild(vwVoiceRow(esc(o.t) + (torQmode() === o.id ? ' ✓' : ''), '', function(){
+              localStorage.setItem('pawflix.tor_qmode', o.id);
+              torQmodePick = false;
+              if (currentDetailMeta) fetchTorrents(currentDetailMeta).then(function(){
+                if (current === 'provider' && prov.name === 'torrents') renderProvTorrents();
+              });
+              else renderProvTorrents();
             }));
           });
         }
@@ -4808,10 +5054,12 @@ var STUDIOS = [
             var box = provListEl();
             if (box) {
               provEscBack = function(){ renderProvTorrents(); };
+              provPillsHTML([]);
               box.innerHTML = '';
-              box.appendChild(makeSrcRow('<span class="file">‹ Раздачи</span>', function(){ renderProvTorrents(); }));
+              box.appendChild(vwBacklineRow('‹ К раздачам', function(){ renderProvTorrents(); }));
+              box.appendChild(vwSecT('Файлы · ' + sorted.length));
               sorted.forEach(function(f){
-                box.appendChild(makeSrcRow('<span class="file">' + esc(shortName(f.path)) + '</span><span class="size">' + fmtSize(f.size) + '</span>', function(){
+                box.appendChild(vwVoiceRow(esc(shortName(f.path)), fmtSize(f.size), function(){
                   if (currentDetailCard) addHist(currentDetailCard);
                   playViaBridge(tsStreamURL(ts, hash, f.id, t.title), shortName(f.path) || t.title);
                 }));
@@ -4831,7 +5079,7 @@ var STUDIOS = [
           onl.level = null; onl.voices = []; onl.seasons = []; onl.eps = []; onl.from = null;
           onl.srcs = []; onl.srcIdx = 0; onl.srcPick = false; onl.seasonIdx = 0; onl.epIdx = -1;
           onl.loading = false; onlPromise = null;
-          torItems = []; torPromise = null; torLoading = false; torSearched = false; torSortPick = false;
+          torItems = []; torPromise = null; torLoading = false; torSearched = false; torSortPick = false; torQmodePick = false;
           fx.token++;
           fx.level = null; fx.playlist = null; fx.seasons = []; fx.eps = [];
         }
@@ -4881,7 +5129,7 @@ var STUDIOS = [
            — другой домен). Пустое поле прокси = дефолт jacred, а НЕ прямое
            подключение. Свой прокси (поле в Настройках) переопределяет дефолт;
            work/filmix-proxy-worker.js остаётся запасным вариантом. */
-        var fx = { token: 0, level: null, maxQ: 720, playlist: null, seasons: [], seasonIdx: 0, eps: [], cardTitle: '' };
+        var fx = { token: 0, level: null, maxQ: 720, playlist: null, seasons: [], seasonIdx: 0, eps: [], cardTitle: '', voicePref: null };
         function fxToken(){ return (localStorage.getItem('pawflix.filmix_token') || '').trim(); }
         function fxProxyBase(){
           return (localStorage.getItem('pawflix.filmix_proxy') || '').trim().replace(/\/+$/, '');
@@ -4992,6 +5240,7 @@ var STUDIOS = [
         }
         function fxErrNote(text, retry){
           provEscBack = null;
+          provPillsHTML([]);
           var box = provListEl();
           box.innerHTML = '';
           box.appendChild(srcNote(text));
@@ -5006,10 +5255,12 @@ var STUDIOS = [
         function fxRenderSimilars(res, tok, maxQ){
           provEscBack = null;
           provSetQ(''); provSetWatch(null); provSetSub('Уточните, что именно:');
+          provPillsHTML([]);
           var box = provListEl();
           box.innerHTML = '';
+          box.appendChild(vwSecT('Похожие названия'));
           res.slice(0, 12).forEach(function(c){
-            box.appendChild(makeSrcRow('<span class="file">' + esc(c.title || c.original_title || 'Вариант') + (c.year ? ' · ' + c.year : '') + '</span>', function(){
+            box.appendChild(vwVoiceRow(esc(c.title || c.original_title || 'Вариант') + (c.year ? ' · ' + c.year : ''), '', function(){
               fxOpenCard(c.id, tok, maxQ);
             }));
           });
@@ -5024,6 +5275,7 @@ var STUDIOS = [
               fx.playlist = pl.playlist;
               fx.seasons = Object.keys(pl.playlist).sort(function(a, b){ return parseInt(a, 10) - parseInt(b, 10); });
               fx.seasonIdx = 0;
+              fx.voicePref = null;
               fx.level = 'seasons';
               fxRenderSeasons(tok, maxQ, false);
               return;
@@ -5045,20 +5297,37 @@ var STUDIOS = [
           if (!items.length) { provNote('Видео не найдено.'); return; }
           fxRenderMovieItems(items, maxQ);
         }
+        /* «Кино» показывает голос студией, а не сырой строкой API.
+           «Дубляж: [4K, SDR, ru, Movie Dubbing]» → имя «Дубляж»,
+           подстрока «Movie Dubbing»; технические токены (разрешение,
+           SDR/HDR, языки) из подстроки выбрасываются — иначе несколько
+           одинаковых «Дубляж» неотличимы. В fxPlay по-прежнему уходит
+           сырая строка API — чистится только отображение. */
+        function fxCleanVoice(tr){
+          var s = String(tr || 'Озвучка');
+          var m = s.match(/^(.*?)\s*\[([^\]]*)\]\s*$/);
+          if (!m) return { name: s, studio: '' };
+          var toks = m[2].split(',').map(function(t){ return t.trim(); }).filter(function(t){
+            return t && !/^(4k|2160p?|1080p?|720p?|480p?|sdr|hdr\d*\+?|dolby.*|dts.*|ru|rus|ukr|uk|en|eng)$/i.test(t);
+          });
+          var name = m[1].replace(/:\s*$/, '').trim();
+          if (!name) { name = toks[0] || 'Озвучка'; toks = toks.slice(1); }
+          return { name: name, studio: toks.join(' · ') };
+        }
         function fxRenderMovieItems(items, maxQ){
           provEscBack = null;
           var best = Math.max.apply(null, items.map(function(i){ return i.q; }));
           provSetQ(best + 'p');
           provSetWatch('Смотреть', function(){ var it = items[0]; fxPlay(it.voice, it.q, fxFileUrl(it.link, it.q)); });
-          provSetSub('Filmix · ' + items.length + ' ' + plural(items.length, ['озвучка', 'озвучки', 'озвучек']) + ' · до ' + best + 'p');
+          provSetSub('Filmix 4k · ' + items.length + ' ' + plural(items.length, ['озвучка', 'озвучки', 'озвучек']) + ' · до ' + best + 'p');
+          provPillsHTML([]);
           var box = provListEl();
           box.innerHTML = '';
-          var sec = document.createElement('div');
-          sec.className = 'src-title';
-          sec.textContent = 'Озвучка';
-          box.appendChild(sec);
+          box.appendChild(vwSecT('Озвучка'));
           items.forEach(function(it){
-            box.appendChild(makeSrcRow('<span class="plugin">Filmix</span><span class="file">' + esc(it.voice) + '</span><span class="badge q">' + it.q + 'p</span><span style="color:var(--muted)">›</span>', function(){
+            var cl = fxCleanVoice(it.voice);
+            var sub = (cl.studio ? esc(cl.studio) + ' · ' : '') + it.q + 'p';
+            box.appendChild(vwVoiceRow(esc(cl.name), sub, function(){
               if (it.qs.length <= 1) { fxPlay(it.voice, it.q, fxFileUrl(it.link, it.q)); return; }
               fxRenderQualities(it, null, function(){ fxRenderMovieItems(items, maxQ); });
             }));
@@ -5068,15 +5337,14 @@ var STUDIOS = [
            тап — играть. Одно качество — шаг пропускается (игра сразу). */
         function fxRenderQualities(it, wkey, backFn){
           provEscBack = backFn || null;
+          provPillsHTML([]);
           var box = provListEl();
           box.innerHTML = '';
-          box.appendChild(makeSrcRow('<span class="file">‹ К озвучкам</span>', function(){ if (backFn) backFn(); }));
-          var sec = document.createElement('div');
-          sec.className = 'src-title';
-          sec.textContent = it.voice + ' — качество';
-          box.appendChild(sec);
+          box.appendChild(vwBacklineRow('‹ К озвучкам', function(){ if (backFn) backFn(); }));
+          var cl = fxCleanVoice(it.voice);
+          box.appendChild(vwSecT((cl.studio ? cl.name + ' · ' + cl.studio : cl.name) + ' — качество'));
           it.qs.slice().sort(function(a, b){ return b - a; }).forEach(function(q){
-            box.appendChild(makeSrcRow('<span class="plugin">Filmix</span><span class="file">' + q + 'p</span>', function(){
+            box.appendChild(vwVoiceRow(q + 'p', (q === it.q ? 'максимум' : ''), function(){
               fxPlay(it.voice, q, fxFileUrl(it.link, q), wkey);
             }));
           });
@@ -5120,11 +5388,13 @@ var STUDIOS = [
         function fxRenderSeasons(tok, maxQ, focusFirst){
           provEscBack = null;
           provSetQ(''); provSetWatch(null);
-          provSetSub('Filmix · ' + fx.seasons.length + ' ' + plural(fx.seasons.length, ['сезон', 'сезона', 'сезонов']));
+          provSetSub('Filmix 4k · ' + fx.seasons.length + ' ' + plural(fx.seasons.length, ['сезон', 'сезона', 'сезонов']));
+          provPillsHTML([]);
           var box = provListEl();
           box.innerHTML = '';
+          box.appendChild(vwSecT('Сезоны · ' + fx.seasons.length));
           fx.seasons.forEach(function(sKey, i){
-            box.appendChild(makeSrcRow('<span class="plugin">Filmix</span><span class="file">' + esc(fxSeasonLabel(sKey)) + ' сезон</span>', function(){
+            box.appendChild(vwVoiceRow(esc(fxSeasonLabel(sKey)) + ' сезон', '', function(){
               fx.seasonIdx = i;
               fx.level = 'episodes';
               fxRenderEps(tok, maxQ, true);
@@ -5135,6 +5405,56 @@ var STUDIOS = [
             if (first) setFocus(first);
           }
         }
+        /* Предпочтение озвучки (пилюля «Озвучка» на уровне серий, как
+           vw.voice в «Кино»): если у серии есть такой голос — «Смотреть»
+           и тап по серии играют его сразу, иначе — список голосов. */
+        function fxPickVoice(e){
+          if (!e.voices.length) return null;
+          if (fx.voicePref) {
+            for (var i = 0; i < e.voices.length; i++) if (e.voices[i].voice === fx.voicePref) return e.voices[i];
+          }
+          return e.voices.length === 1 ? e.voices[0] : null;
+        }
+        function fxRenderVoicePick(tok, maxQ){
+          provEscBack = function(){ fxRenderEps(tok, maxQ, true); };
+          provPillsHTML([]);
+          var box = provListEl();
+          box.innerHTML = '';
+          box.appendChild(vwBacklineRow('‹ К сериям', function(){ fxRenderEps(tok, maxQ, true); }));
+          box.appendChild(vwSecT('Озвучка'));
+          var seen = [];
+          (fx.eps || []).forEach(function(e){
+            e.voices.forEach(function(v){
+              if (seen.indexOf(v.voice) === -1) seen.push(v.voice);
+            });
+          });
+          box.appendChild(vwVoiceRow('Все голоса' + (!fx.voicePref ? ' ✓' : ''), '', function(){
+            fx.voicePref = null;
+            fxRenderEps(tok, maxQ, true);
+          }));
+          seen.forEach(function(vn){
+            var cl = fxCleanVoice(vn);
+            box.appendChild(vwVoiceRow(esc(cl.studio ? cl.name + ' · ' + cl.studio : cl.name) + (fx.voicePref === vn ? ' ✓' : ''), '', function(){
+              fx.voicePref = vn;
+              fxRenderEps(tok, maxQ, true);
+            }));
+          });
+          if (!seen.length) box.appendChild(srcNote('Озвучек не нашлось.'));
+        }
+        function fxRenderSeasonPick(tok, maxQ){
+          provEscBack = function(){ fxRenderEps(tok, maxQ, true); };
+          provPillsHTML([]);
+          var box = provListEl();
+          box.innerHTML = '';
+          box.appendChild(vwBacklineRow('‹ К сериям', function(){ fxRenderEps(tok, maxQ, true); }));
+          box.appendChild(vwSecT('Сезоны · ' + fx.seasons.length));
+          fx.seasons.forEach(function(sKey, i){
+            box.appendChild(vwVoiceRow(esc(fxSeasonLabel(sKey)) + ' сезон' + (i === fx.seasonIdx ? ' ✓' : ''), '', function(){
+              fx.seasonIdx = i;
+              fxRenderEps(tok, maxQ, true);
+            }));
+          });
+        }
         function fxRenderEps(tok, maxQ, focusFirst){
           provEscBack = function(){ fxRenderSeasons(tok, maxQ, true); };
           provSetQ('');
@@ -5143,7 +5463,7 @@ var STUDIOS = [
           if (eps.length) {
             var mid = currentDetailMeta ? 'f' + currentDetailMeta.id : '';
             var watched = mid ? wCount(mid, eps.length) : 0;
-            provSetSub('Filmix · ' + esc(fxSeasonLabel(fx.seasons[fx.seasonIdx])) + ' сезон<br>Просмотрено ' + watched + ' из ' + eps.length + ' · осталось ' + (eps.length - watched));
+            provSetSub('Filmix 4k · ' + esc(fxSeasonLabel(fx.seasons[fx.seasonIdx])) + ' сезон<br>Просмотрено ' + watched + ' из ' + eps.length + ' · осталось ' + (eps.length - watched));
             var target = -1;
             for (var i = 0; i < eps.length; i++) {
               if (!wIs(mid, 's' + eps[i].sNum + 'e' + eps[i].eNum)) { target = i; break; }
@@ -5153,20 +5473,27 @@ var STUDIOS = [
             provSetWatch('Смотреть · S' + te.sNum + 'E' + te.eNum, (function(e){
               return function(){
                 var wk = 's' + e.sNum + 'e' + e.eNum;
-                if (e.voices.length === 1) { fxPlay(e.voices[0].voice, e.voices[0].q, e.voices[0].url, wk); return; }
+                var pick = fxPickVoice(e);
+                if (pick) { fxPlay(pick.voice, pick.q, pick.url, wk); return; }
                 fxRenderEpVoices(e, tok, maxQ);
               };
             })(te));
           } else { provSetWatch(null); provSetSub('Filmix'); }
           var box = provListEl();
           box.innerHTML = '';
-          box.appendChild(makeSrcRow('<span class="file">‹ К сезонам</span>', function(){ fxRenderSeasons(tok, maxQ, true); }));
+          provPillsHTML([
+            { label: 'Сезон', value: fxSeasonLabel(fx.seasons[fx.seasonIdx]) + ' сезон', onPick: function(){ fxRenderSeasonPick(tok, maxQ); } },
+            { label: 'Озвучка', value: fx.voicePref ? (function(){ var cl = fxCleanVoice(fx.voicePref); return cl.studio ? cl.name + ' · ' + cl.studio : cl.name; })() : 'Все голоса', onPick: function(){ fxRenderVoicePick(tok, maxQ); } }
+          ]);
+          box.appendChild(vwBacklineRow('‹ К сезонам', function(){ fxRenderSeasons(tok, maxQ, true); }));
+          box.appendChild(vwSecT('Серии · ' + eps.length));
           eps.forEach(function(e){
-            var vn = e.voices.slice(0, 2).map(function(v){ return v.voice; }).join(' · ') + (e.voices.length > 2 ? ' · …' : '');
+            var vn = e.voices.slice(0, 2).map(function(v){ return fxCleanVoice(v.voice).name; }).join(' · ') + (e.voices.length > 2 ? ' · …' : '');
             var wk = 's' + e.sNum + 'e' + e.eNum;
             var w = currentDetailMeta ? wIs('f' + currentDetailMeta.id, wk) : false;
-            box.appendChild(makeSrcRow('<span class="file">' + e.eNum + ' серия' + (w ? ' ✓' : '') + '</span><span class="size">' + esc(vn) + '</span>', function(){
-              if (e.voices.length === 1) { fxPlay(e.voices[0].voice, e.voices[0].q, e.voices[0].url, wk); return; }
+            box.appendChild(vwEpRow(e.eNum, e.eNum + ' серия', esc(vn), w, function(){
+              var pick = fxPickVoice(e);
+              if (pick) { fxPlay(pick.voice, pick.q, pick.url, wk); return; }
               fxRenderEpVoices(e, tok, maxQ);
             }));
           });
@@ -5178,11 +5505,15 @@ var STUDIOS = [
         }
         function fxRenderEpVoices(e, tok, maxQ){
           provEscBack = function(){ fxRenderEps(tok, maxQ, true); };
+          provPillsHTML([]);
           var box = provListEl();
           box.innerHTML = '';
-          box.appendChild(makeSrcRow('<span class="file">‹ К сериям</span>', function(){ fxRenderEps(tok, maxQ, true); }));
+          box.appendChild(vwBacklineRow('‹ Серии', function(){ fxRenderEps(tok, maxQ, true); }));
+          box.appendChild(vwSecT('Озвучка · серия ' + e.eNum));
           e.voices.forEach(function(v){
-            box.appendChild(makeSrcRow('<span class="plugin">Filmix</span><span class="file">' + esc(v.voice) + '</span><span class="badge q">' + v.q + 'p</span><span style="color:var(--muted)">›</span>', function(){
+            var cl = fxCleanVoice(v.voice);
+            var sub = (cl.studio ? esc(cl.studio) + ' · ' : '') + v.q + 'p';
+            box.appendChild(vwVoiceRow(esc(cl.name), sub, function(){
               var wk = 's' + e.sNum + 'e' + e.eNum;
               if (!v.qs || v.qs.length <= 1) { fxPlay(v.voice, v.q, v.url, wk); return; }
               fxRenderQualities({ voice: v.voice, link: v.link, qs: v.qs, q: v.q }, wk, function(){ fxRenderEpVoices(e, tok, maxQ); });
