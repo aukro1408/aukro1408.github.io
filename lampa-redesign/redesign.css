@@ -1,150 +1,247 @@
-/* ============================================================
-   LAMPA GLASS v4 — ТОЛЬКО ЦВЕТОВАЯ СХЕМА (решение Denis 2026-10-27)
-   Вёрстка Lampa НЕ меняется: боковое меню, ряды, карточки, настройки —
-   всё на штатных местах и штатных размеров. Меняется только цвет:
-   светлый голубовато-серый фон, тёмный текст, оранжевый акцент,
-   полупрозрачное стекло на панелях. Никаких перестроек DOM.
-   ============================================================ */
+/*
+ * Lampa light theme
+ * Color/material override only. The stock layout, spacing and DOM remain intact.
+ * Palette sampled from reference/flix-id.jpg, with the black navigation direction
+ * intentionally replaced by a warm orange focus state.
+ */
 
-/* ---------- База ---------- */
 body.redesign {
-    background: #c9d3e0 !important;
-    background: linear-gradient(180deg, #c9d3e0 0%, #dde4ec 45%, #eef1f5 100%) !important;
-    color: #14161a;
+    --light-bg-deep: #9fb7c4;
+    --light-bg: #c9d8df;
+    --light-bg-soft: #e6edf0;
+    --light-ink: #17242d;
+    --light-muted: #5b707d;
+    --light-line: rgba(23, 36, 45, 0.14);
+    --light-glass: rgba(255, 255, 255, 0.48);
+    --light-glass-strong: rgba(255, 255, 255, 0.72);
+    --light-accent: #f28b24;
+    --light-accent-deep: #c96712;
+    --light-accent-ink: #231a12;
+    --light-shadow: rgba(52, 78, 91, 0.18);
+
+    background: linear-gradient(180deg, var(--light-bg-deep) 0%, var(--light-bg) 48%, var(--light-bg-soft) 100%) !important;
+    color: var(--light-ink) !important;
 }
+
+/* The stock artwork layer is not part of the light material. Keep its space,
+   but remove its dark wash so the palette stays stable from screen to screen. */
 body.redesign .background,
 body.redesign .background__one,
 body.redesign .background__two,
 body.redesign .background__fade {
     opacity: 0 !important;
 }
+
+body.redesign .activity,
 body.redesign .activity__body,
-body.redesign .activity {
+body.redesign .wrap,
+body.redesign .wrap__content {
     background: transparent !important;
+    color: var(--light-ink);
 }
 
-/* ---------- Шапка: тёмный текст и иконки ---------- */
+/* Shared text and line colors */
 body.redesign .head__time,
 body.redesign .head__time-now,
 body.redesign .head__time-date,
-body.redesign .head__time-week {
-    color: #14161a;
-}
-body.redesign .head__action [stroke] {
-    stroke: #14161a;
-}
-body.redesign .head__action path[fill],
-body.redesign .head__action rect[fill],
-body.redesign .head__action circle[fill] {
-    fill: #14161a;
+body.redesign .head__time-week,
+body.redesign .items-line__title,
+body.redesign .card__title,
+body.redesign .full-start-new__title,
+body.redesign .settings__title,
+body.redesign .modal__title,
+body.redesign .selectbox-item__title,
+body.redesign .search__input,
+body.redesign .search-history-key,
+body.redesign .search-source,
+body.redesign .search-looking__text,
+body.redesign .search__results,
+body.redesign .warning-box__title,
+body.redesign .warning-box__descr {
+    color: var(--light-ink);
 }
 
-/* ---------- Боковое меню: тёмный текст, тёмные иконки, чёрный фокус ---------- */
-body.redesign .menu__item {
-    color: #14161a;
+body.redesign .menu__split,
+body.redesign .full-start__pg,
+body.redesign .full-start__status,
+body.redesign .settings-param,
+body.redesign .search-source,
+body.redesign .search-history-key {
+    border-color: var(--light-line);
 }
-body.redesign .menu__item .menu__ico [stroke] {
-    stroke: #14161a;
+
+/* Header and desktop side menu: quiet white glass, not a new navigation. */
+body.redesign .head__action,
+body.redesign .wrap__left {
+    background: var(--light-glass);
+    border-color: var(--light-line);
+    -webkit-backdrop-filter: blur(1.2em);
+    backdrop-filter: blur(1.2em);
 }
+
+body.redesign .head__action {
+    color: var(--light-ink);
+}
+
+body.redesign .head__action.focus,
+body.redesign .head__action.hover {
+    background: var(--light-accent);
+    color: var(--light-accent-ink);
+}
+
+body.redesign .head__action [stroke],
+body.redesign .head__action svg [stroke],
+body.redesign .menu__item .menu__ico [stroke],
+body.redesign .navigation-bar__icon [stroke],
+body.redesign .settings-folder__icon [stroke] {
+    stroke: var(--light-ink);
+}
+
+body.redesign .head__action path[fill],
+body.redesign .head__action rect[fill],
+body.redesign .head__action circle[fill],
 body.redesign .menu__item .menu__ico path[fill],
 body.redesign .menu__item .menu__ico rect[fill],
-body.redesign .menu__item .menu__ico circle[fill] {
-    fill: #14161a;
+body.redesign .menu__item .menu__ico circle[fill],
+body.redesign .navigation-bar__icon path[fill],
+body.redesign .navigation-bar__icon rect[fill],
+body.redesign .navigation-bar__icon circle[fill],
+body.redesign .settings-folder__icon path[fill],
+body.redesign .settings-folder__icon rect[fill],
+body.redesign .settings-folder__icon circle[fill] {
+    fill: var(--light-ink);
 }
+
+body.redesign .head__action.focus [stroke],
+body.redesign .head__action.hover [stroke],
+body.redesign .head__action.focus svg [stroke],
+body.redesign .head__action.hover svg [stroke] {
+    stroke: var(--light-accent-ink);
+}
+
+body.redesign .head__action.focus path[fill],
+body.redesign .head__action.focus rect[fill],
+body.redesign .head__action.focus circle[fill],
+body.redesign .head__action.hover path[fill],
+body.redesign .head__action.hover rect[fill],
+body.redesign .head__action.hover circle[fill] {
+    fill: var(--light-accent-ink);
+}
+
+body.redesign .menu__item {
+    color: var(--light-ink);
+}
+
 body.redesign .menu__item.focus,
 body.redesign .menu__item.traverse,
 body.redesign .menu__item.hover {
-    background-color: #101114;
-    color: #fff;
+    background-color: var(--light-accent);
+    color: var(--light-accent-ink);
 }
-body.redesign .menu__item.focus .menu__ico [stroke] {
-    stroke: #fff;
+
+body.redesign .menu__item.focus .menu__ico [stroke],
+body.redesign .menu__item.traverse .menu__ico [stroke],
+body.redesign .menu__item.hover .menu__ico [stroke] {
+    stroke: var(--light-accent-ink);
 }
+
 body.redesign .menu__item.focus .menu__ico path[fill],
 body.redesign .menu__item.focus .menu__ico rect[fill],
-body.redesign .menu__item.focus .menu__ico circle[fill] {
-    fill: #fff;
-}
-body.redesign .menu__split {
-    border-color: rgba(20, 22, 26, 0.12);
+body.redesign .menu__item.focus .menu__ico circle[fill],
+body.redesign .menu__item.traverse .menu__ico path[fill],
+body.redesign .menu__item.traverse .menu__ico rect[fill],
+body.redesign .menu__item.traverse .menu__ico circle[fill],
+body.redesign .menu__item.hover .menu__ico path[fill],
+body.redesign .menu__item.hover .menu__ico rect[fill],
+body.redesign .menu__item.hover .menu__ico circle[fill] {
+    fill: var(--light-accent-ink);
 }
 
-/* ---------- Нижняя панель навигации (мобильная) ---------- */
-body.redesign .navigation-bar {
-    background: rgba(255, 255, 255, 0.7) !important;
+/* Mobile navigation is still the original bar; only its surface and ink change. */
+body.redesign .navigation-bar,
+body.redesign .navigation-bar__body {
+    background: var(--light-glass-strong) !important;
+    color: var(--light-ink);
+    border-color: var(--light-line);
+    -webkit-backdrop-filter: blur(1.2em);
+    backdrop-filter: blur(1.2em);
 }
+
 body.redesign .navigation-bar__label {
-    color: #14161a;
-}
-body.redesign .navigation-bar__icon [stroke] {
-    stroke: #14161a;
-}
-body.redesign .navigation-bar__icon path[fill],
-body.redesign .navigation-bar__icon rect[fill],
-body.redesign .navigation-bar__icon circle[fill] {
-    fill: #14161a;
+    color: var(--light-ink);
 }
 
-/* ---------- Ряды и карточки ---------- */
-body.redesign .items-line__title {
-    color: #14161a;
+body.redesign .navigation-bar__item.focus,
+body.redesign .navigation-bar__item.active {
+    color: var(--light-accent-deep);
 }
+
+/* Home: images stay photographic; all surrounding ink and affordances become light. */
 body.redesign .items-line__more {
-    background: rgba(255, 255, 255, 0.7);
-    color: #14161a;
-}
-body.redesign .items-line__more.focus {
-    background: #101114;
-    color: #fff;
-}
-body.redesign .card__title {
-    color: #14161a;
-}
-body.redesign .card__vote {
-    color: #ff6a1a;
-}
-body.redesign .card__view {
-    -webkit-box-shadow: 0 0.4em 1.2em rgba(20, 30, 50, 0.15);
-    -moz-box-shadow: 0 0.4em 1.2em rgba(20, 30, 50, 0.15);
-    box-shadow: 0 0.4em 1.2em rgba(20, 30, 50, 0.15);
-}
-body.redesign .card.focus .card__view {
-    -webkit-box-shadow: 0 0 0 0.2em #101114, 0 0.8em 2em rgba(20, 30, 50, 0.3);
-    -moz-box-shadow: 0 0 0 0.2em #101114, 0 0.8em 2em rgba(20, 30, 50, 0.3);
-    box-shadow: 0 0 0 0.2em #101114, 0 0.8em 2em rgba(20, 30, 50, 0.3);
+    background: var(--light-glass);
+    color: var(--light-ink);
+    border-color: var(--light-line);
+    -webkit-box-shadow: 0 0.35em 1em var(--light-shadow);
+    box-shadow: 0 0.35em 1em var(--light-shadow);
 }
 
-/* ---------- Карточка фильма ---------- */
-body.redesign .full-start-new__title {
-    color: #14161a;
+body.redesign .items-line__more.focus {
+    background: var(--light-accent);
+    color: var(--light-accent-ink);
 }
-body.redesign .full-start__rate {
-    color: #ff6a1a;
+
+body.redesign .card__vote,
+body.redesign .full-start__rate,
+body.redesign .info__rate,
+body.redesign .card__quality {
+    color: var(--light-accent-deep);
 }
-body.redesign .full-start__button.button--play {
-    background: #101114;
-    color: #fff;
+
+body.redesign .card__view {
+    -webkit-box-shadow: 0 0.4em 1.2em var(--light-shadow);
+    -moz-box-shadow: 0 0.4em 1.2em var(--light-shadow);
+    box-shadow: 0 0.4em 1.2em var(--light-shadow);
 }
-/* Фон карточки — приглушённый, чтобы тёмный текст читался поверх любого кадра */
+
+body.redesign .card.focus .card__view {
+    -webkit-box-shadow: 0 0 0 0.2em var(--light-accent), 0 0.8em 2em rgba(52, 78, 91, 0.26);
+    -moz-box-shadow: 0 0 0 0.2em var(--light-accent), 0 0.8em 2em rgba(52, 78, 91, 0.26);
+    box-shadow: 0 0 0 0.2em var(--light-accent), 0 0.8em 2em rgba(52, 78, 91, 0.26);
+}
+
+body.redesign .card__textbox,
+body.redesign .card-more__box,
+body.redesign .torrent-item,
+body.redesign .search-history-key,
+body.redesign .search-source {
+    background-color: var(--light-glass);
+    color: var(--light-ink);
+}
+
+/* Movie details: the stock backdrop remains in place, but is subdued behind
+   readable ink and a translucent white content surface. */
 body.redesign .full-start__background.loaded {
-    opacity: 0.15 !important;
+    opacity: 0.14 !important;
 }
+
 body.redesign .full-start__background.dim {
-    opacity: 0.1 !important;
+    opacity: 0.09 !important;
 }
-@media screen and (max-width: 400px) {
-    /* На телефоне постер становится фоном на весь экран — приглушаем его */
-    body.redesign .full-start__poster {
-        opacity: 0.3 !important;
-    }
+
+body.redesign .full-start-new__body,
+body.redesign .full-descr,
+body.redesign .full-person,
+body.redesign .full-episode {
+    color: var(--light-ink);
 }
-/* Весь текст карточки — тёмный (перебивает наследование и светлые цвета стока) */
-body.redesign .full-start-new__head {
-    color: #5a6472;
+
+body.redesign .full-start-new__head,
+body.redesign .full-start-new__creator,
+body.redesign .full-episode__num {
+    color: var(--light-muted);
 }
-body.redesign .full-start-new__head span {
-    color: #14161a;
-}
+
+body.redesign .full-start-new__head span,
 body.redesign .full-start-new__tagline,
 body.redesign .full-start-new__details,
 body.redesign .full-start-new__description,
@@ -157,103 +254,226 @@ body.redesign .full-person__name,
 body.redesign .full-person__role,
 body.redesign .full-episode__name,
 body.redesign .full-episode__body,
-body.redesign .full-episode__date {
-    color: #14161a;
-}
-body.redesign .full-start-new__creator,
-body.redesign .full-episode__num {
-    color: #5a6472;
-}
+body.redesign .full-episode__date,
 body.redesign .full-start__pg,
 body.redesign .full-start__status {
-    color: #14161a;
-    border-color: rgba(20, 22, 26, 0.4);
+    color: var(--light-ink);
 }
 
-/* ---------- Настройки: полупрозрачное стекло ---------- */
-body.redesign .settings__content {
-    background: rgba(255, 255, 255, 0.85) !important;
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
+body.redesign .full-start__button.button--play,
+body.redesign .full-start__button.focus,
+body.redesign .full-descr__tag.focus,
+body.redesign .full-start__tag.focus {
+    background: var(--light-accent);
+    color: var(--light-accent-ink);
 }
-body.redesign .settings__title {
-    color: #14161a;
+
+body.redesign .full-start__button:not(.button--play):not(.focus),
+body.redesign .full-start__tag,
+body.redesign .full-descr__tag,
+body.redesign .full-start .info__rate {
+    background: var(--light-glass);
+    color: var(--light-ink);
+    border-color: var(--light-line);
 }
+
+@media screen and (max-width: 400px) {
+    body.redesign .full-start__poster {
+        opacity: 0.3 !important;
+    }
+}
+
+/* Settings, modal sheets and select lists share one white-glass material. */
+body.redesign .settings__content,
+body.redesign .settings-input__content,
+body.redesign .settings-input--free,
+body.redesign .modal__content,
+body.redesign .selectbox__content,
+body.redesign .discuss-rules {
+    background: var(--light-glass-strong) !important;
+    color: var(--light-ink);
+    border-color: var(--light-line);
+    -webkit-backdrop-filter: blur(1.6em);
+    backdrop-filter: blur(1.6em);
+    -webkit-box-shadow: 0 1em 3em rgba(52, 78, 91, 0.16);
+    box-shadow: 0 1em 3em rgba(52, 78, 91, 0.16);
+}
+
 body.redesign .settings-folder__name,
-body.redesign .settings-param__name {
-    color: #14161a;
+body.redesign .settings-param__name,
+body.redesign .selectbox-item__title,
+body.redesign .modal__title,
+body.redesign .settings-input__input,
+body.redesign .settings-param-text,
+body.redesign .settings-param-title,
+body.redesign .settings-param-title > span {
+    color: var(--light-ink);
 }
+
 body.redesign .settings-param__value,
-body.redesign .settings-param__descr {
-    color: #5a6472;
+body.redesign .settings-param__descr,
+body.redesign .selectbox-item__subtitle {
+    color: var(--light-muted);
 }
+
 body.redesign .settings-folder.focus,
-body.redesign .settings-param.focus {
-    background-color: #101114;
+body.redesign .settings-param.focus,
+body.redesign .selectbox-item.focus {
+    background-color: var(--light-accent);
+    color: var(--light-accent-ink);
 }
+
 body.redesign .settings-folder.focus .settings-folder__name,
 body.redesign .settings-param.focus .settings-param__name,
-body.redesign .settings-param.focus .settings-param__value {
-    color: #fff;
+body.redesign .settings-param.focus .settings-param__value,
+body.redesign .selectbox-item.focus .selectbox-item__title,
+body.redesign .selectbox-item.focus .selectbox-item__subtitle {
+    color: var(--light-accent-ink);
 }
-body.redesign .settings-folder__icon [stroke] {
-    stroke: #14161a;
+
+body.redesign .selectbox-item.selected:not(.nomark)::after,
+body.redesign .selectbox-item.picked::after {
+    border-color: var(--light-accent-deep);
 }
-body.redesign .settings-folder__icon path[fill],
-body.redesign .settings-folder__icon rect[fill],
-body.redesign .settings-folder__icon circle[fill] {
-    fill: #14161a;
+
+body.redesign .settings-input__links,
+body.redesign .settings-input__input,
+body.redesign .torrent-serial,
+body.redesign .notice__footer > div {
+    background: rgba(255, 255, 255, 0.36);
+    color: var(--light-ink);
+    border-color: var(--light-line);
 }
-body.redesign .settings-folder.focus .settings-folder__icon [stroke] {
-    stroke: #fff;
+
+body.redesign .settings-folder.focus .settings-folder__icon [stroke],
+body.redesign .settings-param.focus .settings-folder__icon [stroke],
+body.redesign .selectbox-item.focus .settings-folder__icon [stroke] {
+    stroke: var(--light-accent-ink);
 }
+
 body.redesign .settings-folder.focus .settings-folder__icon path[fill],
 body.redesign .settings-folder.focus .settings-folder__icon rect[fill],
-body.redesign .settings-folder.focus .settings-folder__icon circle[fill] {
-    fill: #fff;
+body.redesign .settings-folder.focus .settings-folder__icon circle[fill],
+body.redesign .settings-param.focus .settings-folder__icon path[fill],
+body.redesign .settings-param.focus .settings-folder__icon rect[fill],
+body.redesign .settings-param.focus .settings-folder__icon circle[fill] {
+    fill: var(--light-accent-ink);
 }
 
-/* ---------- Модальные окна и уведомления: светлая шторка ---------- */
-body.redesign .modal__content {
-    background: rgba(255, 255, 255, 0.88) !important;
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
+/* Notifications: both persistent notices and the bell toast remain recognizable. */
+body.redesign .notice,
+body.redesign .bell__item {
+    background: var(--light-glass-strong);
+    color: var(--light-ink);
+    border: 1px solid var(--light-line);
+    -webkit-backdrop-filter: blur(1.2em);
+    backdrop-filter: blur(1.2em);
+    -webkit-box-shadow: 0 0.7em 2em rgba(52, 78, 91, 0.16);
+    box-shadow: 0 0.7em 2em rgba(52, 78, 91, 0.16);
 }
-body.redesign .modal__title {
-    color: #14161a;
+
+body.redesign .notice__title,
+body.redesign .notice__author-body,
+body.redesign .bell__item-text {
+    color: var(--light-ink);
 }
-body.redesign .notice {
-    background: rgba(255, 255, 255, 0.6);
+
+body.redesign .notice__descr,
+body.redesign .notice__time,
+body.redesign .notice__author-name {
+    color: var(--light-muted);
 }
-body.redesign .notice__title {
-    color: #14161a;
-}
-body.redesign .notice__descr {
-    color: #5a6472;
-}
+
 body.redesign .notice__descr span,
 body.redesign .notice__descr b {
-    color: #8a6d1a;
-}
-body.redesign .notice__time {
-    color: #5a6472;
-}
-body.redesign .notice__author-body {
-    color: #14161a;
+    color: var(--light-accent-deep);
 }
 
-/* ---------- Выпадающие списки: светлые ---------- */
-body.redesign .selectbox__content {
-    background: rgba(255, 255, 255, 0.92) !important;
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
+body.redesign .notice.focus {
+    background: rgba(255, 255, 255, 0.76);
+    border-color: var(--light-accent);
 }
-body.redesign .selectbox-item__title {
-    color: #14161a;
+
+/* Search: full-screen search keeps its original geometry, with a readable field,
+   glass history/source chips and a light keyboard. */
+body.redesign .search {
+    background: rgba(201, 216, 223, 0.96);
+    color: var(--light-ink);
 }
-body.redesign .selectbox-item.focus {
-    background-color: #101114;
+
+body.redesign .search__input {
+    color: var(--light-ink);
+    border-bottom-color: var(--light-line);
 }
-body.redesign .selectbox-item.focus .selectbox-item__title {
-    color: #fff;
+
+body.redesign .search__input.filled::after {
+    border-right-color: var(--light-accent);
+}
+
+body.redesign .search-history-key.focus,
+body.redesign .search-source.focus,
+body.redesign .search-source.active {
+    background: var(--light-accent);
+    color: var(--light-accent-ink);
+    border-color: var(--light-accent);
+}
+
+body.redesign .search-source__count,
+body.redesign .search-source__tab,
+body.redesign .search-history-empty {
+    color: var(--light-muted);
+}
+
+body.redesign .search-source.focus .search-source__count,
+body.redesign .search-source.focus .search-source__tab,
+body.redesign .search-source.active .search-source__count,
+body.redesign .search-source.active .search-source__tab {
+    color: var(--light-accent-ink);
+}
+
+body.redesign .search__keypad .hg-button,
+body.redesign .simple-keyboard .hg-button {
+    background: var(--light-glass-strong);
+    color: var(--light-ink);
+    border-color: var(--light-line);
+    -webkit-box-shadow: 0 0.25em 0.7em rgba(52, 78, 91, 0.12);
+    box-shadow: 0 0.25em 0.7em rgba(52, 78, 91, 0.12);
+}
+
+body.redesign .search__keypad .hg-button:active,
+body.redesign .simple-keyboard .hg-button:active,
+body.redesign .search__keypad .hg-button.focus {
+    background: var(--light-accent);
+    color: var(--light-accent-ink);
+}
+
+/* Focus rings stay obvious against every light surface and never become a black pill. */
+body.redesign :focus-visible {
+    outline: 0.16em solid var(--light-accent);
+    outline-offset: 0.12em;
+}
+
+body.redesign .head__action,
+body.redesign .menu__item,
+body.redesign .items-line__more,
+body.redesign .settings-folder,
+body.redesign .settings-param,
+body.redesign .selectbox-item,
+body.redesign .notice,
+body.redesign .bell__item {
+    -webkit-transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+    -o-transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+    transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.redesign * {
+        -webkit-animation-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        -webkit-animation-iteration-count: 1 !important;
+        animation-iteration-count: 1 !important;
+        -webkit-transition-duration: 0.01ms !important;
+        -o-transition-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
 }

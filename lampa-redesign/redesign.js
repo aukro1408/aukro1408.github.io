@@ -1,24 +1,30 @@
-/* ============================================================
-   LAMPA GLASS v4 — только цветовая схема, без перестроек DOM.
-   Этот скрипт лишь включает классы темы на body; вся работа —
-   в redesign.css (или во встроенном CSS плагина).
-   ============================================================ */
+/* Lampa light theme bootstrap.
+ * This script only applies theme classes to the existing body element.
+ * It does not create, move, or remove DOM nodes.
+ */
 (function () {
     'use strict';
 
-    function apply() {
-        document.body.classList.add('redesign');
-        document.body.classList.add('light--version');
+    function applyTheme() {
+        if (!document.body) return;
+
+        document.body.classList.add('redesign', 'light--version');
         document.body.style.background = '';
     }
 
-    apply();
+    applyTheme();
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyTheme, { once: true });
+    }
 
     try {
         if (window.Lampa && Lampa.Listener) {
-            Lampa.Listener.follow('app', function (e) {
-                if (e.type === 'ready') apply();
+            Lampa.Listener.follow('app', function (event) {
+                if (event && event.type === 'ready') applyTheme();
             });
         }
-    } catch (e) {}
+    } catch (error) {
+        /* Theme CSS remains safe if an older Lampa build has no Listener API. */
+    }
 })();
