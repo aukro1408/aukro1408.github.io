@@ -4,9 +4,6 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>pawflix</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
 <style>
 
@@ -943,7 +940,7 @@
         #screen-provider .prov-body{ padding:1em .7em 4.6em; }
         #screen-detail .detail-extra{ padding:0 1.1em 2em; }
       }
-      /* Ряд кнопок карточки: слайдер источников рядом с «Трейлером» и
+      /* Ряд кнопок карточки: пилюли источников рядом с «Трейлером» и
          закладкой; на узких экранах кнопки переносятся. */
       .detail-actions2{ flex-wrap:wrap; }
       /* Логотип фильма вместо текстового названия (паттерн «Кино»: m.logo). */
@@ -956,7 +953,7 @@
          огромным. Ряд растягивает детей на высоту строки, а круг через
          aspect-ratio берёт эту высоту как диаметр: ровно высота трейлера. */
       #screen-detail .detail-actions2{ align-items:stretch; }
-      #screen-detail #detail-bookmark{ font-size:1em; width:2.6em; height:2.6em; aspect-ratio:1/1; padding:0; align-self:center; }
+      #screen-detail #detail-bookmark{ font-size:1em; width:auto; height:auto; aspect-ratio:1/1; padding:0; align-self:stretch; }
       /* Плитка «Ещё» в конце ряда главной + кнопка «Показать ещё» в сетке категории. */
       .row-more .mimg{ display:flex; align-items:center; justify-content:center; }
       .row-more .mimg span{ font-size:2.4em; font-weight:800; color:var(--accent); }
@@ -972,49 +969,39 @@
       @media (min-width:761px){
         #screen-detail .sidebar{ background:rgba(255,255,255,.6); }
       }
-      /* ---------- Слайдер источников Denis (вариант A, файл один в один) ----------
-         Структура, CSS, squish, цвета, иконки, mobile ≤480px — из файла Denis
-         pawflix_source_buttons_glass_v2_3_piw5.html (вариант A). Демо-обвязка
-         файла (.panel/.wrap/h1/p/note/tools, кнопка «Анимации») НЕ переносится.
-         Отличия интеграции (не редизайн): id thumb → seg-thumb; селекторы
-         .thumb ограничены .seg (класс общий); кнопкам добавлены type="button"
-         и .focusable (D-pad); --mut задан на .seg (в app.css его нет, в файле
-         он в :root); guard'ы margin/box-shadow — иначе app.css .src протекает
-         в кнопки; align-self:center — иначе stretch-ряд растягивал бы .seg;
-         reduced-motion ограничен слайдером (глобальное правило файла убило бы
-         анимации приложения). Позиция bwa: надпись «bwa», иконка и фиолетовый
-         градиент — от прежней позиции lumio (своих Denis не дал). */
+      /* ---------- Светлые пилюли источников (вместо слайдера .seg — вердикт Denis) ----------
+         Белое/светлое стекло, как старая «Смотреть»; иконки — те же, что были
+         в слайдере (плёнка, искры, круг-линии); акцент источника сдержанный —
+         только иконка и текст в цвете var(--b) (синий filmix, фиолетовый bwa,
+         зелёный torrent). Тап = openProvider, как у пилюль и слайдера. */
       .filmix{--a:#3aa0ff;--b:#1a6cf5}.bwa{--a:#a98bff;--b:#7b4dff}.torrent{--a:#3fd6a3;--b:#0fa57a}
-      .seg{--a:#3aa0ff;--b:#1a6cf5;--mut:#7b879f;position:relative;isolation:isolate;display:inline-flex;gap:2px;padding:6px;border-radius:24px;
-      background:linear-gradient(180deg,#ffffff70,#ffffffb0);border:1px solid #fff;box-shadow:0 0 0 1px #d3deF3,inset 0 3px 8px #9fb6e02e}
-      .seg .thumb{position:absolute;z-index:-1;top:6px;bottom:6px;left:0;width:0;border-radius:18px;
-      background:linear-gradient(135deg,var(--a),var(--b));
-      box-shadow:0 12px 26px -8px color-mix(in srgb,var(--b) 75%,transparent),0 0 0 4px color-mix(in srgb,var(--a) 20%,transparent),inset 0 1px #ffffff80;
-      transition:left .5s cubic-bezier(.3,1.35,.5,1),width .5s cubic-bezier(.3,1.35,.5,1),background .4s,box-shadow .4s}
-      .seg .thumb:after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,#ffffff55,transparent 55%)}
-      .seg .thumb.move{animation:squish .5s}
-      @keyframes squish{40%{transform:scale(1.07,.9)}}
-      .seg .src{position:relative;display:inline-flex;align-items:center;gap:9px;height:50px;padding:0 22px;border:0;border-radius:18px;background:none;
-      color:var(--mut);font:600 15px Poppins,system-ui,sans-serif;cursor:pointer;transition:color .3s,transform .2s;-webkit-tap-highlight-color:transparent}
-      .seg .src svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .4s cubic-bezier(.2,.9,.3,1.5)}
-      .seg .src:hover{color:var(--b)}
-      .seg .src:hover svg{transform:scale(1.18) rotate(-8deg)}
-      .seg .src:active{transform:scale(.95)}
-      .seg .src.on,.seg .src.on:hover{color:#fff}
-      .seg .src:focus-visible{outline:3px solid #1a7cf555;outline-offset:2px}
-      .seg .src{margin:0;box-shadow:none}
-      .detail-actions2 .seg{align-self:center}
-      @media (max-width:480px){.seg{display:flex;width:100%}.seg .src{flex:1;justify-content:center;padding:0 8px;font-size:0}.seg .src svg{width:22px;height:22px}}
-      @media (prefers-reduced-motion:reduce){.seg .thumb,.seg .src,.seg .src svg{transition:none!important;animation:none!important}}
+      .src-pill{display:inline-flex;align-items:center;gap:.55em;padding:.68em 1.25em;border-radius:999px;cursor:pointer;
+      background:linear-gradient(180deg,#ffffff,#eef3ff);border:1px solid rgba(255,255,255,.95);
+      box-shadow:0 6px 18px rgba(23,52,110,.18),inset 0 1px #fff;
+      color:var(--b);font:600 1em system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+      .src-pill svg{width:1.2em;height:1.2em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+      .src-pill:hover{box-shadow:0 10px 24px rgba(23,52,110,.24),inset 0 1px #fff;transform:translateY(-1px)}
+      .src-pill:active{transform:scale(.97)}
+      .src-pill:focus-visible{outline:3px solid color-mix(in srgb,var(--b) 55%,transparent);outline-offset:2px}
+      /* ---------- Навбар по высоте hero (поправка Denis) ----------
+         Высота рейки = высоте hero-постера главной (JS ставит --rail-h
+         по getBoundingClientRect #hero при показе главной, загрузке и
+         ресайзе); НИЗ рейки остаётся как сейчас: align-self:flex-end +
+         нижний зазор .5em из плавающего правила не меняются, изменение
+         высоты поглощается сверху (верх = низ − высота hero). Только
+         TV/ПК; мобильный нижний навбар скрыт и не тронут. */
+      @media (min-width:761px){
+        .sidebar{align-self:flex-end;height:var(--rail-h,auto);}
+      }
       /* Fade низа hero провайдера — ровно маска карточки (detail-art):
          у провайдера был только .prov-shade без маски, поэтому арт обрывался
          кромкой контейнера на 58vh. Маска по прозрачности — от яркости
          постера не зависит (тёмный и светлый — одинаково). */
       #screen-provider .prov-art{-webkit-mask-image:linear-gradient(180deg,#000 68%,transparent 97%);mask-image:linear-gradient(180deg,#000 68%,transparent 97%)}
-      /* Закладка — КВАДРАТ (Denis, фото 2): сторона = высота трейлера уже
-         даётся stretch-рядом + aspect-ratio 1/1; меняем только форму —
-         с 50% (.icon-btn) на небольшое скругление. */
-      #screen-detail #detail-bookmark{border-radius:.5em}
+      /* Закладка — КРУГ (вердикт Denis, отменяет квадрат): stretch-ряд даёт
+         высоту строки, aspect-ratio 1/1 — ширину = высоте, 50% — круг
+         диаметром как высота кнопок/«Трейлера». */
+      #screen-detail #detail-bookmark{border-radius:50%}
 
 
     :root {
@@ -1617,12 +1604,9 @@
               <div class="detail-rates" id="detail-rates"></div>
               <p class="detail-desc" id="detail-desc">Откройте карточку из рядов, поиска, библиотеки или категорий — здесь появятся описание, актёры и источники.</p>
               <div class="detail-actions2">
-                <div class="seg" id="seg">
-                  <span class="thumb" id="seg-thumb"></span>
-                  <button class="src filmix on focusable" data-name="filmix" type="button"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M8 4.5v15M16 4.5v15M3.5 9h4.5m-4.5 6h4.5m7.5-6H20m-4.5 6H20"/></svg>filmix</button>
-                  <button class="src bwa focusable" data-name="bwa" type="button"><svg viewBox="0 0 24 24"><path d="m12 2.5 2.5 6.5 7 3-7 3-2.5 6.5L9.5 15l-7-3 7-3z"/><path d="m18.5 3 .7 2 2 .7-2 .8-.7 2-.8-2-2-.8 2-.7z"/></svg>bwa</button>
-                  <button class="src torrent focusable" data-name="torrent" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 2.5v19M4.5 7l15 10M4.5 17l15-10"/></svg>torrent</button>
-                </div>
+                <button class="src-pill filmix focusable" id="src-filmix" data-name="filmix" type="button"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M8 4.5v15M16 4.5v15M3.5 9h4.5m-4.5 6h4.5m7.5-6H20m-4.5 6H20"/></svg>filmix</button>
+                <button class="src-pill bwa focusable" id="src-bwa" data-name="bwa" type="button"><svg viewBox="0 0 24 24"><path d="m12 2.5 2.5 6.5 7 3-7 3-2.5 6.5L9.5 15l-7-3 7-3z"/><path d="m18.5 3 .7 2 2 .7-2 .8-.7 2-.8-2-2-.8 2-.7z"/></svg>bwa</button>
+                <button class="src-pill torrent focusable" id="src-torrent" data-name="torrent" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 2.5v19M4.5 7l15 10M4.5 17l15-10"/></svg>torrent</button>
                 <button class="btn focusable" id="detail-trailer" type="button">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="3.5"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor" stroke="none"/></svg>
                   Трейлер
@@ -3270,7 +3254,7 @@
           });
           fit();
           if (name === 'library') renderLibrary();
-          if (name === 'detail' && typeof segPlace === 'function') requestAnimationFrame(segPlace);
+          if (name === 'home') requestAnimationFrame(measureRail);
           if (!keepFocus) {
             var target = lastFocus[name] || focusables()[0];
             setFocus(target);
@@ -3727,43 +3711,31 @@ var STUDIOS = [
         }
         updateDetailClock();
         setInterval(updateDetailClock, 60000);
-        /* Слайдер источников Denis (вариант A из файла, один в один):
-           place() — дословно из файла (thumb по offsetLeft/offsetWidth
-           кнопки .on, --a/--b из вычисленного стиля кнопки); pick() —
-           та же логика + openProvider. data-name — как в файле
-           (filmix/bwa/torrent), ключ провайдера — через PROV_BY_SEG
-           (torrent → torrents). Позиция bwa: надпись «bwa», иконка и
-           фиолетовый градиент — от прежней позиции lumio (своих иконки
-           и цвета BWA Denis не дал). */
-        var PROV_BY_SEG = { filmix: 'filmix', bwa: 'bwa', torrent: 'torrents' };
-        function segPlace(){
-          var seg = document.getElementById('seg'), thumb = document.getElementById('seg-thumb');
-          if (!seg || !thumb) return;
-          var b = seg.querySelector('.src.on');
-          if (!b) return;
-          thumb.style.left = b.offsetLeft + 'px';
-          thumb.style.width = b.offsetWidth + 'px';
-          var cs = getComputedStyle(b);
-          seg.style.setProperty('--a', cs.getPropertyValue('--a'));
-          seg.style.setProperty('--b', cs.getPropertyValue('--b'));
-        }
-        (function(){
-          var seg = document.getElementById('seg');
-          if (!seg) return;
-          var thumb = document.getElementById('seg-thumb');
-          Array.prototype.forEach.call(seg.querySelectorAll('.src'), function(btn){
-            btn.addEventListener('click', function(){
-              Array.prototype.forEach.call(seg.querySelectorAll('.src'), function(x){ x.classList.toggle('on', x === btn); });
-              if (thumb) { thumb.classList.remove('move'); void thumb.offsetWidth; thumb.classList.add('move'); }
-              segPlace();
-              if (!currentDetailMeta) { toast('Откройте карточку фильма или сериала'); return; }
-              openProvider(PROV_BY_SEG[btn.getAttribute('data-name')] || btn.getAttribute('data-name'));
-            });
+        /* Кнопки источников — светлые пилюли вместо слайдера .seg (вердикт Denis):
+           filmix/bwa/torrent, тап = openProvider того же источника. */
+        var PROV_BY_SRC = { filmix: 'filmix', bwa: 'bwa', torrent: 'torrents' };
+        Array.prototype.forEach.call(document.querySelectorAll('.src-pill'), function(btn){
+          btn.addEventListener('click', function(){
+            if (!currentDetailMeta) { toast('Откройте карточку фильма или сериала'); return; }
+            openProvider(PROV_BY_SRC[btn.getAttribute('data-name')] || btn.getAttribute('data-name'));
           });
-          if (document.fonts && document.fonts.ready) document.fonts.ready.then(segPlace);
-          window.addEventListener('resize', segPlace);
-          segPlace();
-        })();
+        });
+        /* Навбар по высоте hero (поправка Denis): высота рейки = высоте
+           hero-постера главной; низ рейки — как сейчас (flex-end + зазор
+           .5em), верх = низ − высота hero. Замер — по реальному #hero
+           на главной; на остальных экранах та же переменная (рейка
+           глобальная). На скрытой главной высота 0 — старое значение
+           сохраняется, при показе главной show() перемеряет через rAF. */
+        function measureRail(){
+          if (window.matchMedia && window.matchMedia('(max-width:760px)').matches) return;
+          var hero = document.getElementById('hero');
+          if (!hero) return;
+          var h = hero.getBoundingClientRect().height;
+          if (h > 0) document.documentElement.style.setProperty('--rail-h', h + 'px');
+        }
+        measureRail();
+        window.addEventListener('resize', measureRail);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ requestAnimationFrame(measureRail); });
         document.getElementById('prov-back').addEventListener('click', function(){ backFromProvider(); });
         document.getElementById('similar-more').addEventListener('click', function(){ toggleSimilar(); });
         function setGlassRow(valId, value){
@@ -4889,71 +4861,33 @@ var STUDIOS = [
         /* ---------- Страница провайдера (drill-in с карточки) ---------- */
         var prov = { name: null };
         /* ---------- BWA через прокси-воркер (замена Lumio) ----------
-           База — воркер Denis (online.js BWA + bootstrap): /online.js отдаёт
-           оригинал app.bwa.ad/online.js и ставит bwa_server на origin воркера.
-           Диагностика воркера: GET {base}/kit/kinopub/watch?title=..&year=..
-           с заголовком x-kit-key (только если ключ задан). Успешный формат
-           (схема источников/озвучек) по online.js не определяется — плагин
-           обфусцирован: ok:true рендерится только generic-списком записей
-           с http(s)-ссылкой, иначе — честная записка. ok:false: not_bound =
-           устройство не привязано (нужен kit-ключ в Настройках). Сериалы
-           BWA пока — как фильмы (сезоны/серии из ответа не разобраны). */
+           Воркер — тупой прокси (факт из ~/workspace/bwa-proxy/worker.js):
+           /online.js отдаёт оригинал app.bwa.ad/online.js + bootstrap
+           (bwa_server = origin воркера, rust.bwa.ad → /__rust/*,
+           *.fovea.club → /__fx/*), остальное — reverse-proxy на api.bwa.ad
+           с сохранением заголовков (x-kit-key, x-kit-acc). В Лампе BWA
+           работает потому, что там бежит САМ плагин с уже пройденной один
+           раз привязкой Fovea (QR) — ключи лежат в хранилище Лампы.
+           pawflix плагин не запускает, а диагностический /kit/kinopub/watch
+           со страницы /diag воркера — проба связи, а не поисковый API,
+           поэтому как основной путь он УБРАН. Реальный поисковый API из
+           кода плагина не извлечён: копия online.js с воркера не прошла
+           проверку безопасности и не использовалась, а запускать её в
+           pawflix нельзя (зависит от Lampa.Storage/Lampa API). До
+           извлечения API экран BWA честно говорит о привязке и показывает,
+           заданы ли база и kit-ключ (поле pawflix.bwa_key, заголовок
+           x-kit-key). Точное имя ключа в хранилище Лампы не подтверждено —
+           это отмечено как неизвестное, не выдумано. */
         var BWA_DEFAULT = 'https://jolly-resonance-a7b5.flyugertdiana.workers.dev';
         function bwaBase(){ var v = (localStorage.getItem('pawflix.bwa_base') || '').trim().replace(/\/+$/, ''); return v || BWA_DEFAULT; }
         function bwaKey(){ return (localStorage.getItem('pawflix.bwa_key') || '').trim(); }
-        function bwaPickEntries(j){
-          var out = [];
-          function scan(arr){
-            if (!Array.isArray(arr)) return;
-            arr.forEach(function(it){
-              if (!it || typeof it !== 'object') return;
-              var url = it.url || it.file || it.href || it.stream || it.play || '';
-              if (typeof url === 'string' && /^https?:\/\//.test(url)) {
-                out.push({ url: url, title: it.title || it.name || it.voice || it.label || 'Смотреть', sub: it.quality || it.resolution || it.voice || '' });
-              } else {
-                Object.keys(it).forEach(function(k){ scan(it[k]); });
-              }
-            });
-          }
-          ['results', 'items', 'sources', 'streams', 'data', 'voices', 'episodes'].forEach(function(k){ scan(j[k]); });
-          if (!out.length) Object.keys(j).forEach(function(k){ scan(j[k]); });
-          return out;
-        }
         function openBwaPage(){
           provSetSub('BWA');
           provPillsHTML([]);
           provEscBack = backFromProvider;
           var box = provListEl(); if (!box) return;
-          box.innerHTML = ''; box.appendChild(srcNote('Загружаю BWA…'));
-          var m = currentDetailMeta || {};
-          var q = 'title=' + encodeURIComponent(m.orig || m.title || '') + '&year=' + encodeURIComponent(m.year || '');
-          var headers = {};
-          if (bwaKey()) headers['x-kit-key'] = bwaKey();
-          fetch(bwaBase() + '/kit/kinopub/watch?' + q, { headers: headers }).then(function(r){
-            if (!r.ok) throw new Error('http' + r.status);
-            return r.json();
-          }).then(function(j){
-            box.innerHTML = '';
-            if (!j || j.ok === false) {
-              var why = (j && j.why) || '';
-              box.appendChild(srcNote(why === 'not_bound'
-                ? 'BWA: устройство не привязано — для работы источника нужна привязка BWA (kit-ключ — поле в Настройках).'
-                : 'BWA: источник не ответил (' + (why || 'нет данных') + '). Проверь базу BWA в Настройках.'));
-              return;
-            }
-            var entries = bwaPickEntries(j);
-            if (!entries.length) {
-              box.appendChild(srcNote('BWA ответил, но формат ответа пока не разобран — записи с прямой ссылкой не найдены.'));
-              return;
-            }
-            entries.forEach(function(e){
-              box.appendChild(vwVoiceRow(esc(e.title), esc(e.sub || ''), function(){ playViaBridge(e.url, e.title); }));
-            });
-            var first = box.querySelector('.focusable'); if (first) setFocus(first);
-          }).catch(function(){
-            box.innerHTML = '';
-            box.appendChild(srcNote('Не получилось связаться с источником. Проверь базу BWA в Настройках.'));
-          });
+          box.innerHTML = '';
+          box.appendChild(srcNote('BWA здесь пока не ищет. В Лампе BWA работает через сам плагин online.js с уже пройденной привязкой Fovea (QR) — ключи лежат в хранилище Лампы, а pawflix плагин не запускает. Поисковый API плагина пока не извлечён, поэтому показывать здесь нечего — это честно, а не ошибка связи. База: ' + bwaBase() + '. Kit-ключ: ' + (bwaKey() ? 'задан' : 'не задан') + ' (поле «BWA · kit-ключ» в Настройках, уйдёт заголовком x-kit-key, когда появится рабочий API).'));
         }
         var PROV_TITLES = { filmix: 'Filmix 4k', bwa: 'BWA', torrents: 'Торренты' };
         function openProvider(name){
