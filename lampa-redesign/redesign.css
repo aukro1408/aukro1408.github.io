@@ -139,6 +139,12 @@ body.redesign .full-start__background.dim {
     }
 }
 /* Весь текст карточки — тёмный (перебивает наследование и светлые цвета стока) */
+body.redesign .full-start-new__head {
+    color: #5a6472;
+}
+body.redesign .full-start-new__head span {
+    color: #14161a;
+}
 body.redesign .full-start-new__tagline,
 body.redesign .full-start-new__details,
 body.redesign .full-start-new__description,
