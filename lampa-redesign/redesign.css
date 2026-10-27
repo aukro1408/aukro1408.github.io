@@ -1,0 +1,310 @@
+/* ============================================================
+   LAMPA REDESIGN — светлая frosted-glass тема (утверждена 2026-10-27)
+   Подключается ПОСЛЕ css/app.css. Оригинальные app.min.js и app.css
+   не меняются: весь редизайн — этот файл + redesign.js.
+   Откат: убрать две строки из index.html.
+   Единицы — em (Lampa масштабирует шрифт под высоту экрана ТВ).
+   ============================================================ */
+
+/* ---------- База ---------- */
+body.redesign {
+    background: #d9dee6 !important;
+    background: linear-gradient(180deg, #d3d9e2 0%, #e2e7ed 45%, #eef1f5 100%) !important;
+    color: #14161a;
+    font-family: 'Onest', 'Inter', system-ui, sans-serif;
+}
+body.redesign .background,
+body.redesign .background__one,
+body.redesign .background__two,
+body.redesign .background__fade {
+    opacity: 0 !important;
+}
+body.redesign .activity__body,
+body.redesign .activity {
+    background: transparent !important;
+}
+
+/* ---------- Левая колонка меню: прячем, контент на всю ширину ---------- */
+body.redesign .wrap__left {
+    display: none !important;
+}
+body.redesign .wrap__content {
+    padding-top: 0 !important;
+    -webkit-transform: none !important;
+    -moz-transform: none !important;
+    transform: none !important;
+}
+body.redesign.menu--open .wrap__content,
+body.redesign.menu--always .wrap__content,
+body.redesign.menu--always.menu--open .wrap__content {
+    -webkit-transform: none !important;
+    -moz-transform: none !important;
+    transform: none !important;
+}
+
+/* ---------- Пилюля-навигация сверху ---------- */
+#rd-pillnav {
+    position: fixed;
+    top: 1.1em;
+    left: 50%;
+    -webkit-transform: translateX(-50%);
+    -moz-transform: translateX(-50%);
+    transform: translateX(-50%);
+    z-index: 100;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -moz-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    gap: 0.2em;
+    background: #101114;
+    padding: 0.35em 0.5em;
+    -webkit-border-radius: 999px;
+    -moz-border-radius: 999px;
+    border-radius: 999px;
+    -webkit-box-shadow: 0 0.6em 1.8em rgba(16, 17, 20, 0.35);
+    -moz-box-shadow: 0 0.6em 1.8em rgba(16, 17, 20, 0.35);
+    box-shadow: 0 0.6em 1.8em rgba(16, 17, 20, 0.35);
+}
+#rd-pillnav .menu__list {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+#rd-pillnav .menu__item {
+    color: rgba(255, 255, 255, 0.75);
+    padding: 0.55em 1.1em;
+    -webkit-border-radius: 999px;
+    -moz-border-radius: 999px;
+    border-radius: 999px;
+    margin: 0;
+}
+#rd-pillnav .menu__item .menu__ico {
+    display: none;
+}
+#rd-pillnav .menu__item .menu__text {
+    font-size: 0.95em;
+    font-weight: 600;
+    white-space: nowrap;
+}
+#rd-pillnav .menu__item.focus,
+#rd-pillnav .menu__item.traverse,
+#rd-pillnav .menu__item.hover {
+    background: #fff;
+    color: #101114;
+}
+#rd-pillnav .menu__item.focus .menu__text {
+    color: #101114;
+}
+#rd-pillnav .menu__split {
+    display: none;
+}
+
+/* Отступ контента под фиксированную пилюлю */
+body.redesign .activity__body {
+    padding-top: 5.2em !important;
+}
+
+/* ---------- Hero-баннеры ---------- */
+#rd-hero {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    gap: 1.2em;
+    padding: 0 1.5em 1.6em;
+}
+.rd-hero-card {
+    position: relative;
+    -webkit-box-flex: 1;
+    -webkit-flex: 1;
+    -moz-box-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+    height: 13.5em;
+    -webkit-border-radius: 1.4em;
+    -moz-border-radius: 1.4em;
+    border-radius: 1.4em;
+    overflow: hidden;
+    cursor: pointer;
+    -webkit-box-shadow: 0 0.8em 2em rgba(20, 30, 50, 0.25);
+    -moz-box-shadow: 0 0.8em 2em rgba(20, 30, 50, 0.25);
+    box-shadow: 0 0.8em 2em rgba(20, 30, 50, 0.25);
+}
+.rd-hero-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 20%;
+    display: block;
+}
+.rd-hero-card::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 70%;
+    background: -webkit-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.75) 100%);
+    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.75) 100%);
+}
+.rd-hero-card__info {
+    position: absolute;
+    left: 1.4em;
+    right: 1.4em;
+    bottom: 1.2em;
+    z-index: 2;
+    color: #fff;
+}
+.rd-hero-card__title {
+    font-size: 1.5em;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 0.25em;
+}
+.rd-hero-card__meta {
+    font-size: 0.95em;
+    color: rgba(255, 255, 255, 0.85);
+}
+.rd-hero-card__meta b {
+    color: #ff8a3c;
+}
+.rd-hero-card__play {
+    display: inline-block;
+    margin-top: 0.7em;
+    background: #fff;
+    color: #101114;
+    font-weight: 700;
+    font-size: 0.9em;
+    padding: 0.45em 1.2em;
+    -webkit-border-radius: 999px;
+    -moz-border-radius: 999px;
+    border-radius: 999px;
+}
+
+/* ---------- Пилюли-категории (быстрый переход к рядам) ---------- */
+#rd-cats {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    gap: 0.6em;
+    padding: 0 1.5em 1.4em;
+    -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+}
+.rd-cat {
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    color: #14161a;
+    font-weight: 600;
+    font-size: 0.95em;
+    padding: 0.55em 1.2em;
+    -webkit-border-radius: 999px;
+    -moz-border-radius: 999px;
+    border-radius: 999px;
+    cursor: pointer;
+    -webkit-box-shadow: 0 0.3em 0.9em rgba(20, 30, 50, 0.08);
+    -moz-box-shadow: 0 0.3em 0.9em rgba(20, 30, 50, 0.08);
+    box-shadow: 0 0.3em 0.9em rgba(20, 30, 50, 0.08);
+}
+.rd-cat.focus, .rd-cat:hover {
+    background: #101114;
+    color: #fff;
+}
+
+/* ---------- Ряды и карточки ---------- */
+body.redesign .items-line {
+    padding-bottom: 2.2em;
+}
+body.redesign .items-line__head {
+    padding: 0 1.5em;
+    margin-bottom: 1em;
+}
+body.redesign .items-line__title {
+    color: #14161a;
+    font-weight: 700;
+}
+body.redesign .items-line__more {
+    background: rgba(255, 255, 255, 0.7);
+    color: #14161a;
+}
+body.redesign .items-line__more.focus {
+    background: #101114;
+    color: #fff;
+}
+body.redesign .card__view {
+    -webkit-border-radius: 1em;
+    -moz-border-radius: 1em;
+    border-radius: 1em;
+    overflow: hidden;
+    -webkit-box-shadow: 0 0.4em 1.2em rgba(20, 30, 50, 0.15);
+    -moz-box-shadow: 0 0.4em 1.2em rgba(20, 30, 50, 0.15);
+    box-shadow: 0 0.4em 1.2em rgba(20, 30, 50, 0.15);
+}
+body.redesign .card__title {
+    color: #14161a;
+}
+body.redesign .card__vote {
+    color: #ff6a1a;
+}
+body.redesign .card.focus .card__view,
+body.redesign .card.focus {
+    -webkit-box-shadow: 0 0 0 0.2em #101114, 0 0.8em 2em rgba(20, 30, 50, 0.3);
+    -moz-box-shadow: 0 0 0 0.2em #101114, 0 0.8em 2em rgba(20, 30, 50, 0.3);
+    box-shadow: 0 0 0 0.2em #101114, 0 0.8em 2em rgba(20, 30, 50, 0.3);
+}
+
+/* ---------- Карточка фильма (экран full) ---------- */
+body.redesign .full-start-new {
+    color: #14161a;
+}
+body.redesign .full-start-new__title {
+    color: #14161a;
+}
+body.redesign .full-start__button {
+    -webkit-border-radius: 999px;
+    -moz-border-radius: 999px;
+    border-radius: 999px;
+}
+body.redesign .full-start__button.button--play {
+    background: #101114;
+    color: #fff;
+}
+body.redesign .full-start__rate {
+    color: #ff6a1a;
+}
+
+/* ---------- Настройки ---------- */
+body.redesign .settings__content,
+body.redesign .settings-param {
+    -webkit-border-radius: 1em;
+    -moz-border-radius: 1em;
+    border-radius: 1em;
+}
+body.redesign .settings-param {
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    margin-bottom: 0.5em;
+}
+body.redesign .settings-param__name {
+    color: #14161a;
+}
+body.redesign .settings-param.focus {
+    background: #101114;
+}
+body.redesign .settings-param.focus .settings-param__name,
+body.redesign .settings-param.focus .settings-param__value {
+    color: #fff;
+}
