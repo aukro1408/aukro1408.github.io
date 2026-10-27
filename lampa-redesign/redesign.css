@@ -125,6 +125,44 @@ body.redesign .full-start__button.button--play {
     background: #101114;
     color: #fff;
 }
+/* Фон карточки — приглушённый, чтобы тёмный текст читался поверх любого кадра */
+body.redesign .full-start__background.loaded {
+    opacity: 0.15 !important;
+}
+body.redesign .full-start__background.dim {
+    opacity: 0.1 !important;
+}
+@media screen and (max-width: 400px) {
+    /* На телефоне постер становится фоном на весь экран — приглушаем его */
+    body.redesign .full-start__poster {
+        opacity: 0.3 !important;
+    }
+}
+/* Весь текст карточки — тёмный (перебивает наследование и светлые цвета стока) */
+body.redesign .full-start-new__tagline,
+body.redesign .full-start-new__details,
+body.redesign .full-start-new__description,
+body.redesign .full-descr__info-name,
+body.redesign .full-descr__info-body,
+body.redesign .full-descr__text,
+body.redesign .full-descr__line-name,
+body.redesign .full-descr__line-body,
+body.redesign .full-person__name,
+body.redesign .full-person__role,
+body.redesign .full-episode__name,
+body.redesign .full-episode__body,
+body.redesign .full-episode__date {
+    color: #14161a;
+}
+body.redesign .full-start-new__creator,
+body.redesign .full-episode__num {
+    color: #5a6472;
+}
+body.redesign .full-start__pg,
+body.redesign .full-start__status {
+    color: #14161a;
+    border-color: rgba(20, 22, 26, 0.4);
+}
 
 /* ---------- Настройки: полупрозрачное стекло ---------- */
 body.redesign .settings__content {
@@ -167,4 +205,49 @@ body.redesign .settings-folder.focus .settings-folder__icon path[fill],
 body.redesign .settings-folder.focus .settings-folder__icon rect[fill],
 body.redesign .settings-folder.focus .settings-folder__icon circle[fill] {
     fill: #fff;
+}
+
+/* ---------- Модальные окна и уведомления: светлая шторка ---------- */
+body.redesign .modal__content {
+    background: rgba(255, 255, 255, 0.88) !important;
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+}
+body.redesign .modal__title {
+    color: #14161a;
+}
+body.redesign .notice {
+    background: rgba(255, 255, 255, 0.6);
+}
+body.redesign .notice__title {
+    color: #14161a;
+}
+body.redesign .notice__descr {
+    color: #5a6472;
+}
+body.redesign .notice__descr span,
+body.redesign .notice__descr b {
+    color: #8a6d1a;
+}
+body.redesign .notice__time {
+    color: #5a6472;
+}
+body.redesign .notice__author-body {
+    color: #14161a;
+}
+
+/* ---------- Выпадающие списки: светлые ---------- */
+body.redesign .selectbox__content {
+    background: rgba(255, 255, 255, 0.92) !important;
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+}
+body.redesign .selectbox-item__title {
+    color: #14161a;
+}
+body.redesign .selectbox-item.focus {
+    background-color: #101114;
+}
+body.redesign .selectbox-item.focus .selectbox-item__title {
+    color: #fff;
 }
