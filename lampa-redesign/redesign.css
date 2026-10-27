@@ -477,3 +477,30 @@ body.redesign .bell__item {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* ============ FIXES v8 (muse): белые img-иконки, читаемость меню и шапки ============ */
+/* Три папки настроек рисуются <img> с белым цветом, зашитым в SVG-файл:
+   CSS-перекраска внутрь <img> не достаёт, поэтому гасим белый в чёрный фильтром.
+   Только эти три файла — остальные иконки (в т.ч. more.svg) не трогаем. */
+body.redesign .settings-folder__icon img[src*="player.svg"],
+body.redesign .settings-folder__icon img[src*="parser.svg"],
+body.redesign .settings-folder__icon img[src*="server.svg"] {
+    filter: brightness(0);
+}
+
+/* Боковое меню: сплошной белый фон вместо полупрозрачного стекла —
+   сквозь стекло просвечивали постеры, и текст на них расплывался. */
+body.redesign .wrap__left {
+    background: rgba(255, 255, 255, 0.97) !important;
+    -webkit-box-shadow: 0 0.5em 2em rgba(52, 78, 91, 0.22);
+    box-shadow: 0 0.5em 2em rgba(52, 78, 91, 0.22);
+}
+
+/* Кнопки шапки: сплошные белые кружки вместо мутного стекла —
+   тёмные иконки на них читаются чётко, а не пятнами. */
+body.redesign .head__action {
+    background: #ffffff !important;
+    border-color: var(--light-line);
+    -webkit-box-shadow: 0 0.2em 0.8em rgba(52, 78, 91, 0.14);
+    box-shadow: 0 0.2em 0.8em rgba(52, 78, 91, 0.14);
+}
