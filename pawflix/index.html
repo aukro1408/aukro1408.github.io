@@ -731,6 +731,50 @@
       .pl-close:hover{ background:rgba(255,255,255,.28); }
       #pl-video{ flex:1; width:100%; min-height:0; background:#000; outline:none; }
       #pl-yt{ flex:1; width:100%; min-height:0; border:0; background:#000; }
+      /* ТЁМНЫЙ ЭКРАН ФИЛЬМА по референсу — только #screen-detail, остальные экраны светлые.
+         Фон — размытый постер как в «Кино» (blur 40px, цвет фона берётся из постера),
+         поверх — тёмные градиенты для читаемости. Резкого бэкдропа на странице нет. */
+      #screen-detail .sidebar{ position:relative; z-index:2; }
+      #screen-detail .detail-hero::after{ background:none; }
+      #screen-detail #detail-bg{ position:fixed; inset:0; width:100vw; height:100vh;
+        object-fit:cover; object-position:center;
+        filter:blur(40px) saturate(1.6) brightness(.55); transform:scale(1.25); z-index:0; }
+      #screen-detail .detail-shade{ position:fixed; inset:0; z-index:0; pointer-events:none;
+        background:linear-gradient(180deg, rgba(0,0,0,.62) 0%, rgba(0,0,0,.28) 32%, rgba(0,0,0,.12) 55%, rgba(0,0,0,.78) 100%); }
+      #screen-detail .detail-topbar{ position:relative; z-index:3; }
+      #screen-detail .detail-hero-in{ position:relative; z-index:1; }
+      #screen-detail .detail-sourcesbar, #screen-detail .detail-similar{ position:relative; z-index:1; }
+      #screen-detail .detail-title{ color:#fff; text-transform:uppercase; letter-spacing:.3em;
+        font-size:2.9em; line-height:1.18; text-shadow:0 2px 24px rgba(0,0,0,.5); overflow-wrap:break-word; }
+      #screen-detail .detail-main .meta{ color:rgba(255,255,255,.85); }
+      #screen-detail .detail-rates{ color:#fff; text-shadow:0 1px 12px rgba(0,0,0,.4); }
+      #screen-detail .detail-desc{ color:rgba(255,255,255,.92); text-shadow:0 1px 12px rgba(0,0,0,.4); }
+      #screen-detail #detail-watch{ background:#fff; border-color:#fff; color:#0d7bf2;
+        box-shadow:0 8px 28px rgba(13,123,242,.4); }
+      #screen-detail #detail-watch svg{ color:#0d7bf2; }
+      #screen-detail #detail-trailer{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.28);
+        color:#fff; backdrop-filter:blur(10px); box-shadow:none; }
+      #screen-detail .icon-btn{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.28);
+        color:#fff; backdrop-filter:blur(10px); }
+      #screen-detail .detail-menu{ background:rgba(18,26,46,.94); border-color:rgba(255,255,255,.22); }
+      #screen-detail .detail-menu .btn{ background:rgba(255,255,255,.1); border-color:transparent; color:#fff; box-shadow:none; }
+      #screen-detail .detail-glass{ background:rgba(16,24,48,.52); border:1px solid rgba(255,255,255,.22);
+        box-shadow:0 24px 60px rgba(0,0,0,.45); backdrop-filter:blur(18px); }
+      #screen-detail .glass-lab{ color:rgba(255,255,255,.6); }
+      #screen-detail .glass-val{ color:#fff; }
+      #screen-detail #glass-av{ display:none; }
+      #screen-detail .detail-sourcesbar{ background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
+        backdrop-filter:blur(14px); box-shadow:none; }
+      #screen-detail .src-btn{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); color:#fff; }
+      #screen-detail .top-search{ background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.22);
+        color:rgba(255,255,255,.8); }
+      #screen-detail .top-icon{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.28); color:#fff; }
+      #screen-detail .bell-dot{ background:#ff5470; }
+      #screen-detail .detail-clock{ color:#fff; font-weight:600; font-size:1.25em; letter-spacing:.03em;
+        font-variant-numeric:tabular-nums; white-space:nowrap; }
+      #screen-detail .detail-similar .src-title{ color:#fff; }
+      #screen-detail #similar-more{ background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.25); color:#fff; box-shadow:none; }
+      #screen-detail .empty-note{ color:rgba(255,255,255,.7); }
 
 </style>
 </head>
@@ -1163,19 +1207,18 @@
                     <div class="detail-topbar">
             <button class="top-search focusable" id="detail-search" type="button">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-              <span>Поиск фильмов, сериалов…</span>
+              <span>Поиск фильмов, сериалов, актёров…</span>
             </button>
             <div class="top-icons">
               <button class="top-icon focusable" id="detail-bell" type="button" aria-label="Уведомления">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9a6 6 0 0 0-12 0c0 6-2.5 7-2.5 7h17S18 15 18 9Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
                 <span class="bell-dot"></span>
               </button>
-              <button class="top-icon focusable" id="detail-gear" type="button" aria-label="Настройки">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
-              </button>
             </div>
+            <div class="detail-clock" id="detail-clock"></div>
           </div>
 <div class="detail-hero"><img class="bg" id="detail-bg" src="" alt="" />
+          <div class="detail-shade"></div>
           <div class="detail-hero-in">
             <div class="detail-main">
               <h1 class="detail-title" id="detail-title">Выберите фильм или сериал</h1>
@@ -1212,10 +1255,9 @@
           </div>
 </div>
                     <div class="detail-sourcesbar">
-            <span class="src-label">Источники:</span>
-            <button class="src-btn focusable" id="src-lumio" type="button">Lumio</button>
-            <button class="src-btn focusable" id="src-filmix" type="button">Filmix</button>
-            <button class="src-btn focusable" id="src-torrents" type="button">Торренты</button>
+            <button class="src-btn focusable" id="src-lumio" type="button">lumio</button>
+            <button class="src-btn focusable" id="src-filmix" type="button">filmix</button>
+            <button class="src-btn focusable" id="src-torrents" type="button">torrent</button>
           </div>
 
                   <div class="detail-similar">
@@ -2353,7 +2395,14 @@
         });
         document.getElementById('detail-search').addEventListener('click', function(){ closeDetailMenu(); show('search'); });
         document.getElementById('detail-bell').addEventListener('click', function(){ toast('Уведомления появятся позже'); });
-        document.getElementById('detail-gear').addEventListener('click', function(){ closeDetailMenu(); show('settings'); });
+        function updateDetailClock(){
+          var el = document.getElementById('detail-clock');
+          if (!el) return;
+          var d = new Date();
+          el.textContent = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+        }
+        updateDetailClock();
+        setInterval(updateDetailClock, 60000);
         ['lumio', 'filmix', 'torrents'].forEach(function(p){
           document.getElementById('src-' + p).addEventListener('click', function(){
             if (!currentDetailMeta) { toast('Откройте карточку фильма или сериала'); return; }
@@ -2413,7 +2462,8 @@
               if (cr && cr.rating) age = cr.rating;
             }
             var bg = document.getElementById('detail-bg');
-            if (d.backdrop_path) { bg.src = IMG + 'w1280' + d.backdrop_path; bg.style.display = ''; }
+            var bgSrc = d.poster_path ? IMG + 'w780' + d.poster_path : (d.backdrop_path ? IMG + 'w1280' + d.backdrop_path : '');
+            if (bgSrc) { bg.src = bgSrc; bg.style.display = ''; }
             else bg.style.display = 'none';
             var poster = document.getElementById('detail-poster');
             if (d.poster_path) { poster.src = IMG + 'w500' + d.poster_path; poster.style.display = ''; }
