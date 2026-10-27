@@ -784,11 +784,44 @@
       #screen-detail .detail-similar .src-title{ color:#fff; }
       #screen-detail #similar-more{ background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.25); color:#fff; box-shadow:none; }
       #screen-detail .empty-note{ color:rgba(255,255,255,.7); }
+      /* Правки экрана фильма по фото Denis + подтверждение top:0:
+         арт — от самой верхней кромки экрана (absolute top:0; .main на экране
+         фильма имеет padding:0, а .detail-hero переведён в static, чтобы
+         содержащим блоком был именно .main); топбар — прозрачным поверх арта;
+         кроп арта — от верха (object-position 50% 0), чтобы верх композиции
+         не резался; карточка — светлое стекло на позиции макета: ~1/3 ширины,
+         верхний край на высоте заголовка, перекрывает hero, а не сидит под
+         кнопками. */
+      #screen-detail .main{ position:relative; }
+      #screen-detail .detail-hero{ position:static; }
+      #screen-detail .detail-topbar{ position:absolute; top:0; left:0; right:0; z-index:5; }
+      #screen-detail .detail-art{ position:absolute; top:0; left:0; right:0; z-index:0;
+        height:58vh; min-height:400px; max-height:660px; }
+      #screen-detail .detail-art img{ object-position:50% 0; }
+      #screen-detail .detail-hero-in{ padding:21vh 2.4em 2.2em; }
+      #screen-detail .detail-glass{ flex:0 0 32%;
+        background:linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.12));
+        border:1px solid rgba(255,255,255,.4);
+        box-shadow:0 24px 60px rgba(0,0,0,.35); backdrop-filter:blur(22px) saturate(1.5); }
+      #screen-detail .glass-poster{ width:9em; }
+      /* Главная: hero выше — было flex:0 0 50%, бэкдроп резался по вертикали
+         почти вдвое (видно на фото Denis: «Клэйфейс»); 68% оставляет композицию
+         читаемой, .rows сжимается (flex:1, внутренний скролл) — вёрстка ниже
+         не ломается. Только TV/ПК, мобильный hero (min-height 520px) не тронут. */
+      @media (min-width:761px){
+        .hero{ flex-basis:68%; }
+      }
       /* Мобильная вёрстка экрана фильма (блок ПОСЛЕ тёмного — иначе тот перебьёт
          его при равной специфичности): hero-арт — 16:9 на всю ширину main,
-         виден сразу при открытии, без скролла (как арт в мобильном «Кино»). */
+         виден сразу при открытии, без скролла (как арт в мобильном «Кино»).
+         Сброс десктопных перестановок: арт обратно в поток, hero-in без 21vh,
+         карточка на всю ширину; арт от верха экрана — у .main на экране фильма
+         обнулён верхний padding, топбар поверх арта. */
       @media (max-width:760px){
-        #screen-detail .detail-art{ height:auto; aspect-ratio:16/9; min-height:0; max-height:none; }
+        #screen-detail .detail-art{ position:relative; height:auto; aspect-ratio:16/9; min-height:0; max-height:none; }
+        #screen-detail .main{ padding-top:0; }
+        #screen-detail .detail-hero-in{ padding:1em 1.1em 1.6em; }
+        #screen-detail .detail-glass{ flex-basis:auto; width:100%; }
       }
 
 </style>
@@ -3521,11 +3554,19 @@
           show('detail');
         }
 
-        /* ---------- Filmix: механика из «Кино» (токен + прокси Denis) ----------
-           API: {прокси}http://filmixapp.vip/api/v2/{path}?{tokenQS}.
-           Без прокси — прямое https-подключение (CORS может не дать ответ:
-           тогда экран честно скажет проверить токен и прокси).
-           Прокси по умолчанию НЕ подставляется: дефолт «Кино» cors.jacred.stream мёртв. */
+        /* ---------- Filmix: механика из «Кино» (токен + прокси) ----------
+           API: {прокси}http://filmixapp.vip/api/v2/{path}?{tokenQS} для
+           префиксного прокси (как cors.jacred.stream в «Кино») или
+           {прокси}{urlencoded target} для query-прокси (...?quest= / ...?url=).
+           filmixapp.vip не отдаёт CORS-заголовки: с https-страницы (ПК-превью)
+           прямой fetch браузер блокирует, поэтому без прокси запрос уходит
+           напрямую только как fallback — в WebView APK он проходит
+           (universal access), а в превью нужен прокси.
+           Публичный прокси по умолчанию НЕ подставлен: проверенные curl'ом
+           api.codetabs.com (таймаут CONNECT), api.allorigins.win (520/522
+           по filmix) и corsproxy.io (401, нужен API-ключ) — не работают.
+           Свой прокси: поднять work/filmix-proxy-worker.js как Cloudflare
+           Worker и вписать его URL в Настройки → Filmix → Прокси. */
         var fx = { token: 0, level: null, maxQ: 720, playlist: null, seasons: [], seasonIdx: 0, eps: [], cardTitle: '' };
         function fxToken(){ return (localStorage.getItem('pawflix.filmix_token') || '').trim(); }
         function fxProxyBase(){
@@ -3544,12 +3585,16 @@
             '&user_dev_name=Xiaomi+24069PC21G&user_dev_os=12&user_dev_token=' + encodeURIComponent(fxToken()) +
             '&user_dev_vendor=Xiaomi';
         }
-        function fxGet(path, extra){
+        function fxBuildUrl(path, extra){
+          var qs = fxTokenQS() + (extra ? '&' + extra : '');
           var proxy = fxProxyBase();
-          var base = proxy ? proxy + '/' : '';
-          var host = proxy ? 'http://filmixapp.vip/api/v2/' : 'https://filmixapp.vip/api/v2/';
-          var url = base + host + path + '?' + fxTokenQS() + (extra ? '&' + extra : '');
-          return fetch(url).then(function(r){
+          if (!proxy) return 'https://filmixapp.vip/api/v2/' + path + '?' + qs;
+          var target = 'http://filmixapp.vip/api/v2/' + path + '?' + qs;
+          if (/[?&](quest|url)=$/.test(proxy)) return proxy + encodeURIComponent(target);
+          return proxy + '/' + target;
+        }
+        function fxGet(path, extra){
+          return fetch(fxBuildUrl(path, extra)).then(function(r){
             if (!r.ok) throw new Error('http ' + r.status);
             return r.json();
           });
@@ -3629,7 +3674,7 @@
             provNote('На Filmix ничего не нашлось.');
           }).catch(function(){
             if (tok !== fx.token) return;
-            fxErrNote('Не получилось связаться с Filmix. Проверьте токен и прокси в Настройках.', function(){ openFilmixPage(); });
+            fxErrNote('Не получилось связаться с Filmix. Проверьте токен и CORS-прокси в Настройках: без прокси браузер блокирует запрос (CORS).', function(){ openFilmixPage(); });
           });
         }
         function fxErrNote(text, retry){
