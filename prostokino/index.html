@@ -198,6 +198,47 @@ body.phone .person{padding:5em 1em 2em}
 body.phone .person-head img{width:130px}
 .person-head h1{margin:0 0 .4em;font-size:2em}
 .person-bio{color:#d5d8e0;line-height:1.6;max-width:50em;margin-top:1em}
+/* v0.6: экран раздач как в «Кино» + рамка + золотой акцент */
+/* Фрейм-контейнер: сплошная чуть более светлая подложка, тонкая светлая граница, без blur (стекла нет) */
+.framed{background:#1a1a22;border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:1em}
+body.phone .framed{padding:.8em}
+.picker-box.framed{padding:1.2em}
+/* Экран раздач */
+.tor-screen{padding:5.5em 2em 3em}
+body.phone .tor-screen{padding:5em 1em 2em}
+.tor-screen .back-btn{margin:0 0 1.2em}
+.tor-kicker{font-size:.85em;font-weight:800;letter-spacing:2.5px;color:#8ab4f8;text-transform:uppercase;margin-bottom:.5em}
+.tor-screen h1{margin:0 0 .3em;font-size:2em;line-height:1.1}
+body.phone .tor-screen h1{font-size:1.5em}
+.tor-meta{color:#e8eaf0;margin-bottom:1em}
+.tor-meta .star{color:#ffb340}
+.best-btn{display:flex;align-items:center;justify-content:center;gap:.6em;width:100%;padding:1em;border:0;border-radius:18px;background:linear-gradient(135deg,#3b8cff,#7b5cff);color:#fff;font-size:1.15em;font-weight:800;letter-spacing:.2px;box-shadow:0 12px 30px rgba(70,110,255,.40),inset 0 1px 0 rgba(255,255,255,.25);margin-bottom:1em}
+.best-btn:active{transform:scale(.98)}
+.best-btn.focused{outline:3px solid #fff;outline-offset:2px}
+.tor-sub{color:#9aa3b5;font-size:1em;margin-bottom:1em}
+.tor-sub b{color:#fff}
+.tor-filters{display:flex;gap:.8em;flex-wrap:wrap;margin-bottom:1.2em}
+.filter-pill{display:flex;align-items:center;gap:.5em;background:#1e1e28;border:1px solid rgba(255,255,255,.10);border-radius:14px;color:#fff;font-size:1em;font-weight:700;padding:.7em 1em}
+.filter-pill .pv{color:#8ab4f8;max-width:14em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filter-pill.focused{outline:3px solid #fff;outline-offset:2px}
+.tor-status{color:#9aa3b5;font-size:1em;line-height:1.5;margin-bottom:1em;max-width:50em}
+.tor-status.err{color:#ff9a90}
+.tor-card{display:block;width:100%;background:#26262e;border:1px solid rgba(255,255,255,.06);border-radius:14px;color:#fff;padding:.85em 1em;margin-bottom:.7em;text-align:left}
+.tor-card:last-child{margin-bottom:0}
+.tor-card.focused{outline:3px solid #fff;outline-offset:2px}
+.tor-card.busy{opacity:.6}
+.tor-card.premium{border-color:rgba(255,210,90,.55);box-shadow:0 0 18px rgba(255,210,90,.15)}
+.tor-t{display:block;font-size:1.02em;font-weight:700;line-height:1.35}
+.tor-pills{display:flex;flex-wrap:wrap;gap:.4em;margin:.55em 0 .2em}
+.tpill{display:inline-block;padding:.2em .6em;border-radius:999px;font-size:.85em;font-weight:800;letter-spacing:.3px}
+.tpill.res{background:rgba(77,163,255,.16);color:#8dbcff;border:1px solid rgba(77,163,255,.35)}
+.tpill.au{background:rgba(255,255,255,.07);color:#9aa3b5;border:1px solid rgba(255,255,255,.12)}
+.tpill.sub{background:rgba(90,220,170,.12);color:#7fe0b2;border:1px solid rgba(90,220,170,.35)}
+.tpill.top{background:rgba(255,210,90,.15);color:#ffd25e;border:1px solid rgba(255,210,90,.45)}
+.tpill.gold{background:rgba(255,210,90,.15);color:#ffd25e;border:1px solid rgba(255,210,90,.55)}
+.tor-m{display:flex;gap:.9em;align-items:center;color:#9aa3b5;font-size:.95em;margin-top:.5em;flex-wrap:wrap}
+.tor-m .seeds{color:#7fe0b2}
+.tor-m .trk{margin-left:auto}
 /* Пикер (озвучка/качество/сезон/серия/источник/файл) */
 #picker{position:fixed;inset:0;z-index:200;display:none;background:rgba(0,0,0,.78);overflow-y:auto}
 #picker.open{display:block}
@@ -332,6 +373,23 @@ body.phone .person-head img{width:130px}
   </section>
   <section class="screen" id="screen-detail">
     <div class="detail" id="detail-box"></div>
+  </section>
+  <section class="screen" id="screen-tor">
+    <div class="tor-screen">
+      <button class="back-btn focusable" id="tor-back">← Назад</button>
+      <div class="tor-kicker">Торренты</div>
+      <h1 id="tor-title"></h1>
+      <div class="tor-meta" id="tor-meta"></div>
+      <button class="best-btn focusable" id="tor-best" style="display:none">▶ <span id="tor-best-t">Лучшая раздача</span></button>
+      <div class="tor-sub" id="tor-sub"></div>
+      <div class="tor-filters">
+        <button class="filter-pill focusable" id="tor-sort-pill">Сортировка <span class="pv" id="tor-sort-v">Топ</span> <span>▾</span></button>
+        <button class="filter-pill focusable" id="tor-qmode-pill">Запрос <span class="pv" id="tor-qmode-v"></span> <span>▾</span></button>
+      </div>
+      <div class="tor-status" id="tor-status"></div>
+      <div class="framed" id="tor-frame" style="display:none"><div id="tor-list"></div></div>
+      <div class="empty" id="tor-empty" style="display:none"></div>
+    </div>
   </section>
   <section class="screen" id="screen-person">
     <div class="person" id="person-box"></div>
@@ -509,6 +567,8 @@ document.addEventListener('click',e=>{
   if(tile){openGenreList(tile.dataset.type,tile.dataset.genre,tile.dataset.name,tile.dataset.anim==='1');return;}
   const ps=e.target.closest?e.target.closest('.cast-item,.dir-item'):null;
   if(ps){openPerson(ps.dataset.person);return;}
+  const tc=e.target.closest?e.target.closest('.tor-card'):null;
+  if(tc&&torState){torPlayCard(torState.list[+tc.dataset.i],tc);return;}
   const st=e.target.closest?e.target.closest('.src-tile'):null;
   if(st){openSource(st.dataset.src,st);return;}
 });
@@ -724,10 +784,10 @@ function setTileBusy(tile,on){if(tile)tile.classList.toggle('busy',!!on);}
 
 /* Пикер */
 let pickerOpen=false, pickerOpener=null;
-function showPicker(title,items){
+function showPicker(title,items,framed){
   const ov=$('#picker');
   pickerOpener=cur;
-  ov.innerHTML='<div class="picker-box"><h2>'+esc(title)+'</h2>'+items.map((it,i)=>'<button class="pick-btn focusable" data-pi="'+i+'">'+esc(it.label)+(it.sub?'<span class="sub">'+esc(it.sub)+'</span>':'')+'</button>').join('')+'</div>';
+  ov.innerHTML='<div class="picker-box'+(framed?' framed':'')+'"><h2>'+esc(title)+'</h2>'+items.map((it,i)=>'<button class="pick-btn focusable" data-pi="'+i+'">'+esc(it.label)+(it.sub?'<span class="sub">'+esc(it.sub)+'</span>':'')+'</button>').join('')+'</div>';
   ov.classList.add('open'); pickerOpen=true;
   ov.querySelectorAll('.pick-btn').forEach((b,i)=>{b.addEventListener('click',()=>{const cb=items[i].onPick;closePicker();if(cb)cb();});});
   if(detectTV()){const f=ov.querySelector('.pick-btn');if(f)setFocus(f);}
@@ -867,7 +927,7 @@ async function openDetail(type,id){
     const dur=type==='movie'?fmtDur(d.runtime):fmtDur((d.episode_run_time||[])[0]);
     const fav=isFav(type,id);
     const pic=d.backdrop_path||d.poster_path;
-    currentDetail={type:type,id:d.id,title:title,orig:d.original_title||d.original_name||title,year:year};
+    currentDetail={type:type,id:d.id,title:title,orig:d.original_title||d.original_name||title,year:year,rating:d.vote_average||0,dur:dur};
     let credits=null, sim=null, vids=null;
     try{credits=await api('/'+type+'/'+id+'/credits');}catch(e){}
     try{sim=await api('/'+type+'/'+id+'/similar',{page:1});}catch(e){}
@@ -1042,9 +1102,9 @@ function fxMovieVoices(list,maxQ,meta,tile,run){
     const cl=fxCleanVoice(it.voice);
     return {label:cl.name,sub:(cl.studio?cl.studio+' · ':'')+it.q+'p',onPick:()=>{
       if(it.qs.length<=1){playUrl(fxFileUrl(it.link,it.q),meta.title);return;}
-      showPicker('Качество',it.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===it.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(it.link,q),meta.title)})));
+      showPicker('Качество',it.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===it.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(it.link,q),meta.title)})),true);
     }};
-  }));
+  }),true);
 }
 function fxSeriesFlow(playlist,maxQ,meta,tile,run){
   const seasons=Object.keys(playlist).sort((a,b)=>parseInt(a,10)-parseInt(b,10));
@@ -1071,13 +1131,13 @@ function fxSeriesFlow(playlist,maxQ,meta,tile,run){
     showPicker('Серия',epNums.map(en=>({label:'Серия '+en,onPick:()=>{
       const vs=epsMap[en];
       if(vs.length===1){const v=vs[0];fxQualityPick(v,meta);return;}
-      showPicker('Озвучка',vs.map(v=>{const cl=fxCleanVoice(v.voice);return {label:cl.name,sub:(cl.studio?cl.studio+' · ':'')+v.q+'p',onPick:()=>fxQualityPick(v,meta)};}));
+      showPicker('Озвучка',vs.map(v=>{const cl=fxCleanVoice(v.voice);return {label:cl.name,sub:(cl.studio?cl.studio+' · ':'')+v.q+'p',onPick:()=>fxQualityPick(v,meta)};}),true);
     }})));
   }})));
 }
 function fxQualityPick(v,meta){
   if(v.qs.length<=1){playUrl(fxFileUrl(v.link,v.q),meta.title);return;}
-  showPicker('Качество',v.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===v.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(v.link,q),meta.title)})));
+  showPicker('Качество',v.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===v.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(v.link,q),meta.title)})),true);
 }
 
 /* ============ Alpac (порт из «Кино») ============ */
@@ -1249,16 +1309,95 @@ function torYearOK(t,year){
   if(!m) return true;
   return m.some(y=>+y===+year);
 }
-function torScore(t){
-  const s=String(t.title||'');
-  let sc=0;
-  if(/2160p/i.test(s)) sc+=100; else if(/1080p/i.test(s)) sc+=70; else if(/720p/i.test(s)) sc+=40; else sc+=10;
-  if(/\bDV\b/i.test(s)) sc+=30; if(/HDR/i.test(s)) sc+=18;
-  if(/дубляж/i.test(s)) sc+=15; else if(/многоголос/i.test(s)) sc+=8;
-  if(/субтитр/i.test(s)) sc+=5;
-  sc+=Math.min(t.seeders||0,200)*0.2;
-  return sc;
+/* v0.6: разбор раздач как в «Кино» + золотой акцент премиум-фич */
+function torParse(title){
+  const s=title||'', sl=s.toLowerCase();
+  let res=0;
+  if(/2160p|\b4k\b|uhd/.test(sl)) res=2160;
+  else if(/1080p|\b1080i\b/.test(sl)) res=1080;
+  else if(/720p/.test(sl)) res=720;
+  let hdr=null;
+  if(/dolby.?vision|\bdv\b|dovi/.test(sl)) hdr='DV';
+  else if(/hdr10\+/.test(sl)) hdr='HDR10+';
+  else if(/(?<![\p{L}\p{N}])hdr(?![\p{L}\p{N}])/iu.test(s)) hdr='HDR10';
+  let audio=null;
+  const tok=function(re){return new RegExp('(?<![\\p{L}\\p{N}])'+re+'(?![\\p{L}\\p{N}])','iu').test(s);};
+  if(/дубляж/i.test(s)||tok('дб')) audio='Дубляж';
+  else if(/многоголос/i.test(s)||tok('пм')) audio='Многоголосый';
+  else if(/любитель/i.test(s)) audio='Любительский';
+  const subs=/субтитр/i.test(s)||tok('ст');
+  const gold=[];
+  if(res===2160) gold.push('4K');
+  if(/dolby.?vision|\bdv\b|dovi/.test(sl)) gold.push('Dolby Vision');
+  else if(/hdr10\+/.test(sl)) gold.push('HDR10+');
+  else if(/(?<![\p{L}\p{N}])hdr(?![\p{L}\p{N}])/iu.test(s)) gold.push('HDR');
+  if(/dolby.?atmos|\batmos\b/.test(sl)) gold.push('Atmos');
+  const premium=res===2160||/dolby.?vision|\bdv\b|dovi/.test(sl);
+  return {res:res,hdr:hdr,audio:audio,subs:subs,gold:gold,premium:premium};
 }
+function torScore(t){
+  const p=torParse(t.title);
+  let s=p.res===2160?100:p.res===1080?70:p.res===720?40:10;
+  if(p.hdr==='DV') s+=30; else if(p.hdr) s+=18;
+  if(p.audio==='Дубляж') s+=15; else if(p.audio==='Многоголосый') s+=8;
+  if(p.subs) s+=5;
+  s+=Math.min(t.seeders||0,200)*0.2;
+  return Math.round(s);
+}
+function torQuality(t){
+  const s=(t||'').toLowerCase();
+  if(/2160p|\b4k\b|uhd/.test(s)) return 4;
+  if(/1080p/.test(s)) return 3;
+  if(/720p/.test(s)) return 2;
+  if(/hdtv|dvd|bdrip|web-?dl|blu-?ray/.test(s)) return 1;
+  return 0;
+}
+function torNiceTitle(t,m){
+  const raw=t.title||'';
+  const name=((m&&m.title)||'').trim()||raw;
+  if(m&&m.type==='tv'){
+    let season=null,ep1=null,ep2=null,mm;
+    mm=raw.match(/[Ss](\d{1,2})[Ee](\d{1,3})/);
+    if(mm){season=+mm[1];ep1=ep2=+mm[2];}
+    if(season==null){
+      mm=raw.match(/\[s(\d{1,2})\]/i)||raw.match(/\bs(\d{1,2})\b/i)||raw.match(/сезон\s*:\s*(\d{1,2})/i)||raw.match(/(\d{1,2})\s*сезон/i);
+      if(mm) season=+mm[1];
+    }
+    mm=raw.match(/\[(\d{1,3})\s*[-–]\s*(\d{1,3})\s*из\s*\d{1,3}\]/i)||raw.match(/\((\d{1,3})\s*[-–]\s*(\d{1,3})\s*сери[яйи]/i)||raw.match(/(\d{1,3})\s*[-–]\s*(\d{1,3})\s*сери[яйи]/i)||raw.match(/серии\s*:\s*(\d{1,3})\s*[-–]\s*(\d{1,3})/i);
+    if(mm){ep1=+mm[1];ep2=+mm[2];}
+    let s=name;
+    if(season!=null) s+=' · Сезон '+season;
+    if(ep1!=null) s+=ep1===ep2?' · Серия '+ep1:' · Серии '+ep1+'–'+ep2;
+    return s;
+  }
+  const y=(m&&m.year)?m.year:((raw.match(/\b((?:19|20)\d{2})\b/)||[])[1]);
+  return y?name+' ('+y+')':name;
+}
+function torPills(t,isTop){
+  const p=torParse(t.title), out=[];
+  if(isTop) out.push('<span class="tpill top">★ Рекомендую</span>');
+  p.gold.forEach(function(g){out.push('<span class="tpill gold">'+esc(g)+'</span>');});
+  if(p.res) out.push('<span class="tpill res">'+p.res+'p</span>');
+  if(p.audio) out.push('<span class="tpill au">'+esc(p.audio)+'</span>');
+  if(p.subs) out.push('<span class="tpill sub">Субтитры</span>');
+  return out.length?'<span class="tor-pills">'+out.join('')+'</span>':'';
+}
+const TOR_SORTS=[{id:'top',t:'Топ'},{id:'seeds',t:'Сиды'},{id:'quality',t:'Качество'},{id:'size',t:'Размер'}];
+const TOR_QMODES=[
+  {id:'orig',t:'Оригинал'},{id:'orig_year',t:'Оригинал + Год'},{id:'orig_ru',t:'Оригинал + Русский'},{id:'orig_ru_year',t:'Оригинал + Русский + Год'},
+  {id:'ru',t:'Русский'},{id:'ru_year',t:'Русский + Год'},{id:'ru_orig',t:'Русский + Оригинал'},{id:'ru_orig_year',t:'Русский + Оригинал + Год'}
+];
+function torSortName(id){const f=TOR_SORTS.find(x=>x.id===id);return f?f.t:'Топ';}
+function torQmodeName2(id){const f=TOR_QMODES.find(x=>x.id===id);return f?f.t:'Оригинал + Русский + Год';}
+function torSortedList(arr,sortKey){
+  const a=arr.slice();
+  if(sortKey==='size') a.sort((x,y)=>(y.size||0)-(x.size||0));
+  else if(sortKey==='quality') a.sort((x,y)=>(torQuality(y.title)-torQuality(x.title))||((y.seeders||0)-(x.seeders||0)));
+  else if(sortKey==='top') a.sort((x,y)=>torScore(y)-torScore(x));
+  else a.sort((x,y)=>(y.seeders||0)-(x.seeders||0));
+  return a;
+}
+function plural(n,one,few,many){const a=Math.abs(n)%100,b=a%10;if(a>10&&a<20)return many;if(b>1&&b<5)return few;if(b===1)return one;return many;}
 function jacBase(){return getS('prostokino.jac_url')||'https://jac.red';}
 function jacKey(){return getS('prostokino.jac_key');}
 function jacConfigured(){
@@ -1287,35 +1426,93 @@ async function tsAPI(body){
 function tsStreamURL(ts,link,idx,name){
   return ts+'/stream/'+encodeURIComponent(name||'video')+'?link='+encodeURIComponent(link)+'&index='+idx+'&play';
 }
+/* v0.6: экран раздач как в «Кино» */
+let torState=null;
+function torStatusMsg(msg,err){const el=$('#tor-status');if(el){el.textContent=msg||'';el.classList.toggle('err',!!err);}}
+function playStatus(msg,err){if(currentScreen==='tor') torStatusMsg(msg,err); else srcStatus(msg,err);}
 async function openTorrent(meta,tile,run){
-  if(!jacConfigured()){srcStatus('Торренты: парсеры не настроены — добавьте адрес и ключ в Настройках.',true);return;}
-  setTileBusy(tile,true); srcStatus('Ищу раздачи…');
+  torState={meta:meta,run:run,list:[],sort:'top',query:torQuery(meta)};
+  showScreen('tor');
+  $('#tor-title').textContent=meta.title||'';
+  const mp=[];
+  if(meta.rating) mp.push('★ '+Number(meta.rating).toFixed(1));
+  if(meta.year) mp.push(meta.year);
+  if(meta.dur) mp.push(meta.dur);
+  $('#tor-meta').innerHTML=mp.map(esc).join(' · ').replace('★','<span class="star">★</span>');
+  $('#tor-best').style.display='none';
+  $('#tor-sub').textContent='';
+  $('#tor-frame').style.display='none';
+  $('#tor-list').innerHTML='';
+  $('#tor-empty').style.display='none';
+  $('#tor-sort-v').textContent='Топ';
+  $('#tor-qmode-v').textContent=torQmodeName2(torQmode());
+  if(!jacConfigured()){
+    torStatusMsg('Торренты: парсеры не настроены — добавьте адрес и ключ в Настройках.',true);
+    $('#tor-empty').textContent='Парсеры не настроены.'; $('#tor-empty').style.display='block';
+    return;
+  }
+  await torSearch(true);
+}
+async function torSearch(focusFirst){
+  const st=torState; if(!st) return;
+  const meta=st.meta, run=st.run;
+  torStatusMsg('Ищу раздачи…');
+  $('#tor-frame').style.display='none'; $('#tor-list').innerHTML='';
+  $('#tor-empty').style.display='none';
+  st.query=torQuery(meta);
   try{
     const base=jacBase(), key=jacKey();
     if(location.protocol==='https:'&&/^http:\/\//i.test(base)){
-      setTileBusy(tile,false);
-      srcStatus('Парсеры: '+base.replace(/^https?:\/\//,'').split('/')[0]+' — http-адрес заблокирован на https-странице',true);
+      torStatusMsg('Парсеры: '+base.replace(/^https?:\/\//,'').split('/')[0]+' — http-адрес заблокирован на https-странице',true);
+      $('#tor-empty').textContent='Парсер заблокирован.'; $('#tor-empty').style.display='block';
       return;
     }
-    const r=await fetch(jacQueryURL(base,key,torQuery(meta)));
+    const r=await fetch(jacQueryURL(base,key,st.query));
     if(!r.ok) throw new Error('HTTP '+r.status);
     const j=await r.json();
-    let res=(j.Results||[]).filter(x=>x.MagnetUri).map(x=>({title:x.Title,magnet:x.MagnetUri,seeders:x.Seeders||0,size:x.Size||0}));
-    if(meta.type==='movie'){
-      res=res.filter(t=>!torIsSeriesTitle(t.title)&&torYearOK(t.title,meta.year));
-    }
-    res.sort((a,b)=>torScore(b)-torScore(a));
-    if(run!==srcRun){setTileBusy(tile,false);return;}
-    if(!res.length){setTileBusy(tile,false);srcStatus('Раздач не нашлось.',true);return;}
-    setTileBusy(tile,false); srcStatus('');
-    showPicker('Раздачи',res.slice(0,30).map(t=>({label:t.title,sub:(t.size?fmtSize(t.size)+' · ':'')+t.seeders+' сидов',onPick:()=>playTorrent(t,meta,tile)})));
+    let res=(j.Results||[]).filter(x=>x.MagnetUri).map(x=>({title:x.Title,magnet:x.MagnetUri,seeders:x.Seeders||0,size:x.Size||0,tracker:x.Tracker||''}));
+    if(meta.type==='movie') res=res.filter(t=>!torIsSeriesTitle(t.title)&&torYearOK(t.title,meta.year));
+    if(run!==srcRun) return;
+    st.list=res;
+    torStatusMsg('');
+    torRender(!!focusFirst);
   }catch(e){
-    setTileBusy(tile,false);
-    srcStatus('Парсеры не отвечают · проверь адреса в Настройках'+(e&&e.message?' ('+e.message+')':''),true);
+    torStatusMsg('Парсеры не отвечают · проверь адреса в Настройках'+(e&&e.message?' ('+e.message+')':''),true);
+    $('#tor-empty').textContent='Парсеры не отвечают.'; $('#tor-empty').style.display='block';
   }
 }
+function torRender(focusFirst){
+  const st=torState; if(!st) return;
+  const meta=st.meta;
+  const arr=torSortedList(st.list,st.sort);
+  let best=null,bestScore=-1;
+  st.list.forEach(function(t){const s=torScore(t);if(s>bestScore){bestScore=s;best=t;}});
+  const bestBtn=$('#tor-best');
+  if(best){bestBtn.style.display='flex';bestBtn.onclick=function(){torPlayCard(best,null);};} else bestBtn.style.display='none';
+  $('#tor-sub').innerHTML=arr.length+' '+plural(arr.length,'раздача','раздачи','раздач')+(st.query?' · <b>'+esc(st.query)+'</b>':'');
+  $('#tor-sort-v').textContent=torSortName(st.sort);
+  $('#tor-qmode-v').textContent=torQmodeName2(torQmode());
+  const frame=$('#tor-frame'), list=$('#tor-list'), empty=$('#tor-empty');
+  if(!arr.length){frame.style.display='none';empty.textContent='Раздач не нашлось.';empty.style.display='block';return;}
+  empty.style.display='none'; frame.style.display='block';
+  list.innerHTML=arr.map(function(t){
+    const i=st.list.indexOf(t);
+    const p=torParse(t.title);
+    return '<button class="tor-card focusable'+(p.premium?' premium':'')+'" data-i="'+i+'" title="'+esc(t.title).replace(/"/g,'&quot;')+'">'+
+      '<span class="tor-t">'+esc(torNiceTitle(t,meta))+'</span>'+
+      torPills(t,best&&t===best)+
+      '<span class="tor-m"><span>'+fmtSize(t.size)+'</span><span class="seeds">● '+(t.seeders||0)+'</span><span class="trk">'+esc(t.tracker||'')+'</span></span></button>';
+  }).join('');
+  if(focusFirst&&detectTV()){const f=list.querySelector('.focusable');if(f)setFocus(f);}
+}
+function torPlayCard(t,cardEl){
+  if(!t||!torState) return;
+  if(cardEl) cardEl.classList.add('busy');
+  const p=playTorrent(t,torState.meta,null);
+  if(p&&p.finally) p.finally(function(){if(cardEl) cardEl.classList.remove('busy');});
+}
 async function playTorrent(t,meta,tile){
-  setTileBusy(tile,true); srcStatus('Подключаю TorrServer…');
+  setTileBusy(tile,true); playStatus('Подключаю TorrServer…');
   try{
     const ts=tsBase();
     const echo=await fetch(ts+'/echo',{cache:'no-store'});
@@ -1332,7 +1529,7 @@ async function playTorrent(t,meta,tile){
       if(vids.length){files=vids;break;}
       await new Promise(res=>setTimeout(res,1500));
     }
-    setTileBusy(tile,false); srcStatus('');
+    setTileBusy(tile,false); playStatus('');
     if(files&&files.length===1){
       playUrl(tsStreamURL(ts,hash,files[0].id,files[0].name||t.title),meta.title);
       return;
@@ -1344,9 +1541,19 @@ async function playTorrent(t,meta,tile){
     }
     playUrl(tsStreamURL(ts,t.magnet,1,t.title),meta.title);
   }catch(e){
-    setTileBusy(tile,false); srcStatus('TorrServer не отвечает · проверь адрес в Настройках.',true);
+    setTileBusy(tile,false); playStatus('TorrServer не отвечает · проверь адрес в Настройках.',true);
   }
 }
+$('#tor-back').addEventListener('click',goBack);
+$('#tor-sort-pill').addEventListener('click',function(){
+  if(!torState) return;
+  showPicker('Сортировка',TOR_SORTS.map(function(s){return {label:s.t,onPick:function(){torState.sort=s.id;torRender(false);}};}));
+});
+$('#tor-qmode-pill').addEventListener('click',function(){
+  if(!torState) return;
+  const curQ=torQmode();
+  showPicker('Режим поиска',TOR_QMODES.map(function(o){return {label:o.t+(o.id===curQ?' · текущий':''),onPick:function(){setS('prostokino.tor_qmode',o.id);torState.sort='top';torSearch(false);}};}));
+});
 
 /* Оверлеи: кнопки закрытия */
 $('#player-close').addEventListener('click',closeBuiltInPlayer);
