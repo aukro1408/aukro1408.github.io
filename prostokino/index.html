@@ -239,6 +239,22 @@ body.phone .tor-screen h1{font-size:1.5em}
 .tor-m{display:flex;gap:.9em;align-items:center;color:#9aa3b5;font-size:.95em;margin-top:.5em;flex-wrap:wrap}
 .tor-m .seeds{color:#7fe0b2}
 .tor-m .trk{margin-left:auto}
+/* Экран привязки Alpac */
+.alp-screen{padding:5.5em 2em 3em}
+body.phone .alp-screen{padding:5em 1em 2em}
+.alp-screen .back-btn{margin:0 0 1.2em}
+.alp-kicker{font-size:.85em;font-weight:800;letter-spacing:2.5px;color:#f0a832;text-transform:uppercase;margin-bottom:.5em}
+.alp-screen h1{margin:0 0 1em;font-size:2em;line-height:1.1}
+body.phone .alp-screen h1{font-size:1.5em}
+.alp-auth{max-width:26em;margin:0 auto;text-align:center;padding:1.6em 1.4em}
+.alp-qr{width:200px;height:200px;border-radius:16px;background:#fff;padding:10px;display:block;margin:0 auto 1.1em;box-shadow:0 0 34px rgba(240,168,50,.25)}
+.alp-code{font-size:2em;font-weight:800;letter-spacing:8px;text-indent:8px;margin-bottom:.6em;word-break:break-all}
+.alp-msg{font-size:1em;line-height:1.6;color:#9aa3b5;margin-bottom:1em}
+.alp-msg b{color:#fff}
+.alp-status{display:flex;align-items:center;justify-content:center;gap:.5em;font-size:1em;font-weight:700;color:#f0c060;margin-bottom:1.2em}
+.alp-dot{width:9px;height:9px;border-radius:50%;background:#f0a832;box-shadow:0 0 10px #f0a832;animation:alp-blink 1.2s ease-in-out infinite;flex:none}
+@keyframes alp-blink{50%{opacity:.35}}
+.alp-btns{display:flex;gap:.8em;justify-content:center;flex-wrap:wrap}
 /* Пикер (озвучка/качество/сезон/серия/источник/файл) */
 #picker{position:fixed;inset:0;z-index:200;display:none;background:rgba(0,0,0,.78);overflow-y:auto}
 #picker.open{display:block}
@@ -394,6 +410,20 @@ body.phone .tor-screen h1{font-size:1.5em}
   <section class="screen" id="screen-person">
     <div class="person" id="person-box"></div>
   </section>
+  <section class="screen" id="screen-alpac-auth">
+    <div class="alp-screen">
+      <button class="back-btn focusable" id="alp-back">← Назад</button>
+      <div class="alp-kicker">Alpac</div>
+      <h1 id="alp-title"></h1>
+      <div class="framed alp-auth">
+        <img class="alp-qr" id="alp-qr" alt="QR" style="display:none">
+        <div class="alp-code" id="alp-code"></div>
+        <div class="alp-msg" id="alp-msg"></div>
+        <div class="alp-status" id="alp-status"><span class="alp-dot"></span><span id="alp-status-t">Жду подтверждения…</span></div>
+        <div class="alp-btns"><button class="save-btn focusable" id="alp-refresh">Обновить код</button></div>
+      </div>
+    </div>
+  </section>
 </main>
 <div id="picker"></div>
 <div id="player-ov">
@@ -513,6 +543,7 @@ function showScreen(id,push){
   if(push===undefined) push=true;
   if(push&&currentScreen&&currentScreen!==id) hist.push(currentScreen);
   currentScreen=id;
+  if(id!=='alpac-auth') stopAlpacPoll();
   $$('section.screen').forEach(s=>s.classList.toggle('show',s.id==='screen-'+id));
   if(MENU_MAIN[id]) $$('.menu-btn').forEach(b=>b.classList.toggle('active',b.dataset.screen===id));
   window.scrollTo(0,0);
@@ -532,6 +563,8 @@ function goBack(){
   if(currentScreen!=='home') showScreen('home',false);
 }
 $('#list-back').addEventListener('click',goBack);
+$('#alp-back').addEventListener('click',()=>{stopAlpacPoll();alpAuthCtx=null;goBack();});
+$('#alp-refresh').addEventListener('click',()=>{const ctx=alpAuthCtx;if(!ctx)return;stopAlpacPoll();alpAuthCtx=null;openAlpac(ctx.meta,ctx.tile,++srcRun);});
 $$('.menu-btn').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));
 $('#nokey-goto').addEventListener('click',()=>showScreen('settings'));
 
@@ -1150,6 +1183,50 @@ function alpacAbs(u){return /^https?:\/\//i.test(u)?u:ALPAC+'/'+u.replace(/^\/+/
 async function alpacFetchJson(url){const r=await fetch(url,{headers:alpacHeaders()});if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
 async function alpacFetchText(url){const r=await fetch(url,{headers:alpacHeaders()});if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}
 function alpacSaveToken(j){const t=j&&(j.token||j.access_token||j.auth_token||(j.data&&j.data.token));if(t){setS('prostokino.alpac_token',t);return true;}return false;}
+/* Привязка Alpac по QR (порт из «Кино»: accsdb → QR + поллинг tg/auth/check) */
+let alpAuthPoll=null, alpAuthCtx=null;
+function stopAlpacPoll(){if(alpAuthPoll){clearInterval(alpAuthPoll);alpAuthPoll=null;}}
+function alpacQrSrc(q){if(!q)return '';if(/^data:/i.test(q)||/^https?:\/\//i.test(q))return q;return alpacAbs(q);}
+function showAlpacAuth(er,meta,tile){
+  stopAlpacPoll();
+  alpAuthCtx={meta:meta,tile:tile,code:er.code||''};
+  setTileBusy(tile,false); srcStatus('');
+  $('#alp-title').textContent=meta.title||'Alpac';
+  const qr=$('#alp-qr');
+  if(er.qr){qr.src=alpacQrSrc(er.qr);qr.style.display='block';}else qr.style.display='none';
+  $('#alp-code').textContent=er.code||'';
+  $('#alp-msg').innerHTML='Отправь этот код боту <b>'+esc(er.bot||'@go_lampa_testbot')+'</b> в Telegram<br>или просто сканируй QR';
+  const stT=$('#alp-status-t');
+  if(!er.code&&!er.qr){stT.textContent='Не удалось получить код привязки — нажми «Обновить код».';showScreen('alpac-auth');return;}
+  stT.textContent='Жду подтверждения…';
+  showScreen('alpac-auth');
+  const code=er.code||'';
+  alpAuthPoll=setInterval(async ()=>{
+    if(currentScreen!=='alpac-auth'||!alpAuthCtx||alpAuthCtx.code!==code){stopAlpacPoll();return;}
+    try{
+      const r=await fetch(ALPAC+'/tg/auth/check?code='+encodeURIComponent(code));
+      if(!r.ok) return;
+      const j=await r.json();
+      if(!j||currentScreen!=='alpac-auth'){stopAlpacPoll();return;}
+      if(j.status==='approved'&&j.token){
+        stopAlpacPoll();
+        alpacSaveToken(j);
+        stT.textContent='Alpac подключён ✓';
+        const ctx=alpAuthCtx; alpAuthCtx=null;
+        setTimeout(()=>{if(ctx&&currentScreen==='alpac-auth'){goBack();openAlpac(ctx.meta,ctx.tile,++srcRun);}},900);
+      }else if(j.status==='claimed'){
+        stT.textContent='Код принят, жду одобрения…';
+      }else if(j.status==='rejected'){
+        stopAlpacPoll();
+        stT.textContent='Запрос отклонён администратором';
+      }else if(j.status==='expired'){
+        stopAlpacPoll();
+        const ctx=alpAuthCtx; alpAuthCtx=null;
+        if(ctx) openAlpac(ctx.meta,ctx.tile,++srcRun);
+      }
+    }catch(e){}
+  },3000);
+}
 function alpacBestQ(q){
   if(!q||typeof q!=='object')return '';
   const keys=Object.keys(q); if(!keys.length)return '';
@@ -1176,14 +1253,14 @@ async function openAlpac(meta,tile,run){
   try{
     let j=await alpacFetchJson(ALPAC+'/lite/events?life=true&'+alpacParams(meta)+'&'+alpacAuthQS());
     if(j&&j.accsdb){alpacSaveToken(j); j=await alpacFetchJson(ALPAC+'/lite/events?life=true&'+alpacParams(meta)+'&'+alpacAuthQS());}
-    if(j&&j.accsdb){setTileBusy(tile,false);srcStatus('Alpac: требуется привязка (QR) — в этой версии не реализована.',true);return;}
+    if(j&&j.accsdb){showAlpacAuth(j,meta,tile);return;}
     let arr=null;
     if(j&&j.life&&j.memkey){
       let best=[],stable=0;
       for(let i=0;i<24;i++){
         if(run!==srcRun){setTileBusy(tile,false);return;}
         const j3=await alpacFetchJson(ALPAC+'/lifeevents?memkey='+encodeURIComponent(j.memkey)+'&'+alpacAuthQS());
-        if(j3&&j3.accsdb){setTileBusy(tile,false);srcStatus('Alpac: требуется привязка (QR) — в этой версии не реализована.',true);return;}
+        if(j3&&j3.accsdb){showAlpacAuth(j3,meta,tile);return;}
         const list=Array.isArray(j3)?j3:(Array.isArray(j3.online)?j3.online:[]);
         if(list.length>best.length){best=list;stable=0;}else stable++;
         if(j3.ready||stable>=3)break;
@@ -1195,6 +1272,7 @@ async function openAlpac(meta,tile,run){
       try{const j4=await alpacFetchJson(ALPAC+'/tg/auth/status?uid='+alpacUid());if(j4&&j4.authorized&&j4.token)setS('prostokino.alpac_token',j4.token);}catch(e){}
     }
     if(run!==srcRun){setTileBusy(tile,false);return;}
+    if(currentScreen==='alpac-auth') goBack();
     const srcs=(arr||[]).filter(s=>s&&s.show!==false&&s.url);
     if(!srcs.length){setTileBusy(tile,false);srcStatus('На Alpac ничего не нашлось.',true);return;}
     setTileBusy(tile,false); srcStatus('');
@@ -1212,7 +1290,7 @@ async function alpacLoadSource(s,meta,tile,run){
     if(run!==srcRun){setTileBusy(tile,false);return;}
     let acc=null;
     if(html.indexOf('accsdb')>=0){try{const j=JSON.parse(html);if(j&&j.accsdb)acc=j;}catch(e){}}
-    if(acc){setTileBusy(tile,false);srcStatus('Alpac: требуется привязка (QR) — в этой версии не реализована.',true);return;}
+    if(acc){showAlpacAuth(acc,meta,tile);return;}
     const parsed=alpacParseItems(html);
     const videos=parsed.items.filter(it=>it.method==='play'||it.method==='call'||it.method==='iframe');
     if(videos.length){
@@ -1272,7 +1350,7 @@ async function alpacResolve(it,meta,tile){
     const base=alpacAbs(it.url);
     const full=base+(base.indexOf('?')>=0?'&':'?')+alpacAuthQS();
     const j=await alpacFetchJson(full);
-    if(j&&j.accsdb){setTileBusy(tile,false);srcStatus('Alpac: требуется привязка (QR) — в этой версии не реализована.',true);return;}
+    if(j&&j.accsdb){showAlpacAuth(j,meta,tile);return;}
     if(j&&j.method==='iframe'&&j.url){setTileBusy(tile,false);openIframeOverlay(j.url);return;}
     if(j&&j.url){setTileBusy(tile,false);playUrl(j.url,meta.title,j.subtitles||[]);return;}
     setTileBusy(tile,false); srcStatus('На Alpac ничего не нашлось.',true);
