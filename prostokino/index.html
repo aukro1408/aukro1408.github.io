@@ -265,17 +265,86 @@ body.phone .alp-screen h1{font-size:1.5em}
 .pick-btn{display:block;width:100%;background:#1e1e28;border:0;border-radius:12px;color:#fff;font-size:1.05em;padding:.85em 1.1em;margin-bottom:.6em;text-align:left}
 .pick-btn .sub{display:block;color:#9aa3b5;font-size:.9em;margin-top:.2em}
 .pick-btn.focused{background:#ff7a29}
-/* Плеер и трейлер-оверлеи */
-#player-ov,#trailer-ov{position:fixed;inset:0;z-index:300;display:none;background:#000}
-#trailer-ov{background:rgba(0,0,0,.94)}
-#player-ov.open,#trailer-ov.open{display:block}
-#player-ov video{width:100%;height:100%;background:#000}
+/* Плеер (порт из «Кино»: pl-stage, контролы, таймлайн) + оверлей Alpac-iframe */
+#player-ov{position:fixed;inset:0;z-index:300;display:none;background:#000;overflow:hidden}
+#player-ov.open{display:block}
+#trailer-ov{position:fixed;inset:0;z-index:300;display:none;background:rgba(0,0,0,.94)}
+#trailer-ov.open{display:block}
 #trailer-ov .wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:1em}
 #trailer-ov iframe{width:min(96vw,1200px);aspect-ratio:16/9;border:0;border-radius:12px;background:#000}
 .ov-close{position:absolute;top:1em;right:1em;z-index:2;background:#26262e;border:0;border-radius:999px;color:#fff;font-size:1.05em;padding:.6em 1.3em}
 .ov-close.focused{background:#ff7a29}
-#player-err{position:absolute;left:1em;bottom:1em;color:#ff9a90;font-size:1.05em}
-#player-title{position:absolute;left:1em;top:1em;color:#fff;font-size:1.1em;z-index:2}
+.pl-stage{position:relative; width:100%; height:100dvh; background:#000; overflow:hidden; display:flex; align-items:center; justify-content:center}
+#plVideo{width:100%; max-height:100%; background:#000; outline:none}
+.pl-tapzone{position:absolute; top:0; bottom:0; width:50%; z-index:3; touch-action:manipulation; cursor:pointer}
+.pl-tapzone.left{left:0}
+.pl-tapzone.right{right:0}
+.pl-flash{position:absolute; top:50%; width:88px; height:88px; margin:-44px 0 0 -44px; border-radius:50%;
+  background:rgba(255,255,255,.16); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  color:#fff; font-size:17px; font-weight:800; line-height:1; display:flex; align-items:center; justify-content:center;
+  z-index:5; opacity:0; pointer-events:none}
+.pl-flash.left{left:25%}
+.pl-flash.right{left:75%}
+.pl-flash.show{animation:plflash .55s ease-out}
+@keyframes plflash{0%{opacity:0; transform:scale(.55)}22%{opacity:1; transform:scale(1)}100%{opacity:0; transform:scale(1.12)}}
+.pl-ui{position:absolute; inset:0; z-index:4; pointer-events:none; opacity:1; visibility:visible; transition:opacity .25s, visibility 0s}
+.pl-ui.hide{opacity:0; visibility:hidden; transition:opacity .25s, visibility 0s .3s}
+.pl-ui>*{pointer-events:auto}
+.pl-topbar{position:absolute; top:0; left:0; right:0; display:flex; align-items:center; gap:10px; padding:14px 14px 28px; background:linear-gradient(180deg, rgba(0,0,0,.55), transparent)}
+.pl-title{flex:1; font-size:14px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-shadow:0 1px 8px rgba(0,0,0,.8)}
+.pl-icbtn{width:40px; height:40px; border-radius:50%; border:none; background:rgba(10,10,14,.42);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:#fff;
+  display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none}
+.pl-icbtn:active{transform:scale(.9); background:rgba(10,10,14,.6)}
+.pl-icbtn svg{width:20px; height:20px; fill:#fff}
+.pl-q{display:none; font-size:11px; font-weight:800; color:#fff; border:1px solid rgba(255,255,255,.35); background:rgba(10,10,14,.42); padding:5px 10px; border-radius:99px; flex:none; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px)}
+.pl-q.show{display:inline-block}
+.pl-info{position:absolute; left:16px; right:16px; bottom:190px; z-index:6; background:rgba(24,24,30,.92); border:1px solid rgba(255,255,255,.14); border-radius:18px; padding:4px 16px 12px; -webkit-backdrop-filter:blur(22px) saturate(1.5); backdrop-filter:blur(22px) saturate(1.5); box-shadow:0 16px 40px rgba(0,0,0,.5)}
+.pl-info-h{display:flex; align-items:center; justify-content:space-between; padding:8px 0 4px; font-weight:800; font-size:14px; color:#fff}
+.pl-info-x{background:none; border:none; color:rgba(255,255,255,.7); font-size:17px; cursor:pointer; padding:6px}
+.pl-info-row{display:flex; gap:10px; padding:8px 0; border-top:1px solid rgba(255,255,255,.07); font-size:13px}
+.pl-info-row b{color:rgba(255,255,255,.55); font-weight:700; min-width:88px; flex:none}
+.pl-info-row span{color:#fff; word-break:break-word}
+.pl-center{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none}
+.pl-bigplay{width:76px; height:76px; border-radius:50%; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  background:rgba(10,10,14,.4); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  pointer-events:auto; transition:transform .15s, opacity .2s}
+.pl-bigplay:active{transform:scale(.93)}
+.pl-bigplay svg{width:34px; height:34px; fill:#fff; margin-left:4px; filter:drop-shadow(0 2px 10px rgba(0,0,0,.5))}
+.pl-bigplay.pause svg{margin-left:0}
+.pl-bottom{position:absolute; left:0; right:0; bottom:0; padding:0 14px calc(12px + env(safe-area-inset-bottom)); display:flex; justify-content:center; pointer-events:none}
+.pl-panel{pointer-events:auto; width:100%; max-width:600px; background:rgba(24,24,30,.66);
+  -webkit-backdrop-filter:blur(22px) saturate(1.5); backdrop-filter:blur(22px) saturate(1.5);
+  border:1px solid rgba(255,255,255,.13); border-radius:22px; padding:10px 18px 8px;
+  box-shadow:0 14px 44px rgba(0,0,0,.5)}
+.pl-seek{position:relative; height:26px; display:flex; align-items:center; cursor:pointer; touch-action:none}
+.pl-seek::before{content:''; position:absolute; left:0; right:0; height:4px; border-radius:2px; background:rgba(255,255,255,.28)}
+.pl-buf{position:absolute; left:0; height:4px; border-radius:2px; background:rgba(255,255,255,.42); width:0}
+.pl-fill{position:absolute; left:0; height:4px; border-radius:2px; background:#fff; width:0}
+.pl-knob{position:absolute; width:13px; height:13px; border-radius:50%; background:#fff; box-shadow:0 1px 8px rgba(0,0,0,.55); left:0; transform:translateX(-50%)}
+.pl-timerow{display:flex; align-items:center; justify-content:space-between; margin-top:1px;
+  font-size:12px; font-weight:600; color:rgba(255,255,255,.88); font-variant-numeric:tabular-nums}
+.pl-rate{background:rgba(255,255,255,.14); border:none; color:#fff; font-size:12px; font-weight:700;
+  font-variant-numeric:tabular-nums; padding:4px 10px; border-radius:8px; cursor:pointer}
+.pl-rate:active{transform:scale(.93); background:rgba(255,255,255,.22)}
+.pl-controls{display:flex; align-items:center; justify-content:space-between; margin-top:4px; padding:0 4px}
+.pl-cbtn{width:56px; height:56px; border-radius:50%; background:none; border:none; color:#fff;
+  display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none}
+.pl-cbtn:active{transform:scale(.88); background:rgba(255,255,255,.12)}
+.pl-cbtn svg{width:28px; height:28px; fill:#fff}
+.pl-cbtn.big svg{width:37px; height:37px}
+.pl-err{position:absolute; inset:0; z-index:5; display:none; flex-direction:column; gap:14px; align-items:center; justify-content:center; text-align:center; padding:30px; color:rgba(255,255,255,.75); font-size:14px; line-height:1.6}
+.pl-menu{position:absolute; z-index:6; right:12px; bottom:186px; min-width:210px; max-width:78%; background:rgba(24,24,30,.9); border:1px solid rgba(255,255,255,.14); border-radius:18px; padding:8px; box-shadow:0 12px 40px rgba(0,0,0,.6); -webkit-backdrop-filter:blur(22px) saturate(1.5); backdrop-filter:blur(22px) saturate(1.5); max-height:62dvh; overflow-y:auto; scrollbar-width:none}
+.pl-menu .pm-t{font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:rgba(255,255,255,.55); padding:8px 12px 4px}
+.pl-menu .pm-i{padding:11px 12px; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff}
+.pl-menu .pm-i:active{background:rgba(255,255,255,.1)}
+.pl-menu .pm-i.on::after{content:' ✓'; color:#fff}
+.pl-icbtn.focused,.pl-cbtn.focused,.pl-bigplay.focused,.pl-rate.focused{outline:3px solid #fff; outline-offset:3px}
+.pl-bridge-btn{background:#ff7a29; border:0; border-radius:999px; color:#fff; font-size:15px; font-weight:800; padding:12px 22px; cursor:pointer}
+.pl-bridge-btn.focused{background:#ffa05c; outline:3px solid #fff; outline-offset:2px}
+.pl-yt{position:absolute; inset:0; z-index:2; background:#000}
+.pl-yt iframe{width:100%; height:100%; border:0}
+#player-ov.yt #plVideo,#player-ov.yt .pl-tapzone,#player-ov.yt .pl-flash,#player-ov.yt .pl-center,#player-ov.yt .pl-bottom,#player-ov.yt #plQ,#player-ov.yt #plInfo{display:none}
 .trailer-thumb.focused{outline:3px solid #fff;outline-offset:3px}
 </style>
 </head>
@@ -429,10 +498,41 @@ body.phone .alp-screen h1{font-size:1.5em}
 </main>
 <div id="picker"></div>
 <div id="player-ov">
-  <div id="player-title"></div>
-  <button class="ov-close focusable" id="player-close">✕ Закрыть</button>
-  <video id="player-video" controls autoplay playsinline></video>
-  <div id="player-err"></div>
+  <div class="pl-stage" id="plStage">
+    <video id="plVideo" playsinline preload="metadata"></video>
+    <div class="pl-tapzone left" id="plTapL"></div>
+    <div class="pl-tapzone right" id="plTapR"></div>
+    <div class="pl-flash left" id="plFlashL"></div>
+    <div class="pl-flash right" id="plFlashR"></div>
+    <div class="pl-err" id="plErr"><div id="plErrTx"></div><div id="plErrBtns" style="display:none"><button class="pl-bridge-btn focusable" id="plBridgeBtn">Открыть во внешнем плеере</button></div></div>
+    <div class="pl-ui" id="plUI">
+      <div class="pl-topbar">
+        <button class="pl-icbtn focusable" id="plBack" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="M15.5 4.5 8 12l7.5 7.5 2-2L12 12l5.5-5.5z"/></svg></button>
+        <div class="pl-title" id="plTitle"></div>
+        <span class="pl-q" id="plQ"></span>
+        <button class="pl-icbtn focusable" id="plInfo" aria-label="О файле"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></button>
+      </div>
+      <div class="pl-center"><button class="pl-bigplay focusable" id="plBigPlay" aria-label="Пауза/играть"><svg viewBox="0 0 24 24" id="plBigPlayIco"><path d="M8 5v14l11-7z"/></svg></button></div>
+      <div class="pl-bottom">
+        <div class="pl-panel">
+          <div class="pl-seek" id="plSeek"><div class="pl-buf" id="plBuf"></div><div class="pl-fill" id="plFill"></div><div class="pl-knob" id="plKnob"></div></div>
+          <div class="pl-timerow"><span id="plCur">0:00</span><button class="pl-rate focusable" id="plRate" aria-label="Скорость">1.0×</button><span id="plRem">-0:00</span></div>
+          <div class="pl-controls">
+            <button class="pl-cbtn focusable" id="plRw" aria-label="-10 секунд"><svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.3 0 6 2.7 6 6s-2.7 6-6 6-6-2.7-6-6H4c0 4.4 3.6 8 8 8s8-3.6 8-8-3.6-8-8-8z"/><text x="12" y="15.8" text-anchor="middle" font-size="7" font-weight="800" fill="#fff" font-family="system-ui,sans-serif">10</text></svg></button>
+            <button class="pl-cbtn big focusable" id="plPlay" aria-label="Пауза/играть"><svg viewBox="0 0 24 24" id="plPlayIco"><path d="M8 5v14l11-7z"/></svg></button>
+            <button class="pl-cbtn focusable" id="plFf" aria-label="+10 секунд"><svg viewBox="0 0 24 24"><path d="M12 5V1l5 5-5 5V7c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6h2c0 4.4-3.6 8-8 8s-8-3.6-8-8 3.6-8 8-8z"/><text x="12" y="15.8" text-anchor="middle" font-size="7" font-weight="800" fill="#fff" font-family="system-ui,sans-serif">10</text></svg></button>
+            <button class="pl-cbtn focusable" id="plSubs" aria-label="Субтитры"><svg viewBox="0 0 24 24"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 7H9.5v-.5h-2v3h2V13H11v1c0 .55-.45 1-1 1H7.5c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1H10c.55 0 1 .45 1 1v1zm7 0h-1.5v-.5h-2v3h2V13H18v1c0 .55-.45 1-1 1h-2.5c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1H17c.55 0 1 .45 1 1v1z"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pl-menu" id="plMenu" style="display:none"></div>
+    <div class="pl-info" id="plInfoBox" style="display:none">
+      <div class="pl-info-h"><span>О файле</span><button class="pl-info-x focusable" id="plInfoX" aria-label="Закрыть">✕</button></div>
+      <div id="plInfoRows"></div>
+    </div>
+    <div class="pl-yt" id="plYt" style="display:none"></div>
+  </div>
 </div>
 <div id="trailer-ov">
   <button class="ov-close focusable" id="trailer-close">✕ Закрыть</button>
@@ -521,6 +621,12 @@ document.addEventListener('keydown',e=>{
     else if(e.key==='Enter'){e.preventDefault();if(ae.closest&&ae.closest('#screen-settings'))saveSettings();else if(ae.id==='search-input')doSearch();}
     else if(e.key==='Escape'){ae.blur();e.preventDefault();}
     return;
+  }
+  if(playerIsOpen()&&plMode==='video'){
+    if(k==='ArrowLeft'){plSeekBy(-10);plShowUI();e.preventDefault();return;}
+    if(k==='ArrowRight'){plSeekBy(10);plShowUI();e.preventDefault();return;}
+    if(k==='ArrowUp'||k==='ArrowDown'){plShowUI();}
+    if((k==='Enter'||k===' ')&&!(cur&&cur.closest&&cur.closest('#player-ov'))){plToggle();plShowUI();e.preventDefault();return;}
   }
   const k=e.key;
   if(k==='ArrowRight'){moveFocus('right');e.preventDefault();}
@@ -839,43 +945,318 @@ function showPicker(title,items,framed){
 function closePicker(){const ov=$('#picker');if(!ov.classList.contains('open'))return;ov.classList.remove('open');ov.innerHTML='';pickerOpen=false;if(pickerOpener&&pickerOpener.isConnected)setFocus(pickerOpener);pickerOpener=null;}
 function pickerIsOpen(){return pickerOpen;}
 
-/* Плеер */
-let hlsInst=null;
-function openBuiltInPlayer(url,title,subs){
-  const ov=$('#player-ov'), v=$('#player-video');
-  $('#player-title').textContent=title||'';
-  $('#player-err').textContent='';
+/* Плеер (порт из «Кино»: pl-stage, таймлайн, перемотка, качество, субтитры).
+   Встроенный плеер — ОСНОВНОЙ путь для всех источников (Filmix, Alpac, торренты).
+   Мост (window.ProstoKino.openVideo) — только фолбэк, когда встроенный сыграть НЕ может:
+   1) фатальная ошибка video/hls (неподдерживаемый кодек/формат, обрыв сети),
+   2) http-поток на https-странице (mixed content — браузер блокирует),
+   3) потоки с кастомными заголовками — такие сюда вообще не попадают
+      (playUrl заголовков не принимает; источник с заголовками обязан идти в мост напрямую).
+   YouTube <video> напрямую не играет (прямых ссылок на поток нет) — трейлер идёт честным
+   путём метода «Кино» (YouTube embed iframe) внутри этого же экрана плеера (openPlayerTrailer),
+   а не через старый трейлер-оверлей. */
+let hlsInst=null, plMode='video', plFailUrl=null, plInfoData=null, plQ='';
+let plSubsList=[], plCurSub=-1, plHideT=null, plSeeking=false;
+let plStallT=null, plRetried=false, plErrMode=null;
+const PL_RATES=[1,1.5,2,0.5];
+function plFmt(s){
+  s=Math.max(0,Math.floor(s||0));
+  const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60;
+  return (h?h+':':'')+String(m).padStart(h?2:1,'0')+':'+String(x).padStart(2,'0');
+}
+function plQLabel(w,h){
+  if(!w||!h) return '';
+  if(w>=3800||h>=2100) return '4K';
+  if(w>=1900||h>=1050) return '1080p';
+  if(w>=1400||h>=700) return '720p';
+  if(w>=1100||h>=470) return '480p';
+  return h+'p';
+}
+function plSetQ(label){
+  plQ=label||'';
+  const el=$('#plQ');
+  if(el){el.textContent=plQ; el.classList.toggle('show',!!plQ);}
+}
+function plSetPlayIcon(playing){
+  const pp=playing?'<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>':'<path d="M8 5v14l11-7z"/>';
+  $('#plPlayIco').innerHTML=pp;
+  $('#plBigPlayIco').innerHTML=pp;
+  $('#plBigPlay').classList.toggle('pause',!!playing);
+}
+function plShowUI(sticky){
+  const ui=$('#plUI'); ui.classList.remove('hide');
+  clearTimeout(plHideT);
+  if(!sticky){
+    plHideT=setTimeout(()=>{ if(!$('#plVideo').paused) ui.classList.add('hide'); },3500);
+  }
+}
+function plClearStall(){ if(plStallT){clearTimeout(plStallT); plStallT=null;} }
+function plHideErr(){ const e=$('#plErr'); if(e){e.style.display='none';} $('#plErrBtns').style.display='none'; plErrMode=null; }
+function plShowErr(html,bridge){
+  $('#plErrTx').innerHTML=html;
+  $('#plErrBtns').style.display=bridge?'block':'none';
+  const e=$('#plErr'); e.style.display='flex'; plErrMode='fatal'; plShowUI(true);
+  if(bridge&&detectTV()){const b=$('#plBridgeBtn'); if(b) setFocus(b);}
+}
+function plBridgeAvailable(){ const b=window.ProstoKino; return !!(b&&typeof b.openVideo==='function'); }
+function plOpenBridge(){
+  const url=plFailUrl; closeBuiltInPlayer();
+  if(url&&plBridgeAvailable()){ try{window.ProstoKino.openVideo(url);}catch(e){} }
+}
+function plSkipFlash(dir){
+  const f=$(dir<0?'#plFlashL':'#plFlashR');
+  if(!f) return;
+  f.textContent=dir<0?'−10':'+10';
+  f.classList.remove('show'); void f.offsetWidth; f.classList.add('show');
+}
+function plToggle(){
+  const v=$('#plVideo');
+  if(v.paused) v.play().catch(()=>{}); else v.pause();
+  plShowUI();
+}
+function plSeekBy(sec){
+  const v=$('#plVideo');
+  v.currentTime=Math.max(0,Math.min(v.duration||0,v.currentTime+sec));
+  plSkipFlash(sec<0?-1:1); plShowUI();
+}
+function plUpdSeek(){
+  const v=$('#plVideo'); if(!v.duration||plSeeking) return;
+  const p=(v.currentTime/v.duration*100);
+  $('#plFill').style.width=p+'%';
+  $('#plKnob').style.left=p+'%';
+  $('#plCur').textContent=plFmt(v.currentTime);
+  $('#plRem').textContent='-'+plFmt(v.duration-v.currentTime);
+}
+function plSetSubs(list){
+  plSubsList=[]; plCurSub=-1;
+  (list||[]).forEach(function(s,i){
+    let u=null,label=null;
+    if(typeof s==='string') u=s;
+    else if(s&&s.url){u=s.url; label=s.label||s.name||'';}
+    if(u) plSubsList.push({name:label||('Субтитры '+(plSubsList.length+1)),url:u});
+  });
+  const b=$('#plSubs'); if(b) b.style.display=plSubsList.length?'':'none';
+}
+function srtToVtt(srt){
+  return 'WEBVTT\n\n'+srt.replace(/\r\n?/g,'\n').replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g,'$1.$2');
+}
+async function plLoadSub(i){
+  const v=$('#plVideo');
+  v.querySelectorAll('track').forEach(t=>t.remove());
+  plCurSub=i;
+  if(i<0) return;
+  const s=plSubsList[i];
+  try{
+    const r=await fetch(s.url);
+    if(!r.ok) throw 0;
+    let txt=await r.text();
+    if(/\.srt$/i.test(s.name)) txt=srtToVtt(txt);
+    const tr=document.createElement('track');
+    tr.kind='subtitles'; tr.label=s.name; tr.srclang='ru'; tr.default=true;
+    tr.src=URL.createObjectURL(new Blob([txt],{type:'text/vtt'}));
+    v.appendChild(tr);
+    const show=()=>{ for(const t of v.textTracks) t.mode=(t.label===s.name)?'showing':'disabled'; };
+    tr.addEventListener('load',show); setTimeout(show,600);
+  }catch(e){
+    plCurSub=-1;
+    $('#plErrTx').textContent='Не удалось загрузить субтитры';
+    $('#plErr').style.display='flex';
+    setTimeout(()=>{ if(plErrMode!=='fatal') plHideErr(); },3000);
+  }
+}
+function plRenderSubMenu(){
+  const m=$('#plMenu');
+  m.innerHTML='<div class="pm-t">Субтитры</div>'+
+    '<div class="pm-i '+(plCurSub===-1?'on':'')+'" data-s="-1">Выключены</div>'+
+    plSubsList.map((s,i)=>'<div class="pm-i '+(plCurSub===i?'on':'')+'" data-s="'+i+'">'+esc(s.name)+'</div>').join('');
+  m.querySelectorAll('.pm-i').forEach(el=>el.onclick=ev=>{
+    ev.stopPropagation();
+    m.style.display='none'; plLoadSub(+el.dataset.s); plShowUI();
+  });
+}
+function plRenderInfo(){
+  const box=$('#plInfoBox'), rows=$('#plInfoRows');
+  if(!box||!rows) return;
+  const v=$('#plVideo'), d=plInfoData||{};
+  const res=(v.videoWidth&&v.videoHeight)?v.videoWidth+'×'+v.videoHeight:'';
+  const list=[['Качество',[res,plQ||d.quality].filter(Boolean).join(' · ')||'—']];
+  if(d.file) list.push(['Файл',d.file]);
+  if(d.source) list.push(['Источник',d.source]);
+  if(d.voice) list.push(['Озвучка',d.voice]);
+  if(v.duration&&isFinite(v.duration)) list.push(['Длительность',plFmt(v.duration)]);
+  rows.innerHTML=list.map(r=>'<div class="pl-info-row"><b>'+r[0]+'</b><span>'+esc(String(r[1]))+'</span></div>').join('');
+  box.style.display='block';
+}
+function openBuiltInPlayer(url,title,subs,info){
+  plMode='video'; plFailUrl=url;
+  const ov=$('#player-ov'); ov.classList.remove('yt');
+  const yt=$('#plYt'); yt.innerHTML=''; yt.style.display='none';
+  $('#plTitle').textContent=title||'';
+  plInfoData=info||null; plSetQ((info&&info.quality)||'');
+  plSubsList=[]; plCurSub=-1; plRetried=false; plClearStall(); plHideErr();
+  const ib=$('#plInfoBox'); if(ib) ib.style.display='none';
+  const m=$('#plMenu'); if(m) m.style.display='none';
+  const v=$('#plVideo');
+  v.playbackRate=1; const rb=$('#plRate'); if(rb) rb.textContent='1.0×';
   try{v.pause();}catch(e){}
-  try{if(hlsInst){hlsInst.destroy();hlsInst=null;}}catch(e){}
+  if(hlsInst){try{hlsInst.destroy();}catch(_){} hlsInst=null;}
+  v.querySelectorAll('track').forEach(t=>t.remove());
   v.removeAttribute('src'); v.load();
-  [...v.querySelectorAll('track')].forEach(t=>t.remove());
+  plSetSubs([]);
   ov.classList.add('open');
+  v.onloadedmetadata=()=>{ if(v.videoWidth&&v.videoHeight) plSetQ(plQLabel(v.videoWidth,v.videoHeight)); };
+  if(location.protocol==='https:'&&/^http:\/\//i.test(url)){
+    plShowErr('Браузер заблокировал http-поток на https-странице 😕<br><span style="font-size:12px;opacity:.75">В приложении на ТВ такой проблемы нет — там страница локальная.<br>Попробуй другой источник.</span>',plBridgeAvailable());
+    if(detectTV()){const c=$('#plBack'); if(c) setFocus(c);}
+    return;
+  }
   if(/\.m3u8($|\?)/i.test(url)&&window.Hls&&Hls.isSupported()){
     hlsInst=new Hls({maxBufferLength:30});
-    hlsInst.on(Hls.Events.ERROR,function(e,d){if(d&&d.fatal){$('#player-err').textContent='Поток недоступен — попробуйте другой источник';}});
     hlsInst.loadSource(url); hlsInst.attachMedia(v);
-    v.play().catch(function(){});
-  }else{
-    if(/\.m3u8($|\?)/i.test(url)&&!v.canPlayType('application/vnd.apple.mpegurl')){$('#player-err').textContent='Браузер не играет HLS без hls.js — попробуйте другой источник';}
-    v.src=url; v.play().catch(function(){});
-  }
-  if(subs&&subs.length){
-    subs.forEach(function(s,i){
-      let u=null,label=null,lang='ru';
-      if(typeof s==='string')u=s;
-      else if(s&&s.url){u=s.url;label=s.label||s.name||'';lang=s.lang||s.language||'ru';}
-      if(!u)return;
-      const tr=document.createElement('track');
-      tr.kind='subtitles'; tr.label=label||('Субтитры '+(i+1)); tr.srclang=String(lang).slice(0,2); tr.src=u; if(i===0)tr.default=true;
-      v.appendChild(tr);
+    hlsInst.on(Hls.Events.LEVEL_SWITCHED,(ev,data)=>{
+      const lv=hlsInst.levels&&hlsInst.levels[data.level];
+      if(lv) plSetQ(plQLabel(lv.width,lv.height)||(lv.bitrate?Math.round(lv.bitrate/1000)+' кбит/с':''));
     });
+    hlsInst.on(Hls.Events.ERROR,(ev,data)=>{ if(!data.fatal) return;
+      plShowErr('Поток недоступен 😕<br><span style="font-size:12px;opacity:.75">Попробуй другой источник или озвучку.</span>',plBridgeAvailable());
+    });
+  }else{
+    if(/\.m3u8($|\?)/i.test(url)&&!v.canPlayType('application/vnd.apple.mpegurl')){
+      plShowErr('Браузер не играет HLS без hls.js 😕<br><span style="font-size:12px;opacity:.75">Попробуй другой источник.</span>',plBridgeAvailable());
+      if(detectTV()){const c=$('#plBack'); if(c) setFocus(c);}
+      return;
+    }
+    v.src=url;
   }
-  if(detectTV()){const c=$('#player-close');if(c)setFocus(c);}
+  plSetSubs(subs||[]);
+  plShowUI(true);
+  v.play().catch(()=>{});
+  if(detectTV()){const c=$('#plBigPlay'); if(c) setFocus(c);}
 }
-function closeBuiltInPlayer(){const ov=$('#player-ov');if(!ov.classList.contains('open'))return;const v=$('#player-video');try{v.pause();}catch(e){}try{if(hlsInst){hlsInst.destroy();hlsInst=null;}}catch(e){}v.removeAttribute('src');v.load();[...v.querySelectorAll('track')].forEach(t=>t.remove());ov.classList.remove('open');}
+function closeBuiltInPlayer(){
+  const ov=$('#player-ov'); if(!ov.classList.contains('open')) return;
+  plClearStall(); clearTimeout(plHideT);
+  if(hlsInst){try{hlsInst.destroy();}catch(e){} hlsInst=null;}
+  const v=$('#plVideo');
+  if(v){try{v.pause();}catch(e){} v.querySelectorAll('track').forEach(t=>t.remove()); v.removeAttribute('src'); v.load();}
+  const yt=$('#plYt'); yt.innerHTML=''; yt.style.display='none';
+  ov.classList.remove('yt'); ov.classList.remove('open');
+  const e=$('#plErr'); if(e) e.style.display='none';
+  const m=$('#plMenu'); if(m) m.style.display='none';
+  const ib=$('#plInfoBox'); if(ib) ib.style.display='none';
+  plSetQ(''); plSubsList=[]; plCurSub=-1; plSetPlayIcon(false); plFailUrl=null;
+  if(detectTV()){const f=visibleFocusable(); if(f.length) setFocus(f[0]);}
+}
 function playerIsOpen(){return $('#player-ov').classList.contains('open');}
+function openPlayerTrailer(ytKey,title){
+  closeBuiltInPlayer();
+  plMode='trailer'; plFailUrl=null;
+  const ov=$('#player-ov'); ov.classList.add('yt');
+  $('#plTitle').textContent=title||'';
+  const yt=$('#plYt');
+  yt.innerHTML='<iframe src="https://www.youtube.com/embed/'+ytKey+'?autoplay=1&rel=0" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+  yt.style.display='block';
+  $('#plUI').classList.remove('hide');
+  ov.classList.add('open');
+  if(detectTV()){const c=$('#plBack'); if(c) setFocus(c);}
+}
+$('#plBack').onclick=()=>{ closeBuiltInPlayer(); };
+$('#plBridgeBtn').onclick=()=>{ plOpenBridge(); };
+$('#plPlay').onclick=()=>{ plToggle(); };
+$('#plBigPlay').onclick=()=>{ plToggle(); };
+$('#plRw').onclick=()=>{ plSeekBy(-10); };
+$('#plFf').onclick=()=>{ plSeekBy(10); };
+$('#plRate').onclick=function(){ const v=$('#plVideo'); const i=(PL_RATES.indexOf(v.playbackRate)+1)%PL_RATES.length; v.playbackRate=PL_RATES[i]; this.textContent=PL_RATES[i].toFixed(1)+'×'; plShowUI(); };
+$('#plInfo').onclick=()=>{ plRenderInfo(); plShowUI(true); };
+$('#plInfoX').onclick=()=>{ $('#plInfoBox').style.display='none'; plShowUI(true); };
+$('#plSubs').onclick=e=>{
+  e.stopPropagation();
+  const m=$('#plMenu');
+  if(m.style.display!=='none'){ m.style.display='none'; return; }
+  plRenderSubMenu();
+  m.style.display='block';
+  plShowUI();
+};
+$('#plErr').addEventListener('click',e=>{ if(e.target.closest&&e.target.closest('#plBridgeBtn')) return; plHideErr(); plShowUI(true); });
+function plBindTapZone(id,dir){
+  const el=$(id); let clicks=0, t=null;
+  el.addEventListener('click',()=>{
+    clicks++;
+    if(clicks===1){
+      t=setTimeout(()=>{
+        clicks=0;
+        $('#plMenu').style.display='none';
+        $('#plInfoBox').style.display='none';
+        const ui=$('#plUI');
+        if(ui.classList.contains('hide')) plShowUI(); else ui.classList.add('hide');
+      },280);
+    }else{
+      clearTimeout(t); clicks=0;
+      plSeekBy(dir*10);
+    }
+  });
+}
+plBindTapZone('#plTapL',-1);
+plBindTapZone('#plTapR',+1);
+(function(){
+  const seek=$('#plSeek');
+  const go=cx=>{
+    const r=seek.getBoundingClientRect();
+    const p=Math.min(1,Math.max(0,(cx-r.left)/r.width));
+    const v=$('#plVideo');
+    if(v.duration) v.currentTime=p*v.duration;
+  };
+  seek.addEventListener('pointerdown',e=>{ plSeeking=true; try{seek.setPointerCapture(e.pointerId);}catch(_){} go(e.clientX); plShowUI(); });
+  seek.addEventListener('pointermove',e=>{ if(plSeeking) go(e.clientX); });
+  seek.addEventListener('pointerup',()=>{ plSeeking=false; });
+})();
+(function(){
+  const v=$('#plVideo');
+  v.addEventListener('timeupdate',plUpdSeek);
+  v.addEventListener('loadedmetadata',plUpdSeek);
+  v.addEventListener('progress',()=>{
+    try{
+      const b=v.buffered; if(b.length&&v.duration) $('#plBuf').style.width=(b.end(b.length-1)/v.duration*100)+'%';
+    }catch(e){}
+  });
+  v.addEventListener('play',()=>{ plSetPlayIcon(true); plShowUI(); });
+  v.addEventListener('pause',()=>{ plSetPlayIcon(false); plShowUI(true); });
+  v.addEventListener('ended',()=>{ plSetPlayIcon(false); plShowUI(true); });
+  v.addEventListener('error',()=>{
+    plClearStall();
+    const code=v.error&&v.error.code;
+    if(code===2&&!plRetried){
+      plRetried=true;
+      $('#plErrTx').textContent='Обрыв потока — переподключаюсь…';
+      $('#plErr').style.display='flex'; plErrMode='retry';
+      setTimeout(()=>{ try{v.load(); v.play().catch(()=>{});}catch(e){} },1500);
+      return;
+    }
+    const msg=code===2?'Сеть оборвалась — TorrServer недоступен или поток встал'
+      :code===3?'Браузер не смог декодировать видео — похоже, неподдерживаемый кодек (HEVC/AV1)'
+      :code===4?'Формат не поддерживается браузером'
+      :'Не удалось воспроизвести';
+    plShowErr(msg+' 😕<br><span style="font-size:12px;opacity:.75">Попробуй другую раздачу — лучше 1080p (x264/H.264) с сидами.</span>',plBridgeAvailable());
+  });
+  const plStallWarn=()=>{
+    plClearStall();
+    plStallT=setTimeout(()=>{
+      if(v.paused||v.readyState>=3) return;
+      $('#plErrTx').innerHTML='Поток завис 😕<br><span style="font-size:12px;opacity:.75">Возможно, у раздачи нет сидов — попробуй другую.<br>Тапни по экрану, чтобы скрыть.</span>';
+      $('#plErrBtns').style.display='none';
+      $('#plErr').style.display='flex'; plErrMode='stall';
+      plShowUI(true);
+    },20000);
+  };
+  v.addEventListener('waiting',plStallWarn);
+  v.addEventListener('stalled',plStallWarn);
+  ['playing','progress','canplay'].forEach(ev=>v.addEventListener(ev,()=>{
+    plClearStall();
+    if(plErrMode==='stall'||plErrMode==='retry') plHideErr();
+  }));
+})();
 
-/* Iframe-оверлей (трейлер, Alpac-iframe) */
+/* Iframe-оверлей (Alpac-iframe) */
 function openIframeOverlay(url){
   const ov=$('#trailer-ov');
   $('#trailer-frame').src=url;
@@ -890,10 +1271,8 @@ function currentOverlay(){
   if(pickerIsOpen())return '#picker';
   return null;
 }
-function playUrl(url,title,subs){
-  const b=window.ProstoKino;
-  if(b&&typeof b.openVideo==='function'){try{b.openVideo(url);return;}catch(e){}}
-  openBuiltInPlayer(url,title,subs);
+function playUrl(url,title,subs,info){
+  openBuiltInPlayer(url,title,subs,info);
 }
 
 /* Портретные карточки, актёры */
@@ -974,11 +1353,14 @@ async function openDetail(type,id){
     try{credits=await api('/'+type+'/'+id+'/credits');}catch(e){}
     try{sim=await api('/'+type+'/'+id+'/similar',{page:1});}catch(e){}
     try{vids=await api('/'+type+'/'+id+'/videos');}catch(e){}
+    const ytList=((vids&&vids.results)||[]).filter(v=>v.site==='YouTube');
+    const trItem=ytList.filter(v=>v.type==='Trailer')[0]||ytList[0];
+    const trailerBlock=trItem?'<div class="block-title">Трейлер</div>'+'<button class="trailer-thumb focusable" data-yt="'+trItem.key+'" style="display:block;width:min(640px,100%);aspect-ratio:16/9;border:0;border-radius:14px;overflow:hidden;padding:0;background:#22222c;position:relative">'+'<img src="https://i.ytimg.com/vi/'+trItem.key+'/hqdefault.jpg" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.remove()">'+'<span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:26px;line-height:64px;text-align:center">▶</span></button>':'';
     let html='<div style="padding-top:4.5em"></div>'+
       '<div class="backdrop">'+(pic?'<img src="'+imgUrl(pic,'w1280')+'" alt="" onerror="this.remove()">':'')+'<div class="shade"></div></div>'+
       '<div class="detail-info"><h1>'+esc(title)+'</h1>'+
       '<div class="meta">'+[star?'<span class="star">★</span> '+esc(star.slice(2)):null,year,gs,dur].filter(Boolean).join(' · ')+'</div>'+
-      '<p>'+esc(d.overview||'Описание отсутствует.')+'</p>'+
+      '<p>'+esc(d.overview||'Описание отсутствует.')+'</p>'+trailerBlock+
       '<div class="detail-actions"><button class="fav-btn focusable'+(fav?' in':'')+'" id="fav-toggle" data-type="'+type+'" data-id="'+id+'">'+(fav?'✓ В избранном':'♡ В избранное')+'</button></div>'+
       '<div class="src-tiles">'+
       '<button class="src-tile src-film focusable" data-src="filmix"><span class="in"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 4v16M16 4v16M3 9h5M3 15h5M16 9h5M16 15h5"/></svg>Filmix</span><svg class="out" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 9L9 3M4 3h5v5"/></svg><i class="bar"></i></button>'+
@@ -1003,14 +1385,6 @@ async function openDetail(type,id){
         simItems.slice(0,12).map(m=>pcardHTML(m,type)).join('')+
         '<span class="more-wrap" style="width:200px;aspect-ratio:2/3"><button class="more-pill focusable sim-more" data-type="'+type+'" data-id="'+d.id+'">Ещё →</button></span></div>';
     }
-    const yt=((vids&&vids.results)||[]).filter(v=>v.site==='YouTube');
-    const tr=yt.filter(v=>v.type==='Trailer')[0]||yt[0];
-    if(tr){
-      html+='<div class="block-title">Трейлер</div>'+
-        '<button class="trailer-thumb focusable" data-yt="'+tr.key+'" style="display:block;width:min(640px,100%);aspect-ratio:16/9;border:0;border-radius:14px;overflow:hidden;padding:0;background:#22222c;position:relative">'+
-        '<img src="https://i.ytimg.com/vi/'+tr.key+'/hqdefault.jpg" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.remove()">'+
-        '<span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:26px;line-height:64px;text-align:center">▶</span></button>';
-    }
     html+='</div>';
     box.innerHTML=html;
     const favBtn=$('#fav-toggle');
@@ -1024,7 +1398,7 @@ async function openDetail(type,id){
     });
     const trBtn=box.querySelector('.trailer-thumb');
     if(trBtn) trBtn.addEventListener('click',()=>{
-      openIframeOverlay('https://www.youtube.com/embed/'+trBtn.dataset.yt+'?autoplay=1&rel=0');
+      openPlayerTrailer(trBtn.dataset.yt,currentDetail?currentDetail.title:'');
     });
     if(detectTV()){const b=$('#fav-toggle'); if(b) setFocus(b);}
   }catch(e){
@@ -1143,8 +1517,8 @@ function fxMovieVoices(list,maxQ,meta,tile,run){
   showPicker('Озвучка',items.map(it=>{
     const cl=fxCleanVoice(it.voice);
     return {label:cl.name,sub:(cl.studio?cl.studio+' · ':'')+it.q+'p',onPick:()=>{
-      if(it.qs.length<=1){playUrl(fxFileUrl(it.link,it.q),meta.title);return;}
-      showPicker('Качество',it.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===it.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(it.link,q),meta.title)})),true);
+      if(it.qs.length<=1){playUrl(fxFileUrl(it.link,it.q),meta.title,undefined,{source:'Filmix'});return;}
+      showPicker('Качество',it.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===it.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(it.link,q),meta.title,undefined,{source:'Filmix'})})),true);
     }};
   }),true);
 }
@@ -1178,8 +1552,8 @@ function fxSeriesFlow(playlist,maxQ,meta,tile,run){
   }})));
 }
 function fxQualityPick(v,meta){
-  if(v.qs.length<=1){playUrl(fxFileUrl(v.link,v.q),meta.title);return;}
-  showPicker('Качество',v.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===v.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(v.link,q),meta.title)})),true);
+  if(v.qs.length<=1){playUrl(fxFileUrl(v.link,v.q),meta.title,undefined,{source:'Filmix'});return;}
+  showPicker('Качество',v.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===v.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(v.link,q),meta.title,undefined,{source:'Filmix'})})),true);
 }
 
 /* ============ Alpac (порт из «Кино») ============ */
@@ -1354,14 +1728,14 @@ async function alpacFollowVoice(url,meta,tile,run){
 async function alpacResolve(it,meta,tile){
   setTileBusy(tile,true);
   try{
-    if(it.method==='play'){const url=(it.quality?alpacBestQ(it.quality):'')||it.url;setTileBusy(tile,false);playUrl(url,meta.title);return;}
+    if(it.method==='play'){const url=(it.quality?alpacBestQ(it.quality):'')||it.url;setTileBusy(tile,false);playUrl(url,meta.title,undefined,{source:'Alpac'});return;}
     if(it.method==='iframe'){setTileBusy(tile,false);openIframeOverlay(it.url);return;}
     const base=alpacAbs(it.url);
     const full=base+(base.indexOf('?')>=0?'&':'?')+alpacAuthQS();
     const j=await alpacFetchJson(full);
     if(j&&j.accsdb){showAlpacAuth(j,meta,tile);return;}
     if(j&&j.method==='iframe'&&j.url){setTileBusy(tile,false);openIframeOverlay(j.url);return;}
-    if(j&&j.url){setTileBusy(tile,false);playUrl(j.url,meta.title,j.subtitles||[]);return;}
+    if(j&&j.url){setTileBusy(tile,false);playUrl(j.url,meta.title,j.subtitles||[],{source:'Alpac'});return;}
     setTileBusy(tile,false); srcStatus('На Alpac ничего не нашлось.',true);
   }catch(e){
     setTileBusy(tile,false); srcStatus('Не получилось связаться с Alpac.',true);
@@ -1618,15 +1992,15 @@ async function playTorrent(t,meta,tile){
     }
     setTileBusy(tile,false); playStatus('');
     if(files&&files.length===1){
-      playUrl(tsStreamURL(ts,hash,files[0].id,files[0].name||t.title),meta.title);
+      playUrl(tsStreamURL(ts,hash,files[0].id,files[0].name||t.title),meta.title,undefined,{source:'Torrent',file:files[0].name||t.title});
       return;
     }
     if(files&&files.length>1){
       files.sort((a,b)=>(b.size||0)-(a.size||0));
-      showPicker('Файл',files.map(f=>({label:f.name,sub:f.size?fmtSize(f.size):'',onPick:()=>playUrl(tsStreamURL(ts,hash,f.id,f.name||t.title),meta.title)})));
+      showPicker('Файл',files.map(f=>({label:f.name,sub:f.size?fmtSize(f.size):'',onPick:()=>playUrl(tsStreamURL(ts,hash,f.id,f.name||t.title),meta.title,undefined,{source:'Torrent',file:f.name||t.title})})));
       return;
     }
-    playUrl(tsStreamURL(ts,t.magnet,1,t.title),meta.title);
+    playUrl(tsStreamURL(ts,t.magnet,1,t.title),meta.title,undefined,{source:'Torrent',file:t.title});
   }catch(e){
     setTileBusy(tile,false); playStatus('TorrServer не отвечает · проверь адрес в Настройках.',true);
   }
@@ -1644,7 +2018,6 @@ $('#tor-qmode-pill').addEventListener('click',function(){
 
 
 /* Оверлеи: кнопки закрытия */
-$('#player-close').addEventListener('click',closeBuiltInPlayer);
 $('#trailer-close').addEventListener('click',closeIframeOverlay);
 
 /* Старт */
