@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Просто Кино</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:#0f0f14;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+button{font-family:inherit;cursor:pointer}
+button:focus,input:focus{outline:none}
+/* Верхнее меню: тонкая строка как на рефе, активный пункт — светлая пилюля */
+.topmenu{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;gap:.4em;align-items:center;
+  padding:1.1em 2em;background:linear-gradient(180deg,rgba(0,0,0,.75),rgba(0,0,0,0));overflow-x:auto;
+  scrollbar-width:none}
+.topmenu::-webkit-scrollbar{display:none}
+.menu-btn{flex:0 0 auto;background:transparent;border:0;color:#e8eaf0;font-size:1.05em;
+  padding:.45em 1em;border-radius:999px;white-space:nowrap}
+.menu-btn.active{background:#fff;color:#111;font-weight:700}
+.menu-btn.focused{box-shadow:0 0 0 3px rgba(255,255,255,.9)}
+body.phone .topmenu{padding:.9em 1em}
+/* Экраны */
+main{padding-top:0}
+section.screen{display:none}
+section.screen.show{display:block}
+/* Hero: фон на весь экран, НЕ кликабелен, НЕ фокусируем */
+.hero{position:relative;height:62vh;min-height:340px;overflow:hidden;background:#181820}
+body.phone .hero{height:46vh;min-height:260px}
+.hero img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,0) 30%,rgba(15,15,20,0) 55%,rgba(15,15,20,.92) 88%,#0f0f14)}
+.hero-info{position:absolute;left:2em;bottom:2.2em;max-width:44em;z-index:2}
+body.phone .hero-info{left:1em;right:1em;bottom:1.4em}
+.hero-info h1{margin:0 0 .25em;font-size:3em;line-height:1.05;text-transform:uppercase}
+body.phone .hero-info h1{font-size:1.8em}
+.hero-meta{font-size:1.1em;color:#e8eaf0;margin-bottom:.5em}
+.hero-meta .star{color:#ffb340}
+.hero-overview{margin:0;color:#d5d8e0;font-size:1.05em;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.hero-dots{display:flex;gap:.45em;margin-top:1em}
+.hero-dots span{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.35)}
+.hero-dots span.on{background:#fff}
+/* Ряды и широкие карточки: название ПОД карточкой */
+.rows{padding:1em 2em 3em}
+body.phone .rows{padding:.5em 1em 2em}
+.row-title{font-size:1.4em;font-weight:700;margin:1.2em 0 .6em}
+.row{display:flex;gap:1em;overflow-x:auto;padding:.4em .2em 1em;scrollbar-width:none;scroll-behavior:smooth}
+.row::-webkit-scrollbar{display:none}
+.card{flex:0 0 auto;width:320px;background:none;border:0;padding:0;text-align:left;color:#fff}
+body.phone .card{width:78vw;max-width:380px}
+.card .thumb{display:block;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;
+  background:#22222c;box-shadow:0 14px 30px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.45);transition:transform .15s}
+.card .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.card .ctitle{display:block;margin-top:.55em;font-size:1.02em;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card.focused .thumb{outline:3px solid #fff;outline-offset:3px;transform:scale(1.03)}
+/* Маленькая пилюля «Ещё» в конце жанрового ряда — НЕ карточка */
+.more-wrap{flex:0 0 auto;width:320px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center}
+body.phone .more-wrap{width:78vw;max-width:380px}
+.more-pill{height:2.6em;padding:0 1.5em;border:0;border-radius:999px;background:#26262e;color:#fff;font-size:1em}
+.more-pill.focused{background:#ff7a29}
+/* Сетки */
+.grid{display:grid;gap:1em;padding:1.5em 2em 3em}
+body.tv .grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+body.phone .grid{grid-template-columns:1fr;padding:1em 1em 2em}
+.grid .card{width:auto}
+/* Плитки жанров */
+.tiles{display:grid;gap:1em;padding:5.5em 2em 3em}
+body.tv .tiles{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+body.phone .tiles{grid-template-columns:1fr 1fr;padding:5em 1em 2em}
+.tile{background:#1e1e28;border:0;border-radius:16px;color:#fff;font-size:1.15em;padding:1.2em .5em;text-align:center}
+.tile.focused{outline:3px solid #fff;outline-offset:2px}
+/* Кнопки, поля, тексты */
+.back-btn{margin:5em 0 0 2em;background:#26262e;border:0;border-radius:999px;color:#fff;font-size:1em;padding:.6em 1.4em}
+body.phone .back-btn{margin:4.5em 0 0 1em}
+.back-btn.focused{background:#ff7a29}
+.fav-btn{background:#26262e;border:0;border-radius:999px;color:#fff;font-size:1.05em;padding:.7em 1.6em}
+.fav-btn.in{background:#ff7a29}
+.fav-btn.focused{outline:3px solid #fff;outline-offset:2px}
+.save-btn{background:#ff7a29;border:0;border-radius:999px;color:#fff;font-size:1.05em;padding:.7em 1.8em}
+.save-btn.focused{outline:3px solid #fff;outline-offset:2px}
+.field{background:#1e1e28;border:1px solid #33333f;border-radius:12px;color:#fff;font-size:1.05em;padding:.8em 1em;width:min(28em,90vw)}
+.field:focus{border-color:#ff7a29}
+.hint{color:#9aa3b5;font-size:1.05em;line-height:1.5;padding:2em}
+.empty{color:#9aa3b5;font-size:1.1em;padding:2em}
+.loader{color:#9aa3b5;padding:1.5em 2em}
+.settings,.searchbox{padding:6em 2em 3em}
+body.phone .settings,body.phone .searchbox{padding:5em 1em 2em}
+.settings h2,.searchbox h2{margin:0 0 .8em}
+.rowline{display:flex;gap:.8em;flex-wrap:wrap;align-items:center}
+.status{color:#8be9a4;margin-top:1em}
+/* Экран фильма */
+.detail{padding:0 0 3em}
+.detail .backdrop{position:relative;height:56vh;min-height:300px;overflow:hidden;background:#181820}
+body.phone .detail .backdrop{height:38vh}
+.detail .backdrop img{width:100%;height:100%;object-fit:cover}
+.detail .backdrop .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.3),rgba(0,0,0,0) 40%,rgba(15,15,20,.95) 90%,#0f0f14)}
+.detail-info{padding:0 2em}
+body.phone .detail-info{padding:0 1em}
+.detail-info h1{margin:.2em 0 .3em;font-size:2.2em}
+.detail-info .meta{color:#e8eaf0;margin-bottom:.8em}
+.detail-info .meta .star{color:#ffb340}
+.detail-info p{color:#d5d8e0;line-height:1.6;max-width:50em}
+</style>
+</head>
+<body>
+<header class="topmenu" id="menu">
+  <button class="menu-btn focusable active" data-screen="home">Главная</button>
+  <button class="menu-btn focusable" data-screen="genres-movie">Фильмы</button>
+  <button class="menu-btn focusable" data-screen="genres-tv">Сериалы</button>
+  <button class="menu-btn focusable" data-screen="genres-anim">Мультфильмы</button>
+  <button class="menu-btn focusable" data-screen="favs">Избранное</button>
+  <button class="menu-btn focusable" data-screen="settings">Настройки</button>
+  <button class="menu-btn focusable" data-screen="search">Поиск</button>
+</header>
+<main>
+  <section class="screen show" id="screen-home">
+    <div class="hero" id="hero">
+      <img class="bg" id="hero-img" alt="">
+      <div class="hero-shade"></div>
+      <div class="hero-info">
+        <h1 id="hero-title"></h1>
+        <div class="hero-meta" id="hero-meta"></div>
+        <p class="hero-overview" id="hero-overview"></p>
+        <div class="hero-dots" id="hero-dots"></div>
+      </div>
+    </div>
+    <div class="hint" id="home-nokey" style="display:none">Добавьте TMDB-ключ в Настройках — без него каталог не загрузится.
+      <button class="save-btn focusable" id="nokey-goto" style="margin-left:1em">В настройки</button>
+    </div>
+    <div class="rows" id="home-rows"></div>
+  </section>
+  <section class="screen" id="screen-genres-movie"><div class="tiles" id="tiles-movie"></div></section>
+  <section class="screen" id="screen-genres-tv"><div class="tiles" id="tiles-tv"></div></section>
+  <section class="screen" id="screen-genres-anim"><div class="tiles" id="tiles-anim"></div></section>
+  <section class="screen" id="screen-list">
+    <button class="back-btn focusable" id="list-back">← Назад</button>
+    <div class="loader" id="list-loader"></div>
+    <div class="grid" id="list-grid"></div>
+  </section>
+  <section class="screen" id="screen-favs">
+    <div style="padding-top:5em"></div>
+    <div class="grid" id="favs-grid"></div>
+    <div class="empty" id="favs-empty" style="display:none">Пока пусто. Добавляйте кнопкой «В избранное» на карточке фильма.</div>
+  </section>
+  <section class="screen" id="screen-settings">
+    <div class="settings">
+      <h2>Настройки</h2>
+      <div class="rowline">
+        <input class="field focusable" id="tmdb-key" type="text" placeholder="TMDB-ключ" autocomplete="off">
+        <button class="save-btn focusable" id="tmdb-save">Сохранить</button>
+      </div>
+      <div class="hint" style="padding:1em 0">Ключ — тот же, что в «Кино» (TMDB, раздел API). Хранится только на этом устройстве.</div>
+      <div class="status" id="tmdb-status"></div>
+    </div>
+  </section>
+  <section class="screen" id="screen-search">
+    <div class="searchbox">
+      <h2>Поиск</h2>
+      <div class="rowline">
+        <input class="field focusable" id="search-input" type="text" placeholder="Название фильма или сериала" autocomplete="off">
+        <button class="save-btn focusable" id="search-go">Найти</button>
+      </div>
+      <div class="loader" id="search-loader" style="padding-left:0"></div>
+      <div class="grid" id="search-grid" style="padding:1.5em 0"></div>
+    </div>
+  </section>
+  <section class="screen" id="screen-detail">
+    <div class="detail" id="detail-box"></div>
+  </section>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+const LS_KEY='prostokino.tmdb_key', LS_FAV='prostokino.favs';
+const TMDB='https://api.themoviedb.org/3', IMG='https://image.tmdb.org/t/p';
+let genreMovie={}, currentScreen='home', hist=[];
+const HOME_GENRES=[['28','Боевики'],['35','Комедии'],['18','Драмы'],['878','Фантастика'],['53','Триллеры']];
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function getKey(){return (localStorage.getItem(LS_KEY)||'').trim();}
+function hasKey(){return !!getKey();}
+function imgUrl(p,size){return p?IMG+'/'+size+p:'';}
+function getFavs(){try{return JSON.parse(localStorage.getItem(LS_FAV)||'[]');}catch(e){return [];}}
+function setFavs(f){localStorage.setItem(LS_FAV,JSON.stringify(f));}
+function isFav(type,id){return getFavs().some(f=>f.type===type&&String(f.id)===String(id));}
+
+/* ТВ или телефон — автоматически */
+function detectTV(){
+  const ua=navigator.userAgent||'';
+  if(/TV|MiBox|Android TV|BRAVIA|AFT|GoogleTV/i.test(ua)) return true;
+  const coarse=window.matchMedia('(pointer: coarse)').matches;
+  const touch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
+  return window.innerWidth>=960 && !coarse && !touch;
+}
+function applyMode(){document.body.classList.toggle('tv',detectTV());document.body.classList.toggle('phone',!detectTV());}
+applyMode();
+let rsT=null;window.addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(applyMode,200);});
+
+/* Пространственная навигация (D-pad) */
+let cur=null;
+function setFocus(el){
+  if(!el) return;
+  if(cur) cur.classList.remove('focused');
+  cur=el; cur.classList.add('focused');
+  try{cur.scrollIntoView({block:'nearest',inline:'nearest'});}catch(e){}
+}
+function visibleFocusable(){
+  return $$('.focusable').filter(el=>{
+    if(el.disabled) return false;
+    const s=el.closest('section.screen');
+    if(s && !s.classList.contains('show')) return false;
+    return el.offsetParent!==null;
+  });
+}
+function moveFocus(dir){
+  const list=visibleFocusable();
+  if(!cur){if(list.length) setFocus(list[0]);return;}
+  const r=cur.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+  let best=null,bd=1e15;
+  for(const el of list){
+    if(el===cur) continue;
+    const q=el.getBoundingClientRect(), ex=q.left+q.width/2, ey=q.top+q.height/2;
+    const dx=ex-cx, dy=ey-cy;
+    let ok=false;
+    if(dir==='right') ok=dx>0&&Math.abs(dy)<=Math.abs(dx);
+    if(dir==='left') ok=dx<0&&Math.abs(dy)<=Math.abs(dx);
+    if(dir==='down') ok=dy>0&&Math.abs(dx)<=Math.abs(dy);
+    if(dir==='up') ok=dy<0&&Math.abs(dx)<=Math.abs(dy);
+    if(!ok) continue;
+    const d=dx*dx+dy*dy;
+    if(d<bd){bd=d;best=el;}
+  }
+  if(best) setFocus(best);
+}
+document.addEventListener('mouseover',e=>{
+  const f=e.target.closest?e.target.closest('.focusable'):null;
+  if(f) setFocus(f);
+});
+document.addEventListener('keydown',e=>{
+  const ae=document.activeElement;
+  const inField=ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA');
+  if(inField){
+    /* Пока фокус в поле — навигация клавиши не перехватывает, ввод идёт в поле */
+    if(e.key==='ArrowUp'||e.key==='ArrowDown'){ae.blur();e.preventDefault();}
+    else if(e.key==='Enter'){e.preventDefault();if(ae.id==='tmdb-key')saveKey();else if(ae.id==='search-input')doSearch();}
+    else if(e.key==='Escape'){ae.blur();e.preventDefault();}
+    return;
+  }
+  const k=e.key;
+  if(k==='ArrowRight'){moveFocus('right');e.preventDefault();}
+  else if(k==='Left'||k==='ArrowLeft'){moveFocus('left');e.preventDefault();}
+  else if(k==='ArrowDown'){moveFocus('down');e.preventDefault();}
+  else if(k==='ArrowUp'){moveFocus('up');e.preventDefault();}
+  else if(k==='Enter'||k===' '){
+    if(cur){
+      /* Поле ввода: только РЕАЛЬНЫЙ DOM-фокус открывает системную клавиатуру на ТВ.
+         Синтезированный click() на WebView MiBox клавиатуру не открывает (урок pawflix v0.9). */
+      if(cur.tagName==='INPUT'||cur.tagName==='TEXTAREA'){setFocus(cur);cur.focus();}
+      else cur.click();
+      e.preventDefault();
+    }
+  }
+  else if(k==='Escape'){goBack();e.preventDefault();}
+});
+
+/* Экраны */
+const MENU_MAIN={home:1,'genres-movie':1,'genres-tv':1,'genres-anim':1,favs:1,settings:1,search:1};
+function showScreen(id,push){
+  if(push===undefined) push=true;
+  if(push&&currentScreen&&currentScreen!==id) hist.push(currentScreen);
+  currentScreen=id;
+  $$('section.screen').forEach(s=>s.classList.toggle('show',s.id==='screen-'+id));
+  if(MENU_MAIN[id]) $$('.menu-btn').forEach(b=>b.classList.toggle('active',b.dataset.screen===id));
+  window.scrollTo(0,0);
+  if(id==='home'&&!homeLoaded) loadHome();
+  if(id==='genres-movie') loadGenreTiles('movie');
+  if(id==='genres-tv') loadGenreTiles('tv');
+  if(id==='genres-anim') loadGenreTiles('anim');
+  if(id==='favs') renderFavs();
+  if(id==='settings'){$('#tmdb-key').value=getKey();$('#tmdb-status').textContent='';}
+  if(detectTV()){
+    const first=visibleFocusable();
+    if(first.length) setFocus(first[0]);
+  }
+}
+function goBack(){
+  if(hist.length){showScreen(hist.pop(),false);return;}
+  if(currentScreen!=='home') showScreen('home',false);
+}
+$('#list-back').addEventListener('click',goBack);
+$$('.menu-btn').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));
+$('#nokey-goto').addEventListener('click',()=>showScreen('settings'));
+
+/* TMDB */
+async function api(path,params){
+  const k=getKey();
+  if(!k) throw new Error('nokey');
+  const u=new URL(TMDB+path);
+  u.searchParams.set('api_key',k);
+  u.searchParams.set('language','ru-RU');
+  if(params) for(const key2 of Object.keys(params)) u.searchParams.set(key2,params[key2]);
+  const r=await fetch(u.toString());
+  if(!r.ok) throw new Error('tmdb '+r.status);
+  return r.json();
+}
+function cardHTML(it,type){
+  const title=it.title||it.name||'';
+  const pic=it.backdrop_path||it.poster_path;
+  return '<button class="card focusable" data-id="'+it.id+'" data-type="'+type+'">'+
+    '<span class="thumb">'+(pic?'<img src="'+imgUrl(pic,'w780')+'" alt="" loading="lazy" onerror="this.remove()">':'')+'</span>'+
+    '<span class="ctitle">'+esc(title)+'</span></button>';
+}
+document.addEventListener('click',e=>{
+  const card=e.target.closest?e.target.closest('.card'):null;
+  if(card){openDetail(card.dataset.type,card.dataset.id);return;}
+  const pill=e.target.closest?e.target.closest('.more-pill'):null;
+  if(pill){openGenreList(pill.dataset.type,pill.dataset.genre,pill.dataset.name,pill.dataset.anim==='1');return;}
+  const tile=e.target.closest?e.target.closest('.tile'):null;
+  if(tile){openGenreList(tile.dataset.type,tile.dataset.genre,tile.dataset.name,tile.dataset.anim==='1');return;}
+});
+
+/* Главная: hero + ряды */
+let homeLoaded=false, heroTimer=null, heroList=[], heroIdx=0;
+function showHero(i){
+  const it=heroList[i]; if(!it) return;
+  const im=$('#hero-img');
+  if(it.backdrop_path) im.src=imgUrl(it.backdrop_path,'w1280'); else im.removeAttribute('src');
+  $('#hero-title').textContent=it.title||it.name||'';
+  const year=(it.release_date||it.first_air_date||'').slice(0,4);
+  const gs=(it.genre_ids||[]).map(id=>genreMovie[id]).filter(Boolean).slice(0,3).join(', ');
+  const star=it.vote_average?'★ '+it.vote_average.toFixed(1):'';
+  $('#hero-meta').innerHTML=[star,year,gs].filter(Boolean).map(esc).join(' · ').replace('★','<span class="star">★</span>');
+  $('#hero-overview').textContent=it.overview||'';
+  $$('#hero-dots span').forEach((d,j)=>d.classList.toggle('on',j===i));
+}
+function startHero(list){
+  heroList=list; heroIdx=0;
+  $('#hero-dots').innerHTML=list.map(()=>'<span></span>').join('');
+  showHero(0);
+  if(heroTimer) clearInterval(heroTimer);
+  if(list.length>1) heroTimer=setInterval(()=>{
+    if(document.hidden) return;
+    heroIdx=(heroIdx+1)%heroList.length; showHero(heroIdx);
+  },8000);
+}
+function renderRow(boxId,title,items,type,more){
+  const box=$(boxId); if(!box) return;
+  let html='<div class="row-title">'+esc(title)+'</div><div class="row">';
+  html+=items.map(it=>cardHTML(it,type)).join('');
+  if(more) html+='<span class="more-wrap"><button class="more-pill focusable" data-type="'+more.type+'" data-genre="'+more.genre+'" data-name="'+esc(more.name)+'" data-anim="'+(more.anim?'1':'0')+'">Ещё →</button></span>';
+  html+='</div>';
+  box.innerHTML=html;
+}
+async function loadHome(){
+  homeLoaded=true;
+  const nk=$('#home-nokey'), rows=$('#home-rows');
+  if(!hasKey()){nk.style.display='block';rows.innerHTML='';$('#hero-title').textContent='';$('#hero-meta').textContent='';$('#hero-overview').textContent='';$('#hero-dots').innerHTML='';return;}
+  nk.style.display='none';
+  rows.innerHTML='<div class="loader">Загружаю…</div>';
+  try{
+    const gm=await api('/genre/movie/list');
+    genreMovie={}; gm.genres.forEach(g=>{genreMovie[g.id]=g.name;});
+    let heroItems=[];
+    try{const np=await api('/movie/now_playing',{page:1});heroItems=np.results.filter(r=>r.backdrop_path).slice(0,12);}catch(e){}
+    if(heroItems.length<3){try{const tr=await api('/trending/movie/week');heroItems=tr.results.filter(r=>r.backdrop_path).slice(0,12);}catch(e){}}
+    startHero(heroItems);
+    rows.innerHTML='<div id="row-popular"></div>'+HOME_GENRES.map(g=>'<div id="row-g'+g[0]+'"></div>').join('');
+    const pop=await api('/movie/popular',{page:1});
+    renderRow('#row-popular','Популярное',pop.results,'movie',null);
+    for(const g of HOME_GENRES){
+      const d=await api('/discover/movie',{with_genres:g[0],sort_by:'popularity.desc',page:1});
+      renderRow('#row-g'+g[0],g[1],d.results,'movie',{type:'movie',genre:g[0],name:g[1],anim:false});
+    }
+  }catch(e){
+    rows.innerHTML='<div class="empty">Не удалось загрузить каталог — проверьте TMDB-ключ в Настройках.</div>';
+  }
+}
+
+/* Страницы жанров */
+const tilesLoaded={};
+async function loadGenreTiles(kind){
+  if(tilesLoaded[kind]) return;
+  const box=kind==='movie'?$('#tiles-movie'):kind==='tv'?$('#tiles-tv'):$('#tiles-anim');
+  if(!hasKey()){box.innerHTML='<div class="empty">Добавьте TMDB-ключ в Настройках — без него каталог не загрузится.</div>';return;}
+  box.innerHTML='<div class="loader">Загружаю…</div>';
+  try{
+    const d=await api(kind==='tv'?'/genre/tv/list':'/genre/movie/list');
+    if(kind==='tv') d.genres.forEach(g=>{});
+    box.innerHTML=d.genres.map(g=>'<button class="tile focusable" data-type="'+(kind==='tv'?'tv':'movie')+'" data-genre="'+g.id+'" data-name="'+esc(g.name)+'" data-anim="'+(kind==='anim'?'1':'0')+'">'+esc(g.name)+'</button>').join('');
+    tilesLoaded[kind]=true;
+  }catch(e){
+    box.innerHTML='<div class="empty">Не удалось загрузить жанры — проверьте TMDB-ключ в Настройках.</div>';
+  }
+}
+
+/* Полный список жанра: все страницы сразу, без кнопки «Показать ещё» */
+async function openGenreList(type,genreId,genreName,animOnly){
+  showScreen('list');
+  const grid=$('#list-grid'), loader=$('#list-loader');
+  grid.innerHTML=''; loader.textContent='Загружаю…';
+  if(!hasKey()){loader.textContent='Добавьте TMDB-ключ в Настройках.';return;}
+  try{
+    let page=1,totalPages=1,all=[];
+    do{
+      const params={sort_by:'popularity.desc',page:page};
+      if(type==='movie') params.with_genres=animOnly?((String(genreId)==='16')?'16':'16,'+genreId):genreId;
+      else params.with_genres=genreId;
+      const d=await api(type==='movie'?'/discover/movie':'/discover/tv',params);
+      totalPages=d.total_pages||1;
+      all=all.concat(d.results||[]);
+      loader.textContent='Загружено: '+all.length+' — страница '+page+' из '+Math.min(totalPages,50);
+      page++;
+    }while(page<=totalPages&&page<=50);
+    loader.textContent='Всего: '+all.length;
+    grid.innerHTML=all.length?all.map(it=>cardHTML(it,type)).join(''):'<div class="empty">Ничего не найдено</div>';
+    const first=grid.querySelector('.focusable');
+    if(first&&detectTV()) setFocus(first);
+  }catch(e){
+    loader.textContent='Ошибка загрузки — проверьте TMDB-ключ в Настройках.';
+  }
+}
+
+/* Экран фильма: минимум, без плеера */
+async function openDetail(type,id){
+  showScreen('detail');
+  const box=$('#detail-box');
+  box.innerHTML='<div class="loader" style="padding-top:6em">Загружаю…</div>';
+  try{
+    const d=await api('/'+type+'/'+id);
+    const title=d.title||d.name||'';
+    const year=(d.release_date||d.first_air_date||'').slice(0,4);
+    const gs=(d.genres||[]).map(g=>g.name).join(', ');
+    const star=d.vote_average?'★ '+d.vote_average.toFixed(1):'';
+    const fav=isFav(type,id);
+    const pic=d.backdrop_path||d.poster_path;
+    box.innerHTML=
+      '<div style="padding-top:4.5em"></div>'+
+      '<div class="backdrop">'+(pic?'<img src="'+imgUrl(pic,'w1280')+'" alt="" onerror="this.remove()">':'')+'<div class="shade"></div></div>'+
+      '<div class="detail-info"><h1>'+esc(title)+'</h1>'+
+      '<div class="meta">'+[star?'<span class="star">★</span> '+esc(star.slice(2)):null,year,gs].filter(Boolean).join(' · ')+'</div>'+
+      '<p>'+esc(d.overview||'Описание отсутствует.')+'</p>'+
+      '<button class="fav-btn focusable'+(fav?' in':'')+'" id="fav-toggle" data-type="'+type+'" data-id="'+id+'">'+(fav?'✓ В избранном':'♡ В избранное')+'</button></div>';
+    $('#fav-toggle').addEventListener('click',()=>{
+      const f=getFavs(), idx=f.findIndex(x=>x.type===type&&String(x.id)===String(id));
+      if(idx>=0) f.splice(idx,1);
+      else f.push({type:type,id:d.id,title:title,backdrop:d.backdrop_path||null,poster:d.poster_path||null,rating:d.vote_average||0});
+      setFavs(f);
+      const b=$('#fav-toggle'), now=idx<0;
+      b.classList.toggle('in',now); b.textContent=now?'✓ В избранном':'♡ В избранное';
+    });
+    if(detectTV()){const b=$('#fav-toggle'); if(b) setFocus(b);}
+  }catch(e){
+    box.innerHTML='<div class="empty" style="padding-top:6em">Ошибка загрузки — проверьте TMDB-ключ в Настройках.</div>';
+  }
+}
+
+/* Избранное */
+function renderFavs(){
+  const grid=$('#favs-grid'), empty=$('#favs-empty');
+  const f=getFavs();
+  empty.style.display=f.length?'none':'block';
+  grid.innerHTML=f.map(x=>cardHTML({id:x.id,title:x.title,backdrop_path:x.backdrop,poster_path:x.poster,vote_average:x.rating},x.type)).join('');
+}
+
+/* Настройки: только TMDB-ключ */
+function saveKey(){
+  const v=$('#tmdb-key').value.trim();
+  localStorage.setItem(LS_KEY,v);
+  $('#tmdb-status').textContent=v?'Сохранено ✓':'Ключ удалён';
+  homeLoaded=false; tilesLoaded.movie=false; tilesLoaded.tv=false; tilesLoaded.anim=false;
+  if(v) loadHome();
+}
+$('#tmdb-save').addEventListener('click',saveKey);
+
+/* Поиск */
+async function doSearch(){
+  const q=$('#search-input').value.trim();
+  const grid=$('#search-grid'), loader=$('#search-loader');
+  grid.innerHTML='';
+  if(!q){loader.textContent='Введите название.';return;}
+  if(!hasKey()){loader.textContent='Добавьте TMDB-ключ в Настройках.';return;}
+  loader.textContent='Ищу…';
+  try{
+    const d=await api('/search/multi',{query:q,page:1,include_adult:'false'});
+    const items=(d.results||[]).filter(r=>(r.media_type==='movie'||r.media_type==='tv')&&(r.backdrop_path||r.poster_path));
+    loader.textContent=items.length?('Найдено: '+items.length):'Ничего не найдено';
+    grid.innerHTML=items.map(it=>cardHTML(it,it.media_type)).join('');
+    const first=grid.querySelector('.focusable');
+    if(first&&detectTV()) setFocus(first);
+  }catch(e){
+    loader.textContent='Ошибка поиска — проверьте TMDB-ключ в Настройках.';
+  }
+}
+$('#search-go').addEventListener('click',doSearch);
+
+/* Старт */
+if(hasKey()) loadHome();
+else{
+  $('#home-nokey').style.display='block';
+  $('#hero-title').textContent='Просто Кино';
+  $('#hero-overview').textContent='Добавьте TMDB-ключ в Настройках — и каталог загрузится.';
+}
+if(detectTV()){
+  const first=visibleFocusable();
+  if(first.length) setFocus(first[0]);
+}
+</script>
+</body>
+</html>
