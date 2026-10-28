@@ -3509,10 +3509,13 @@
             e.preventDefault(); return;
           }
           // Ввод в текстовом поле (TMDB-ключ): клавиши идут в поле,
-          // стрелки двигают каретку, Enter — сохранить, Esc — убрать фокус.
+          // стрелки влево/вправо двигают каретку, вверх/вниз — выход из поля
+          // обратно в навигацию (паттерн «КиноTV»), Enter — сохранить,
+          // Esc — убрать фокус.
           var ae = document.activeElement;
           if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) {
             if (k === 'Escape') { ae.blur(); e.preventDefault(); }
+            else if (k === 'ArrowUp' || k === 'ArrowDown') { ae.blur(); e.preventDefault(); }
             else if (k === 'Enter' && ae.id === 'tmdb-key-input') { saveKey(); e.preventDefault(); }
             else if (k === 'Enter' && ae.id === 'ts-https-input') { saveTsHttps(); e.preventDefault(); }
             else if (k === 'Enter' && ae.id === 'ts-http-input') { saveTsHttp(); e.preventDefault(); }
@@ -3524,6 +3527,7 @@
             else if (k === 'Enter' && ae.id === 'filmix-proxy-input') { saveFilmixProxy(); e.preventDefault(); }
             else if (k === 'Enter' && ae.id === 'bwa-base-input') { saveBwaBase(); e.preventDefault(); }
             else if (k === 'Enter' && ae.id === 'bwa-key-input') { saveBwaKey(); e.preventDefault(); }
+            else if (k === 'Enter' && ae.id && ae.id.slice(-6) === '-input') { var sb = document.getElementById(ae.id.slice(0, -6) + '-save'); if (sb) { sb.click(); e.preventDefault(); } }
             return;
           }
           if (k === 'Escape' && isBookmarkSheetOpen()) { closeBookmarkSheet(); e.preventDefault(); return; }
@@ -3543,7 +3547,14 @@
           else if (k === 'ArrowDown')  { move('down');  e.preventDefault(); }
           else if (k === 'Enter' || k === ' ') {
             var cur = document.querySelector('.focused');
-            if (cur) { cur.click(); e.preventDefault(); }
+            if (cur) {
+              /* Поле ввода: D-pad даёт РЕАЛЬНЫЙ DOM-фокус — только он открывает
+                 системную клавиатуру на ТВ (класс .focused сам по себе IME не
+                 открывает, а синтезированный click() на WebView ТВ ненадёжен). */
+              if (cur.tagName === 'INPUT' || cur.tagName === 'TEXTAREA') { setFocus(cur); cur.focus(); }
+              else { cur.click(); }
+              e.preventDefault();
+            }
           }
           else if (k === 'Escape' || k === 'Backspace') {
             if (current === 'provider') {
