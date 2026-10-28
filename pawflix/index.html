@@ -3443,26 +3443,41 @@
             img: m.poster_path ? IMG + 'w500' + m.poster_path : ''
           };
         }
-        /* Тень под цвет постера: canvas-сэмплинг (TMDB отдаёт CORS).
+        /* Тень под цвет постера: сэмплинг отдельным CORS-запросом.
+           Отображаемый img — БЕЗ crossorigin: CORS-режим на телефоне Denis
+           ронял саму загрузку постеров (чёрные боксы + битые иконки).
            Кэш на URL; при любой неудаче — fallback оранжевый. */
         var glowCache = {};
         function applyGlow(img, card){
           var url = img.getAttribute('src');
           if (!url) return;
           if (glowCache[url]) { card.style.setProperty('--glow', glowCache[url]); return; }
-          var fb = 'rgba(255,150,80,.5)';
-          try {
-            var c = document.createElement('canvas');
-            c.width = 16; c.height = 24;
-            var x = c.getContext('2d');
-            x.drawImage(img, 0, 0, 16, 24);
-            var d = x.getImageData(0, 0, 16, 24).data, r = 0, g = 0, b = 0, n = 0, i;
-            for (i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
-            if (!n) return;
-            var gl = 'rgba(' + Math.round(r / n) + ',' + Math.round(g / n) + ',' + Math.round(b / n) + ',.55)';
-            glowCache[url] = gl;
-            card.style.setProperty('--glow', gl);
-          } catch (e) { card.style.setProperty('--glow', fb); }
+          if (typeof fetch === 'undefined') return;
+          fetch(url, { mode: 'cors' }).then(function(r){
+            if (!r.ok) throw new Error('img ' + r.status);
+            return r.blob();
+          }).then(function(b){
+            var o = URL.createObjectURL(b);
+            var im = new Image();
+            im.onload = function(){
+              try {
+                var c = document.createElement('canvas');
+                c.width = 16; c.height = 24;
+                var x = c.getContext('2d');
+                x.drawImage(im, 0, 0, 16, 24);
+                var d = x.getImageData(0, 0, 16, 24).data, r = 0, g = 0, bl = 0, n = 0, i;
+                for (i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; bl += d[i + 2]; n++; }
+                if (n) {
+                  var gl = 'rgba(' + Math.round(r / n) + ',' + Math.round(g / n) + ',' + Math.round(bl / n) + ',.55)';
+                  glowCache[url] = gl;
+                  card.style.setProperty('--glow', gl);
+                }
+              } catch (e) { /* fallback уже стоит */ }
+              URL.revokeObjectURL(o);
+            };
+            im.onerror = function(){ URL.revokeObjectURL(o); };
+            im.src = o;
+          }).catch(function(){ /* fallback уже стоит */ });
         }
         /* Постер-карточка по файлу Denis «Карточки с фокусом»: без подложки-
            контейнера, постер + подпись обычным текстом. Класс pcard отличает
@@ -3480,7 +3495,7 @@
           var meta = [m.y, esc(m.g)].filter(function(s){ return s; }).join(' • ');
           d.innerHTML =
             '<div class="poster">' +
-              (m.img ? '<img class="art" src="' + m.img + '" alt="" crossorigin="anonymous" />' : '') +
+              (m.img ? '<img class="art" src="' + m.img + '" alt="" />' : '') +
               '<span class="gloss"></span><span class="shade"></span>' +
               '<span class="ui heart"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5C4 15 2.5 10.5 5 7.5C7 5.2 10.5 5.6 12 8.2C13.5 5.6 17 5.2 19 7.5C21.5 10.5 20 15 12 20.5Z"/></svg></span>' +
               '<span class="ui play"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 5L19 12L8 19Z" fill="#1c120c"/></svg></span>' +
