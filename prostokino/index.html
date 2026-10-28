@@ -62,6 +62,13 @@ body.phone .more-wrap{width:78vw;max-width:380px}
 body.tv .grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
 body.phone .grid{grid-template-columns:1fr;padding:1em 1em 2em}
 .grid .card{width:auto}
+/* Полный список жанра: фиксированный фон-бэкдроп, карточки листаются поверх */
+.list-bg{position:fixed;inset:0;z-index:0;overflow:hidden;background:#0f0f14}
+.list-bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(24px) saturate(1.2);transform:scale(1.12)}
+.list-bg-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,15,20,.82),rgba(15,15,20,.88) 55%,rgba(15,15,20,.94))}
+#screen-list .back-btn,#screen-list .loader,#screen-list .grid,#screen-list #list-more,#screen-list #list-sentinel{position:relative;z-index:1}
+#list-sentinel{height:8px}
+#list-more{text-align:center;padding:1em 2em 3em}
 /* Плитки жанров */
 .tiles{display:grid;gap:1em;padding:5.5em 2em 3em}
 body.tv .tiles{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
@@ -132,9 +139,12 @@ body.phone .detail-info{padding:0 1em}
   <section class="screen" id="screen-genres-tv"><div class="tiles" id="tiles-tv"></div></section>
   <section class="screen" id="screen-genres-anim"><div class="tiles" id="tiles-anim"></div></section>
   <section class="screen" id="screen-list">
+    <div class="list-bg" id="list-bg"><img id="list-bg-img" alt="" onerror="this.style.display='none'"><div class="list-bg-shade"></div></div>
     <button class="back-btn focusable" id="list-back">← Назад</button>
     <div class="loader" id="list-loader"></div>
     <div class="grid" id="list-grid"></div>
+    <div id="list-sentinel"></div>
+    <div class="loader" id="list-more" style="display:none"></div>
   </section>
   <section class="screen" id="screen-favs">
     <div style="padding-top:5em"></div>
@@ -392,31 +402,66 @@ async function loadGenreTiles(kind){
   }
 }
 
-/* Полный список жанра: все страницы сразу, без кнопки «Показать ещё» */
-async function openGenreList(type,genreId,genreName,animOnly){
-  showScreen('list');
-  const grid=$('#list-grid'), loader=$('#list-loader');
-  grid.innerHTML=''; loader.textContent='Загружаю…';
-  if(!hasKey()){loader.textContent='Добавьте TMDB-ключ в Настройках.';return;}
+/* Полный список жанра: первая порция (20) — сразу, дальше догрузка по скроллу.
+   Фон — статичный размытый бэкдроп первого фильма списка. */
+let listState=null, listObserver=null;
+function listBgFrom(item){
+  const bgImg=$('#list-bg-img');
+  bgImg.style.display='none'; bgImg.removeAttribute('src');
+  if(!item) return;
+  const u=item.backdrop_path?imgUrl(item.backdrop_path,'w1280'):(item.poster_path?imgUrl(item.poster_path,'w500'):'');
+  if(u){bgImg.src=u; bgImg.style.display='block';}
+}
+async function listLoadPage(){
+  const st=listState; if(!st||st.loading||st.done) return;
+  st.loading=true;
+  const more=$('#list-more');
+  if(st.page>1){more.style.display='block'; more.textContent='Загружаю ещё…';}
   try{
-    let page=1,totalPages=1,all=[];
-    do{
-      const params={sort_by:'popularity.desc',page:page};
-      if(type==='movie') params.with_genres=animOnly?((String(genreId)==='16')?'16':'16,'+genreId):genreId;
-      else params.with_genres=genreId;
-      const d=await api(type==='movie'?'/discover/movie':'/discover/tv',params);
-      totalPages=d.total_pages||1;
-      all=all.concat(d.results||[]);
-      loader.textContent='Загружено: '+all.length+' — страница '+page+' из '+Math.min(totalPages,50);
-      page++;
-    }while(page<=totalPages&&page<=50);
-    loader.textContent='Всего: '+all.length;
-    grid.innerHTML=all.length?all.map(it=>cardHTML(it,type)).join(''):'<div class="empty">Ничего не найдено</div>';
-    const first=grid.querySelector('.focusable');
-    if(first&&detectTV()) setFocus(first);
+    const params={sort_by:'popularity.desc',page:st.page};
+    if(st.type==='movie') params.with_genres=st.animOnly?((String(st.genreId)==='16')?'16':'16,'+st.genreId):st.genreId;
+    else params.with_genres=st.genreId;
+    const d=await api(st.type==='movie'?'/discover/movie':'/discover/tv',params);
+    st.totalPages=d.total_pages||1;
+    const items=d.results||[];
+    if(st.page===1){
+      $('#list-loader').textContent='';
+      $('#list-grid').innerHTML=items.length?items.map(it=>cardHTML(it,st.type)).join(''):'<div class="empty">Ничего не найдено</div>';
+      listBgFrom(items[0]);
+      const first=$('#list-grid').querySelector('.focusable');
+      if(first&&detectTV()) setFocus(first);
+    }else{
+      $('#list-grid').insertAdjacentHTML('beforeend',items.map(it=>cardHTML(it,st.type)).join(''));
+    }
+    st.page++;
+    if(st.page>st.totalPages) st.done=true;
   }catch(e){
-    loader.textContent='Ошибка загрузки — проверьте TMDB-ключ в Настройках.';
+    if(st.page===1) $('#list-loader').textContent='Ошибка загрузки — проверьте TMDB-ключ в Настройках.';
+    st.done=true;
   }
+  st.loading=false;
+  more.style.display='none';
+  if(st.done&&listObserver) listObserver.disconnect();
+}
+function listObserve(){
+  if(listObserver) listObserver.disconnect();
+  listObserver=new IntersectionObserver(entries=>{
+    if(entries.some(en=>en.isIntersecting)) listLoadPage();
+  },{rootMargin:'400px'});
+  const s=$('#list-sentinel');
+  if(s) listObserver.observe(s);
+}
+async function openGenreList(type,genreId,genreName,animOnly){
+  if(listObserver) listObserver.disconnect();
+  showScreen('list');
+  const loader=$('#list-loader'), grid=$('#list-grid'), more=$('#list-more');
+  grid.innerHTML=''; more.style.display='none'; more.textContent='';
+  const bgImg=$('#list-bg-img'); bgImg.style.display='none'; bgImg.removeAttribute('src');
+  if(!hasKey()){loader.textContent='Добавьте TMDB-ключ в Настройках.'; listState=null; return;}
+  loader.textContent='Загружаю…';
+  listState={type:type,genreId:genreId,animOnly:animOnly,page:1,totalPages:1,loading:false,done:false};
+  await listLoadPage();
+  if(listState&&!listState.done) listObserve();
 }
 
 /* Экран фильма: минимум, без плеера */
