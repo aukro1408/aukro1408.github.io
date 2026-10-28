@@ -3795,6 +3795,63 @@
             heroSide.appendChild(c);
           });
         }
+        /* Hero-скосы — один общий угол (параллельность швов).
+           objectBoundingBox масштабирует x и y независимо, и при разной ширине
+           карточек дробные пути дают разные углы: главная-правая ~4.66°,
+           боковая-левая ~3.39° — шов расходится на ~1.27° (8–12px по высоте).
+           Поэтому clip-path строится в px из замеренных боксов: все наклонные
+           края сдвигаются на один и тот же dx = H*tan(4.4°) — угол у всех
+           ровно 4.4°, швы параллельны на любой ширине. Скругления — файловые
+           ~50px с масштабом от высоты. Без JS (или если path() не
+           поддерживается) остаётся дробный SVG-путь из CSS. */
+        var HERO_SLANT = 4.4 * Math.PI / 180;
+        var HERO_PATH_OK = (typeof CSS !== 'undefined' && CSS.supports &&
+          CSS.supports('clip-path', 'path("M0 0H10V10H0Z")'));
+        function heroSlantPath(W, H, dx, r, sL, sR){
+          var TRx = sR ? W - dx : W, BLx = sL ? dx : 0;
+          var len = Math.sqrt(dx * dx + H * H);
+          var uxR = sR ? dx / len : 0, uyR = sR ? H / len : 1;
+          var uxL = sL ? -dx / len : 0, uyL = sL ? -H / len : -1;
+          r = Math.min(r, (TRx - 0) * 0.4, H * 0.4);
+          function f(n){ return Math.round(n * 10) / 10; }
+          return 'M ' + f(r) + ' 0' +
+            ' L ' + f(TRx - r) + ' 0' +
+            ' Q ' + f(TRx) + ' 0 ' + f(TRx + r * uxR) + ' ' + f(r * uyR) +
+            ' L ' + f(W - r * uxR) + ' ' + f(H - r * uyR) +
+            ' Q ' + f(W) + ' ' + f(H) + ' ' + f(W - r) + ' ' + f(H) +
+            ' L ' + f(BLx + r) + ' ' + f(H) +
+            ' Q ' + f(BLx) + ' ' + f(H) + ' ' + f(BLx + r * uxL) + ' ' + f(H + r * uyL) +
+            ' L ' + f(-r * uxL) + ' ' + f(-r * uyL) +
+            ' Q 0 0 ' + f(r) + ' 0 Z';
+        }
+        function applyHeroClips(){
+          var hero = document.querySelector('#screen-home .hero-stage .hero');
+          var side = document.getElementById('hero-side');
+          var cards = side ? side.children : [];
+          function clear(el){ if (el) el.style.clipPath = ''; }
+          if (!HERO_PATH_OK || window.innerWidth <= 760) {
+            clear(hero); clear(cards[0]); clear(cards[1]);
+            return;
+          }
+          function setClip(el, sL, sR){
+            if (!el) return;
+            var b = el.getBoundingClientRect();
+            if (!b.width || !b.height) return;
+            var dx = b.height * Math.tan(HERO_SLANT);
+            el.style.clipPath = 'path("' +
+              heroSlantPath(b.width, b.height, dx, 50 * b.height / 388, sL, sR) + '")';
+          }
+          setClip(hero, 0, 1);
+          setClip(cards[0], 1, 1);
+          setClip(cards[1], 1, 0);
+        }
+        var heroClipTimer = null;
+        function applyHeroClipsSoon(){
+          if (heroClipTimer) clearTimeout(heroClipTimer);
+          heroClipTimer = setTimeout(applyHeroClips, 120);
+        }
+        window.addEventListener('resize', applyHeroClipsSoon);
+        window.addEventListener('load', applyHeroClips);
         function setHero(i){
           heroIdx = (i + HERO.length) % HERO.length;
           var m = HERO[heroIdx];
@@ -3822,6 +3879,7 @@
           }
           document.getElementById('hero-desc').textContent = m.desc;
           renderHeroSide();
+          applyHeroClips();
         }
         function restartHero(){
           if (heroTimer) clearInterval(heroTimer);
