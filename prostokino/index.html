@@ -10,15 +10,21 @@ html,body{margin:0;padding:0}
 body{background:#0f0f14;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 button{font-family:inherit;cursor:pointer}
 button:focus,input:focus{outline:none}
-/* Верхнее меню: тонкая строка как на рефе, активный пункт — светлая пилюля */
-.topmenu{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;gap:.4em;align-items:center;
+/* Верхнее меню: мягкое свечение из файла Denis, белая пилюля убрана полностью */
+.topmenu{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;gap:clamp(18px,4vw,44px);align-items:center;
   padding:1.1em 2em;background:linear-gradient(180deg,rgba(0,0,0,.75),rgba(0,0,0,0));overflow-x:auto;
   scrollbar-width:none}
 .topmenu::-webkit-scrollbar{display:none}
-.menu-btn{flex:0 0 auto;background:transparent;border:0;color:#e8eaf0;font-size:1.05em;
-  padding:.45em 1em;border-radius:999px;white-space:nowrap}
-.menu-btn.active{background:#fff;color:#111;font-weight:700}
-.menu-btn.focused{box-shadow:0 0 0 3px rgba(255,255,255,.9)}
+.menu-btn{position:relative;flex:0 0 auto;background:transparent;border:0;color:rgba(255,255,255,.74);
+  font-size:clamp(17px,3vw,25px);font-weight:400;padding:10px 0 13px;white-space:nowrap;
+  text-shadow:0 0 8px rgba(255,255,255,.06);transition:color .3s ease,text-shadow .3s ease}
+.menu-btn.active{color:#fff;font-weight:600;text-shadow:0 0 8px rgba(255,255,255,.18),0 0 18px rgba(255,255,255,.08)}
+.menu-btn:hover,.menu-btn.focused{color:#fff;text-shadow:0 0 8px rgba(255,255,255,.25),0 0 16px rgba(255,255,255,.12)}
+.menu-btn:after{content:"";position:absolute;left:25%;right:25%;bottom:3px;height:2px;border-radius:2px;
+  background:rgba(255,255,255,.88);transform:scaleX(0);opacity:0;transition:transform .3s ease,opacity .3s ease;
+  box-shadow:0 0 8px rgba(255,255,255,.22)}
+.menu-btn.active:after,.menu-btn:hover:after,.menu-btn.focused:after{transform:scaleX(1);opacity:.7}
+@media(prefers-reduced-motion:reduce){.menu-btn,.menu-btn:after{transition:none}}
 body.phone .topmenu{padding:.9em 1em}
 /* Экраны */
 main{padding-top:0}
