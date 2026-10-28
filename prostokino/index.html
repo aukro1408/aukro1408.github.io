@@ -77,11 +77,13 @@ body.phone .rows{padding:.5em 1em 2em}
 .row::-webkit-scrollbar{display:none}
 .card{flex:0 0 auto;width:320px;background:none;border:0;padding:0;text-align:left;color:#fff}
 body.phone .card{width:78vw;max-width:380px}
-.card .thumb{display:block;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;
+.card .thumb{position:relative;display:block;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;
   background:#22222c;box-shadow:0 14px 30px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.45);transition:transform .15s}
 .card .thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .card .ctitle{display:block;margin-top:.55em;font-size:1.02em;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card.focused .thumb{outline:3px solid #fff;outline-offset:3px;transform:scale(1.03)}
+.cbadge{position:absolute;top:.55em;left:.55em;z-index:2;background:rgba(0,0,0,.72);color:#fff;font-size:.82em;font-weight:700;line-height:1;padding:.35em .65em;border-radius:999px;white-space:nowrap;pointer-events:none}
+.cbadge .star{color:#ffb340}
 /* Маленькая пилюля «Ещё» в конце жанрового ряда — НЕ карточка */
 .more-wrap{flex:0 0 auto;width:320px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center}
 body.phone .more-wrap{width:78vw;max-width:380px}
@@ -180,7 +182,7 @@ body.phone .src-tile{width:100%;height:4.4rem}
 /* Портретные карточки (Похожие, фильмы персоны) */
 .pcard{flex:0 0 auto;width:200px;background:none;border:0;padding:0;text-align:left;color:#fff}
 body.phone .pcard{width:40vw}
-.pcard .pthumb{display:block;width:100%;aspect-ratio:2/3;border-radius:14px;overflow:hidden;background:#22222c;box-shadow:0 14px 30px rgba(0,0,0,.55)}
+.pcard .pthumb{position:relative;display:block;width:100%;aspect-ratio:2/3;border-radius:14px;overflow:hidden;background:#22222c;box-shadow:0 14px 30px rgba(0,0,0,.55)}
 .pcard .pthumb img{width:100%;height:100%;object-fit:cover;display:block}
 .pcard .ptitle{display:block;margin-top:.55em;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pcard .prate{display:block;margin-top:.2em;color:#e8eaf0}
@@ -580,11 +582,20 @@ async function api(path,params){
   if(!r.ok) throw new Error('tmdb '+r.status);
   return r.json();
 }
+function badgeHTML(it){
+  const r=Number(it.vote_average)||0;
+  const year=(it.release_date||it.first_air_date||'').slice(0,4);
+  const parts=[];
+  if(r>0) parts.push('<span class="star">★</span> '+r.toFixed(1));
+  if(year) parts.push(year);
+  if(!parts.length) return '';
+  return '<span class="cbadge">'+parts.join(' · ')+'</span>';
+}
 function cardHTML(it,type){
   const title=it.title||it.name||'';
   const pic=it.backdrop_path||it.poster_path;
   return '<button class="card focusable" data-id="'+it.id+'" data-type="'+type+'">'+
-    '<span class="thumb">'+(pic?'<img src="'+imgUrl(pic,'w780')+'" alt="" loading="lazy" onerror="this.remove()">':'')+'</span>'+
+    '<span class="thumb">'+badgeHTML(it)+(pic?'<img src="'+imgUrl(pic,'w780')+'" alt="" loading="lazy" onerror="this.remove()">':'')+'</span>'+
     '<span class="ctitle">'+esc(title)+'</span></button>';
 }
 document.addEventListener('click',e=>{
@@ -889,11 +900,9 @@ function playUrl(url,title,subs){
 function pcardHTML(it,type){
   const title=it.title||it.name||'';
   const pic=it.poster_path;
-  const rate=it.vote_average?it.vote_average.toFixed(1):'';
   return '<button class="pcard focusable" data-id="'+it.id+'" data-type="'+type+'">'+
-    '<span class="pthumb">'+(pic?'<img src="'+imgUrl(pic,'w342')+'" alt="" loading="lazy" onerror="this.remove()">':'')+'</span>'+
-    '<span class="ptitle">'+esc(title)+'</span>'+
-    (rate?'<span class="prate"><span class="star">★</span> '+esc(rate)+'</span>':'')+'</button>';
+    '<span class="pthumb">'+badgeHTML(it)+(pic?'<img src="'+imgUrl(pic,'w342')+'" alt="" loading="lazy" onerror="this.remove()">':'')+'</span>'+
+    '<span class="ptitle">'+esc(title)+'</span></button>';
 }
 function castHTML(c){
   const img=c.profile_path?'<img src="'+imgUrl(c.profile_path,'w185')+'" alt="" loading="lazy" onerror="this.remove()">':'<span style="display:flex;align-items:center;justify-content:center;width:104px;height:104px;border-radius:50%;background:#26262e;font-size:2em;margin:0 auto">'+esc((c.name||'?')[0])+'</span>';
