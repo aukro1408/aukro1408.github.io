@@ -948,12 +948,18 @@
         filter:drop-shadow(0 4px 18px rgba(0,0,0,.55)); }
       /* Закладка: заполненная, когда фильм в избранном или «смотреть позже». */
       #screen-detail .icon-btn.bk-on{ color:#8cddff; border-color:rgba(140,221,255,.55); }
-      /* Закладка — по высоте как пилюля «Трейлер»: .icon-btn был 3em при
-         font-size 1.3em (≈3.9em в ряду) против пилюли ≈2.6em — круг казался
-         огромным. Ряд растягивает детей на высоту строки, а круг через
-         aspect-ratio берёт эту высоту как диаметр: ровно высота трейлера. */
+      /* Закладка — РОВНЫЙ КРУГ диаметром ТОЧНО как «Трейлер» (диагноз 2026-10-28):
+         прежний круг брал высоту СТРОКИ (stretch + aspect-ratio): если ряд выше
+         трейлера (пилюли другой высоты, перенос на вторую строку), круг выходил
+         больше/меньше трейлера — отсюда «не по размеру». Теперь диаметр задан
+         явно формулой высоты трейлера: padding .68em×2 + line-height 1.2 +
+         border 2px = calc(2.56em + 2px); line-height кнопок ряда зафиксирован
+         1.2, чтобы формула была точной; align-self:center ставит центр круга
+         в центр ряда; flex:0 0 auto не даёт сжать круг при переносе. */
       #screen-detail .detail-actions2{ align-items:stretch; }
-      #screen-detail #detail-bookmark{ font-size:1em; width:auto; height:auto; aspect-ratio:1/1; padding:0; align-self:stretch; }
+      #screen-detail .detail-actions2 .btn, #screen-detail .detail-actions2 .src-pill{ line-height:1.2; }
+      #screen-detail #detail-bookmark{ font-size:1em; width:calc(2.56em + 2px); height:calc(2.56em + 2px); flex:0 0 auto; padding:0; align-self:center; border-radius:50%; }
+      #screen-detail #detail-bookmark svg{ width:1.5em; height:1.5em; }
       /* Плитка «Все» в конце ряда главной (сетка категории — бесконечная). */
       .row-more .mimg{ display:flex; align-items:center; justify-content:center; }
       .row-more .mimg span{ font-size:2.4em; font-weight:800; color:var(--accent); }
@@ -975,32 +981,28 @@
          зелёный torrent). Тап = openProvider, как у пилюль и слайдера. */
       .filmix{--a:#3aa0ff;--b:#1a6cf5}.bwa{--a:#a98bff;--b:#7b4dff}.torrent{--a:#3fd6a3;--b:#0fa57a}
       .src-pill{display:inline-flex;align-items:center;gap:.55em;padding:.68em 1.25em;border-radius:999px;cursor:pointer;
-      background:linear-gradient(180deg,#ffffff,#eef3ff);border:1px solid rgba(255,255,255,.95);
-      box-shadow:0 6px 18px rgba(23,52,110,.18),inset 0 1px #fff;
-      color:var(--b);font:600 1em system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+      background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.16);
+      box-shadow:0 6px 18px rgba(0,0,0,.45),inset 0 1px rgba(255,255,255,.12);
+      color:var(--a);font:600 1em system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
       .src-pill svg{width:1.2em;height:1.2em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-      .src-pill:hover{box-shadow:0 10px 24px rgba(23,52,110,.24),inset 0 1px #fff;transform:translateY(-1px)}
+      .src-pill:hover{box-shadow:0 10px 24px rgba(0,0,0,.55),inset 0 1px rgba(255,255,255,.14);transform:translateY(-1px)}
       .src-pill:active{transform:scale(.97)}
-      .src-pill:focus-visible{outline:3px solid color-mix(in srgb,var(--b) 55%,transparent);outline-offset:2px}
-      /* ---------- Навбар по высоте hero (поправка Denis) ----------
-         Высота рейки = высоте hero-постера главной (JS ставит --rail-h
-         по getBoundingClientRect #hero при показе главной, загрузке и
-         ресайзе); НИЗ рейки остаётся как сейчас: align-self:flex-end +
-         нижний зазор .5em из плавающего правила не меняются, изменение
-         высоты поглощается сверху (верх = низ − высота hero). Только
-         TV/ПК; мобильный нижний навбар скрыт и не тронут. */
+      .src-pill:focus-visible{outline:3px solid rgba(255,122,41,.6);outline-offset:2px}
+      /* ---------- Рейка выше за счёт зазоров (вердикт Denis 2026-10-28) ----------
+         Кап --rail-h СНЯТ: высота рейки снова контентная (JS-замер удалён);
+         выше она становится за счёт увеличенных зазоров (см. блок в конце
+         extra_css: gap 4.6em, nav-padding 1.05em). НИЗ как раньше:
+         align-self:flex-end + нижний зазор .5em, рейка растёт вверх.
+         Только TV/ПК; мобильный нижний навбар скрыт и не тронут. */
       @media (min-width:761px){
-        .sidebar{align-self:flex-end;height:var(--rail-h,auto);}
+        .sidebar{align-self:flex-end;}
       }
       /* Fade низа hero провайдера — ровно маска карточки (detail-art):
          у провайдера был только .prov-shade без маски, поэтому арт обрывался
          кромкой контейнера на 58vh. Маска по прозрачности — от яркости
          постера не зависит (тёмный и светлый — одинаково). */
       #screen-provider .prov-art{-webkit-mask-image:linear-gradient(180deg,#000 68%,transparent 97%);mask-image:linear-gradient(180deg,#000 68%,transparent 97%)}
-      /* Закладка — КРУГ (вердикт Denis, отменяет квадрат): stretch-ряд даёт
-         высоту строки, aspect-ratio 1/1 — ширину = высоте, 50% — круг
-         диаметром как высота кнопок/«Трейлера». */
-      #screen-detail #detail-bookmark{border-radius:50%}
+      /* (радиус круга закладки — в правиле выше, с явным диаметром) */
       /* ---------- Редизайн по референсу: тёмная тема, оранжевый акцент ----------
          Своп переменных — только вне тёмных экранов: body.on-detail и
          body.on-provider сохраняют светлые значения, экран фильма и экраны
@@ -1059,6 +1061,48 @@
         .hero-stage .hero{ min-height:15em; }
         .hero-side{ flex:0 0 auto; width:100%; }
         .side-card{ aspect-ratio:16/10; }
+      }
+      /* ---------- Правки 2026-10-28 (вердикт Denis) ---------- */
+      /* 1. Рейка выше за счёт зазоров (кап --rail-h снят выше). */
+      @media (min-width:761px){
+        .sidebar{ gap:4.6em; }
+        .sidebar .nav-item{ padding:1.05em .74em; }
+      }
+      /* 2. Карточка фильма — в новой палитре (тёмная схема + оранжевый акцент).
+         Только экран фильма: провайдеры не тронуты (у них свои .prov-*).
+         Элементы уровня body (.detail-shade, .detail-menu) — через body.on-detail. */
+      #screen-detail .main{ background:#08080c; }
+      body.on-detail .detail-shade{ background:linear-gradient(180deg, rgba(8,8,12,.18) 0%, rgba(8,8,12,.42) 42%, #08080c 88%, #08080c 100%); }
+      #screen-detail .detail-art-shade{ background:linear-gradient(180deg, rgba(8,8,12,.22) 0%, rgba(8,8,12,0) 35%, rgba(8,8,12,.30) 60%, rgba(8,8,12,.55) 100%); }
+      #screen-detail .detail-main .meta{ color:#d7dce8; }
+      #screen-detail .detail-desc{ color:#d7dce8; }
+      #screen-detail .detail-rates .star{ color:#ffb340; }
+      #screen-detail .detail-glass{ background:linear-gradient(180deg, rgba(24,24,36,.78), rgba(14,14,20,.72)); border:1px solid rgba(255,255,255,.14); box-shadow:0 24px 60px rgba(0,0,0,.5); backdrop-filter:blur(22px); }
+      #screen-detail .glass-lab{ color:#9aa3b5; }
+      #screen-detail .detail-actions2 .btn.primary{ background:linear-gradient(135deg,#ffb066,#ff6a1a); border-color:transparent; color:#1a1208; box-shadow:0 .5em 1.3em rgba(255,122,41,.4); }
+      #screen-detail .detail-actions2 .btn.primary svg{ color:#1a1208; }
+      #screen-detail #detail-trailer{ background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.16); }
+      #screen-detail .icon-btn{ background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.16); }
+      #screen-detail .icon-btn.bk-on{ color:#ffb066; border-color:rgba(255,176,102,.55); }
+      #screen-detail .top-search{ border-color:rgba(255,255,255,.16); }
+      #screen-detail .top-icon{ background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.16); }
+      #screen-detail .bell-dot{ background:#ff7a29; }
+      #screen-detail #similar-more{ border-color:rgba(255,255,255,.16); }
+      #screen-detail .empty-note{ color:#9aa3b5; }
+      body.on-detail .detail-menu{ background:rgba(18,18,26,.94); border-color:rgba(255,255,255,.14); }
+      /* 6. Hero-карточки — параллелограммы, как на рефе (только TV/ПК).
+         Главная: левый край прямой, правый скошен на 5% ширины.
+         Боковые: скошены обе стороны на 5%. Скосы вкладываются за счёт
+         перекрытия ~1em (gap 1em минус margin -1em). Точки и стрелка
+         отодвинуты от скошенного края, чтобы clip-path их не резал;
+         тень — через drop-shadow (box-shadow clip-path убивает). */
+      @media (min-width:761px){
+        .hero-stage .hero{ clip-path:polygon(0 0, 100% 0, 95% 100%, 0 100%); box-shadow:none; filter:drop-shadow(0 20px 30px rgba(0,0,0,.5)); }
+        .hero-side{ margin-left:-1em; }
+        .side-card{ clip-path:polygon(5% 0, 100% 0, 95% 100%, 0 100%); filter:drop-shadow(0 14px 28px rgba(0,0,0,.45)); }
+        .side-card + .side-card{ margin-left:-1em; }
+        .hero-dots{ right:2.6em; }
+        .hero-next{ right:1.8em; }
       }
 
 
@@ -3210,7 +3254,6 @@
           });
           fit();
           if (name === 'library') renderLibrary();
-          if (name === 'home') requestAnimationFrame(measureRail);
           if (!keepFocus) {
             var target = lastFocus[name] || focusables()[0];
             setFocus(target);
@@ -3638,12 +3681,14 @@
           if (!currentDetailCard) { toast('Откройте карточку фильма или сериала'); return; }
           var added = toggleList('fav', currentDetailCard);
           updateDetailButtons();
+          closeBookmarkSheet();
           toast(added ? 'Добавлено в избранное' : 'Убрано из избранного');
         });
         detailBkLater.addEventListener('click', function(){
           if (!currentDetailCard) { toast('Откройте карточку фильма или сериала'); return; }
           var added = toggleList('later', currentDetailCard);
           updateDetailButtons();
+          closeBookmarkSheet();
           toast(added ? 'Добавлено в «Смотреть позже»' : 'Убрано из «Смотреть позже»');
         });
         detailTrailer.addEventListener('click', function(){
@@ -3669,22 +3714,8 @@
             openProvider(PROV_BY_SRC[btn.getAttribute('data-name')] || btn.getAttribute('data-name'));
           });
         });
-        /* Навбар по высоте hero (поправка Denis): высота рейки = высоте
-           hero-постера главной; низ рейки — как сейчас (flex-end + зазор
-           .5em), верх = низ − высота hero. Замер — по реальному #hero
-           на главной; на остальных экранах та же переменная (рейка
-           глобальная). На скрытой главной высота 0 — старое значение
-           сохраняется, при показе главной show() перемеряет через rAF. */
-        function measureRail(){
-          if (window.matchMedia && window.matchMedia('(max-width:760px)').matches) return;
-          var hero = document.getElementById('hero');
-          if (!hero) return;
-          var h = hero.getBoundingClientRect().height;
-          if (h > 0) document.documentElement.style.setProperty('--rail-h', h + 'px');
-        }
-        measureRail();
-        window.addEventListener('resize', measureRail);
-        if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ requestAnimationFrame(measureRail); });
+        /* Рейка выше за счёт зазоров (вердикт Denis 2026-10-28): кап --rail-h снят,
+           JS-замер удалён — высота рейки контентная, низ как раньше (flex-end). */
         document.getElementById('prov-back').addEventListener('click', function(){ backFromProvider(); });
         document.getElementById('similar-more').addEventListener('click', function(){ toggleSimilar(); });
         function setGlassRow(valId, value){
