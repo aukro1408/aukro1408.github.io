@@ -765,8 +765,6 @@
       #screen-detail .detail-actions2 .btn.primary{ background:#fff; border-color:#fff; color:#0d7bf2;
         box-shadow:0 8px 28px rgba(13,123,242,.4); }
       #screen-detail .detail-actions2 .btn.primary svg{ color:#0d7bf2; }
-      #screen-detail #detail-trailer{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.28);
-        color:#fff; backdrop-filter:blur(10px); box-shadow:none; }
       #screen-detail .icon-btn{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.28);
         color:#fff; backdrop-filter:blur(10px); }
       #screen-detail .detail-glass{ background:rgba(16,24,48,.52); border:1px solid rgba(255,255,255,.22);
@@ -946,20 +944,8 @@
       /* Логотип фильма вместо текстового названия (паттерн «Кино»: m.logo). */
       .detail-logo{ display:block; max-width:22em; max-height:6em; width:auto; height:auto; object-fit:contain;
         filter:drop-shadow(0 4px 18px rgba(0,0,0,.55)); }
-      /* Закладка: заполненная, когда фильм в избранном или «смотреть позже». */
-      #screen-detail .icon-btn.bk-on{ color:#8cddff; border-color:rgba(140,221,255,.55); }
-      /* Закладка — РОВНЫЙ КРУГ диаметром ТОЧНО как «Трейлер» (диагноз 2026-10-28):
-         прежний круг брал высоту СТРОКИ (stretch + aspect-ratio): если ряд выше
-         трейлера (пилюли другой высоты, перенос на вторую строку), круг выходил
-         больше/меньше трейлера — отсюда «не по размеру». Теперь диаметр задан
-         явно формулой высоты трейлера: padding .68em×2 + line-height 1.2 +
-         border 2px = calc(2.56em + 2px); line-height кнопок ряда зафиксирован
-         1.2, чтобы формула была точной; align-self:center ставит центр круга
-         в центр ряда; flex:0 0 auto не даёт сжать круг при переносе. */
-      #screen-detail .detail-actions2{ align-items:stretch; }
-      #screen-detail .detail-actions2 .btn, #screen-detail .detail-actions2 .src-pill{ line-height:1.2; }
-      #screen-detail #detail-bookmark{ font-size:1em; width:calc(2.56em + 2px); height:calc(2.56em + 2px); flex:0 0 auto; padding:0; align-self:center; border-radius:50%; }
-      #screen-detail #detail-bookmark svg{ width:1.5em; height:1.5em; }
+      /* Блок кнопок карточки — док/трейлер/закладка из файла Denis
+         (см. конец extra_css); старые пилюли и круг-закладка удалены. */
       /* Плитка «Все» в конце ряда главной (сетка категории — бесконечная). */
       .row-more .mimg{ display:flex; align-items:center; justify-content:center; }
       .row-more .mimg span{ font-size:2.4em; font-weight:800; color:var(--accent); }
@@ -974,20 +960,8 @@
       @media (min-width:761px){
         #screen-detail .sidebar{ background:rgba(255,255,255,.6); }
       }
-      /* ---------- Светлые пилюли источников (вместо слайдера .seg — вердикт Denis) ----------
-         Белое/светлое стекло, как старая «Смотреть»; иконки — те же, что были
-         в слайдере (плёнка, искры, круг-линии); акцент источника сдержанный —
-         только иконка и текст в цвете var(--b) (синий filmix, фиолетовый bwa,
-         зелёный torrent). Тап = openProvider, как у пилюль и слайдера. */
-      .filmix{--a:#3aa0ff;--b:#1a6cf5}.bwa{--a:#a98bff;--b:#7b4dff}.torrent{--a:#3fd6a3;--b:#0fa57a}
-      .src-pill{display:inline-flex;align-items:center;gap:.55em;padding:.68em 1.25em;border-radius:999px;cursor:pointer;
-      background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.16);
-      box-shadow:0 6px 18px rgba(0,0,0,.45),inset 0 1px rgba(255,255,255,.12);
-      color:var(--a);font:600 1em system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
-      .src-pill svg{width:1.2em;height:1.2em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-      .src-pill:hover{box-shadow:0 10px 24px rgba(0,0,0,.55),inset 0 1px rgba(255,255,255,.14);transform:translateY(-1px)}
-      .src-pill:active{transform:scale(.97)}
-      .src-pill:focus-visible{outline:3px solid rgba(255,122,41,.6);outline-offset:2px}
+      /* ---------- Кнопки карточки — док/трейлер/закладка из файла Denis
+         (см. конец extra_css) ---------- */
       /* ---------- Рейка выше за счёт зазоров (вердикт Denis 2026-10-28) ----------
          Кап --rail-h СНЯТ: высота рейки снова контентная (JS-замер удалён);
          выше она становится за счёт увеличенных зазоров (см. блок в конце
@@ -1083,9 +1057,6 @@
       #screen-detail .glass-lab{ color:#9aa3b5; }
       #screen-detail .detail-actions2 .btn.primary{ background:linear-gradient(135deg,#ffb066,#ff6a1a); border-color:transparent; color:#1a1208; box-shadow:0 .5em 1.3em rgba(255,122,41,.4); }
       #screen-detail .detail-actions2 .btn.primary svg{ color:#1a1208; }
-      #screen-detail #detail-trailer{ background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.16); }
-      #screen-detail .icon-btn{ background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.16); }
-      #screen-detail .icon-btn.bk-on{ color:#ffb066; border-color:rgba(255,176,102,.55); }
       #screen-detail .top-search{ border-color:rgba(255,255,255,.16); }
       #screen-detail .top-icon{ background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.16); }
       #screen-detail .bell-dot{ background:#ff7a29; }
@@ -1110,6 +1081,16 @@
         .side-card + .side-card{ clip-path:url(#heroClipEdge); margin-left:-2em; }
         .side-info{ left:12%; right:2.5em; }
         .hero-dots{ right:auto; left:50%; transform:translateX(-50%); }
+      }
+      /* Hero-раскладка на десктопе — СТРОГО рядом (явный row + nowrap):
+         главная + боковые в одну строку, каскад не может уронить .hero-side
+         под главную; параллелограммы и отсутствие стрелки не тронуты,
+         мобильная колонка (max-width:760px) — как раньше. */
+      @media (min-width:761px){
+        #screen-home .hero-stage{ display:flex; flex-direction:row; flex-wrap:nowrap; align-items:stretch; }
+        #screen-home .hero-stage .hero{ flex:1 1 0; min-width:0; }
+        #screen-home .hero-side{ flex:0 0 34%; min-width:0; }
+        #screen-home .side-card{ flex:0 0 62%; }
       }
       /* ---------- Правки 2026-10-28 (фото Denis): карточки рядов по файлу
          «Карточки с фокусом». Только .mcard.pcard (постер-карточки из makeCard:
@@ -1146,6 +1127,153 @@
           0 30px 46px -8px rgba(255,150,80,.5), 0 14px 28px rgba(0,0,0,.5); }
       .mcard.pcard.focused .ui, .mcard.pcard:focus .ui, .mcard.pcard:hover .ui{ opacity:1; }
       .mcard.pcard.focused .t, .mcard.pcard:focus .t, .mcard.pcard:hover .t{ color:#ffb27a; }
+      /* ---------- Кнопки карточки фильма — файл Denis «Pawflix — кнопки» ----------
+         Порт блока один в один по визуалу: док источников с бегущей подсветкой,
+         трейлер с инверсией заливкой, закладка с заливкой чернилами.
+         НЕ портировано: фон страницы, main max-width, демо-контент (.meta/.rate/
+         .desc), тост, авто-демо-подсветка по таймеру, демо-keydown-сетка
+         (у pawflix своя пространственная навигация). Шрифт — наследованный
+         стек pawflix, новых font-ссылок нет.
+         Фокус под пульт: .focused (setFocus) + :focus-visible + :hover зажигают
+         те же визуалы, что hover в файле; бегущая подсветка .hl следует за
+         .focused через litSeg/offDock в JS (пересчёт при фокусе и resize).
+         Сетка дока — grid-auto-flow:column: скрытый seg не оставляет пустой
+         колонки. Блок в потоке (.detail-main без фиксированных высот) — рост
+         с ~43px до 68px ничего не перекрывает и не обрезает. */
+      #screen-detail .detail-actions2{ display:block; margin-top:1.2em; position:relative;
+        --ease:cubic-bezier(.2,.8,.2,1); --spring:cubic-bezier(.3,1.35,.5,1); }
+      #screen-detail .detail-actions2 .label{ display:flex; align-items:center; gap:14px; margin:0 0 12px;
+        font-size:11.5px; font-weight:800; letter-spacing:.24em; text-transform:uppercase; color:#6f7d88; }
+      #screen-detail .detail-actions2 .label::after{ content:""; flex:1; height:1px;
+        background:linear-gradient(90deg,rgba(255,255,255,.14),transparent); }
+      /* --- Источники: док с «бегущей» подсветкой --- */
+      #screen-detail .detail-actions2 .dock{ --hx:0px; --hw:0px; --hc:255,255,255; position:relative; isolation:isolate;
+        display:grid; grid-auto-flow:column; grid-auto-columns:1fr; height:68px; margin-bottom:30px; border-radius:24px;
+        background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+        border:1px solid rgba(255,255,255,.1);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 26px 44px -26px #000; overflow:hidden;
+        animation:wipe 1s var(--ease) both .1s; }
+      #screen-detail .detail-actions2 .dock::before{ content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+        background:radial-gradient(170px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.1),transparent 70%);
+        opacity:var(--so,0); transition:opacity .35s; }
+      #screen-detail .detail-actions2 .dock::after{ content:""; position:absolute; top:0; bottom:0; left:-40%; width:35%; z-index:0;
+        pointer-events:none; background:linear-gradient(100deg,transparent,rgba(255,255,255,.07),transparent);
+        transform:skewX(-20deg); animation:sheen 7s ease-in-out infinite 2s; }
+      #screen-detail .detail-actions2 .hl{ position:absolute; z-index:1; top:5px; bottom:5px; left:4px; width:calc(var(--hw) - 8px);
+        transform:translateX(var(--hx)); border-radius:19px; pointer-events:none;
+        background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.04));
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 10px 26px -8px rgba(var(--hc),.5); opacity:0;
+        transition:transform .5s var(--spring),width .5s var(--spring),opacity .25s,box-shadow .4s; }
+      #screen-detail .detail-actions2 .dock.on .hl{ opacity:1; }
+      #screen-detail .detail-actions2 .seg{ position:relative; z-index:2; display:flex; align-items:center; justify-content:center;
+        gap:9px; padding:0; border:0; background:none; color:#cdd5db; font:inherit; font-size:17px; font-weight:800;
+        letter-spacing:-.01em; cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent;
+        transition:color .3s,transform .25s var(--spring); }
+      #screen-detail .detail-actions2 .seg:active{ transform:scale(.94); }
+      #screen-detail .detail-actions2 .seg.act, #screen-detail .detail-actions2 .seg.focused{ color:#fff; }
+      #screen-detail .detail-actions2 .ic{ width:22px; height:22px; fill:none; stroke:var(--c); stroke-width:1.9;
+        stroke-linecap:round; stroke-linejoin:round; opacity:.8; transition:transform .55s var(--spring),opacity .3s; }
+      #screen-detail .detail-actions2 .seg.act .ic, #screen-detail .detail-actions2 .seg.focused .ic{ opacity:1; transform:scale(1.14); }
+      #screen-detail .detail-actions2 .film.act .ic, #screen-detail .detail-actions2 .film.focused .ic{ transform:scale(1.14) rotate(-12deg); }
+      #screen-detail .detail-actions2 .bwa.act .ic, #screen-detail .detail-actions2 .bwa.focused .ic{ transform:scale(1.14) rotate(90deg); }
+      #screen-detail .detail-actions2 .tor.act .ic, #screen-detail .detail-actions2 .tor.focused .ic{ transform:scale(1.14) rotate(180deg); }
+      #screen-detail .detail-actions2 .txt{ display:block; overflow:hidden; line-height:24px; }
+      #screen-detail .detail-actions2 .txt b{ display:block; font-weight:inherit; transform:translateY(110%);
+        animation:up .8s var(--ease) forwards; animation-delay:calc(.35s + var(--i) * .1s); }
+      #screen-detail .detail-actions2 .out{ position:absolute; top:10px; right:12px; width:11px; height:11px; fill:none;
+        stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; opacity:0;
+        transform:translate(-5px,5px); transition:opacity .3s,transform .4s var(--spring); }
+      #screen-detail .detail-actions2 .seg.act .out, #screen-detail .detail-actions2 .seg.focused .out{ opacity:.75; transform:none; }
+      #screen-detail .detail-actions2 .load{ position:absolute; left:16px; right:16px; bottom:9px; height:2px; border-radius:1px;
+        background:var(--c); transform:scaleX(0); transform-origin:left; opacity:0; box-shadow:0 0 10px var(--c); }
+      #screen-detail .detail-actions2 .seg.busy .load{ opacity:1; animation:fill 1.3s cubic-bezier(.6,0,.2,1) forwards; }
+      #screen-detail .detail-actions2 .seg.busy .txt{ opacity:.55; }
+      #screen-detail .detail-actions2 .seg.done .out{ animation:fly .6s var(--ease); }
+      /* --- Трейлер: инверсия заливкой --- */
+      #screen-detail .detail-actions2 .row2{ display:grid; grid-template-columns:1fr 68px; gap:10px; }
+      #screen-detail .detail-actions2 .trail{ position:relative; overflow:hidden; isolation:isolate; height:68px;
+        padding:0 20px 0 14px; border:0; border-radius:24px; background:#f3efe6; color:#0a0d11;
+        display:flex; align-items:center; justify-content:center; gap:13px; font:inherit; font-size:19px; font-weight:800;
+        letter-spacing:-.01em; cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent;
+        box-shadow:0 22px 40px -22px rgba(255,240,220,.55);
+        transition:transform .4s var(--spring),color .45s,box-shadow .4s,letter-spacing .5s;
+        animation:rise .8s var(--ease) both .55s; }
+      #screen-detail .detail-actions2 .trail::before{ content:""; position:absolute; z-index:-1; left:29px; top:50%;
+        width:1100px; height:1100px; border-radius:50%; background:#0a0d11;
+        transform:translate(-50%,-50%) scale(0); transition:transform .7s cubic-bezier(.7,0,.2,1); }
+      #screen-detail .detail-actions2 .trail::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:3px;
+        background:#e5322d; transform:scaleX(0); transform-origin:left; box-shadow:0 0 12px #e5322d; }
+      #screen-detail .detail-actions2 .trail:hover, #screen-detail .detail-actions2 .trail:focus-visible,
+      #screen-detail .detail-actions2 .trail.focused{ color:#f3efe6; letter-spacing:.015em;
+        box-shadow:0 0 0 1px rgba(255,255,255,.2),0 26px 46px -20px rgba(255,255,255,.28); }
+      #screen-detail .detail-actions2 .trail:hover::before, #screen-detail .detail-actions2 .trail:focus-visible::before,
+      #screen-detail .detail-actions2 .trail.focused::before{ transform:translate(-50%,-50%) scale(1); }
+      #screen-detail .detail-actions2 .trail:hover::after, #screen-detail .detail-actions2 .trail:focus-visible::after,
+      #screen-detail .detail-actions2 .trail.focused::after{ animation:play 2.6s linear infinite .3s; }
+      #screen-detail .detail-actions2 .trail:active{ transform:scale(.97); }
+      #screen-detail .detail-actions2 .pg{ width:40px; height:40px; border-radius:50%; background:#0a0d11;
+        display:grid; place-items:center; transition:background .45s,transform .5s var(--spring); }
+      #screen-detail .detail-actions2 .pg svg{ width:15px; height:15px; margin-left:2px; fill:#f3efe6; transition:fill .45s; }
+      #screen-detail .detail-actions2 .trail:hover .pg, #screen-detail .detail-actions2 .trail:focus-visible .pg,
+      #screen-detail .detail-actions2 .trail.focused .pg{ background:#e5322d; transform:scale(1.12); }
+      #screen-detail .detail-actions2 .trail:hover .pg svg, #screen-detail .detail-actions2 .trail:focus-visible .pg svg,
+      #screen-detail .detail-actions2 .trail.focused .pg svg{ fill:#fff; }
+      /* --- Закладка: заливка чернилами --- */
+      #screen-detail .detail-actions2 .mark{ position:relative; overflow:hidden; width:68px; height:68px; padding:0;
+        border-radius:24px; border:1px solid rgba(255,255,255,.12);
+        background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+        display:grid; place-items:center; color:#e9edf0; cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+        transition:transform .4s var(--spring),border-color .3s,box-shadow .4s,background .4s;
+        animation:rise .8s var(--ease) both .65s; }
+      #screen-detail .detail-actions2 .mark:hover, #screen-detail .detail-actions2 .mark:focus-visible,
+      #screen-detail .detail-actions2 .mark.focused{ border-color:rgba(255,255,255,.4); transform:translateY(-3px);
+        box-shadow:0 18px 30px -16px rgba(255,255,255,.3),inset 0 1px 0 rgba(255,255,255,.12); }
+      #screen-detail .detail-actions2 .mark:active{ transform:scale(.92); }
+      #screen-detail .detail-actions2 .bk{ position:relative; width:28px; height:28px; }
+      #screen-detail .detail-actions2 .bk svg{ position:absolute; inset:0; width:28px; height:28px;
+        stroke-linejoin:round; stroke-linecap:round; }
+      #screen-detail .detail-actions2 .bk .o{ fill:none; stroke:currentColor; stroke-width:1.9;
+        stroke-dasharray:64; stroke-dashoffset:0; }
+      #screen-detail .detail-actions2 .bk .f{ fill:#f3efe6; stroke:#f3efe6; stroke-width:1.9;
+        clip-path:inset(100% 0 0 0); transition:clip-path .55s cubic-bezier(.6,0,.2,1); }
+      #screen-detail .detail-actions2 .mark[aria-pressed="true"]{ border-color:rgba(243,239,230,.5);
+        box-shadow:0 18px 34px -16px rgba(243,239,230,.5); }
+      #screen-detail .detail-actions2 .mark[aria-pressed="true"] .f{ clip-path:inset(0 0 0 0); }
+      #screen-detail .detail-actions2 .mark.pop .o{ animation:draw .7s ease-out; }
+      #screen-detail .detail-actions2 .mark.pop .bk{ animation:pop .6s var(--spring); }
+      #screen-detail .detail-actions2 .ring{ position:absolute; left:50%; top:50%; width:30px; height:30px; margin:-15px;
+        border-radius:50%; border:1.5px solid #f3efe6; pointer-events:none; animation:ringo .7s ease-out forwards; }
+      /* Нейтрализация глобального .focused из app.css (дословно, не трогаем):
+         он ставит синее кольцо + синюю тень с !important — поверх визуалов
+         файла это смотрелось бы чужеродно. Прецедент в кодовой базе —
+         .stream-item.focused{ box-shadow:none !important; }. Здесь: seg —
+         без тени (подсветка — пилюля .hl), trail/mark — свои тени файла
+         с !important, чтобы перебить глобальные; у нажатой закладки
+         в фокусе сохраняется вид pressed. */
+      #screen-detail .detail-actions2 .seg.focused{ box-shadow:none !important; }
+      #screen-detail .detail-actions2 .trail.focused{
+        box-shadow:0 0 0 1px rgba(255,255,255,.2),0 26px 46px -20px rgba(255,255,255,.28) !important; }
+      #screen-detail .detail-actions2 .mark.focused{ border-color:rgba(255,255,255,.4) !important;
+        box-shadow:0 18px 30px -16px rgba(255,255,255,.3),inset 0 1px 0 rgba(255,255,255,.12) !important; }
+      #screen-detail .detail-actions2 .mark[aria-pressed="true"].focused{ border-color:rgba(243,239,230,.5) !important;
+        box-shadow:0 18px 34px -16px rgba(243,239,230,.5) !important; }
+      @keyframes wipe{ from{ clip-path:inset(0 100% 0 0 round 24px); } to{ clip-path:inset(0 0 0 0 round 24px); } }
+      @keyframes up{ to{ transform:none; } }
+      @keyframes rise{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
+      @keyframes sheen{ 0%,60%{ left:-40%; } 100%{ left:140%; } }
+      @keyframes fill{ to{ transform:scaleX(1); } }
+      @keyframes fly{ 0%{ transform:none; } 40%{ transform:translate(8px,-8px); opacity:0; } 41%{ transform:translate(-8px,8px); } 100%{ transform:none; opacity:.75; } }
+      @keyframes play{ from{ transform:scaleX(0); } to{ transform:scaleX(1); } }
+      @keyframes draw{ from{ stroke-dashoffset:64; } to{ stroke-dashoffset:0; } }
+      @keyframes pop{ 0%{ transform:scale(1); } 35%{ transform:scale(.7); } 70%{ transform:scale(1.25); } 100%{ transform:scale(1); } }
+      @keyframes ringo{ from{ transform:scale(.6); opacity:.9; } to{ transform:scale(2.6); opacity:0; } }
+      @media (prefers-reduced-motion:reduce){
+        #screen-detail .detail-actions2 *, #screen-detail .detail-actions2 *::before, #screen-detail .detail-actions2 *::after{ animation:none !important; transition:none !important; }
+        #screen-detail .detail-actions2 .txt b{ transform:none; } }
+      @media (max-width:420px){
+        #screen-detail .detail-actions2 .seg{ font-size:16px; gap:7px; }
+        #screen-detail .detail-actions2 .ic{ width:20px; height:20px; } }
 
 
     :root {
@@ -1718,14 +1846,18 @@
               <div class="detail-rates" id="detail-rates"></div>
               <p class="detail-desc" id="detail-desc">Откройте карточку из рядов, поиска, библиотеки или категорий — здесь появятся описание, актёры и источники.</p>
               <div class="detail-actions2">
-                <button class="src-pill filmix focusable" id="src-filmix" data-name="filmix" type="button"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M8 4.5v15M16 4.5v15M3.5 9h4.5m-4.5 6h4.5m7.5-6H20m-4.5 6H20"/></svg>filmix</button>
-                <button class="src-pill bwa focusable" id="src-bwa" data-name="bwa" type="button"><svg viewBox="0 0 24 24"><path d="m12 2.5 2.5 6.5 7 3-7 3-2.5 6.5L9.5 15l-7-3 7-3z"/><path d="m18.5 3 .7 2 2 .7-2 .8-.7 2-.8-2-2-.8 2-.7z"/></svg>bwa</button>
-                <button class="src-pill torrent focusable" id="src-torrent" data-name="torrent" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 2.5v19M4.5 7l15 10M4.5 17l15-10"/></svg>torrent</button>
-                <button class="btn focusable" id="detail-trailer" type="button">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="3.5"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor" stroke="none"/></svg>
-                  Трейлер
-                </button>
-                <button class="icon-btn focusable" id="detail-bookmark" type="button" aria-label="Закладка"></button>
+                <p class="label">Источники</p>
+                <div class="dock" id="detail-dock">
+                  <i class="hl"></i>
+                  <button class="seg film focusable" id="src-filmix" data-name="filmix" data-rgb="122,162,255" style="--c:#7aa2ff;--i:0" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 4v16M16 4v16M3 9h5M3 15h5M16 9h5M16 15h5"/></svg><span class="txt"><b>filmix</b></span><svg class="out" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 9L9 3M4 3h5v5"/></svg><i class="load"></i></button>
+                  <button class="seg bwa focusable" id="src-bwa" data-name="bwa" data-rgb="183,156,255" style="--c:#b79cff;--i:1" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 3.5l1.9 5.4 5.4 1.9-5.4 1.9-1.9 5.4-1.9-5.4-5.4-1.9 5.4-1.9z"/><path d="M19 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg><span class="txt"><b>bwa</b></span><svg class="out" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 9L9 3M4 3h5v5"/></svg><i class="load"></i></button>
+                  <button class="seg tor focusable" id="src-torrent" data-name="torrent" data-rgb="91,227,166" style="--c:#5be3a6;--i:2" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/></svg><span class="txt"><b>torrent</b></span><svg class="out" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 9L9 3M4 3h5v5"/></svg><i class="load"></i></button>
+                </div>
+                <p class="label">Смотреть</p>
+                <div class="row2">
+                  <button class="trail focusable" id="detail-trailer" type="button"><span class="pg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5L20 12L6 20.5Z"/></svg></span>Трейлер</button>
+                  <button class="mark focusable" id="detail-bookmark" type="button" aria-label="Закладка" aria-pressed="false"><span class="bk"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="o" d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f" d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1z"/></svg></span></button>
+                </div>
               </div>
             </div>
             <div class="detail-glass" id="detail-glass">
@@ -3269,6 +3401,11 @@
           if(!el) return;
           Array.prototype.forEach.call(document.querySelectorAll('.focused'), function(n){ n.classList.remove('focused'); });
           el.classList.add('focused');
+          /* Док источников: бегущая подсветка .hl следует за фокусом
+             (D-pad, мышь, клик — все идут через setFocus); уход фокуса
+             с дока гасит её. */
+          if (el.classList && el.classList.contains('seg') && el.closest && el.closest('#detail-dock')) litSeg(el);
+          else offDock();
           lastFocus[current] = el;
           if (current === 'categories' && typeof catBox !== 'undefined' && catBox && catBox.contains(el) && el.classList.contains('mcard')) {
             var _cards = catBox.querySelectorAll('.mcard');
@@ -3276,6 +3413,26 @@
             if (_idx !== -1 && _cards.length - _idx <= 8) catGridLoadMore();
           }
           if (el.scrollIntoView) { try { el.scrollIntoView({block:'nearest', inline:'nearest'}); } catch(e){} }
+        }
+        /* Бегущая подсветка дока источников (файл Denis «Pawflix — кнопки»):
+           позиция/ширина/цвет .hl — из getBoundingClientRect активного seg.
+           Вызовы только из setFocus/фокуса/клика/ресайза — демо-автоподсветки
+           по таймеру нет. */
+        function litSeg(s){
+          var dock = document.getElementById('detail-dock');
+          if (!dock || !s) return;
+          var r = s.getBoundingClientRect(), d = dock.getBoundingClientRect();
+          dock.style.setProperty('--hx', (r.left - d.left - 1) + 'px');
+          dock.style.setProperty('--hw', r.width + 'px');
+          dock.style.setProperty('--hc', s.getAttribute('data-rgb') || '255,255,255');
+          dock.classList.add('on');
+          Array.prototype.forEach.call(dock.querySelectorAll('.seg'), function(x){ x.classList.toggle('act', x === s); });
+        }
+        function offDock(){
+          var dock = document.getElementById('detail-dock');
+          if (!dock) return;
+          dock.classList.remove('on');
+          Array.prototype.forEach.call(dock.querySelectorAll('.seg'), function(x){ x.classList.remove('act'); });
         }
         function show(name, keepFocus){
           if (lastFocus[current]) lastFocus[current] = document.querySelector('.focused') || lastFocus[current];
@@ -3443,18 +3600,46 @@
             img: m.poster_path ? IMG + 'w500' + m.poster_path : ''
           };
         }
-        /* Тень под цвет постера: сэмплинг отдельным CORS-запросом.
-           Отображаемый img — БЕЗ crossorigin: CORS-режим на телефоне Denis
-           ронял саму загрузку постеров (чёрные боксы + битые иконки).
-           Кэш на URL; при любой неудаче — fallback оранжевый. */
+        /* Тень под цвет постера: сэмплинг цвета — через CORS-прокси
+           images.weserv.nl (прямой CORS с TMDB на телефоне Denis не
+           проходит: выжил только «Астрал 6»). Отображаемый img — БЕЗ
+           crossorigin (не трогать). Кэш — по оригинальному URL;
+           при любой неудаче — оранжевый fallback, тень есть всегда. */
         var glowCache = {};
+        /* Яркий цвет постера: усредняются ТОЛЬКО живые насыщенные пиксели
+           (взвешенно по насыщенности), тёмные/серые/белые — мимо. Плоское
+           среднее тёмных постеров давало муть — поэтому тень «не совпадала».
+           Возвращает 'rgba(r,g,b,.55)' или null (→ оранжевый fallback). */
+        function vividColor(data){
+          var r = 0, g = 0, b = 0, wsum = 0, vivid = 0, total = 0, i, mx, mn, d, s, v, w;
+          for (i = 0; i < data.length; i += 4) {
+            if (data[i + 3] < 128) continue;
+            total++;
+            mx = Math.max(data[i], data[i + 1], data[i + 2]);
+            mn = Math.min(data[i], data[i + 1], data[i + 2]);
+            d = mx - mn;
+            if (!mx) continue;
+            s = d / mx; v = mx / 255;
+            if (s < 0.35 || v < 0.18 || v > 0.96 || d < 30) continue;
+            w = s; vivid++;
+            r += data[i] * w; g += data[i + 1] * w; b += data[i + 2] * w; wsum += w;
+          }
+          if (!vivid || vivid < Math.max(4, total * 0.02) || !wsum) return null;
+          return 'rgba(' + Math.round(r / wsum) + ',' + Math.round(g / wsum) + ',' + Math.round(b / wsum) + ',.55)';
+        }
         function applyGlow(img, card){
           var url = img.getAttribute('src');
           if (!url) return;
           if (glowCache[url]) { card.style.setProperty('--glow', glowCache[url]); return; }
           if (typeof fetch === 'undefined') return;
-          fetch(url, { mode: 'cors' }).then(function(r){
-            if (!r.ok) throw new Error('img ' + r.status);
+          /* Цвет — через CORS-прокси images.weserv.nl (проверено: отдаёт
+             Access-Control-Allow-Origin:*). Прямой CORS-fetch с TMDB на
+             телефоне Denis не проходит (выжил только «Астрал 6»).
+             Отображаемый постер — по-прежнему напрямую с TMDB, без
+             crossorigin (не трогать). Кэш — по ОРИГИНАЛЬНОМУ URL. */
+          var proxy = 'https://images.weserv.nl/?url=' + url.replace(/^https?:\/\//, '');
+          fetch(proxy, { mode: 'cors' }).then(function(r){
+            if (!r.ok) throw new Error('wsrv ' + r.status);
             return r.blob();
           }).then(function(b){
             var o = URL.createObjectURL(b);
@@ -3465,13 +3650,8 @@
                 c.width = 16; c.height = 24;
                 var x = c.getContext('2d');
                 x.drawImage(im, 0, 0, 16, 24);
-                var d = x.getImageData(0, 0, 16, 24).data, r = 0, g = 0, bl = 0, n = 0, i;
-                for (i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; bl += d[i + 2]; n++; }
-                if (n) {
-                  var gl = 'rgba(' + Math.round(r / n) + ',' + Math.round(g / n) + ',' + Math.round(bl / n) + ',.55)';
-                  glowCache[url] = gl;
-                  card.style.setProperty('--glow', gl);
-                }
+                var gl = vividColor(x.getImageData(0, 0, 16, 24).data);
+                if (gl) { glowCache[url] = gl; card.style.setProperty('--glow', gl); }
               } catch (e) { /* fallback уже стоит */ }
               URL.revokeObjectURL(o);
             };
@@ -3734,9 +3914,9 @@
         var detailBkBackdrop = document.getElementById('detail-bookmark-backdrop');
         var detailTrailer = document.getElementById('detail-trailer');
         /* Закладка вместо сердечка (требование Denis): тап открывает выбор
-           «В избранное» / «Смотреть позже» с текущим состоянием ✓. */
-        var BOOKMARK_OUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>';
-        var BOOKMARK_ON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12v18l-6-4-6 4z"/></svg>';
+           «В избранное» / «Смотреть позже» с текущим состоянием ✓.
+           Вид — квадрат 68px из файла Denis (заливка чернилами через
+           aria-pressed); innerHTML кнопки статичен в разметке. */
         function isBookmarkSheetOpen(){ return !!detailBkMenu && detailBkMenu.classList.contains('show'); }
         function closeBookmarkSheet(){
           if (detailBkMenu) detailBkMenu.classList.remove('show');
@@ -3746,8 +3926,9 @@
           if (!currentDetailCard) return;
           var fav = inList('fav', currentDetailCard);
           var later = inList('later', currentDetailCard);
-          detailBookmark.innerHTML = (fav || later) ? BOOKMARK_ON : BOOKMARK_OUT;
-          detailBookmark.classList.toggle('bk-on', fav || later);
+          /* Состояние закладки — aria-pressed + заливка (CSS
+             .mark[aria-pressed="true"] .f); старый класс и смена innerHTML убраны. */
+          detailBookmark.setAttribute('aria-pressed', (fav || later) ? 'true' : 'false');
           detailBkFav.textContent = fav ? '✓ В избранное' : 'В избранное';
           detailBkLater.textContent = later ? '✓ Смотреть позже' : 'Смотреть позже';
         }
@@ -3776,11 +3957,19 @@
           var dm = document.querySelector('#screen-detail .main');
           if (dm) dm.addEventListener('scroll', closeBookmarkSheet);
         })();
+        /* pop + расходящееся кольцо при добавлении в закладки (из файла);
+           при снятии — только aria-pressed=false через updateDetailButtons. */
+        function bookmarkPop(){
+          detailBookmark.classList.remove('pop'); void detailBookmark.offsetWidth; detailBookmark.classList.add('pop');
+          var g = document.createElement('span'); g.className = 'ring'; detailBookmark.appendChild(g);
+          setTimeout(function(){ g.remove(); }, 750);
+        }
         detailBkFav.addEventListener('click', function(){
           if (!currentDetailCard) { toast('Откройте карточку фильма или сериала'); return; }
           var added = toggleList('fav', currentDetailCard);
           updateDetailButtons();
           closeBookmarkSheet();
+          if (added) bookmarkPop();
           toast(added ? 'Добавлено в избранное' : 'Убрано из избранного');
         });
         detailBkLater.addEventListener('click', function(){
@@ -3788,6 +3977,7 @@
           var added = toggleList('later', currentDetailCard);
           updateDetailButtons();
           closeBookmarkSheet();
+          if (added) bookmarkPop();
           toast(added ? 'Добавлено в «Смотреть позже»' : 'Убрано из «Смотреть позже»');
         });
         detailTrailer.addEventListener('click', function(){
@@ -3804,14 +3994,33 @@
         }
         updateDetailClock();
         setInterval(updateDetailClock, 60000);
-        /* Кнопки источников — светлые пилюли вместо слайдера .seg (вердикт Denis):
-           filmix/bwa/torrent, тап = openProvider того же источника. */
+        /* Кнопки источников — док .seg из файла Denis (вместо пилюль):
+           filmix/bwa/torrent, тап = openProvider того же источника.
+           Навигация немедленная: демо-busy/done/toast из файла не портируем.
+           Радиальный блик за курсором — только для мыши (pointermove). */
         var PROV_BY_SRC = { filmix: 'filmix', bwa: 'bwa', torrent: 'torrents' };
-        Array.prototype.forEach.call(document.querySelectorAll('.src-pill'), function(btn){
+        var detailDock = document.getElementById('detail-dock');
+        Array.prototype.forEach.call(document.querySelectorAll('#detail-dock .seg'), function(btn){
           btn.addEventListener('click', function(){
             if (!currentDetailMeta) { toast('Откройте карточку фильма или сериала'); return; }
+            litSeg(btn);
             openProvider(PROV_BY_SRC[btn.getAttribute('data-name')] || btn.getAttribute('data-name'));
           });
+          btn.addEventListener('focus', function(){ litSeg(btn); });
+          btn.addEventListener('blur', function(){ setTimeout(function(){ if (detailDock && !detailDock.contains(document.activeElement)) offDock(); }, 0); });
+        });
+        if (detailDock) {
+          detailDock.addEventListener('pointermove', function(e){
+            var r = detailDock.getBoundingClientRect();
+            detailDock.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+            detailDock.style.setProperty('--my', (e.clientY - r.top) + 'px');
+            detailDock.style.setProperty('--so', 1);
+          });
+          detailDock.addEventListener('pointerleave', function(){ detailDock.style.setProperty('--so', 0); });
+        }
+        window.addEventListener('resize', function(){
+          var act = detailDock && detailDock.querySelector('.seg.act');
+          if (act) litSeg(act);
         });
         /* Рейка выше за счёт зазоров (вердикт Denis 2026-10-28): кап --rail-h снят,
            JS-замер удалён — высота рейки контентная, низ как раньше (flex-end). */
