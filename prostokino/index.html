@@ -297,6 +297,8 @@ body.phone .alp-screen h1{font-size:1.5em}
   display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none}
 .pl-icbtn:active{transform:scale(.9); background:rgba(10,10,14,.6)}
 .pl-icbtn svg{width:20px; height:20px; fill:#fff}
+.pl-ytbtn{display:none; flex:none; border:0; border-radius:999px; background:#ff7a29; color:#fff; font-size:13px; font-weight:800; padding:9px 14px; cursor:pointer; white-space:nowrap}
+.pl-ytbtn.focused{outline:3px solid #fff; outline-offset:3px}
 .pl-q{display:none; font-size:11px; font-weight:800; color:#fff; border:1px solid rgba(255,255,255,.35); background:rgba(10,10,14,.42); padding:5px 10px; border-radius:99px; flex:none; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px)}
 .pl-q.show{display:inline-block}
 .pl-info{position:absolute; left:16px; right:16px; bottom:190px; z-index:6; background:rgba(24,24,30,.92); border:1px solid rgba(255,255,255,.14); border-radius:18px; padding:4px 16px 12px; -webkit-backdrop-filter:blur(22px) saturate(1.5); backdrop-filter:blur(22px) saturate(1.5); box-shadow:0 16px 40px rgba(0,0,0,.5)}
@@ -508,6 +510,7 @@ body.phone .alp-screen h1{font-size:1.5em}
     <div class="pl-ui" id="plUI">
       <div class="pl-topbar">
         <button class="pl-icbtn focusable" id="plBack" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="M15.5 4.5 8 12l7.5 7.5 2-2L12 12l5.5-5.5z"/></svg></button>
+        <button class="pl-ytbtn focusable" id="plYtBtn" style="display:none">Открыть в YouTube</button>
         <div class="pl-title" id="plTitle"></div>
         <span class="pl-q" id="plQ"></span>
         <button class="pl-icbtn focusable" id="plInfo" aria-label="О файле"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></button>
@@ -1088,7 +1091,7 @@ function plRenderInfo(){
   box.style.display='block';
 }
 function openBuiltInPlayer(url,title,subs,info){
-  plMode='video'; plFailUrl=url;
+  plMode='video'; plFailUrl=url; plSyncYtBtn();
   const ov=$('#player-ov'); ov.classList.remove('yt');
   const yt=$('#plYt'); yt.innerHTML=''; yt.style.display='none';
   $('#plTitle').textContent=title||'';
@@ -1144,24 +1147,27 @@ function closeBuiltInPlayer(){
   const e=$('#plErr'); if(e) e.style.display='none';
   const m=$('#plMenu'); if(m) m.style.display='none';
   const ib=$('#plInfoBox'); if(ib) ib.style.display='none';
-  plSetQ(''); plSubsList=[]; plCurSub=-1; plSetPlayIcon(false); plFailUrl=null;
+  plSetQ(''); plSubsList=[]; plCurSub=-1; plSetPlayIcon(false); plFailUrl=null; const yb=$('#plYtBtn'); if(yb) yb.style.display='none';
   if(detectTV()){const f=visibleFocusable(); if(f.length) setFocus(f[0]);}
 }
 function playerIsOpen(){return $('#player-ov').classList.contains('open');}
 function openPlayerTrailer(ytKey,title){
   closeBuiltInPlayer();
-  plMode='trailer'; plFailUrl=null;
+  plMode='trailer'; plFailUrl='https://www.youtube.com/watch?v='+ytKey;
   const ov=$('#player-ov'); ov.classList.add('yt');
   $('#plTitle').textContent=title||'';
   const yt=$('#plYt');
-  yt.innerHTML='<iframe src="https://www.youtube.com/embed/'+ytKey+'?autoplay=1&rel=0" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+  yt.innerHTML='<iframe src="https://www.youtube-nocookie.com/embed/'+ytKey+'?autoplay=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
   yt.style.display='block';
+  plSyncYtBtn();
   $('#plUI').classList.remove('hide');
   ov.classList.add('open');
   if(detectTV()){const c=$('#plBack'); if(c) setFocus(c);}
 }
 $('#plBack').onclick=()=>{ closeBuiltInPlayer(); };
 $('#plBridgeBtn').onclick=()=>{ plOpenBridge(); };
+function plSyncYtBtn(){ const b=$('#plYtBtn'); if(!b) return; b.style.display=(plMode==='trailer'&&plBridgeAvailable())?'block':'none'; }
+$('#plYtBtn').onclick=()=>{ plOpenBridge(); };
 $('#plPlay').onclick=()=>{ plToggle(); };
 $('#plBigPlay').onclick=()=>{ plToggle(); };
 $('#plRw').onclick=()=>{ plSeekBy(-10); };
