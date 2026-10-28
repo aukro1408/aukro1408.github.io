@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Просто Кино</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap">
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
@@ -25,6 +26,28 @@ button:focus,input:focus{outline:none}
   box-shadow:0 0 8px rgba(255,255,255,.22)}
 .menu-btn.active:after,.menu-btn:hover:after,.menu-btn.focused:after{transform:scaleX(1);opacity:.7}
 @media(prefers-reduced-motion:reduce){.menu-btn,.menu-btn:after{transition:none}}
+/* Логотип pawflix в меню: lockup из файла Denis 1:1 (только логотип, не демо-сцена) */
+.pk-logo{position:relative;z-index:1;display:flex;align-items:center;gap:.1em;font-size:calc(clamp(17px,3vw,25px) * 1.3);line-height:1;flex:none;cursor:pointer;margin-right:calc(.5em - clamp(18px,4vw,44px))}
+.pk-logo .paw{width:1.15em;height:1.15em;flex:none;overflow:visible;filter:drop-shadow(0 .06em .18em rgba(66,133,244,.5))}
+.pk-logo .word{display:flex;font-family:'Fredoka',system-ui,sans-serif;font-weight:600;letter-spacing:-.02em;padding-bottom:.04em}
+.pk-logo .word span{display:inline-block;transform-origin:50% 100%;opacity:0}
+.pk-logo .word .f{color:#b4d0fb}.pk-logo .word .f2{color:#8ab4f8}.pk-logo .word .f3{color:#6b9ff5}.pk-logo .word .f4{color:#4f8bf2}
+.pk-logo .body,.pk-logo .toe,.pk-logo .tri,.pk-logo .ring,.pk-logo .dot{opacity:0}
+.pk-logo.go .body{transform-box:fill-box;transform-origin:50% 100%;animation:stamp .95s cubic-bezier(.3,.7,.4,1) both .1s}
+.pk-logo.go .toe{transform-box:fill-box;transform-origin:50% 100%;animation:splay .7s cubic-bezier(.3,1.5,.5,1) both calc(.78s + var(--k) * .06s),wig 5.5s ease-in-out infinite calc(4.2s + var(--k) * .16s)}
+.pk-logo.go .tri{transform-box:fill-box;transform-origin:center;animation:tri .7s cubic-bezier(.3,1.5,.5,1) both 1.15s,beat 3.2s ease-in-out infinite 3s}
+.pk-logo.go .ring{transform-box:fill-box;transform-origin:center;animation:ring .9s ease-out both .78s}
+.pk-logo.go .dot{animation:burst .8s ease-out both .78s}
+.pk-logo.go .word span{animation:lt .75s cubic-bezier(.3,1.5,.5,1) both calc(1.05s + var(--k) * .08s)}
+@keyframes stamp{0%{transform:translateY(-.55em) scale(1.45);opacity:0}40%{opacity:1}68%{transform:translateY(0) scale(1.05,.92);opacity:1}84%{transform:scale(.98,1.03);opacity:1}100%{transform:none;opacity:1}}
+@keyframes splay{from{transform:translate(var(--tx),var(--ty)) scale(.4);opacity:0}to{transform:none;opacity:1}}
+@keyframes wig{0%,88%,100%{transform:none}91%{transform:translateY(-3px) rotate(-9deg)}95%{transform:translateY(0) rotate(4deg)}}
+@keyframes tri{from{transform:scale(0) rotate(-60deg);opacity:1}to{transform:none;opacity:1}}
+@keyframes beat{0%,70%,100%{transform:none}80%{transform:scale(1.14)}90%{transform:scale(.96)}}
+@keyframes ring{from{transform:scale(.4);opacity:.7}to{transform:scale(7);opacity:0}}
+@keyframes burst{from{transform:translate(0,0) scale(1);opacity:1}to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
+@keyframes lt{0%{opacity:0;transform:translateY(.5em) rotate(12deg) scale(.5)}60%{opacity:1;transform:translateY(-.09em) rotate(-3deg) scale(1.08)}100%{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.pk-logo .body,.pk-logo .toe,.pk-logo .tri,.pk-logo .word span{opacity:1!important}.pk-logo.go *{animation:none!important}}
 body.phone .topmenu{padding:.9em 1em}
 /* Экраны */
 main{padding-top:0}
@@ -116,6 +139,26 @@ body.phone .detail-info{padding:0 1em}
 </head>
 <body>
 <header class="topmenu" id="menu">
+<div class="pk-logo go" id="pk-logo" role="img" aria-label="Pawflix">
+<svg class="paw" viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<linearGradient id="pk-g" gradientUnits="userSpaceOnUse" x1="8" y1="14" x2="112" y2="116"><stop offset="0" stop-color="#AECBFA"/><stop offset="1" stop-color="#3F7DF0"/></linearGradient>
+<mask id="pk-m"><rect width="120" height="120" fill="#fff"/><path class="tri" d="M54 77L54 97L71.500 87Z" fill="#000" stroke="#000" stroke-width="4.500" stroke-linejoin="round"/></mask>
+</defs>
+<ellipse class="ring" cx="60" cy="112" rx="9" ry="3" fill="none" stroke="#8AB4F8" stroke-width="1.500"/>
+<g fill="#8AB4F8">
+<circle class="dot" cx="60" cy="108" r="2.200" style="--dx:-30px;--dy:-22px"/><circle class="dot" cx="60" cy="108" r="1.600" style="--dx:-46px;--dy:-4px"/><circle class="dot" cx="60" cy="108" r="2" style="--dx:-18px;--dy:-34px"/><circle class="dot" cx="60" cy="108" r="2.200" style="--dx:30px;--dy:-22px"/><circle class="dot" cx="60" cy="108" r="1.600" style="--dx:46px;--dy:-4px"/><circle class="dot" cx="60" cy="108" r="2" style="--dx:18px;--dy:-34px"/>
+</g>
+<g class="body" fill="url(#pk-g)">
+<g class="toe" style="--k:0;--tx:20px;--ty:20px"><ellipse cx="19" cy="57" rx="10" ry="12.500" transform="rotate(-22 19 57)"/></g>
+<g class="toe" style="--k:1;--tx:12px;--ty:26px"><ellipse cx="42" cy="32" rx="11.500" ry="14.500" transform="rotate(-8 42 32)"/></g>
+<g class="toe" style="--k:2;--tx:-12px;--ty:26px"><ellipse cx="78" cy="32" rx="11.500" ry="14.500" transform="rotate(8 78 32)"/></g>
+<g class="toe" style="--k:3;--tx:-20px;--ty:20px"><ellipse cx="101" cy="57" rx="10" ry="12.500" transform="rotate(22 101 57)"/></g>
+<g mask="url(#pk-m)"><circle cx="41" cy="96" r="13"/><circle cx="79" cy="96" r="13"/><circle cx="60" cy="102" r="12"/><ellipse cx="60" cy="82" rx="26" ry="21"/></g>
+</g>
+</svg>
+<div class="word" aria-hidden="true"><span style="--k:0">p</span><span style="--k:1">a</span><span style="--k:2">w</span><span class="f" style="--k:3">f</span><span class="f2" style="--k:4">l</span><span class="f3" style="--k:5">i</span><span class="f4" style="--k:6">x</span></div>
+</div>
   <button class="menu-btn focusable active" data-screen="home">Главная</button>
   <button class="menu-btn focusable" data-screen="genres-movie">Фильмы</button>
   <button class="menu-btn focusable" data-screen="genres-tv">Сериалы</button>
@@ -554,6 +597,18 @@ if(detectTV()){
   const first=visibleFocusable();
   if(first.length) setFocus(first[0]);
 }
+
+/* Логотип pawflix в меню: входная анимация из файла, тап — повтор (знак, не кнопка) */
+(function(){
+  var logo=document.getElementById('pk-logo');
+  if(!logo) return;
+  function play(){logo.classList.remove('go');void logo.offsetWidth;logo.classList.add('go');}
+  logo.addEventListener('click',play);
+  logo.classList.remove('go');
+  var started=false;
+  function start(){if(started)return;started=true;logo.classList.add('go');}
+  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(start);setTimeout(start,1500);}else{start();}
+})();
 </script>
 </body>
 </html>
