@@ -1099,6 +1099,17 @@
          Подложки-контейнера нет: постер + подпись обычным текстом. */
       .mcard.pcard{ background:none; border:0; padding:0; box-shadow:none; border-radius:0; }
       .mcard.pcard.focused{ transform:none; }
+      /* 2026-10-28 (фото Denis): глобальный .focused из app.css рисует
+         кольцо уровня карточки (box-shadow var(--accent) + !important) —
+         у pcard оно дублирует кольцо постера и выглядит отдельной обводкой
+         вокруг подписи (верх/бока сливаются с кольцом постера, низ остаётся
+         виден). Индикатор фокуса pcard — только кольцо постера, поэтому
+         card-level тень и outline гасятся scoped-правилом (по прецеденту
+         кнопок); кольцо постера, акцент названия и оверлеи .ui не тронуты. */
+      .mcard.pcard.focused, .mcard.pcard:focus, .mcard.pcard:focus-visible, .mcard.pcard:hover{
+        outline:none !important;
+        box-shadow:none !important;
+      }
       .mcard.pcard .poster{ position:relative; aspect-ratio:2/3; border-radius:1.1rem; overflow:hidden; background:#111;
         box-shadow:0 26px 34px -14px var(--glow, rgba(255,150,80,.5)), 0 12px 24px rgba(0,0,0,.5);
         transition:transform .22s ease, box-shadow .22s ease; }
