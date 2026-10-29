@@ -232,6 +232,15 @@ body.phone .fav-tabs{padding:5em 1em 0}
 body.phone .settings,body.phone .searchbox{padding:5em 1em 2em}
 .settings h2,.searchbox h2{margin:0 0 .8em}
 .rowline{display:flex;gap:.8em;flex-wrap:wrap;align-items:center}
+/* v0.37: история поиска */
+.hist-row{display:flex;gap:.6em;overflow-x:auto;padding:.9em .2em 0;scrollbar-width:none}
+.hist-row::-webkit-scrollbar{display:none}
+.hist-row:empty{display:none}
+.hist-chip{display:flex;align-items:center;gap:.45em;white-space:nowrap;background:#26262e;border:1px solid #33333f;border-radius:999px;color:#cfd3dd;font-size:.95em;padding:.5em 1em}
+.hist-chip.focused{outline:3px solid #fff;outline-offset:2px}
+.hist-chip .clk{color:#9aa3b5}
+.hist-clear{background:transparent;border:0;color:#9aa3b5;font-size:.85em;white-space:nowrap;padding:.5em .4em}
+.hist-clear.focused{outline:3px solid #fff;outline-offset:2px;border-radius:999px}
 .status{color:#8be9a4;margin-top:1em}
 /* Экран фильма */
 .detail{padding:0 0 3em}
@@ -719,6 +728,7 @@ body.phone .collections{padding:5em 1em 2em}
         <input class="field focusable" id="search-input" type="text" placeholder="Название фильма или сериала" autocomplete="off">
         <button class="save-btn focusable" id="search-go">Найти</button>
       </div>
+      <div class="hist-row" id="search-hist"></div>
       <div class="loader" id="search-loader" style="padding-left:0"></div>
       <div class="grid" id="search-grid" style="padding:1.5em 0"></div>
     </div>
@@ -1096,6 +1106,7 @@ function showScreen(id,push){
   if(id==='favs') renderFavs();
   if(id==='collections') renderCol();
   if(id==='settings'){populateSettings();}
+  if(id==='search') restoreSearch();
   if(detectTV()){
     const first=visibleFocusable();
     if(first.length) setFocus(first[0]);
@@ -1522,6 +1533,7 @@ async function doSearch(){
     const items=(d.results||[]).filter(r=>(r.media_type==='movie'||r.media_type==='tv')&&(r.backdrop_path||r.poster_path));
     loader.textContent=items.length?('Найдено: '+items.length):'Ничего не найдено';
     grid.innerHTML=items.map(it=>cardHTML(it,it.media_type)).join('');
+    saveSearchHist(q); saveSearchLast(q,items); renderSearchHist();
     const first=grid.querySelector('.focusable');
     if(first&&detectTV()) setFocus(first);
   }catch(e){
@@ -1529,6 +1541,28 @@ async function doSearch(){
   }
 }
 $('#search-go').addEventListener('click',doSearch);
+/* v0.37: история поиска и восстановление прошлого поиска */
+function loadSearchHist(){try{const v=JSON.parse(localStorage.getItem('prostokino.search_hist')||'[]');return Array.isArray(v)?v.filter(x=>typeof x==='string'&&x.trim()):[]}catch(e){return []}}
+function saveSearchHist(q){const h=loadSearchHist().filter(x=>x.toLowerCase()!==q.toLowerCase());h.unshift(q);try{localStorage.setItem('prostokino.search_hist',JSON.stringify(h.slice(0,10)))}catch(e){}}
+function loadSearchLast(){try{const v=JSON.parse(localStorage.getItem('prostokino.search_last')||'null');return (v&&typeof v.q==='string'&&Array.isArray(v.items))?v:null}catch(e){return null}}
+function saveSearchLast(q,items){try{localStorage.setItem('prostokino.search_last',JSON.stringify({q:q,items:items}))}catch(e){}}
+function renderSearchHist(){
+  const box=$('#search-hist'); if(!box) return;
+  const h=loadSearchHist();
+  if(!h.length){box.innerHTML='';return;}
+  box.innerHTML=h.map((q,i)=>'<button class="hist-chip focusable" data-hi="'+i+'"><span class="clk">\u25F7</span>'+esc(q)+'</button>').join('')+'<button class="hist-clear focusable" title="Очистить историю">\u2715 Очистить</button>';
+  box.querySelectorAll('.hist-chip').forEach(b=>{b.addEventListener('click',()=>{const q=loadSearchHist()[+b.dataset.hi];if(q===undefined)return;$('#search-input').value=q;doSearch();});});
+  const cl=box.querySelector('.hist-clear'); if(cl) cl.addEventListener('click',()=>{try{localStorage.removeItem('prostokino.search_hist')}catch(e){} renderSearchHist();});
+}
+function restoreSearch(){
+  renderSearchHist();
+  const inp=$('#search-input'); if(!inp||inp.value.trim()) return;
+  const last=loadSearchLast(); if(!last) return;
+  inp.value=last.q;
+  const grid=$('#search-grid'), loader=$('#search-loader');
+  loader.textContent=last.items.length?('Найдено: '+last.items.length):'Ничего не найдено';
+  grid.innerHTML=last.items.map(it=>cardHTML(it,it.media_type)).join('');
+}
 
 /* ============ v0.5: страница фильма, персоны, источники ============ */
 let currentDetail=null;
