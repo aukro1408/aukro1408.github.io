@@ -1054,7 +1054,7 @@ document.addEventListener('click',e=>{
   const sim=e.target.closest?e.target.closest('.sim-more'):null;
   if(sim){openSimilarList(sim.dataset.type,sim.dataset.id);return;}
   const pill=e.target.closest?e.target.closest('.more-pill'):null;
-  if(pill){openGenreList(pill.dataset.type,pill.dataset.genre,pill.dataset.name,pill.dataset.anim==='1');return;}
+  if(pill){if(pill.dataset.trend==='1'){openTrendList(pill.dataset.type,pill.dataset.name);}else{openGenreList(pill.dataset.type,pill.dataset.genre,pill.dataset.name,pill.dataset.anim==='1');}return;}
   const ps=e.target.closest?e.target.closest('.cast-item,.dir-item'):null;
   if(ps){openPerson(ps.dataset.person);return;}
   const tc=e.target.closest?e.target.closest('.tor-card'):null;
@@ -1099,7 +1099,7 @@ function renderRow(boxId,title,items,type,more,vert){
   const box=$(boxId); if(!box) return;
   let html='<div class="row-title">'+esc(title)+'</div><div class="row">';
   html+=items.map(it=>vert?pcardHTML(it,type):cardHTML(it,type,true)).join('');
-  if(more) html+='<span class="more-wrap"'+(vert?' style="width:200px;aspect-ratio:2/3"':'')+'><button class="more-pill focusable" data-type="'+more.type+'" data-genre="'+more.genre+'" data-name="'+esc(more.name)+'" data-anim="'+(more.anim?'1':'0')+'">Ещё →</button></span>';
+  if(more) html+='<span class="more-wrap"'+(vert?' style="width:200px;aspect-ratio:2/3"':'')+'><button class="more-pill focusable" data-type="'+more.type+'" data-genre="'+more.genre+'" data-name="'+esc(more.name)+'" data-anim="'+(more.anim?'1':'0')+'" data-trend="'+(more.trend?'1':'0')+'">Ещё →</button></span>';
   html+='</div>';
   box.innerHTML=html;
   watchCardLogos(box);
@@ -1117,9 +1117,11 @@ async function loadHome(){
     try{const np=await api('/movie/now_playing',{page:1});heroItems=np.results.filter(r=>r.backdrop_path).slice(0,12);}catch(e){}
     if(heroItems.length<3){try{const tr=await api('/trending/movie/week');heroItems=tr.results.filter(r=>r.backdrop_path).slice(0,12);}catch(e){}}
     startHero(heroItems);
-    rows.innerHTML='<div id="row-popular"></div>'+HOME_GENRES.map(g=>'<div id="row-g'+g[0]+'"></div>').join('');
+    rows.innerHTML='<div id="row-popular"></div><div id="row-trend-movie"></div><div id="row-trend-tv"></div>'+HOME_GENRES.map(g=>'<div id="row-g'+g[0]+'"></div>').join('');
     const pop=await api('/movie/popular',{page:1});
     renderRow('#row-popular','Популярное',pop.results,'movie',null);
+    try{const tm=await api('/trending/movie/week',{page:1});renderRow('#row-trend-movie','Лидеры недели по просмотрам (фильмы)',tm.results,'movie',{type:'movie',genre:'',name:'Лидеры недели по просмотрам (фильмы)',anim:false,trend:true},true);}catch(e){}
+    try{const tt=await api('/trending/tv/week',{page:1});renderRow('#row-trend-tv','Лидеры недели по просмотрам (сериалы)',tt.results,'tv',{type:'tv',genre:'',name:'Лидеры недели по просмотрам (сериалы)',anim:false,trend:true},true);}catch(e){}
     for(const g of HOME_GENRES){
       const d=await api('/discover/movie',{with_genres:g[0],sort_by:'popularity.desc',page:1});
       renderRow('#row-g'+g[0],g[1],d.results,'movie',{type:'movie',genre:g[0],name:g[1],anim:false},true);
@@ -1290,7 +1292,9 @@ async function listLoadPage(){
   if(st.page>1){more.style.display='block'; more.textContent='Загружаю ещё…';}
   try{
     let d;
-    if(st.mode==='similar'){
+    if(st.mode==='trend'){
+      d=await api('/trending/'+st.type+'/week',{page:st.page});
+    }else if(st.mode==='similar'){
       d=await api('/'+st.type+'/'+st.id+'/similar',{page:st.page});
     }else{
       const params={sort_by:'popularity.desc',page:st.page};
@@ -1336,6 +1340,21 @@ async function openGenreList(type,genreId,genreName,animOnly){
   if(!hasKey()){loader.textContent='Добавьте TMDB-ключ в Настройках.'; listState=null; return;}
   loader.textContent='Загружаю…';
   listState={mode:'genre',type:type,genreId:genreId,animOnly:animOnly,page:1,totalPages:1,loading:false,done:false};
+  await listLoadPage();
+  if(listState&&!listState.done) listObserve();
+}
+
+/* v0.30: полный список ряда «Лидеры недели по просмотрам» — тот же источник
+   TMDB /trending/{movie,tv}/week, пагинация как у жанровых списков. */
+async function openTrendList(type,title){
+  if(listObserver) listObserver.disconnect();
+  showScreen('list');
+  const loader=$('#list-loader'), grid=$('#list-grid'), more=$('#list-more');
+  grid.innerHTML=''; more.style.display='none'; more.textContent='';
+  const bgImg=$('#list-bg-img'); bgImg.style.display='none'; bgImg.removeAttribute('src');
+  if(!hasKey()){loader.textContent='Добавьте TMDB-ключ в Настройках.'; listState=null; return;}
+  loader.textContent='Загружаю…';
+  listState={mode:'trend',type:type,page:1,totalPages:1,loading:false,done:false};
   await listLoadPage();
   if(listState&&!listState.done) listObserve();
 }
