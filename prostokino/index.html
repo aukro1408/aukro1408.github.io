@@ -136,8 +136,8 @@ body.phone .back-btn{margin:4.5em 0 0 1em}
 .fav-btn.in{background:#ff7a29}
 .fav-btn.focused{outline:3px solid #fff;outline-offset:2px}
 /* v0.18: круглая кнопка закладок справа сверху на постере + меню списков + табы «Избранного» */
-.bm-btn{position:absolute;top:6.3em;right:1.4em;z-index:3;width:3.1em;height:3.1em;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.5)}
-body.phone .bm-btn{top:5.2em;right:1em}
+.bm-btn{position:absolute;top:7.0em;right:1.4em;z-index:3;width:3.1em;height:3.1em;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+body.phone .bm-btn{top:5.9em;right:1em}
 .bm-btn svg{width:1.5em;height:1.5em;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
 .bm-btn.on{background:#ff7a29;border-color:#ff7a29}
 .bm-btn.on svg{fill:#fff}
@@ -171,10 +171,10 @@ body.phone .settings,body.phone .searchbox{padding:5em 1em 2em}
 .status{color:#8be9a4;margin-top:1em}
 /* Экран фильма */
 .detail{padding:0 0 3em}
-.detail .backdrop{position:relative;height:67.2vh;min-height:360px;overflow:hidden;background:#181820}
-body.phone .detail .backdrop{height:45.6vh}
+.detail .backdrop{position:relative;height:76vh;min-height:400px;overflow:hidden;background:#181820}
+body.phone .detail .backdrop{height:51.5vh}
 .detail .backdrop img{width:100%;height:100%;object-fit:cover;object-position:top}
-.detail .backdrop .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.3),rgba(0,0,0,0) 60%,rgba(15,15,20,.95) 94%,#0f0f14)}
+.detail .backdrop .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.3),rgba(0,0,0,0) 80%,rgba(15,15,20,.95) 97%,#0f0f14)}
 .detail-info{padding:0 2em}
 body.phone .detail-info{padding:0 1em}
 .detail-info h1{margin:.2em 0 .3em;font-size:2.2em}
@@ -184,7 +184,7 @@ body.phone .detail-info{padding:0 1em}
 .detail-info .meta .star{color:#ffb340}
 .detail-info p{color:#d5d8e0;line-height:1.6;max-width:50em}
 /* v0.5: плитки сервисов — механика из файла Denis 1:1, геометрия — широкие прямоугольники ~3:1 */
-.src-tiles{display:flex;gap:1em;flex-wrap:wrap;margin:1.2em 0}
+.src-tiles{display:flex;gap:1em;flex-wrap:wrap;margin:2.2em 0 1.2em}
 .src-tile{position:relative;overflow:hidden;isolation:isolate;width:15rem;height:4.8rem;padding:0;border:0;border-radius:1.1rem;background:var(--g);cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 .6rem 1.4rem rgba(0,0,0,.45);transition:transform .3s cubic-bezier(.2,0,0,1),box-shadow .35s}
 body.phone .src-tile{width:100%;height:4.4rem}
 .src-tile::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(120% 90% at 20% 0%,rgba(255,255,255,.22),transparent 60%)}
@@ -1719,7 +1719,7 @@ async function openDetail(type,id){
     const ytList=((vids&&vids.results)||[]).filter(v=>v.site==='YouTube');
     const trItem=ytList.filter(v=>v.type==='Trailer')[0]||ytList[0];
     const trailerBlock=trItem?'<div class="block-title">Трейлер</div>'+'<button class="trailer-thumb focusable" data-yt="'+trItem.key+'" style="display:block;width:min(320px,100%);aspect-ratio:16/9;border:0;border-radius:14px;overflow:hidden;padding:0;background:#22222c;position:relative">'+'<img src="https://i.ytimg.com/vi/'+trItem.key+'/hqdefault.jpg" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.remove()">'+'<span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:26px;line-height:64px;text-align:center">▶</span></button>':'';
-    let html='<div class="backdrop">'+(pic?'<img src="'+imgUrl(pic,'original')+'" alt="" onerror="this.remove()">':'')+'<div class="shade"></div>'+'<button class="bm-btn focusable'+(bmed?' on':'')+'" id="bm-btn" aria-label="Закладки"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v18l-5-3.5L7 21z"/></svg></button></div>'+
+    let html='<div class="backdrop">'+(pic?'<img src="'+imgUrl(pic,'original')+'" alt="" onerror="this.remove()">':'')+'<div class="shade"></div>'+'<button class="bm-btn focusable'+(bmed?' on':'')+'" id="bm-btn" aria-label="Закладки"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button></div>'+
       '<div class="detail-info"><h1 id="detail-title">'+esc(title)+'</h1>'+
       '<div class="meta">'+[star?'<span class="star">★</span> '+esc(star.slice(2)):null,year,gs,dur].filter(Boolean).join(' · ')+'</div>'+
       '<p>'+esc(d.overview||'Описание отсутствует.')+'</p>'+trailerBlock+
