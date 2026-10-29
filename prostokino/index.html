@@ -1106,6 +1106,9 @@ document.addEventListener('keydown',e=>{
       /* Поле ввода: только РЕАЛЬНЫЙ DOM-фокус открывает системную клавиатуру на ТВ.
          Синтезированный click() на WebView MiBox клавиатуру не открывает (урок pawflix v0.9). */
       if(cur.tagName==='INPUT'||cur.tagName==='TEXTAREA'){setFocus(cur);cur.focus();}
+      /* v0.42: выпадающий список <select> синтетический click() в Chromium/WebView не открывает —
+         открываем программно через showPicker() (Chrome 112+), с фолбэком на click. */
+      else if(cur.tagName==='SELECT'){setFocus(cur);try{if(typeof cur.showPicker==='function')cur.showPicker();else cur.click();}catch(err){cur.click();}}
       else cur.click();
       e.preventDefault();
     }
