@@ -1537,7 +1537,7 @@ function playerSel(){return getS('prostokino.player_sel')||'ours';}
 function tsFetch(url,opts){
   return fetch(url,opts||{});
 }
-const ALPAC='https://beta.l-vid.online';
+const ALPAC='https://lampa.li';
 function getS(k){return (localStorage.getItem(k)||'').trim();}
 function setS(k,v){localStorage.setItem(k,v);}
 function fmtDur(min){min=+min;if(!min)return '';if(min<60)return min+' мин';var h=Math.floor(min/60),m=min%60;return h+' ч'+(m?' '+m+' мин':'');}
