@@ -249,34 +249,29 @@ body.phone .watch{padding:5.2em 1em 2em}
 .watch-card{background:#1c1c26;border-radius:18px;padding:1.2em 1.4em;margin-bottom:1.4em}
 .watch-card .w-src{font-size:1.4em;font-weight:800}
 .watch-card .w-sub{color:#9aa3b5;margin-top:.35em;line-height:1.5}
-.watch-card .w-change{background:none;border:0;color:#6fe3b0;font:inherit;font-weight:700;cursor:pointer;padding:0}
+.watch-card .w-change{background:none;border:0;color:#ff7a29;font:inherit;font-weight:700;cursor:pointer;padding:0}
 .watch-card .w-change.focused{outline:3px solid #fff;outline-offset:2px;border-radius:6px}
 .watch-seasons{display:flex;gap:.6em;flex-wrap:wrap;margin-bottom:1.4em}
 .watch-season{background:#1e1e28;border:2px solid transparent;border-radius:999px;color:#fff;font-size:1em;padding:.55em 1.2em;cursor:pointer}
-.watch-season.active{border-color:#6fe3b0}
+.watch-season.active{border-color:#ff7a29}
 .watch-season.focused{outline:3px solid #fff;outline-offset:2px}
 .watch-ep{position:relative;display:block;width:100%;text-align:left;background:#1c1c26;border:0;border-radius:18px;overflow:hidden;color:#fff;padding:0;margin-bottom:1em;cursor:pointer}
 .watch-ep .ep-bg{position:absolute;inset:0;background:#22222c}
-.watch-ep .ep-bg img{width:100%;height:100%;object-fit:cover;display:block}
+.watch-ep .ep-bg img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
 .watch-ep .ep-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.15) 40%,rgba(0,0,0,.85))}
 .watch-ep .ep-body{position:relative;padding:1.1em 1.3em}
+/* v0.28: карточки серий выше на широких экранах (ТВ/десктоп) — кадр меньше режется; на телефоне без изменений */
+body.tv .watch-ep .ep-body{min-height:13em}
 .watch-ep .ep-top{display:flex;justify-content:space-between;align-items:center;gap:1em}
-.watch-ep .ep-kicker{color:#6fe3b0;font-weight:700;letter-spacing:.06em;font-size:.9em}
+.watch-ep .ep-kicker{color:#ff7a29;font-weight:700;letter-spacing:.06em;font-size:.9em}
 .watch-ep .ep-dur{background:rgba(0,0,0,.75);border-radius:8px;padding:.25em .6em;font-weight:700;white-space:nowrap}
 .watch-ep .ep-title{font-size:1.25em;font-weight:800;margin:.5em 0 .3em}
 .watch-ep .ep-ov{color:#d5d8e0;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:56em}
 .watch-ep .ep-bot{display:flex;justify-content:space-between;align-items:center;margin-top:.7em}
 .watch-ep .ep-rate{color:#e8eaf0}
-.watch-ep .ep-check{width:34px;height:34px;flex:none;border-radius:50%;background:#6fe3b0;color:#06281a;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:1.1em}
+.watch-ep .ep-check{width:34px;height:34px;flex:none;border-radius:50%;background:#ff7a29;color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:1.1em}
 .watch-ep.focused{outline:3px solid #fff;outline-offset:2px}
-.watch-movie{position:relative;border-radius:18px;overflow:hidden;background:#1c1c26;margin-bottom:1.4em}
-.watch-movie img.mv-bg{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#22222c}
-.watch-movie .mv-body{padding:1.2em 1.4em}
-.watch-movie .mv-title{font-size:1.5em;font-weight:800}
-.watch-movie .mv-meta{color:#9aa3b5;margin:.35em 0 .6em}
-.watch-movie .mv-ov{color:#d5d8e0;line-height:1.6;max-width:56em}
-.watch-go{background:#ff7a29;border:0;border-radius:999px;color:#fff;font-size:1.1em;font-weight:800;padding:.75em 2.2em;cursor:pointer}
-.watch-go.focused{outline:3px solid #fff;outline-offset:2px}
+/* v0.28: карточка фильма и кнопка «Смотреть» убраны — фильмы идут старым путём, watch только для сериалов */
 .watch-status{color:#9aa3b5;font-size:1.05em;line-height:1.5;margin-bottom:1em;max-width:56em}
 .watch-status.err{color:#ff9a90}
 /* Блоки страницы фильма */
@@ -1883,11 +1878,17 @@ async function openDetail(type,id){
   }
 }
 
-/* Вход в источники */
+/* Вход в источники: v0.28 — watch только для сериалов (Filmix/Alpac); фильмы и торрент — старым путём */
 function openSource(src,tile){
   if(!currentDetail) return;
   if(tile&&tile.classList.contains('busy')) return;
   srcStatus('');
+  if(currentDetail.type!=='tv'||src==='torrent'){
+    if(src==='filmix') openFilmix(currentDetail,tile,++srcRun);
+    else if(src==='alpac') openAlpac(currentDetail,tile,++srcRun);
+    else openTorrent(currentDetail,tile,++srcRun);
+    return;
+  }
   openWatch(src);
 }
 document.addEventListener('pointerdown',function(e){
@@ -2218,7 +2219,8 @@ async function alpacResolve(it,meta,tile,fromWatch){
 
 /* v0.27: экран «Смотреть» по образцу PRISMA (дизайн + механика памяти, только наши источники) */
 let watchState=null;
-const WATCH_SOURCES=[{key:'filmix',label:'Filmix'},{key:'alpac',label:'Alpac'},{key:'torrent',label:'Торрент'}];
+/* v0.28: пилюли watch — только Filmix/Alpac; торрент идёт старым путём, минуя watch */
+const WATCH_SOURCES=[{key:'filmix',label:'Filmix'},{key:'alpac',label:'Alpac'}];
 function watchHash(s){let h=5381;const t=String(s||'');for(let i=0;i<t.length;i++){h=((h<<5)+h+t.charCodeAt(i))|0;}return 'w'+(h>>>0).toString(36);}
 function watchWatchedGet(){try{return JSON.parse(localStorage.getItem('prostokino.watched')||'{}')||{};}catch(e){return {};}}
 function watchIsWatched(meta,season,ep){return !!watchWatchedGet()[watchHash((meta.title||'')+'|'+season+'|'+ep)];}
@@ -2226,7 +2228,7 @@ function watchMarkWatched(meta,season,ep){const w=watchWatchedGet();w[watchHash(
 function watchMemGet(){try{return JSON.parse(localStorage.getItem('prostokino.watch_mem')||'{}')||{};}catch(e){return {};}}
 function watchMemSet(src,season,ep){const m=watchMemGet();m[src]={season:season,episode:ep};try{localStorage.setItem('prostokino.watch_mem',JSON.stringify(m));}catch(e){}}
 function watchSrcLabel(k){const s=WATCH_SOURCES.find(x=>x.key===k);return s?s.label:k;}
-function watchSeasonLabel(v){return String(v)==='0'?'Спец.':String(v);}
+function watchSeasonLabel(v){return String(v)==='0'?'Спецвыпуски':'Сезон '+v;}
 function fxWatchEpsMap(playlist,sk,maxQ){
   const epsMap={};
   const voices=playlist[sk];
@@ -2257,7 +2259,7 @@ function openWatch(src){
   const mem=watchMemGet()[src]||{};
   watchState={meta:meta,source:src,season:(mem.season!==undefined?mem.season:null),episode:(mem.episode!==undefined?mem.episode:null),
     tmdbSeasons:[],tmdbEps:[],tmdbOk:false,srcLoading:true,srcErr:'',msg:'',
-    fx:null,alp:null,tor:null};
+    fx:null,alp:null};
   showScreen('watch');
   watchRender(true);
   watchLoadTmdb();
@@ -2271,7 +2273,6 @@ function watchSetSource(src){
   st.srcErr=''; st.msg='';
   if(st.source==='filmix'&&st.fx) { st.srcLoading=false; watchRender(); return; }
   if(st.source==='alpac'&&st.alp&&st.alp.videos) { st.srcLoading=false; watchRender(); return; }
-  if(st.source==='torrent'&&st.tor) { st.srcLoading=false; watchRender(); return; }
   st.srcLoading=true; watchRender();
   watchLoadSource();
 }
@@ -2307,19 +2308,11 @@ function watchSourceSub(st){
   const eps=st.meta.type==='tv'?watchEpisodesList(st):[];
   if(st.source==='filmix'){
     if(st.meta.type==='tv') return 'Серий: '+eps.length;
-    if(st.fx&&st.fx.kind==='movie'&&st.fx.voices.length){
-      const q=Math.max.apply(null,st.fx.voices.map(v=>v.q||0));
-      return q>0?'Качество до '+q+'p':'';
-    }
     return '';
   }
   if(st.source==='alpac'){
     if(st.meta.type==='tv') return 'Серий: '+eps.length;
-    if(st.alp&&st.alp.videos) return 'Озвучек: '+st.alp.videos.length;
     return '';
-  }
-  if(st.tor&&st.tor.releases){
-    return 'Раздач: '+st.tor.releases.length+(st.meta.type==='tv'?' · Серий: '+eps.length:'');
   }
   return '';
 }
@@ -2353,26 +2346,13 @@ function watchRender(first){
           '<span class="ep-bot"><span class="ep-rate">'+(ep.rating?'★ '+Number(ep.rating).toFixed(1):'')+'</span>'+(watched?'<span class="ep-check">✓</span>':'')+'</span></span></button>';
       }).join('');
     }else if(!st.srcLoading&&!st.srcErr){
-      if(st.source==='torrent'&&st.tor&&st.tor.releases&&st.tor.releases.length){
-        html+='<button class="watch-go focusable" data-wk="gotor" id="watch-gotor">▶ Выбрать раздачу</button>';
-      }else{
-        html+='<div class="watch-status">Серии не загрузились — попробуйте другой источник.</div>';
-      }
+      html+='<div class="watch-status">Серии не загрузились — попробуйте другой источник.</div>';
     }
-  }else{
-    const pic=meta.backdrop?imgUrl(meta.backdrop,'original'):(meta.poster?imgUrl(meta.poster,'w780'):'');
-    html+='<div class="watch-movie">'+(pic?'<img class="mv-bg" src="'+pic+'" alt="" onerror="this.remove()">':'')+
-      '<div class="mv-body"><div class="mv-title">'+esc(meta.title)+'</div>'+
-      '<div class="mv-meta">'+[meta.rating?'★ '+Number(meta.rating).toFixed(1):null,meta.year,meta.dur].filter(Boolean).join(' · ')+'</div>'+
-      (meta.overview?'<div class="mv-ov">'+esc(meta.overview)+'</div>':'')+'</div></div>'+
-      '<button class="watch-go focusable" data-wk="go" id="watch-go">▶ Смотреть</button>';
   }
   box.innerHTML=html;
   box.querySelectorAll('[data-wsrc]').forEach(b=>b.addEventListener('click',()=>watchSetSource(b.dataset.wsrc)));
   box.querySelectorAll('[data-wseason]').forEach(b=>b.addEventListener('click',()=>watchSetSeason(b.dataset.wseason)));
   box.querySelectorAll('[data-wep]').forEach(b=>b.addEventListener('click',()=>watchPlayEpisode(parseInt(b.dataset.wep,10))));
-  const go=box.querySelector('#watch-go'); if(go) go.addEventListener('click',watchPlayMovie);
-  const gotor=box.querySelector('#watch-gotor'); if(gotor) gotor.addEventListener('click',watchTorPick);
   const ch=box.querySelector('#watch-change'); if(ch) ch.addEventListener('click',watchChangeSeason);
   if(detectTV()){
     if(first){const f=box.querySelector('.watch-pill');if(f)setFocus(f);}
@@ -2421,7 +2401,6 @@ async function watchLoadSource(){
   try{
     if(st.source==='filmix') await fxWatchLoad(st);
     else if(st.source==='alpac') await alpWatchLoad(st);
-    else await torWatchLoad(st);
   }catch(e){
     if(watchState===st){ st.srcErr='Не получилось загрузить источник.'; }
   }
@@ -2550,23 +2529,6 @@ async function alpWatchVoice(st,url){
     st.srcErr='Не получилось связаться с Alpac.'; st.srcLoading=false; watchRender();
   }
 }
-async function torWatchLoad(st){
-  const meta=st.meta;
-  if(!jacConfigured()){ st.srcErr='Торренты: парсеры не настроены — добавьте адрес и ключ в Настройках.'; return; }
-  if(location.protocol==='https:'&&/^http:\/\//i.test(jacBase())){
-    st.srcErr='Парсер: http-адрес заблокирован на https-странице.'; return;
-  }
-  const r=await fetch(jacQueryURL(jacBase(),jacKey(),torQuery(meta)));
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  const j=await r.json();
-  let res=(j.Results||[]).filter(x=>x.MagnetUri).map(x=>({title:x.Title,magnet:x.MagnetUri,seeders:x.Seeders||0,size:x.Size||0,tracker:x.Tracker||''}));
-  if(meta.type==='movie') res=res.filter(t=>!torIsSeriesTitle(t.title)&&torYearOK(t.title,meta.year));
-  st.tor={releases:res};
-  if(!res.length) st.srcErr='Раздач не нашлось.';
-}
-async function torWatchEcho(){
-  try{const ts=tsBase();const r=await fetch(ts+'/echo',{cache:'no-store'});return r.ok;}catch(e){return false;}
-}
 function watchPlayEpisode(epNum){
   const st=watchState; if(!st||st.meta.type!=='tv') return;
   const meta=st.meta, season=st.season;
@@ -2593,51 +2555,6 @@ function watchPlayEpisode(epNum){
     showPicker('Озвучка',vs.map(v=>({label:(v.voice||v.title||'Смотреть'),onPick:()=>alpacResolve(v,meta,null,true)})),true);
     return;
   }
-  if(st.source==='torrent'){
-    if(!st.tor||!st.tor.releases||!st.tor.releases.length){ st.srcErr='Раздач не нашлось.'; watchRender(); return; }
-    watchRender();
-    torWatchEcho().then(ok=>{
-      if(watchState!==st) return;
-      if(!ok){ st.srcErr='TorrServer не отвечает · проверь адрес в Настройках.'; watchRender(); return; }
-      showPicker('Раздача',st.tor.releases.map(t=>({label:torNiceTitle(t,meta),sub:(fmtSize(t.size)||'')+(t.seeders?' · ● '+t.seeders:'')+(t.tracker?' · '+t.tracker:''),onPick:()=>{ playTorrent(t,meta,null); }})));
-    });
-    return;
-  }
-}
-function watchPlayMovie(){
-  const st=watchState; if(!st||st.meta.type!=='movie') return;
-  const meta=st.meta;
-  if(st.source==='filmix'){
-    if(!st.fx||st.fx.kind!=='movie'||!st.fx.voices.length){ st.srcErr='Filmix: видео ещё загружается.'; watchRender(); return; }
-    const items=st.fx.voices;
-    if(items.length===1){const it=items[0]; if(it.qs.length<=1){playUrl(fxFileUrl(it.link,it.q),meta.title,undefined,{source:'Filmix'});return;} showPicker('Качество',it.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===it.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(it.link,q),meta.title,undefined,{source:'Filmix'})})),true); return;}
-    showPicker('Озвучка',items.map(it=>{const cl=fxCleanVoice(it.voice);return {label:cl.name,sub:(cl.studio?cl.studio+' · ':'')+it.q+'p',onPick:()=>{ if(it.qs.length<=1){playUrl(fxFileUrl(it.link,it.q),meta.title,undefined,{source:'Filmix'});return;} showPicker('Качество',it.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===it.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(it.link,q),meta.title,undefined,{source:'Filmix'})})),true); }};}),true);
-    return;
-  }
-  if(st.source==='alpac'){
-    if(!st.alp||!st.alp.videos||!st.alp.videos.length){ st.srcErr='Alpac: видео ещё загружается.'; watchRender(); return; }
-    const vs=st.alp.videos;
-    if(vs.length===1){alpacResolve(vs[0],meta,null,true);return;}
-    showPicker('Озвучка',vs.map(v=>({label:(v.voice||v.title||'Смотреть'),onPick:()=>alpacResolve(v,meta,null,true)})),true);
-    return;
-  }
-  if(st.source==='torrent'){
-    if(!st.tor||!st.tor.releases||!st.tor.releases.length){ st.srcErr='Раздач не нашлось.'; watchRender(); return; }
-    torWatchEcho().then(ok=>{
-      if(watchState!==st) return;
-      if(!ok){ st.srcErr='TorrServer не отвечает · проверь адрес в Настройках.'; watchRender(); return; }
-      showPicker('Раздача',st.tor.releases.map(t=>({label:torNiceTitle(t,meta),sub:(fmtSize(t.size)||'')+(t.seeders?' · ● '+t.seeders:'')+(t.tracker?' · '+t.tracker:''),onPick:()=>{ playTorrent(t,meta,null); }})));
-    });
-    return;
-  }
-}
-function watchTorPick(){
-  const st=watchState; if(!st||!st.tor||!st.tor.releases||!st.tor.releases.length) return;
-  torWatchEcho().then(ok=>{
-    if(watchState!==st) return;
-    if(!ok){ st.srcErr='TorrServer не отвечает · проверь адрес в Настройках.'; watchRender(); return; }
-    showPicker('Раздача',st.tor.releases.map(t=>({label:torNiceTitle(t,st.meta),sub:(fmtSize(t.size)||'')+(t.seeders?' · ● '+t.seeders:'')+(t.tracker?' · '+t.tracker:''),onPick:()=>{ playTorrent(t,st.meta,null); }})));
-  });
 }
 $('#watch-back').addEventListener('click',goBack);
 
