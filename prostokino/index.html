@@ -327,6 +327,7 @@ body.phone .alp-screen h1{font-size:1.5em}
 .pl-barfill{display:block;height:100%;width:0%;background:#ff7a29;border-radius:3px}
 .pl-status{font-size:1em;color:rgba(255,255,255,.85)}
 .pl-status.err{color:#ff6b5e}
+.pl-stage{font-size:1.05em;font-weight:700;color:#fff}
 .pl-dots{display:flex;gap:.55em;justify-content:center;margin-top:.7em}
 .pl-dots i{width:10px;height:10px;border-radius:50%;animation:pldot 1.2s infinite}
 .pl-dots i:nth-child(1){background:#ff1694}
@@ -599,6 +600,7 @@ body.phone .pl-actions{bottom:1.4em}
         <div class="pl-progress waiting" id="pl-progress">
           <div class="pl-row"><span>Предзагрузка</span><span id="pl-pct">0%</span></div>
           <div class="pl-bar"><span class="pl-barfill" id="pl-barfill"></span></div>
+          <div class="pl-stage" id="pl-stage">Поиск источников</div>
           <div class="pl-status" id="pl-status">Подключаюсь…</div>
           <div class="pl-dots"><i></i><i></i><i></i></div>
         </div>
@@ -2370,64 +2372,77 @@ async function playTorrent(t,meta,tile){
     setTileBusy(tile,false); playStatus('TorrServer не отвечает · проверь адрес в Настройках.',true);
   }
 }
-/* v0.17: экран предзагрузки торрента (паттерн Reelo: готовность 95%, таймауты 30/90 сек, код свой) */
+/* v0.22: экран предзагрузки торрента — транспорт и стадии по рабочему референсу Denis: первичный /torrents, готовность без stat-кодов */
 let plState=null;
 function stopPreload(){
   if(!plState) return;
   const st=plState; plState=null;
-  if(st.timer) clearInterval(st.timer);
+  if(st.timer) clearTimeout(st.timer);
   if(st.ctl) try{st.ctl.abort();}catch(e){}
 }
-function plSetUI(pct,status,err){
+const PL_STAGES=['Поиск источников','Подключение к пирам','Получение метаданных','Буферизация','Запуск'];
+function plSetUI(pct,stage,status,err){
   const p=$('#pl-pct'); if(p) p.textContent=pct+'%';
   const b=$('#pl-barfill'); if(b) b.style.width=pct+'%';
+  const g=$('#pl-stage'); if(g) g.textContent=stage||'';
   const s=$('#pl-status'); if(s){s.textContent=status||'';s.classList.toggle('err',!!err);}
 }
-function plStatusLine(tor){
-  const seeds=tor.connected_seeders||0, peers=tor.active_peers||0;
-  let s=fmtSize(tor.download_speed||0)+'/с · '+seeds+' '+plural(seeds,'раздающий','раздающих','раздающих');
-  if(peers) s+=' · '+peers+' в сети';
+function plStageOf(tor){
+  if(!(tor.torrent_size||0)) return (tor.total_peers||0)?2:((tor.active_peers||0)?1:0);
+  const need=tor.preload_size||0, got=tor.preloaded_bytes||0;
+  return (need>0&&got>=need)?4:3;
+}
+function plStatsLine(tor,stage){
+  const ap=tor.active_peers||0, tp=tor.total_peers||0;
+  let s=tp>0?('пиры '+ap+' из '+tp):('пиры '+ap);
+  const sp=tor.download_speed||0;
+  s+=' · '+(sp>0?fmtSize(sp)+'/с':'—');
+  if(stage>=3) s+=' · в буфере '+fmtSize(tor.preloaded_bytes||0);
   return s;
+}
+function plHasStatFields(tor){
+  return !!(tor&&(tor.torrent_size!==undefined||tor.preload_size!==undefined||tor.preloaded_bytes!==undefined||tor.active_peers!==undefined||tor.total_peers!==undefined||tor.download_speed!==undefined));
 }
 async function plTick(){
   const st=plState; if(!st||st.done||st.stalled) return;
+  const again=function(ms){ if(plState===st&&!st.done&&!st.stalled) st.timer=setTimeout(plTick,ms); };
+  let tor=null, ok=false;
   try{
-    let tor=null;
-    const r=await fetch(tsBase()+'/cache',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'get',hash:st.hash})});
-    if(r.ok){const j=await r.json(); tor=j.Torrent||j.torrent||j;}
-    if(!tor||(tor.preloaded_bytes===undefined&&tor.preload_size===undefined&&tor.stat===undefined)){
-      const g=await tsAPI({action:'get',hash:st.hash});
-      tor=g&&(g.torrent||g);
-    }
-    if(!plState||plState!==st||st.done||st.stalled) return;
-    if(!tor) throw new Error('nostat');
-    const pre=tor.preloaded_bytes||0, size=tor.preload_size||0, stat=tor.stat;
-    const hasFields=size>0;
-    if(stat===2||(hasFields&&pre<size)) st.seenPreload=true;
-    if(hasFields) st.hadFields=true;
-    if((tor.active_peers||0)+(tor.total_peers||0)+(tor.connected_seeders||0)>0) st.seenPeers=true;
-    const pct=hasFields?Math.min(100,Math.floor(pre*100/size)):0;
-    st.fails=0;
-    if(hasFields||stat!==undefined){const prog=$('#pl-progress'); if(prog) prog.classList.remove('waiting');}
-    const ready=(hasFields&&pct>=95)||(st.seenPreload&&stat===3)||(st.seenPreload&&st.hadFields&&!hasFields&&stat===undefined);
-    if(ready){plSetUI(hasFields?pct:100,'Готово — запускаю…',false);plPlay();return;}
-    const el=(Date.now()-st.started)/1000;
-    if((!st.seenPeers&&el>30)||(st.seenPeers&&el>90)){
-      st.stalled=true;
-      if(st.timer) clearInterval(st.timer);
-      plSetUI(pct,'Предзагрузка затянулась — можно смотреть сразу.',true);
-      return;
-    }
-    plSetUI(pct,(hasFields||stat!==undefined)?((tor.download_speed||0)>0?plStatusLine(tor):'Подключаюсь к пирам…'):'Подключаюсь…',false);
-  }catch(e){
-    if(!plState||plState!==st||st.done||st.stalled) return;
+    const r=await fetch(tsBase()+'/torrents',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'get',hash:st.hash})});
+    if(r.ok){const j=await r.json(); tor=j&&(j.torrent||j); ok=true;}
+  }catch(e){}
+  if(!ok||!plHasStatFields(tor)){
+    try{
+      const r2=await fetch(tsBase()+'/cache',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'get',hash:st.hash})});
+      if(r2.ok){const j2=await r2.json(); const c=j2&&(j2.Torrent||j2.torrent||j2); if(c&&plHasStatFields(c)){tor=c; ok=true;}}
+    }catch(e){}
+  }
+  if(!plState||plState!==st||st.done||st.stalled) return;
+  if(!ok){
     st.fails=(st.fails||0)+1;
     if(st.fails>=3){
       st.stalled=true;
-      if(st.timer) clearInterval(st.timer);
-      plSetUI(0,'Статистика недоступна — можно смотреть сразу.',true);
+      plSetUI(0,PL_STAGES[0],'Статистика недоступна — можно смотреть сразу.',true);
+      return;
     }
+    again(2000); return;
   }
+  st.fails=0;
+  if(!plHasStatFields(tor)){ again(1000); return; }
+  const stage=plStageOf(tor);
+  const need=tor.preload_size||0, got=tor.preloaded_bytes||0;
+  const pct=need>0?Math.min(100,Math.floor(got*100/need)):0;
+  if((tor.active_peers||0)+(tor.total_peers||0)+(tor.connected_seeders||0)>0) st.seenPeers=true;
+  const prog=$('#pl-progress'); if(prog) prog.classList.remove('waiting');
+  if(stage>=4){ plSetUI(100,PL_STAGES[4],'Готово — запускаю…',false); plPlay(); return; }
+  const el=(Date.now()-st.started)/1000;
+  if((!st.seenPeers&&el>30)||(st.seenPeers&&el>90)){
+    st.stalled=true;
+    plSetUI(pct,PL_STAGES[stage],'Предзагрузка затянулась — можно смотреть сразу.',true);
+    return;
+  }
+  plSetUI(pct,PL_STAGES[stage],plStatsLine(tor,stage),false);
+  again(1000);
 }
 function plPlay(){
   const st=plState; if(!st||st.done) return;
@@ -2451,9 +2466,9 @@ function openPreload(url,hash,meta,file){
   let pills=gp.map(g=>'<span class="tpill gold">'+esc(g)+'</span>').join('');
   if(!pills){const rp=torParse(file||'').res; if(rp) pills='<span class="tpill res">'+rp+'p</span>';}
   $('#pl-qpills').innerHTML=pills;
-  plSetUI(0,'Подключаюсь…',false);
+  plSetUI(0,PL_STAGES[0],'Подключаюсь…',false);
   const prog=$('#pl-progress'); if(prog) prog.classList.add('waiting');
-  const st={url:url,hash:hash,meta:meta,file:file||'',done:false,stalled:false,fails:0,timer:null,ctl:null,seenPreload:false,seenPeers:false,hadFields:false,started:Date.now()};
+  const st={url:url,hash:hash,meta:meta,file:file||'',done:false,stalled:false,fails:0,timer:null,ctl:null,seenPeers:false,started:Date.now()};
   plState=st;
   showScreen('preload');
   if(detectTV()) setFocus($('#pl-watch'));
@@ -2477,7 +2492,6 @@ function openPreload(url,hash,meta,file){
     fetch(pu,{signal:ctl.signal,cache:'no-store'}).catch(()=>{});
   }catch(e){}
   plTick();
-  st.timer=setInterval(plTick,1000);
 }
 $('#pl-back').addEventListener('click',plCancel);
 $('#pl-cancel').addEventListener('click',plCancel);
