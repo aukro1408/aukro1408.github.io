@@ -15,11 +15,23 @@ button{font-family:inherit;cursor:pointer}
 button:focus,input:focus{outline:none}
 /* Верхнее меню: мягкое свечение из файла Denis, белая пилюля убрана полностью */
 .topmenu{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;gap:clamp(18px,4vw,44px);align-items:center;
-  padding:1.1em 2em;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0));overflow-x:auto;
+  padding:1.1em 2em;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0));
   -webkit-backdrop-filter:blur(10px) saturate(1.3);backdrop-filter:blur(10px) saturate(1.3);
   -webkit-mask-image:linear-gradient(180deg,#000 0,#000 calc(100% - .9em),transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 calc(100% - .9em),transparent 100%);
   scrollbar-width:none}
 .topmenu::-webkit-scrollbar{display:none}
+/* v0.32: прокрутка пунктов меню — во внутренней обёртке, блок часов/погоды закреплён справа */
+.menu-scroll{display:flex;gap:clamp(18px,4vw,44px);align-items:center;overflow-x:auto;flex:1 1 auto;scrollbar-width:none}
+.menu-scroll::-webkit-scrollbar{display:none}
+/* v0.32: часы + погода в конце панели — минимализм, не кнопка, вне D-pad */
+.menu-clock{flex:none;display:flex;align-items:center;gap:.5em;font-size:clamp(15px,2.4vw,20px);color:rgba(255,255,255,.85);white-space:nowrap}
+#clock-time{font-weight:600;font-variant-numeric:tabular-nums}
+#clock-wx{display:inline-flex;align-items:center;gap:.45em}
+#clock-wx[hidden]{display:none}
+.wx-ico svg{width:1.25em;height:1.25em;display:block}
+.wx-temp{font-weight:600;font-variant-numeric:tabular-nums}
+.wx-city{color:rgba(255,255,255,.55);font-size:.85em}
+@media (max-width:760px){.wx-city{display:none}}
 .menu-btn{position:relative;flex:0 0 auto;background:transparent;border:0;color:rgba(255,255,255,.74);
   font-size:clamp(17px,3vw,25px);font-weight:400;padding:10px 0 13px;white-space:nowrap;
   text-shadow:0 0 8px rgba(255,255,255,.06);transition:color .3s ease,text-shadow .3s ease}
@@ -101,7 +113,7 @@ body.phone .rows{padding:.5em 1em 2em}
 .wlp-bar--2{animation:wlp-bar-2 1.8s ease-in-out infinite;animation-delay:0.2s;transform-origin:bottom}
 .wlp-bar--3{animation:wlp-bar-3 1.8s ease-in-out infinite;animation-delay:0.4s;transform-origin:bottom}
 @media (prefers-reduced-motion: reduce){.wlp-pulse,.wlp-top,.wlp-kernel,.wlp-star,.wlp-star-glow,.wlp-bar--1,.wlp-bar--2,.wlp-bar--3{animation:none !important}}
-.row{display:flex;gap:1em;overflow-x:auto;padding:.4em .2em 1em;scrollbar-width:none;scroll-behavior:smooth}
+.row{display:flex;gap:1em;overflow-x:auto;padding:.55em .55em 1em;scrollbar-width:none;scroll-behavior:smooth}
 .row::-webkit-scrollbar{display:none}
 .card,.col-card{flex:0 0 auto;width:320px;background:none;border:0;padding:0;text-align:left;color:#fff}
 body.phone .card,body.phone .col-card{width:78vw;max-width:380px}
@@ -109,7 +121,7 @@ body.phone .card,body.phone .col-card{width:78vw;max-width:380px}
   background:#22222c;box-shadow:0 14px 30px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.45);transition:transform .15s}
 .card .thumb img,.col-card .thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .card .ctitle,.col-card .ctitle{display:block;margin-top:.55em;font-size:1.02em;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card.focused .thumb,.col-card.focused .thumb{outline:3px solid #fff;outline-offset:3px;transform:scale(1.03)}
+.card.focused .thumb,.col-card.focused .thumb{outline:3px solid #fff;outline-offset:3px}
 .cbadge{position:absolute;top:.55em;left:.55em;z-index:2;background:rgba(0,0,0,.72);color:#fff;font-size:.82em;font-weight:700;line-height:1;padding:.35em .65em;border-radius:999px;white-space:nowrap;pointer-events:none}
 .cbadge .star{color:#ffb340}
 .card .thumb img.card-logo{position:absolute;left:.6em;bottom:.5em;z-index:2;width:auto;height:2.2em;max-width:48%;object-fit:contain;object-position:left bottom;filter:drop-shadow(0 2px 6px rgba(0,0,0,.85));pointer-events:none;visibility:hidden}
@@ -566,6 +578,7 @@ body.phone .collections{padding:5em 1em 2em}
 </svg>
 <div class="word" aria-hidden="true"><span style="--k:0">p</span><span style="--k:1">a</span><span style="--k:2">w</span><span class="f" style="--k:3">f</span><span class="f2" style="--k:4">l</span><span class="f3" style="--k:5">i</span><span class="f4" style="--k:6">x</span></div>
 </div>
+  <nav class="menu-scroll" id="menu-scroll">
   <button class="menu-btn focusable active" data-screen="home">Главная</button>
   <button class="menu-btn focusable" data-screen="collections">Коллекции</button>
   <button class="menu-btn focusable" data-screen="genres-movie">Фильмы</button>
@@ -574,6 +587,8 @@ body.phone .collections{padding:5em 1em 2em}
   <button class="menu-btn focusable" data-screen="favs">Избранное</button>
   <button class="menu-btn focusable" data-screen="settings">Настройки</button>
   <button class="menu-btn focusable" data-screen="search">Поиск</button>
+  </nav>
+  <div class="menu-clock" id="menu-clock" aria-hidden="true"><span id="clock-time"></span><span id="clock-wx" hidden><span class="wx-ico" id="wx-ico"></span><span class="wx-temp" id="wx-temp"></span><span class="wx-city">Раздельная</span></span></div>
 </header>
 <main>
   <section class="screen show" id="screen-home">
@@ -887,13 +902,59 @@ function applyMode(){document.body.classList.toggle('tv',detectTV());document.bo
 applyMode();
 let rsT=null;window.addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(applyMode,200);});
 
+/* v0.32: часы + погода в конце верхней панели (минимализм; блок — не кнопка, вне D-pad) */
+function wxIcon(code){
+  const s='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">';
+  const sun='<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/>';
+  const cloud='<path d="M7 18a4.5 4.5 0 1 1 .8-8.9A5.5 5.5 0 0 1 18.5 10 3.75 3.75 0 0 1 18 17.5H7z"/>';
+  const drops='<path d="M8 16l-1 3M12 16l-1 3M16 16l-1 3"/>';
+  const flakes='<path d="M9 16l1.5 2M12 16v3M15 16l-1.5 2"/>';
+  const bolt='<path d="M13 13l-3 4h4l-2 5"/>';
+  const fogL='<path d="M4 9h13a3 3 0 1 0-1-5.8A4.5 4.5 0 0 0 7.5 6H4z"/><path d="M4 13h16M4 17h12M4 21h8"/>';
+  const e='</svg>';
+  if(code===0) return s+sun+e;
+  if(code===1||code===2) return s+'<circle cx="17" cy="6" r="2.6"/>'+cloud+e;
+  if(code===3) return s+cloud+e;
+  if(code===45||code===48) return s+fogL+e;
+  if(code===51||code===53||code===55) return s+cloud+drops+e;
+  if(code===71||code===73||code===75||code===77||code===85||code===86) return s+cloud+flakes+e;
+  if(code===95||code===96||code===99) return s+cloud+bolt+e;
+  return s+cloud+drops+e;
+}
+/* Раздельная, Одесская область, Украина — проверено живым запросом к Open-Meteo geocoding 2026-10-29:
+   id 695344, latitude 46.85479, longitude 30.07091, timezone Europe/Kyiv. Open-Meteo — без ключа. */
+const WX_LAT=46.85479, WX_LON=30.07091;
+function tickClock(){const el=document.getElementById('clock-time');if(!el)return;const d=new Date();el.textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+async function loadWx(){
+  try{
+    const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+WX_LAT+'&longitude='+WX_LON+'&current=temperature_2m,weather_code&timezone=auto');
+    if(!r.ok) throw new Error('wx '+r.status);
+    const j=await r.json(), c=j&&j.current;
+    if(!c||typeof c.temperature_2m!=='number') throw new Error('wx empty');
+    document.getElementById('wx-ico').innerHTML=wxIcon(c.weather_code);
+    document.getElementById('wx-temp').textContent=Math.round(c.temperature_2m)+'°';
+    document.getElementById('clock-wx').hidden=false;
+  }catch(e){/* без сети погода скрыта, часы остаются */}
+}
+tickClock();setInterval(tickClock,30000);loadWx();setInterval(loadWx,30*60*1000);
+
 /* Пространственная навигация (D-pad) */
 let cur=null;
 function setFocus(el,noScroll){
   if(!el) return;
   if(cur) cur.classList.remove('focused');
   cur=el; cur.classList.add('focused');
-  if(!noScroll){try{cur.scrollIntoView({block:'nearest',inline:'nearest'});}catch(e){}}
+  if(!noScroll){
+    try{cur.scrollIntoView({block:'nearest',inline:'nearest'});}catch(e){}
+    /* v0.32: scrollIntoView(block:'nearest') ставит карточку вплотную к верху вьюпорта — под фиксированное меню (симптом (б)).
+       Сдвигаем страницу вниз, чтобы кольцо фокуса было ниже меню. Элементы внутри самого меню и фиксированных оверлеев не трогаем. */
+    try{
+      if(!cur.closest('#menu,#picker,#player-ov,#trailer-ov,#bm-menu')){
+        const m=document.getElementById('menu'), mh=m?m.offsetHeight:0, r=cur.getBoundingClientRect();
+        if(r.top<mh+8) window.scrollBy(0, r.top-mh-8);
+      }
+    }catch(e){}
+  }
 }
 /* v0.13: логотип TMDB вместо названия (как в «Кино»): logos[0], .svg → .png, fallback — текст */
 const logoCache={};
