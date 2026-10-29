@@ -281,16 +281,16 @@ body.phone .watch{padding:5.2em 1em 2em}
 .watch .back-btn{margin:0 0 1em}
 .watch-srcpills{display:flex;gap:.6em;flex-wrap:wrap;margin-bottom:1.2em}
 .watch-pill{display:inline-flex;align-items:center;background:#1e1e28;border:0;border-radius:999px;color:#fff;font-size:1em;padding:.6em 1.4em;cursor:pointer}
-.watch-pill.active{background:#ff7a29}
+.watch-pill.active{background:var(--acc,#ff7a29)}
 .watch-pill.focused{outline:3px solid #fff;outline-offset:2px}
 .watch-card{background:#1c1c26;border-radius:18px;padding:1.2em 1.4em;margin-bottom:1.4em}
 .watch-card .w-src{font-size:1.4em;font-weight:800}
 .watch-card .w-sub{color:#9aa3b5;margin-top:.35em;line-height:1.5}
-.watch-card .w-change{background:none;border:0;color:#ff7a29;font:inherit;font-weight:700;cursor:pointer;padding:0}
+.watch-card .w-change{background:none;border:0;color:var(--acc,#ff7a29);font:inherit;font-weight:700;cursor:pointer;padding:0}
 .watch-card .w-change.focused{outline:3px solid #fff;outline-offset:2px;border-radius:6px}
 .watch-seasons{display:flex;gap:.6em;flex-wrap:wrap;margin-bottom:1.4em}
 .watch-season{background:#1e1e28;border:2px solid transparent;border-radius:999px;color:#fff;font-size:1em;padding:.55em 1.2em;cursor:pointer}
-.watch-season.active{border-color:#ff7a29}
+.watch-season.active{border-color:var(--acc,#ff7a29)}
 .watch-season.focused{outline:3px solid #fff;outline-offset:2px}
 .watch-ep{position:relative;display:block;width:100%;text-align:left;background:#1c1c26;border:0;border-radius:18px;overflow:hidden;color:#fff;padding:0;margin-bottom:1em;cursor:pointer}
 .watch-ep .ep-bg{position:absolute;inset:0;background:#22222c}
@@ -300,13 +300,13 @@ body.phone .watch{padding:5.2em 1em 2em}
 /* v0.28: карточки серий выше на широких экранах (ТВ/десктоп) — кадр меньше режется; на телефоне без изменений */
 body.tv .watch-ep .ep-body{min-height:13em}
 .watch-ep .ep-top{display:flex;justify-content:space-between;align-items:center;gap:1em}
-.watch-ep .ep-kicker{color:#ff7a29;font-weight:700;letter-spacing:.06em;font-size:.9em}
+.watch-ep .ep-kicker{color:var(--acc,#ff7a29);font-weight:700;letter-spacing:.06em;font-size:.9em}
 .watch-ep .ep-dur{background:rgba(0,0,0,.75);border-radius:8px;padding:.25em .6em;font-weight:700;white-space:nowrap}
 .watch-ep .ep-title{font-size:1.25em;font-weight:800;margin:.5em 0 .3em}
 .watch-ep .ep-ov{color:#d5d8e0;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:56em}
 .watch-ep .ep-bot{display:flex;justify-content:space-between;align-items:center;margin-top:.7em}
 .watch-ep .ep-rate{color:#e8eaf0}
-.watch-ep .ep-check{width:34px;height:34px;flex:none;border-radius:50%;background:#ff7a29;color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:1.1em}
+.watch-ep .ep-check{width:34px;height:34px;flex:none;border-radius:50%;background:var(--acc,#ff7a29);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:1.1em}
 .watch-ep.focused{outline:3px solid #fff;outline-offset:2px}
 /* v0.28: карточка фильма и кнопка «Смотреть» убраны — фильмы идут старым путём, watch только для сериалов */
 .watch-status{color:#9aa3b5;font-size:1.05em;line-height:1.5;margin-bottom:1em;max-width:56em}
@@ -355,19 +355,19 @@ body.phone .framed{padding:.8em}
 .tor-screen{padding:5.5em 2em 3em}
 body.phone .tor-screen{padding:5em 1em 2em}
 .tor-screen .back-btn{margin:0 0 1.2em}
-.tor-kicker{font-size:.85em;font-weight:800;letter-spacing:2.5px;color:#8ab4f8;text-transform:uppercase;margin-bottom:.5em}
+.tor-kicker{font-size:.85em;font-weight:800;letter-spacing:2.5px;color:#17a06b;text-transform:uppercase;margin-bottom:.5em}
 .tor-screen h1{margin:0 0 .3em;font-size:2em;line-height:1.1}
 body.phone .tor-screen h1{font-size:1.5em}
 .tor-meta{color:#e8eaf0;margin-bottom:1em}
 .tor-meta .star{color:#ffb340}
-.best-btn{display:flex;align-items:center;justify-content:center;gap:.6em;width:100%;padding:1em;border:0;border-radius:18px;background:linear-gradient(135deg,#3b8cff,#7b5cff);color:#fff;font-size:1.15em;font-weight:800;letter-spacing:.2px;box-shadow:0 12px 30px rgba(70,110,255,.40),inset 0 1px 0 rgba(255,255,255,.25);margin-bottom:1em}
+.best-btn{display:flex;align-items:center;justify-content:center;gap:.6em;width:100%;padding:1em;border:0;border-radius:18px;background:linear-gradient(135deg,#17a06b,#0a4a33);color:#fff;font-size:1.15em;font-weight:800;letter-spacing:.2px;box-shadow:0 12px 30px rgba(23,160,107,.40),inset 0 1px 0 rgba(255,255,255,.25);margin-bottom:1em}
 .best-btn:active{transform:scale(.98)}
 .best-btn.focused{outline:3px solid #fff;outline-offset:2px}
 .tor-sub{color:#9aa3b5;font-size:1em;margin-bottom:1em}
 .tor-sub b{color:#fff}
 .tor-filters{display:flex;gap:.8em;flex-wrap:wrap;margin-bottom:1.2em}
 .filter-pill{display:flex;align-items:center;gap:.5em;background:#1e1e28;border:1px solid rgba(255,255,255,.10);border-radius:14px;color:#fff;font-size:1em;font-weight:700;padding:.7em 1em}
-.filter-pill .pv{color:#8ab4f8;max-width:14em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filter-pill .pv{color:#17a06b;max-width:14em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .filter-pill.focused{outline:3px solid #fff;outline-offset:2px}
 .tor-status{color:#9aa3b5;font-size:1em;line-height:1.5;margin-bottom:1em;max-width:50em}
 .tor-status.err{color:#ff9a90}
@@ -386,6 +386,9 @@ body.phone .tor-screen h1{font-size:1.5em}
 .tpill.gold{background:rgba(255,210,90,.15);color:#ffd25e;border:1px solid rgba(255,210,90,.55)}
 .tor-m{display:flex;gap:.9em;align-items:center;color:#9aa3b5;font-size:.95em;margin-top:.5em;flex-wrap:wrap}
 .tor-m .seeds{color:#7fe0b2}
+.tor-m .seeds.seed-low{color:#ff9a90}
+.tor-m .seeds.seed-mid{color:#ffb340}
+.tor-m .seeds.seed-good{color:#ffd25e}
 .tor-m .trk{margin-left:auto}
 /* Экран привязки Alpac */
 .alp-screen{padding:5.5em 2em 3em}
@@ -411,6 +414,9 @@ body.phone .alp-screen h1{font-size:1.5em}
 .pick-btn{display:block;width:100%;background:#1e1e28;border:0;border-radius:12px;color:#fff;font-size:1.05em;padding:.85em 1.1em;margin-bottom:.6em;text-align:left}
 .pick-btn .sub{display:block;color:#9aa3b5;font-size:.9em;margin-top:.2em}
 .pick-btn.focused{background:#ff7a29}
+#picker.pick-src-filmix .pick-btn.focused{background:#2a5ad0}
+#picker.pick-src-alpac .pick-btn.focused{background:#f0a832}
+#picker.pick-src-torrent .pick-btn.focused{background:#17a06b}
 /* v0.23: экран предзагрузки торрента — порт референса Denis 1:1 (блюр-постер, ведёрко, %, стадии, статистика, взрыв) */
 #screen-preload{background:#08080a;--bg:#08080a;--ink:#f4e9d6;--dim:rgba(244,233,214,.58);--track:rgba(244,233,214,.16);--amber:#f0b24a}
 #screen-preload .pl23-wrap{position:fixed;inset:0;overflow:hidden;background:#08080a;color:var(--ink);font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -1547,15 +1553,17 @@ function setTileBusy(tile,on){if(tile)tile.classList.toggle('busy',!!on);}
 
 /* Пикер */
 let pickerOpen=false, pickerOpener=null;
-function showPicker(title,items,framed){
+function showPicker(title,items,framed,src){
   const ov=$('#picker');
+  ov.classList.remove('pick-src-filmix','pick-src-alpac','pick-src-torrent');
+  if(src)ov.classList.add('pick-src-'+src);
   pickerOpener=cur;
   ov.innerHTML='<div class="picker-box'+(framed?' framed':'')+'"><h2>'+esc(title)+'</h2>'+items.map((it,i)=>'<button class="pick-btn focusable" data-pi="'+i+'">'+esc(it.label)+(it.sub?'<span class="sub">'+esc(it.sub)+'</span>':'')+'</button>').join('')+'</div>';
   ov.classList.add('open'); pickerOpen=true;
   ov.querySelectorAll('.pick-btn').forEach((b,i)=>{b.addEventListener('click',()=>{const cb=items[i].onPick;closePicker();if(cb)cb();});});
   if(detectTV()){const f=ov.querySelector('.pick-btn');if(f)setFocus(f);}
 }
-function closePicker(){const ov=$('#picker');if(!ov.classList.contains('open'))return;ov.classList.remove('open');ov.innerHTML='';pickerOpen=false;if(pickerOpener&&pickerOpener.isConnected)setFocus(pickerOpener);pickerOpener=null;}
+function closePicker(){const ov=$('#picker');if(!ov.classList.contains('open'))return;ov.classList.remove('open');ov.classList.remove('pick-src-filmix','pick-src-alpac','pick-src-torrent');ov.innerHTML='';pickerOpen=false;if(pickerOpener&&pickerOpener.isConnected)setFocus(pickerOpener);pickerOpener=null;}
 function pickerIsOpen(){return pickerOpen;}
 
 /* v0.18: меню закладок на постере — свой оверлей (пикер не трогаем). v0.20: тап переключает список и сразу закрывает меню (вердикт Denis) */
@@ -2299,7 +2307,7 @@ async function openFilmix(meta,tile,run){
     if(card){fxOpenCard(card.id,maxQ,meta,tile,run);return;}
     if(Array.isArray(res)&&res.length){
       setTileBusy(tile,false); srcStatus('');
-      showPicker('Уточните, что именно',res.slice(0,12).map(c=>({label:(c.title||c.original_title||'Вариант')+(c.year?' · '+c.year:''),onPick:()=>{setTileBusy(tile,true);fxOpenCard(c.id,maxQ,meta,tile,++srcRun);}})),true);
+      showPicker('Уточните, что именно',res.slice(0,12).map(c=>({label:(c.title||c.original_title||'Вариант')+(c.year?' · '+c.year:''),onPick:()=>{setTileBusy(tile,true);fxOpenCard(c.id,maxQ,meta,tile,++srcRun);}})),true,'filmix');
       return;
     }
     setTileBusy(tile,false); srcStatus('На Filmix ничего не нашлось.',true);
@@ -2333,9 +2341,9 @@ function fxMovieVoices(list,maxQ,meta,tile,run){
     const cl=fxCleanVoice(it.voice);
     return {label:cl.name,sub:(cl.studio?cl.studio+' · ':'')+it.q+'p',onPick:()=>{
       if(it.qs.length<=1){playUrl(fxFileUrl(it.link,it.q),meta.title,undefined,{source:'Filmix'});return;}
-      showPicker('Качество',it.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===it.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(it.link,q),meta.title,undefined,{source:'Filmix'})})),true);
+      showPicker('Качество',it.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===it.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(it.link,q),meta.title,undefined,{source:'Filmix'})})),true,'filmix');
     }};
-  }),true);
+  }),true,'filmix');
 }
 function fxSeriesFlow(playlist,maxQ,meta,tile,run){
   const seasons=Object.keys(playlist).sort((a,b)=>parseInt(a,10)-parseInt(b,10));
@@ -2362,14 +2370,14 @@ function fxSeriesFlow(playlist,maxQ,meta,tile,run){
     showPicker('Серия',epNums.map(en=>({label:'Серия '+en,onPick:()=>{
       const vs=epsMap[en];
       if(vs.length===1){const v=vs[0];fxQualityPick(v,meta);return;}
-      showPicker('Озвучка',vs.map(v=>{const cl=fxCleanVoice(v.voice);return {label:cl.name,sub:(cl.studio?cl.studio+' · ':'')+v.q+'p',onPick:()=>fxQualityPick(v,meta)};}),true);
-    }})),true);
-  }})),true);
+      showPicker('Озвучка',vs.map(v=>{const cl=fxCleanVoice(v.voice);return {label:cl.name,sub:(cl.studio?cl.studio+' · ':'')+v.q+'p',onPick:()=>fxQualityPick(v,meta)};}),true,'filmix');
+    }})),true,'filmix');
+  }})),true,'filmix');
 }
 function fxQualityPick(v,meta,ctx){
   ctx=ctx||{kind:(meta&&meta.type==='tv'?'series':'movie'),source:'filmix',meta:meta,season:null,episode:null,seasons:[],epsInSeason:[]};
   if(v.qs.length<=1){playUrl(fxFileUrl(v.link,v.q),meta.title,undefined,{source:'Filmix'},ctx);return;}
-  showPicker('Качество',v.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===v.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(v.link,q),meta.title,undefined,{source:'Filmix'},ctx)})),true);
+  showPicker('Качество',v.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===v.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(v.link,q),meta.title,undefined,{source:'Filmix'},ctx)})),true,'filmix');
 }
 
 /* ============ Alpac (порт из «Кино») ============ */
@@ -2476,7 +2484,7 @@ async function openAlpac(meta,tile,run){
     if(!srcs.length){setTileBusy(tile,false);srcStatus('На Alpac ничего не нашлось.',true);return;}
     setTileBusy(tile,false); srcStatus('');
     if(srcs.length===1){alpacLoadSource(srcs[0],meta,tile,++srcRun);return;}
-    showPicker('Источник',srcs.map(s=>({label:s.name||'Источник',sub:s.balanser||'',onPick:()=>{setTileBusy(tile,true);alpacLoadSource(s,meta,tile,++srcRun);}})),true);
+    showPicker('Источник',srcs.map(s=>({label:s.name||'Источник',sub:s.balanser||'',onPick:()=>{setTileBusy(tile,true);alpacLoadSource(s,meta,tile,++srcRun);}})),true,'alpac');
   }catch(e){
     setTileBusy(tile,false); srcStatus('Не получилось связаться с Alpac.',true);
   }
@@ -2495,24 +2503,24 @@ async function alpacLoadSource(s,meta,tile,run){
     if(videos.length){
       if(parsed.buttons.length){
         setTileBusy(tile,false); srcStatus('');
-        showPicker('Озвучка',parsed.buttons.map(b=>({label:b.title,onPick:()=>{setTileBusy(tile,true);alpacFollowVoice(b.url,meta,tile,++srcRun);}})),true);
+        showPicker('Озвучка',parsed.buttons.map(b=>({label:b.title,onPick:()=>{setTileBusy(tile,true);alpacFollowVoice(b.url,meta,tile,++srcRun);}})),true,'alpac');
         return;
       }
       if(meta.type==='tv'){
         const eps=videos.map((v,i)=>({v:v,num:(v.episode&&v.episode>0)?v.episode:(i+1)}));
         setTileBusy(tile,false); srcStatus('');
-        showPicker('Серия',eps.map(e=>({label:'Серия '+e.num+(e.v.title&&e.v.title!=='Смотреть'?' · '+e.v.title:''),onPick:()=>alpacResolve(e.v,meta,tile)})),true);
+        showPicker('Серия',eps.map(e=>({label:'Серия '+e.num+(e.v.title&&e.v.title!=='Смотреть'?' · '+e.v.title:''),onPick:()=>alpacResolve(e.v,meta,tile)})),true,'alpac');
         return;
       }
       setTileBusy(tile,false); srcStatus('');
-      showPicker('Озвучка',videos.map(v=>({label:(v.voice||v.title||'Смотреть'),onPick:()=>alpacResolve(v,meta,tile)})),true);
+      showPicker('Озвучка',videos.map(v=>({label:(v.voice||v.title||'Смотреть'),onPick:()=>alpacResolve(v,meta,tile)})),true,'alpac');
       return;
     }
     const links=parsed.items.filter(it=>it.method==='link');
     if(links.length===1){alpacFollowVoice(links[0].url,meta,tile,run);return;}
     if(parsed.items.length){
       setTileBusy(tile,false); srcStatus('');
-      showPicker('Сезон',parsed.items.map(it=>{const m=String(it.title||'').match(/\d+/);return {label:(m?m[0]+' сезон':it.title||'Сезон'),onPick:()=>{setTileBusy(tile,true);alpacFollowVoice(it.url,meta,tile,++srcRun);}};}),true);
+      showPicker('Сезон',parsed.items.map(it=>{const m=String(it.title||'').match(/\d+/);return {label:(m?m[0]+' сезон':it.title||'Сезон'),onPick:()=>{setTileBusy(tile,true);alpacFollowVoice(it.url,meta,tile,++srcRun);}};}),true,'alpac');
       return;
     }
     setTileBusy(tile,false); srcStatus('На Alpac ничего не нашлось.',true);
@@ -2532,11 +2540,11 @@ async function alpacFollowVoice(url,meta,tile,run){
     if(meta.type==='tv'){
       const eps=videos.map((v,i)=>({v:v,num:(v.episode&&v.episode>0)?v.episode:(i+1)}));
       setTileBusy(tile,false); srcStatus('');
-      showPicker('Серия',eps.map(e=>({label:'Серия '+e.num+(e.v.title&&e.v.title!=='Смотреть'?' · '+e.v.title:''),onPick:()=>alpacResolve(e.v,meta,tile)})),true);
+      showPicker('Серия',eps.map(e=>({label:'Серия '+e.num+(e.v.title&&e.v.title!=='Смотреть'?' · '+e.v.title:''),onPick:()=>alpacResolve(e.v,meta,tile)})),true,'alpac');
       return;
     }
     setTileBusy(tile,false); srcStatus('');
-    showPicker('Озвучка',videos.map(v=>({label:(v.voice||v.title||'Смотреть'),onPick:()=>alpacResolve(v,meta,tile)})),true);
+    showPicker('Озвучка',videos.map(v=>({label:(v.voice||v.title||'Смотреть'),onPick:()=>alpacResolve(v,meta,tile)})),true,'alpac');
   }catch(e){
     setTileBusy(tile,false); srcStatus('Не получилось связаться с Alpac.',true);
   }
@@ -2692,6 +2700,7 @@ function watchRender(first){
     }
   }
   box.innerHTML=html;
+  box.style.setProperty('--acc',st.source==='alpac'?'#f0a832':'#2a5ad0');
   box.querySelectorAll('[data-wsrc]').forEach(b=>b.addEventListener('click',()=>watchSetSource(b.dataset.wsrc)));
   box.querySelectorAll('[data-wseason]').forEach(b=>b.addEventListener('click',()=>watchSetSeason(b.dataset.wseason)));
   box.querySelectorAll('[data-wep]').forEach(b=>b.addEventListener('click',()=>watchPlayEpisode(parseInt(b.dataset.wep,10))));
@@ -2765,7 +2774,7 @@ async function fxWatchLoad(st){
   if(card){ await fxWatchCard(st,card.id,maxQ); return; }
   if(Array.isArray(res)&&res.length){
     st.srcLoading=false; st.msg='Выберите вариант на Filmix…'; watchRender();
-    showPicker('Уточните, что именно',res.slice(0,12).map(c=>({label:(c.title||c.original_title||'Вариант')+(c.year?' · '+c.year:''),onPick:()=>{ if(watchState!==st) return; st.srcLoading=true; st.msg=''; watchRender(); fxWatchCard(st,c.id,maxQ); }} )),true);
+    showPicker('Уточните, что именно',res.slice(0,12).map(c=>({label:(c.title||c.original_title||'Вариант')+(c.year?' · '+c.year:''),onPick:()=>{ if(watchState!==st) return; st.srcLoading=true; st.msg=''; watchRender(); fxWatchCard(st,c.id,maxQ); }} )),true,'filmix');
     return;
   }
   st.srcErr='На Filmix ничего не нашлось.';
@@ -2820,7 +2829,7 @@ async function alpWatchLoad(st){
   if(!srcs.length){ st.srcErr='На Alpac ничего не нашлось.'; return; }
   if(srcs.length===1){ await alpWatchSource(st,srcs[0]); return; }
   st.srcLoading=false; st.msg='Выберите источник…'; watchRender();
-  showPicker('Источник',srcs.map(s=>({label:s.name||'Источник',sub:s.balanser||'',onPick:()=>{ if(watchState!==st) return; st.srcLoading=true; st.msg=''; watchRender(); alpWatchSource(st,s); }} )),true);
+  showPicker('Источник',srcs.map(s=>({label:s.name||'Источник',sub:s.balanser||'',onPick:()=>{ if(watchState!==st) return; st.srcLoading=true; st.msg=''; watchRender(); alpWatchSource(st,s); }} )),true,'alpac');
 }
 async function alpWatchSource(st,s){
   const meta=st.meta;
@@ -2837,7 +2846,7 @@ async function alpWatchSource(st,s){
     if(videos.length){
       if(parsed.buttons.length){
         st.srcLoading=false; st.msg='Выберите озвучку…'; watchRender();
-        showPicker('Озвучка',parsed.buttons.map(b=>({label:b.title,onPick:()=>{ if(watchState!==st) return; st.srcLoading=true; st.msg=''; watchRender(); alpWatchVoice(st,b.url); }} )),true);
+        showPicker('Озвучка',parsed.buttons.map(b=>({label:b.title,onPick:()=>{ if(watchState!==st) return; st.srcLoading=true; st.msg=''; watchRender(); alpWatchVoice(st,b.url); }} )),true,'alpac');
         return;
       }
       st.alp={videos:videos}; st.srcLoading=false; watchRender(); return;
@@ -2846,7 +2855,7 @@ async function alpWatchSource(st,s){
     if(links.length===1){ await alpWatchVoice(st,links[0].url); return; }
     if(parsed.items.length){
       st.srcLoading=false; st.msg='Выберите сезон…'; watchRender();
-      showPicker('Сезон',parsed.items.map(it=>{const m=String(it.title||'').match(/\d+/);return {label:(m?m[0]+' сезон':it.title||'Сезон'),onPick:()=>{ if(watchState!==st) return; st.srcLoading=true; st.msg=''; watchRender(); alpWatchVoice(st,it.url); }};}),true);
+      showPicker('Сезон',parsed.items.map(it=>{const m=String(it.title||'').match(/\d+/);return {label:(m?m[0]+' сезон':it.title||'Сезон'),onPick:()=>{ if(watchState!==st) return; st.srcLoading=true; st.msg=''; watchRender(); alpWatchVoice(st,it.url); }};}),true,'alpac');
       return;
     }
     st.srcErr='На Alpac ничего не нашлось.'; st.srcLoading=false; watchRender();
@@ -2892,7 +2901,7 @@ function watchPlayEpisode(epNum,auto){
     const ctx=watchPlayCtx(st,epNum);
     if(vs.length===1){st.fxVoice=vs[0].voice;fxQualityPick(vs[0],meta,ctx);return;}
     if(auto){const pick=vs.find(v=>v.voice===st.fxVoice)||vs[0];st.fxVoice=pick.voice;fxQualityPick(pick,meta,ctx);return;}
-    showPicker('Озвучка',vs.map(v=>{const cl=fxCleanVoice(v.voice);return {label:cl.name,sub:(cl.studio?cl.studio+' · ':'')+v.q+'p',onPick:()=>{st.fxVoice=v.voice;fxQualityPick(v,meta,ctx);}};}),true);
+    showPicker('Озвучка',vs.map(v=>{const cl=fxCleanVoice(v.voice);return {label:cl.name,sub:(cl.studio?cl.studio+' · ':'')+v.q+'p',onPick:()=>{st.fxVoice=v.voice;fxQualityPick(v,meta,ctx);}};}),true,'filmix');
     return;
   }
   if(st.source==='alpac'){
@@ -2903,7 +2912,7 @@ function watchPlayEpisode(epNum,auto){
     const ctx=watchPlayCtx(st,epNum);
     if(vs.length===1){st.alpVoice=vs[0].voice;alpacResolve(vs[0],meta,null,true,ctx);return;}
     if(auto){const pick=vs.find(v=>v.voice===st.alpVoice)||vs[0];st.alpVoice=pick.voice;alpacResolve(pick,meta,null,true,ctx);return;}
-    showPicker('Озвучка',vs.map(v=>({label:(v.voice||v.title||'Смотреть'),onPick:()=>{st.alpVoice=v.voice;alpacResolve(v,meta,null,true,ctx);}})),true);
+    showPicker('Озвучка',vs.map(v=>({label:(v.voice||v.title||'Смотреть'),onPick:()=>{st.alpVoice=v.voice;alpacResolve(v,meta,null,true,ctx);}})),true,'alpac');
     return;
   }
 }
@@ -3109,6 +3118,7 @@ async function torSearch(focusFirst){
     $('#tor-empty').textContent='Парсеры не отвечают.'; $('#tor-empty').style.display='block';
   }
 }
+function torSeedTier(n){return n<5?'seed-low':n<10?'seed-mid':n<20?'seed-good':'';}
 function torRender(focusFirst){
   const st=torState; if(!st) return;
   const meta=st.meta;
@@ -3129,7 +3139,7 @@ function torRender(focusFirst){
     return '<button class="tor-card focusable'+(p.premium?' premium':'')+'" data-i="'+i+'" title="'+esc(t.title).replace(/"/g,'&quot;')+'">'+
       '<span class="tor-t">'+esc(torNiceTitle(t,meta))+'</span>'+
       torPills(t,best&&t===best)+
-      '<span class="tor-m"><span>'+fmtSize(t.size)+'</span><span class="seeds">● '+(t.seeders||0)+'</span><span class="trk">'+esc(t.tracker||'')+'</span></span></button>';
+      '<span class="tor-m"><span>'+fmtSize(t.size)+'</span><span class="seeds '+torSeedTier(t.seeders||0)+'">● '+(t.seeders||0)+'</span><span class="trk">'+esc(t.tracker||'')+'</span></span></button>';
   }).join('');
   if(focusFirst&&detectTV()){const f=list.querySelector('.focusable');if(f)setFocus(f);}
 }
@@ -3164,7 +3174,7 @@ async function playTorrent(t,meta,tile){
     }
     if(files&&files.length>1){
       files.sort((a,b)=>(b.size||0)-(a.size||0));
-      showPicker('Файл',files.map(f=>({label:f.name,sub:f.size?fmtSize(f.size):'',onPick:()=>openPreload(tsStreamURL(ts,hash,f.id,f.name||t.title),hash,meta,f.name||t.title,f.size||0)})));
+      showPicker('Файл',files.map(f=>({label:f.name,sub:f.size?fmtSize(f.size):'',onPick:()=>openPreload(tsStreamURL(ts,hash,f.id,f.name||t.title),hash,meta,f.name||t.title,f.size||0)})),true,'torrent');
       return;
     }
     playUrl(tsStreamURL(ts,t.magnet,1,t.title),meta.title,undefined,{source:'Torrent',file:t.title},{kind:(meta.type==='tv'?'series':'movie'),source:'torrent',meta:meta});
@@ -3467,12 +3477,12 @@ $('#pl-watch').addEventListener('click',plPlay);
 $('#tor-back').addEventListener('click',goBack);
 $('#tor-sort-pill').addEventListener('click',function(){
   if(!torState) return;
-  showPicker('Сортировка',TOR_SORTS.map(function(s){return {label:s.t,onPick:function(){torState.sort=s.id;torRender(false);}};}));
+  showPicker('Сортировка',TOR_SORTS.map(function(s){return {label:s.t,onPick:function(){torState.sort=s.id;torRender(false);}};}),true,'torrent');
 });
 $('#tor-qmode-pill').addEventListener('click',function(){
   if(!torState) return;
   const curQ=torQmode();
-  showPicker('Режим поиска',TOR_QMODES.map(function(o){return {label:o.t+(o.id===curQ?' · текущий':''),onPick:function(){setS('prostokino.tor_qmode',o.id);torState.sort='top';torSearch(false);}};}));
+  showPicker('Режим поиска',TOR_QMODES.map(function(o){return {label:o.t+(o.id===curQ?' · текущий':''),onPick:function(){setS('prostokino.tor_qmode',o.id);torState.sort='top';torSearch(false);}};}),true,'torrent');
 });
 
 
