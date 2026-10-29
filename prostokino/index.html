@@ -110,6 +110,24 @@ body.tv .tiles{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
 body.phone .tiles{grid-template-columns:1fr 1fr;padding:5em 1em 2em}
 .tile{background:#1e1e28;border:0;border-radius:16px;color:#fff;font-size:1.15em;padding:1.2em .5em;text-align:center}
 .tile.focused{outline:3px solid #fff;outline-offset:2px}
+/* v0.15: каталоги + фильтры */
+.cat-toolbar{display:flex;gap:.8em;align-items:center;padding:5.5em 2em 0;flex-wrap:wrap}
+body.phone .cat-toolbar{padding:5em 1em 0}
+.cat-btn{display:inline-flex;align-items:center;gap:.5em;background:#26262e;border:0;border-radius:999px;color:#fff;font-size:1em;padding:.6em 1.4em}
+.cat-btn svg{width:1.15em;height:1.15em;flex:none}
+.cat-btn.focused{background:#ff7a29}
+.cat-sentinel{height:8px}
+.catfilter{padding:5.5em 2em 3em;max-width:52em}
+body.phone .catfilter{padding:5em 1em 2em}
+.catfilter h2{margin:0 0 1em;font-size:1.5em}
+.cf-block{margin-bottom:1.5em}
+.cf-title{font-size:1.05em;font-weight:700;margin-bottom:.6em;color:#d5d8e0}
+.cf-row{display:flex;gap:.6em;flex-wrap:wrap;align-items:center}
+.cf-opt{background:#1e1e28;border:0;border-radius:999px;color:#fff;font-size:1em;padding:.55em 1.2em}
+.cf-opt.on{background:#ff7a29}
+.cf-opt.focused{outline:3px solid #fff;outline-offset:2px}
+.cf-btns{display:flex;gap:.8em;flex-wrap:wrap;margin-top:2em}
+.field-sm{width:auto;min-width:9em}
 /* Кнопки, поля, тексты */
 .back-btn{margin:5em 0 0 2em;background:#26262e;border:0;border-radius:999px;color:#fff;font-size:1em;padding:.6em 1.4em}
 body.phone .back-btn{margin:4.5em 0 0 1em}
@@ -402,9 +420,37 @@ body.phone .alp-screen h1{font-size:1.5em}
     </div>
     <div class="rows" id="home-rows"></div>
   </section>
-  <section class="screen" id="screen-genres-movie"><div class="tiles" id="tiles-movie"></div></section>
-  <section class="screen" id="screen-genres-tv"><div class="tiles" id="tiles-tv"></div></section>
-  <section class="screen" id="screen-genres-anim"><div class="tiles" id="tiles-anim"></div></section>
+  <section class="screen" id="screen-genres-movie">
+    <div class="cat-toolbar">
+      <button class="cat-btn focusable" id="cat-filter-movie"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h9M17 8h3M4 16h3M11 16h9"/><circle cx="15" cy="8" r="2.2"/><circle cx="9" cy="16" r="2.2"/></svg><span>Фильтры</span></button>
+      <button class="cat-btn focusable" id="cat-sort-movie"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Популярные</span></button>
+    </div>
+    <div class="loader" id="cat-loader-movie"></div>
+    <div class="grid" id="cat-grid-movie"></div>
+    <div class="cat-sentinel" id="cat-sentinel-movie"></div>
+    <div class="loader" id="cat-more-movie" style="display:none"></div>
+  </section>
+  <section class="screen" id="screen-genres-tv">
+    <div class="cat-toolbar">
+      <button class="cat-btn focusable" id="cat-filter-tv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h9M17 8h3M4 16h3M11 16h9"/><circle cx="15" cy="8" r="2.2"/><circle cx="9" cy="16" r="2.2"/></svg><span>Фильтры</span></button>
+      <button class="cat-btn focusable" id="cat-sort-tv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Популярные</span></button>
+    </div>
+    <div class="loader" id="cat-loader-tv"></div>
+    <div class="grid" id="cat-grid-tv"></div>
+    <div class="cat-sentinel" id="cat-sentinel-tv"></div>
+    <div class="loader" id="cat-more-tv" style="display:none"></div>
+  </section>
+  <section class="screen" id="screen-genres-anim">
+    <div class="cat-toolbar">
+      <button class="cat-btn focusable" id="cat-filter-anim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h9M17 8h3M4 16h3M11 16h9"/><circle cx="15" cy="8" r="2.2"/><circle cx="9" cy="16" r="2.2"/></svg><span>Фильтры</span></button>
+      <button class="cat-btn focusable" id="cat-sort-anim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Популярные</span></button>
+    </div>
+    <div class="loader" id="cat-loader-anim"></div>
+    <div class="grid" id="cat-grid-anim"></div>
+    <div class="cat-sentinel" id="cat-sentinel-anim"></div>
+    <div class="loader" id="cat-more-anim" style="display:none"></div>
+  </section>
+  <section class="screen" id="screen-catfilter"><div class="catfilter" id="catfilter-box"></div></section>
   <section class="screen" id="screen-list">
     <div class="list-bg" id="list-bg"><img id="list-bg-img" alt="" onerror="this.style.display='none'"><div class="list-bg-shade"></div></div>
     <button class="back-btn focusable" id="list-back">← Назад</button>
@@ -702,9 +748,9 @@ function showScreen(id,push){
   if(MENU_MAIN[id]) $$('.menu-btn').forEach(b=>b.classList.toggle('active',b.dataset.screen===id));
   window.scrollTo(0,0);
   if(id==='home'&&!homeLoaded) loadHome();
-  if(id==='genres-movie') loadGenreTiles('movie');
-  if(id==='genres-tv') loadGenreTiles('tv');
-  if(id==='genres-anim') loadGenreTiles('anim');
+  if(id==='genres-movie') openCatalog('movie');
+  if(id==='genres-tv') openCatalog('tv');
+  if(id==='genres-anim') openCatalog('anim');
   if(id==='favs') renderFavs();
   if(id==='settings'){populateSettings();}
   if(detectTV()){
@@ -720,6 +766,10 @@ $('#list-back').addEventListener('click',goBack);
 $('#alp-back').addEventListener('click',()=>{stopAlpacPoll();alpAuthCtx=null;goBack();});
 $('#alp-refresh').addEventListener('click',()=>{const ctx=alpAuthCtx;if(!ctx)return;stopAlpacPoll();alpAuthCtx=null;openAlpac(ctx.meta,ctx.tile,++srcRun);});
 $$('.menu-btn').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));
+['movie','tv','anim'].forEach(k=>{
+  $('#cat-filter-'+k).addEventListener('click',()=>openCatFilter(k));
+  $('#cat-sort-'+k).addEventListener('click',()=>openCatSort(k));
+});
 $('#nokey-goto').addEventListener('click',()=>showScreen('settings'));
 
 /* TMDB */
@@ -759,8 +809,6 @@ document.addEventListener('click',e=>{
   if(sim){openSimilarList(sim.dataset.type,sim.dataset.id);return;}
   const pill=e.target.closest?e.target.closest('.more-pill'):null;
   if(pill){openGenreList(pill.dataset.type,pill.dataset.genre,pill.dataset.name,pill.dataset.anim==='1');return;}
-  const tile=e.target.closest?e.target.closest('.tile'):null;
-  if(tile){openGenreList(tile.dataset.type,tile.dataset.genre,tile.dataset.name,tile.dataset.anim==='1');return;}
   const ps=e.target.closest?e.target.closest('.cast-item,.dir-item'):null;
   if(ps){openPerson(ps.dataset.person);return;}
   const tc=e.target.closest?e.target.closest('.tor-card'):null;
@@ -835,20 +883,147 @@ async function loadHome(){
   }
 }
 
-/* Страницы жанров */
-const tilesLoaded={};
-async function loadGenreTiles(kind){
-  if(tilesLoaded[kind]) return;
-  const box=kind==='movie'?$('#tiles-movie'):kind==='tv'?$('#tiles-tv'):$('#tiles-anim');
-  if(!hasKey()){box.innerHTML='<div class="empty">Добавьте TMDB-ключ в Настройках — без него каталог не загрузится.</div>';return;}
-  box.innerHTML='<div class="loader">Загружаю…</div>';
+/* v0.15: каталоги Фильмы/Сериалы/Мультфильмы (вместо одних категорий).
+   Сетка постеров + бесконечная подгрузка (20 = страница TMDB, догрузка по скроллу
+   через IntersectionObserver, как списки жанров). Карточки — обычный cardHTML
+   (пилюли ★/год как везде, БЕЗ логотипов — они только в рядах главной).
+   Честные ограничения: рейтингов КиноПоиска/IMDb в TMDB нет — их в фильтрах нет,
+   только рейтинг TMDB; фильтра по качеству (FHD/4K/TS) нет — качество это свойство
+   источников, а не каталога. */
+const CAT_SORTS=[
+  {key:'pop',label:'Популярные',by:'popularity.desc'},
+  {key:'date',label:'По дате выхода',by:null},
+  {key:'rate',label:'По рейтингу',by:'vote_average.desc'}
+];
+const CAT_KIND_NAME={movie:'Фильмы',tv:'Сериалы',anim:'Мультфильмы'};
+function catDefault(kind){return {kind:kind,sort:'pop',genres:[],yearFrom:'',yearTo:'',minRating:'',page:1,totalPages:1,loading:false,done:false,loaded:false,loadError:false};}
+const catState={movie:catDefault('movie'),tv:catDefault('tv'),anim:catDefault('anim')};
+let catCurrent='movie', catObserver=null, catGenres={movie:null,tv:null};
+function catEls(kind){return {grid:$('#cat-grid-'+kind),loader:$('#cat-loader-'+kind),more:$('#cat-more-'+kind),sentinel:$('#cat-sentinel-'+kind),filterBtn:$('#cat-filter-'+kind),sortBtn:$('#cat-sort-'+kind)};}
+function catSortLabel(st){const f=CAT_SORTS.find(x=>x.key===st.sort);return f?f.label:'Популярные';}
+function catSortBy(st){
+  if(st.sort==='date') return st.kind==='tv'?'first_air_date.desc':'primary_release_date.desc';
+  const f=CAT_SORTS.find(x=>x.key===st.sort); return f&&f.by?f.by:'popularity.desc';
+}
+function catFilterCount(st){return st.genres.length+((st.yearFrom||st.yearTo)?1:0)+(st.minRating?1:0);}
+function catRenderToolbar(kind){
+  const st=catState[kind], el=catEls(kind), n=catFilterCount(st);
+  el.filterBtn.querySelector('span').textContent=n?('Фильтры ('+n+')'):'Фильтры';
+  el.sortBtn.querySelector('span').textContent=catSortLabel(st);
+}
+function catParams(st){
+  const p={sort_by:catSortBy(st),page:st.page};
+  if(st.sort==='rate') p['vote_count.gte']=100;
+  let gs=st.genres.map(String);
+  if(st.kind==='anim') gs=['16'].concat(gs.filter(g=>g!=='16'));
+  gs=[...new Set(gs)];
+  if(gs.length) p.with_genres=gs.join(',');
+  const df=st.kind==='tv'?'first_air_date':'primary_release_date';
+  if(st.yearFrom) p[df+'.gte']=st.yearFrom+'-01-01';
+  if(st.yearTo) p[df+'.lte']=st.yearTo+'-12-31';
+  if(st.minRating) p['vote_average.gte']=st.minRating;
+  return p;
+}
+async function catLoadPage(kind){
+  const st=catState[kind]; if(!st||st.loading||st.done) return;
+  st.loading=true;
+  const el=catEls(kind);
+  if(st.page>1){el.more.style.display='block';el.more.textContent='Загружаю ещё…';}
   try{
-    const d=await api(kind==='tv'?'/genre/tv/list':'/genre/movie/list');
-    if(kind==='tv') d.genres.forEach(g=>{});
-    box.innerHTML=d.genres.map(g=>'<button class="tile focusable" data-type="'+(kind==='tv'?'tv':'movie')+'" data-genre="'+g.id+'" data-name="'+esc(g.name)+'" data-anim="'+(kind==='anim'?'1':'0')+'">'+esc(g.name)+'</button>').join('');
-    tilesLoaded[kind]=true;
+    const d=await api(st.kind==='tv'?'/discover/tv':'/discover/movie',catParams(st));
+    st.totalPages=d.total_pages||1;
+    const items=d.results||[];
+    const type=st.kind==='tv'?'tv':'movie';
+    if(st.page===1){
+      el.loader.textContent='';
+      el.grid.innerHTML=items.length?items.map(it=>cardHTML(it,type)).join(''):'<div class="empty">Ничего не найдено</div>';
+    }else{
+      el.grid.insertAdjacentHTML('beforeend',items.map(it=>cardHTML(it,type)).join(''));
+    }
+    st.page++;
+    if(st.page>st.totalPages) st.done=true;
   }catch(e){
-    box.innerHTML='<div class="empty">Не удалось загрузить жанры — проверьте TMDB-ключ в Настройках.</div>';
+    if(st.page===1){el.loader.textContent='Ошибка загрузки — проверьте TMDB-ключ в Настройках.';st.loadError=true;}
+    st.done=true;
+  }
+  st.loading=false;
+  el.more.style.display='none';
+  if(st.done&&catObserver) catObserver.disconnect();
+}
+function catObserve(){
+  if(catObserver) catObserver.disconnect();
+  catObserver=new IntersectionObserver(entries=>{
+    if(entries.some(en=>en.isIntersecting)) catLoadPage(catCurrent);
+  },{rootMargin:'400px'});
+  const s=catEls(catCurrent).sentinel;
+  if(s) catObserver.observe(s);
+}
+async function catReload(kind){
+  const st=catState[kind], el=catEls(kind);
+  if(catObserver) catObserver.disconnect();
+  st.page=1; st.totalPages=1; st.done=false; st.loading=false; st.loadError=false;
+  el.grid.innerHTML=''; el.more.style.display='none'; el.more.textContent='';
+  el.loader.textContent='Загружаю…';
+  await catLoadPage(kind);
+  st.loaded=!st.loadError;
+  if(!st.done) catObserve();
+}
+async function openCatalog(kind){
+  catCurrent=kind;
+  const st=catState[kind], el=catEls(kind);
+  if(catObserver) catObserver.disconnect();
+  catRenderToolbar(kind);
+  if(st.loaded){catObserve();return;}
+  if(!hasKey()){el.loader.textContent='Добавьте TMDB-ключ в Настройках — без него каталог не загрузится.';el.grid.innerHTML='';return;}
+  await catReload(kind);
+}
+function openCatSort(kind){
+  const st=catState[kind];
+  showPicker('Сортировка',CAT_SORTS.map(s=>({label:s.label,onPick:async()=>{st.sort=s.key;catRenderToolbar(kind);await catReload(kind);}})));
+}
+async function catGetGenres(kind){
+  const gk=kind==='tv'?'tv':'movie';
+  if(catGenres[gk]) return catGenres[gk];
+  const d=await api('/genre/'+gk+'/list');
+  catGenres[gk]=d.genres||[];
+  return catGenres[gk];
+}
+function catYearOptions(){
+  const y=new Date().getFullYear()+1;
+  let h='<option value="">Любой</option>';
+  for(let yy=y;yy>=1900;yy--) h+='<option value="'+yy+'">'+yy+'</option>';
+  return h;
+}
+let catFilterDraft=null, catFilterKind='movie';
+async function openCatFilter(kind){
+  catFilterKind=kind;
+  const st=catState[kind];
+  catFilterDraft={sort:st.sort,genres:st.genres.slice(),yearFrom:st.yearFrom,yearTo:st.yearTo,minRating:st.minRating};
+  const box=$('#catfilter-box');
+  box.innerHTML='<div class="loader">Загружаю…</div>';
+  showScreen('catfilter');
+  try{
+    let genres=await catGetGenres(kind);
+    if(kind==='anim') genres=genres.filter(g=>g.id!==16);
+    const d=catFilterDraft;
+    let h='<button class="back-btn focusable" id="cf-back">← Назад</button>';
+    h+='<h2>Фильтры · '+CAT_KIND_NAME[kind]+'</h2>';
+    h+='<div class="cf-block"><div class="cf-title">Сортировка</div><div class="cf-row">'+CAT_SORTS.map(s=>'<button class="cf-opt focusable'+(d.sort===s.key?' on':'')+'" data-sort="'+s.key+'">'+s.label+'</button>').join('')+'</div></div>';
+    h+='<div class="cf-block"><div class="cf-title">Жанры</div><div class="cf-row">'+genres.map(g=>'<button class="cf-opt focusable'+(d.genres.indexOf(String(g.id))>=0?' on':'')+'" data-genre="'+g.id+'">'+esc(g.name)+'</button>').join('')+'</div></div>';
+    h+='<div class="cf-block"><div class="cf-title">Год выпуска</div><div class="cf-row"><span>от</span><select class="field field-sm focusable" id="cf-year-from">'+catYearOptions()+'</select><span>до</span><select class="field field-sm focusable" id="cf-year-to">'+catYearOptions()+'</select></div></div>';
+    h+='<div class="cf-block"><div class="cf-title">Рейтинг TMDB не ниже</div><select class="field field-sm focusable" id="cf-min-rating"><option value="">Любой</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option></select></div>';
+    h+='<div class="cf-btns"><button class="save-btn focusable" id="cf-apply">Показать результаты</button><button class="cat-btn focusable" id="cf-reset">Сбросить</button></div>';
+    box.innerHTML=h;
+    $('#cf-year-from').value=d.yearFrom; $('#cf-year-to').value=d.yearTo; $('#cf-min-rating').value=d.minRating;
+    box.querySelectorAll('[data-sort]').forEach(b=>b.addEventListener('click',()=>{box.querySelectorAll('[data-sort]').forEach(x=>x.classList.remove('on'));b.classList.add('on');d.sort=b.dataset.sort;}));
+    box.querySelectorAll('[data-genre]').forEach(b=>b.addEventListener('click',()=>{const id=b.dataset.genre;const i=d.genres.indexOf(id);if(i>=0){d.genres.splice(i,1);b.classList.remove('on');}else{d.genres.push(id);b.classList.add('on');}}));
+    $('#cf-back').addEventListener('click',()=>{goBack();});
+    $('#cf-apply').addEventListener('click',async()=>{d.yearFrom=$('#cf-year-from').value;d.yearTo=$('#cf-year-to').value;d.minRating=$('#cf-min-rating').value;const t=catState[kind];t.sort=d.sort;t.genres=d.genres.slice();t.yearFrom=d.yearFrom;t.yearTo=d.yearTo;t.minRating=d.minRating;catRenderToolbar(kind);goBack();await catReload(kind);});
+    $('#cf-reset').addEventListener('click',async()=>{catState[kind]=catDefault(kind);catRenderToolbar(kind);goBack();await catReload(kind);});
+    if(detectTV()){const f=box.querySelector('.focusable');if(f)setFocus(f);}
+  }catch(e){
+    box.innerHTML='<div class="empty">Не удалось загрузить жанры — проверьте TMDB-ключ в Настройках.</div><button class="back-btn focusable" id="cf-back">← Назад</button>';
+    $('#cf-back').addEventListener('click',()=>{goBack();});
   }
 }
 
@@ -938,7 +1113,7 @@ function saveSettings(){
   setS('prostokino.jac_key',$('#jac-key').value.trim());
   const qm=$('#tor-qmode'); if(qm) setS('prostokino.tor_qmode',qm.value);
   $('#tmdb-status').textContent='Сохранено ✓';
-  homeLoaded=false; tilesLoaded.movie=false; tilesLoaded.tv=false; tilesLoaded.anim=false;
+  homeLoaded=false;
   if(getKey()) loadHome();
 }
 function populateSettings(){
