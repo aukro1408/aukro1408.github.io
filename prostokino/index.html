@@ -135,6 +135,28 @@ body.phone .back-btn{margin:4.5em 0 0 1em}
 .fav-btn{background:#26262e;border:0;border-radius:999px;color:#fff;font-size:1.05em;padding:.7em 1.6em}
 .fav-btn.in{background:#ff7a29}
 .fav-btn.focused{outline:3px solid #fff;outline-offset:2px}
+/* v0.18: круглая кнопка закладок справа сверху на постере + меню списков + табы «Избранного» */
+.bm-btn{position:absolute;top:4.7em;right:1.4em;z-index:3;width:3.1em;height:3.1em;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+body.phone .bm-btn{top:4.2em;right:1em}
+.bm-btn svg{width:1.5em;height:1.5em;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
+.bm-btn.on{background:#ff7a29;border-color:#ff7a29}
+.bm-btn.on svg{fill:#fff}
+.bm-btn.focused{outline:3px solid #fff;outline-offset:2px}
+#bm-menu{position:fixed;inset:0;z-index:200;display:none;background:rgba(0,0,0,.78);overflow-y:auto}
+#bm-menu.open{display:block}
+.bm-box{max-width:30em;margin:6em auto 3em;padding:0 1em}
+.bm-box h2{margin:0 0 .8em;font-size:1.4em}
+.bm-item{display:flex;align-items:center;gap:.7em;width:100%;background:#1e1e28;border:1px solid transparent;border-radius:12px;color:#fff;font-size:1.1em;padding:.9em 1.1em;margin-bottom:.6em;text-align:left}
+.bm-item .bm-check{margin-left:auto;font-weight:800;color:#8be9a4;visibility:hidden}
+.bm-item.on{border-color:rgba(255,122,41,.6)}
+.bm-item.on .bm-check{visibility:visible}
+.bm-item.focused{background:#ff7a29}
+.bm-item.focused .bm-check{color:#fff}
+.fav-tabs{display:flex;gap:.6em;flex-wrap:wrap;padding:5.5em 2em 0}
+body.phone .fav-tabs{padding:5em 1em 0}
+.fav-tab{background:#1e1e28;border:0;border-radius:999px;color:#fff;font-size:1em;padding:.6em 1.4em}
+.fav-tab.on{background:#ff7a29}
+.fav-tab.focused{outline:3px solid #fff;outline-offset:2px}
 .save-btn{background:#ff7a29;border:0;border-radius:999px;color:#fff;font-size:1.05em;padding:.7em 1.8em}
 .save-btn.focused{outline:3px solid #fff;outline-offset:2px}
 .field{background:#1e1e28;border:1px solid #33333f;border-radius:12px;color:#fff;font-size:1.05em;padding:.8em 1em;width:min(28em,90vw)}
@@ -490,9 +512,13 @@ body.phone .pl-actions{bottom:1.4em}
     <div class="loader" id="list-more" style="display:none"></div>
   </section>
   <section class="screen" id="screen-favs">
-    <div style="padding-top:5em"></div>
+    <div class="fav-tabs" id="fav-tabs">
+      <button class="fav-tab focusable" data-tab="like">❤ Нравится</button>
+      <button class="fav-tab focusable" data-tab="later">🕐 Позже</button>
+      <button class="fav-tab focusable" data-tab="fav">🔖 Избранное</button>
+    </div>
     <div class="grid" id="favs-grid"></div>
-    <div class="empty" id="favs-empty" style="display:none">Пока пусто. Добавляйте кнопкой «В избранное» на карточке фильма.</div>
+    <div class="empty" id="favs-empty" style="display:none">Пока пусто. Добавляйте кнопкой закладки на постере фильма.</div>
   </section>
   <section class="screen" id="screen-settings">
     <div class="settings">
@@ -602,6 +628,7 @@ body.phone .pl-actions{bottom:1.4em}
   </section>
 </main>
 <div id="picker"></div>
+<div id="bm-menu"></div>
 <div id="player-ov">
   <div class="pl-stage" id="plStage">
     <video id="plVideo" playsinline preload="metadata"></video>
@@ -648,6 +675,9 @@ body.phone .pl-actions{bottom:1.4em}
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 const LS_KEY='prostokino.tmdb_key', LS_FAV='prostokino.favs';
+const LS_LIKE='prostokino.likes', LS_LATER='prostokino.later';
+/* v0.18: три списка закладок; старый единый prostokino.favs без миграции становится категорией «Избранное» */
+const BM_LISTS=[{key:'like',ls:LS_LIKE,label:'Нравится',icon:'❤'},{key:'later',ls:LS_LATER,label:'Позже',icon:'🕐'},{key:'fav',ls:LS_FAV,label:'Избранное',icon:'🔖'}];
 const TMDB='https://api.themoviedb.org/3', IMG='https://image.tmdb.org/t/p';
 let genreMovie={}, currentScreen='home', hist=[];
 const HOME_GENRES=[['28','Боевики'],['35','Комедии'],['18','Драмы'],['878','Фантастика'],['53','Триллеры']];
@@ -656,9 +686,14 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;',
 function getKey(){return (localStorage.getItem(LS_KEY)||'').trim();}
 function hasKey(){return !!getKey();}
 function imgUrl(p,size){return p?IMG+'/'+size+p:'';}
-function getFavs(){try{return JSON.parse(localStorage.getItem(LS_FAV)||'[]');}catch(e){return [];}}
-function setFavs(f){localStorage.setItem(LS_FAV,JSON.stringify(f));}
+function getList(ls){try{return JSON.parse(localStorage.getItem(ls)||'[]');}catch(e){return [];}}
+function setList(ls,a){localStorage.setItem(ls,JSON.stringify(a));}
+function getFavs(){return getList(LS_FAV);}
+function setFavs(f){setList(LS_FAV,f);}
 function isFav(type,id){return getFavs().some(f=>f.type===type&&String(f.id)===String(id));}
+function inList(ls,type,id){return getList(ls).some(f=>f.type===type&&String(f.id)===String(id));}
+function anyBm(type,id){return BM_LISTS.some(l=>inList(l.ls,type,id));}
+function toggleBm(ls,item){const a=getList(ls);const i=a.findIndex(x=>x.type===item.type&&String(x.id)===String(item.id));if(i>=0)a.splice(i,1);else a.push(item);setList(ls,a);return i<0;}
 
 /* ТВ или телефон — автоматически */
 function detectTV(){
@@ -786,7 +821,7 @@ document.addEventListener('keydown',e=>{
       e.preventDefault();
     }
   }
-  else if(k==='Escape'){if(iframeIsOpen()){closeIframeOverlay();}else if(playerIsOpen()){closeBuiltInPlayer();}else if(pickerIsOpen()){closePicker();}else{goBack();}e.preventDefault();}
+  else if(k==='Escape'){if(iframeIsOpen()){closeIframeOverlay();}else if(playerIsOpen()){closeBuiltInPlayer();}else if(pickerIsOpen()){closePicker();}else if(bmMenuIsOpen()){closeBmMenu();}else{goBack();}e.preventDefault();}
 });
 
 /* Экраны */
@@ -1147,13 +1182,18 @@ async function openGenreList(type,genreId,genreName,animOnly){
   if(listState&&!listState.done) listObserve();
 }
 
-/* Избранное */
+/* Избранное v0.18: три категории-таба; по умолчанию — «Избранное» (туда попал старый единый список) */
+let favTab='fav';
 function renderFavs(){
   const grid=$('#favs-grid'), empty=$('#favs-empty');
-  const f=getFavs();
+  $$('#fav-tabs .fav-tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===favTab));
+  const list=BM_LISTS.find(l=>l.key===favTab)||BM_LISTS[2];
+  const f=getList(list.ls);
   empty.style.display=f.length?'none':'block';
+  empty.textContent='Пока пусто в «'+list.label+'». Добавляйте кнопкой закладки на постере фильма.';
   grid.innerHTML=f.map(x=>cardHTML({id:x.id,title:x.title,backdrop_path:x.backdrop,poster_path:x.poster,vote_average:x.rating},x.type)).join('');
 }
+$$('#fav-tabs .fav-tab').forEach(b=>b.addEventListener('click',()=>{favTab=b.dataset.tab;renderFavs();}));
 
 /* Настройки: TMDB-ключ + источники */
 function saveSettings(){
@@ -1227,6 +1267,41 @@ function showPicker(title,items,framed){
 }
 function closePicker(){const ov=$('#picker');if(!ov.classList.contains('open'))return;ov.classList.remove('open');ov.innerHTML='';pickerOpen=false;if(pickerOpener&&pickerOpener.isConnected)setFocus(pickerOpener);pickerOpener=null;}
 function pickerIsOpen(){return pickerOpen;}
+
+/* v0.18: меню закладок на постере — свой оверлей (пикер не трогаем: тут тап — переключатель, меню не закрывается) */
+let bmMenuOpen=false, bmMenuOpener=null, bmMenuItem=null;
+function bmMenuIsOpen(){return bmMenuOpen;}
+function renderBmMenu(){
+  const ov=$('#bm-menu');
+  ov.innerHTML='<div class="bm-box"><h2>Закладки</h2>'+BM_LISTS.map(l=>{
+    const on=inList(l.ls,bmMenuItem.type,bmMenuItem.id);
+    return '<button class="bm-item focusable'+(on?' on':'')+'" data-bm="'+l.key+'"><span>'+l.icon+' '+l.label+'</span><span class="bm-check">✓</span></button>';
+  }).join('')+'</div>';
+  ov.querySelectorAll('.bm-item').forEach(b=>{b.addEventListener('click',()=>{
+    const l=BM_LISTS.find(x=>x.key===b.dataset.bm); if(!l) return;
+    toggleBm(l.ls,bmMenuItem);
+    renderBmMenu();
+    const btn=$('#bm-btn'); if(btn) btn.classList.toggle('on',anyBm(bmMenuItem.type,bmMenuItem.id));
+    if(detectTV()){const nb=ov.querySelector('[data-bm="'+l.key+'"]'); if(nb) setFocus(nb);}
+  });});
+}
+function openBmMenu(item,opener){
+  bmMenuItem=item; bmMenuOpener=opener||cur;
+  const ov=$('#bm-menu');
+  renderBmMenu();
+  ov.classList.add('open'); bmMenuOpen=true;
+  if(detectTV()){const f=ov.querySelector('.bm-item'); if(f) setFocus(f);}
+}
+function closeBmMenu(){
+  const ov=$('#bm-menu'); if(!ov.classList.contains('open')) return;
+  ov.classList.remove('open'); ov.innerHTML=''; bmMenuOpen=false; bmMenuItem=null;
+  if(bmMenuOpener&&bmMenuOpener.isConnected) setFocus(bmMenuOpener);
+  bmMenuOpener=null;
+}
+document.addEventListener('click',e=>{
+  const ov=$('#bm-menu');
+  if(bmMenuOpen&&e.target===ov) closeBmMenu();
+});
 
 /* Плеер (порт из «Кино»: pl-stage, таймлайн, перемотка, качество, субтитры).
    Встроенный плеер — ОСНОВНОЙ путь для всех источников (Filmix, Alpac, торренты).
@@ -1555,6 +1630,7 @@ function currentOverlay(){
   if(iframeIsOpen())return '#trailer-ov';
   if(playerIsOpen())return '#player-ov';
   if(pickerIsOpen())return '#picker';
+  if(bmMenuIsOpen())return '#bm-menu';
   return null;
 }
 function playUrl(url,title,subs,info){
@@ -1633,7 +1709,7 @@ async function openDetail(type,id){
     const gs=(d.genres||[]).map(g=>g.name).join(', ');
     const star=d.vote_average?'★ '+d.vote_average.toFixed(1):'';
     const dur=type==='movie'?fmtDur(d.runtime):fmtDur((d.episode_run_time||[])[0]);
-    const fav=isFav(type,id);
+    const bmed=anyBm(type,id);
     const pic=d.backdrop_path||d.poster_path;
     currentDetail={type:type,id:d.id,title:title,orig:d.original_title||d.original_name||title,year:year,rating:d.vote_average||0,dur:dur};
     let credits=null, sim=null, vids=null;
@@ -1643,11 +1719,11 @@ async function openDetail(type,id){
     const ytList=((vids&&vids.results)||[]).filter(v=>v.site==='YouTube');
     const trItem=ytList.filter(v=>v.type==='Trailer')[0]||ytList[0];
     const trailerBlock=trItem?'<div class="block-title">Трейлер</div>'+'<button class="trailer-thumb focusable" data-yt="'+trItem.key+'" style="display:block;width:min(320px,100%);aspect-ratio:16/9;border:0;border-radius:14px;overflow:hidden;padding:0;background:#22222c;position:relative">'+'<img src="https://i.ytimg.com/vi/'+trItem.key+'/hqdefault.jpg" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.remove()">'+'<span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:26px;line-height:64px;text-align:center">▶</span></button>':'';
-    let html='<div class="backdrop">'+(pic?'<img src="'+imgUrl(pic,'original')+'" alt="" onerror="this.remove()">':'')+'<div class="shade"></div></div>'+
+    let html='<div class="backdrop">'+(pic?'<img src="'+imgUrl(pic,'original')+'" alt="" onerror="this.remove()">':'')+'<div class="shade"></div>'+'<button class="bm-btn focusable'+(bmed?' on':'')+'" id="bm-btn" aria-label="Закладки"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v18l-5-3.5L7 21z"/></svg></button></div>'+
       '<div class="detail-info"><h1 id="detail-title">'+esc(title)+'</h1>'+
       '<div class="meta">'+[star?'<span class="star">★</span> '+esc(star.slice(2)):null,year,gs,dur].filter(Boolean).join(' · ')+'</div>'+
       '<p>'+esc(d.overview||'Описание отсутствует.')+'</p>'+trailerBlock+
-      '<div class="detail-actions"><button class="fav-btn focusable'+(fav?' in':'')+'" id="fav-toggle" data-type="'+type+'" data-id="'+id+'">'+(fav?'✓ В избранном':'♡ В избранное')+'</button></div>'+
+      ''+
       '<div class="src-tiles">'+
       '<button class="src-tile src-film focusable" data-src="filmix"><span class="in"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 4v16M16 4v16M3 9h5M3 15h5M16 9h5M16 15h5"/></svg>Filmix</span><svg class="out" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 9L9 3M4 3h5v5"/></svg><i class="bar"></i></button>'+
       '<button class="src-tile src-alpac focusable" data-src="alpac"><span class="in"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>Alpac</span><svg class="out" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 9L9 3M4 3h5v5"/></svg><i class="bar"></i></button>'+
@@ -1680,20 +1756,15 @@ async function openDetail(type,id){
       img.onload=()=>{if(h1.isConnected){h1.innerHTML='';h1.appendChild(img);}};
       img.src=u;
     });
-    const favBtn=$('#fav-toggle');
-    if(favBtn) favBtn.addEventListener('click',()=>{
-      const f=getFavs(), idx=f.findIndex(x=>x.type===type&&String(x.id)===String(id));
-      if(idx>=0) f.splice(idx,1);
-      else f.push({type:type,id:d.id,title:title,backdrop:d.backdrop_path||null,poster:d.poster_path||null,rating:d.vote_average||0});
-      setFavs(f);
-      const b=$('#fav-toggle'), now=idx<0;
-      b.classList.toggle('in',now); b.textContent=now?'✓ В избранном':'♡ В избранное';
+    const bmBtn=$('#bm-btn');
+    if(bmBtn) bmBtn.addEventListener('click',()=>{
+      openBmMenu({type:type,id:d.id,title:title,backdrop:d.backdrop_path||null,poster:d.poster_path||null,rating:d.vote_average||0},bmBtn);
     });
     const trBtn=box.querySelector('.trailer-thumb');
     if(trBtn) trBtn.addEventListener('click',()=>{
       openPlayerTrailer(trBtn.dataset.yt,currentDetail?currentDetail.title:'');
     });
-    if(detectTV()){const b=$('#fav-toggle'); if(b) setFocus(b,true);}
+    if(detectTV()){const b=$('#bm-btn'); if(b) setFocus(b,true);}
     window.scrollTo(0,0);
   }catch(e){
     box.innerHTML='<div class="empty" style="padding-top:6em">Ошибка загрузки — проверьте TMDB-ключ в Настройках.</div>';
