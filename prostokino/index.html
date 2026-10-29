@@ -360,6 +360,8 @@ body.phone .alp-screen h1{font-size:1.5em}
 #screen-preload .stats{margin-top:20px;display:flex;gap:34px;justify-content:center;text-shadow:0 2px 14px rgba(0,0,0,.6)}
 #screen-preload .stats b{display:block;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
 #screen-preload .stats span{display:block;margin-top:3px;font-size:12px;font-weight:500;color:var(--dim)}
+#screen-preload .pl23-diag{margin-top:14px;max-width:min(80vw,360px);font-size:12px;line-height:1.45;color:var(--dim);text-shadow:0 1px 10px rgba(0,0,0,.6)}
+#screen-preload .pl23-diag:empty{display:none}
 #screen-preload .pl23-actions{display:flex;gap:.8em;margin-top:22px}
 #screen-preload .pl23-btn{font:inherit;font-size:14px;font-weight:700;color:var(--ink);background:rgba(8,8,10,.35);border:1px solid rgba(244,233,214,.4);border-radius:999px;padding:11px 24px;cursor:pointer;transition:border-color .2s}
 #screen-preload .pl23-btn:hover{border-color:var(--ink)}
@@ -654,6 +656,7 @@ body.phone .alp-screen h1{font-size:1.5em}
           <div><b id="mSpeed">—</b><span>скорость</span></div>
           <div><b id="mLoaded">—</b><span>в буфере</span></div>
         </div>
+        <div class="pl23-diag" id="plDiag"></div>
         <div class="pl23-actions">
           <button class="pl23-btn primary focusable" id="pl-watch">Смотреть</button>
           <button class="pl23-btn focusable" id="pl-cancel">Отмена</button>
@@ -2496,7 +2499,7 @@ async function playTorrent(t,meta,tile){
     for(var n=0;n<2;n++){var o=P[pi++%P.length];o.life=.8;o.x=px;o.y=py-8;o.vx=(Math.random()-.5)*50;o.vy=-(110+Math.random()*80)}
   }
 
-  var S={stage:0,target:0,shown:0,peers:0,total:0,speed:0,loaded:null,waited:false,note:null};
+  var S={stage:0,target:0,shown:0,peers:0,total:0,speed:0,loaded:null,waited:false,note:null,diag:null};
   var lastTxt="", lastCount=0, dy=0, vy=0, last=0, lastBlur="", doneKicked=false;
   function fmtSpeed(b){ if(!b)return "—"; var m=b/1048576; return (m>=1?m.toFixed(1):Math.round(b/1024)).toString().replace(".",",")+(m>=1?" МБ/с":" КБ/с"); }
   function fmtSize(b){ if(b==null)return "—"; var m=b/1048576; return m>=1024?(m/1024).toFixed(1).replace(".",",")+" ГБ":Math.round(m)+" МБ"; }
@@ -2553,16 +2556,18 @@ async function playTorrent(t,meta,tile){
     $("mPeers").textContent=S.total?S.peers+" из "+S.total:S.peers;
     $("mSpeed").textContent=fmtSpeed(S.speed);
     $("mLoaded").textContent=buf?fmtSize(S.loaded):"—";
+    $("plDiag").textContent=S.diag||"";
     requestAnimationFrame(frame);
   }
 
   // API: torrentPreload.update({stage:0..4, progress:0..1, peers, total, speed, loaded, waited, note, title, sub, poster, reset})
   window.torrentPreload={update:function(o){
-    if(o.reset){S.shown=0;S.target=0;S.stage=0;S.note=null;S.waited=false;doneKicked=false;lastCount=0}
+    if(o.reset){S.shown=0;S.target=0;S.stage=0;S.note=null;S.diag=null;S.waited=false;doneKicked=false;lastCount=0}
     if(o.stage!=null)S.stage=o.stage; if(o.progress!=null)S.target=o.progress;
     if(o.peers!=null)S.peers=o.peers; if(o.total!=null)S.total=o.total;
     if(o.speed!=null)S.speed=o.speed; if(o.loaded!=null)S.loaded=o.loaded; if(o.waited!=null)S.waited=o.waited;
     if(o.note!==undefined)S.note=o.note;
+    if(o.diag!==undefined)S.diag=o.diag;
     if(o.title)$("title").textContent=o.title; if(o.sub!=null)$("sub").textContent=o.sub;
     if(o.poster)poster.style.backgroundImage='url("'+o.poster+'")';
   }};
@@ -2622,7 +2627,19 @@ async function plTick(){
   const dispStage=ready?4:stage;
   if((tor.active_peers||0)+(tor.total_peers||0)+(tor.connected_seeders||0)>0) st.seenPeers=true;
   const el=(Date.now()-st.started)/1000;
-  window.torrentPreload.update({stage:dispStage,progress:ready?1:prog,peers:tor.active_peers||0,total:tor.total_peers||0,speed:tor.download_speed||0,loaded:got,waited:el>8,note:null});
+  // v0.24, диагностика на экране: Denis не видит консоль, а молчаливый 0% неотличим
+  // от «сервер качает, но статистика не приходит». Показываем исход preload-запроса
+  // и последние значения опроса, как только 10 сек нет роста preloaded_bytes.
+  if(got>st.lastGot){st.lastGot=got;st.lastGrowth=Date.now();}
+  const noGrowth=(Date.now()-(st.lastGrowth||st.started))/1000;
+  let diag=null;
+  const pr=st.preReq;
+  if(pr&&pr.error) diag='Запрос предзагрузки: '+pr.state+' ('+pr.error+') · '+pr.time;
+  else if(noGrowth>=10){
+    diag='Запрос: '+(pr?pr.state:'—')+(pr&&pr.time?' '+pr.time:'')+' · нет роста '+Math.round(noGrowth)+' сек · preload_size '+(need>0?fmtSize(need):'не приходит')+' · в буфере '+fmtSize(got);
+    if(!need&&size>0) diag+=' · проверьте % предзагрузки в настройках TorrServer';
+  }
+  window.torrentPreload.update({stage:dispStage,progress:ready?1:prog,peers:tor.active_peers||0,total:tor.total_peers||0,speed:tor.download_speed||0,loaded:got,waited:el>8,note:null,diag:diag});
   if(ready){
     // короткая пауза, чтобы взрыв попкорна был виден, но без долгого ожидания
     if(!st.readyTimer) st.readyTimer=setTimeout(function(){ if(plState===st) plPlay(); },1600);
@@ -2657,7 +2674,7 @@ function openPreload(url,hash,meta,file,size){
   const sub=qparts.length?qparts.join(' · '):(file||'');
   // заголовок — ТЕКСТ названия (логотипа в дизайне файла нет, fetchLogo для предзагрузки выброшен)
   window.torrentPreload.update({reset:true,title:(meta&&meta.title)||'',sub:sub,poster:domSrc||null,stage:0,progress:0,peers:0,total:0,speed:0,loaded:0,note:null,waited:false});
-  const st={url:url,hash:hash,meta:meta,file:file||'',done:false,stalled:false,fails:0,timer:null,readyTimer:null,ctl:null,seenPeers:false,started:Date.now()};
+  const st={url:url,hash:hash,meta:meta,file:file||'',done:false,stalled:false,fails:0,timer:null,readyTimer:null,ctl:null,seenPeers:false,started:Date.now(),preReq:null,lastGot:0,lastGrowth:0};
   plState=st;
   showScreen('preload');
   if(detectTV()) setFocus($('#pl-watch'));
@@ -2668,11 +2685,34 @@ function openPreload(url,hash,meta,file,size){
       if(pic) window.torrentPreload.update({poster:imgUrl(pic,d.backdrop_path?'original':'w780')});
     }).catch(()=>{});
   }
+  // v0.24: предзагрузка — ТОЛЬКО в связке play&preload. Официальная комбинация
+  // TorrServer: link+index+play+preload («Preloads and streams file»); голого
+  // &preload без play в таблице комбинаций нет — поэтому в v0.8–v0.23 сервер не
+  // запускал закачку никогда (preloaded_bytes не рос при живых пирах). Запрос
+  // держится открытым весь экран: тело читаем и выбрасываем, аборт — только
+  // через stopPreload (Отмена/Назад/Esc/готовность). Исход записывается в
+  // st.preReq и показывается строкой диагностики, а не глушится.
   try{
     const ctl=new AbortController(); st.ctl=ctl;
-    let pu=url.replace(/&play$/,'');
-    pu+=(pu.indexOf('?')>-1?'&preload':'?preload');
-    fetch(pu,{signal:ctl.signal,cache:'no-store'}).catch(()=>{});
+    const pu=url+'&preload';
+    const tstr=function(){return new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});};
+    st.preReq={state:'висит',time:tstr(),error:''};
+    fetch(pu,{signal:ctl.signal,cache:'no-store'}).then(async function(r){
+      if(plState!==st) return;
+      st.preReq.state='HTTP '+r.status; st.preReq.time=tstr();
+      if(!r.ok){ st.preReq.error='HTTP '+r.status; return; }
+      try{
+        const rd=r.body&&r.body.getReader();
+        if(rd){ for(;;){ const ch=await rd.read(); if(ch.done) break; } }
+        if(plState===st) st.preReq.state='завершён';
+      }catch(e){
+        if(plState===st&&e&&e.name!=='AbortError') st.preReq.error=String(e.message||e);
+      }
+    }).catch(function(e){
+      if(plState!==st) return;
+      if(e&&e.name==='AbortError') st.preReq.state='прерван';
+      else { st.preReq.state='ошибка'; st.preReq.error=String(e&&e.message||e); }
+    });
   }catch(e){}
   plTick();
 }
