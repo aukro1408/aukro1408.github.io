@@ -57,8 +57,8 @@ main{position:relative;z-index:1;padding-top:0}
 section.screen{display:none}
 section.screen.show{display:block}
 /* Hero: фон на весь экран, НЕ кликабелен, НЕ фокусируем */
-.hero{position:relative;height:62vh;min-height:340px;overflow:hidden;background:#181820}
-body.phone .hero{height:46vh;min-height:260px}
+.hero{position:relative;height:74.4vh;min-height:408px;overflow:hidden;background:#181820}
+body.phone .hero{height:55.2vh;min-height:312px}
 .hero img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top}
 .hero-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,0) 30%,rgba(15,15,20,0) 55%,rgba(15,15,20,.92) 88%,#0f0f14)}
 .hero-info{position:absolute;left:2em;bottom:2.2em;max-width:44em;z-index:2}
@@ -86,7 +86,7 @@ body.phone .card{width:78vw;max-width:380px}
 .card.focused .thumb{outline:3px solid #fff;outline-offset:3px;transform:scale(1.03)}
 .cbadge{position:absolute;top:.55em;left:.55em;z-index:2;background:rgba(0,0,0,.72);color:#fff;font-size:.82em;font-weight:700;line-height:1;padding:.35em .65em;border-radius:999px;white-space:nowrap;pointer-events:none}
 .cbadge .star{color:#ffb340}
-.card .thumb img.card-logo{position:absolute;left:.6em;bottom:.5em;z-index:2;width:auto;height:2.2em;max-width:48%;object-fit:contain;object-position:left bottom;filter:drop-shadow(0 2px 6px rgba(0,0,0,.85));pointer-events:none;display:none}
+.card .thumb img.card-logo{position:absolute;left:.6em;bottom:.5em;z-index:2;width:auto;height:2.2em;max-width:48%;object-fit:contain;object-position:left bottom;filter:drop-shadow(0 2px 6px rgba(0,0,0,.85));pointer-events:none;visibility:hidden}
 /* Маленькая пилюля «Ещё» в конце жанрового ряда — НЕ карточка */
 .more-wrap{flex:0 0 auto;width:320px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center}
 body.phone .more-wrap{width:78vw;max-width:380px}
@@ -149,8 +149,8 @@ body.phone .settings,body.phone .searchbox{padding:5em 1em 2em}
 .status{color:#8be9a4;margin-top:1em}
 /* Экран фильма */
 .detail{padding:0 0 3em}
-.detail .backdrop{position:relative;height:56vh;min-height:300px;overflow:hidden;background:#181820}
-body.phone .detail .backdrop{height:38vh}
+.detail .backdrop{position:relative;height:67.2vh;min-height:360px;overflow:hidden;background:#181820}
+body.phone .detail .backdrop{height:45.6vh}
 .detail .backdrop img{width:100%;height:100%;object-fit:cover;object-position:top}
 .detail .backdrop .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.3),rgba(0,0,0,0) 40%,rgba(15,15,20,.95) 90%,#0f0f14)}
 .detail-info{padding:0 2em}
@@ -638,7 +638,7 @@ async function fetchLogo(type,id){
     const logos=(d&&d.logos)||[];
     const pick=logos.find(l=>l.iso_639_1==='ru')||logos.find(l=>l.iso_639_1==='en')||logos[0]||null;
     let url='';
-    if(pick&&pick.file_path) url=imgUrl(pick.file_path.replace(/\.svg$/i,'.png'),'w300');
+    if(pick&&pick.file_path) url=imgUrl(pick.file_path.replace(/\.svg$/i,'.png'),'w500');
     logoCache[k]=url; return url;
   }catch(e){logoCache[k]='';return '';}
 }
@@ -647,7 +647,7 @@ let cardLogoObs=null;
 function loadCardLogo(im){
   fetchLogo(im.dataset.lt,im.dataset.li).then(u=>{
     if(!u){im.remove();return;}
-    im.onload=()=>{im.style.display='block';};
+    im.onload=()=>{im.style.visibility='visible';};
     im.onerror=()=>{im.remove();};
     im.src=u;
   });
@@ -822,7 +822,7 @@ let homeLoaded=false, heroTimer=null, heroList=[], heroIdx=0;
 function showHero(i){
   const it=heroList[i]; if(!it) return;
   const im=$('#hero-img');
-  if(it.backdrop_path) im.src=imgUrl(it.backdrop_path,'w1280'); else im.removeAttribute('src');
+  if(it.backdrop_path) im.src=imgUrl(it.backdrop_path,'original'); else im.removeAttribute('src');
   const heroTitle=it.title||it.name||'';
   $('#hero-title').textContent=heroTitle;
   fetchLogo('movie',it.id).then(u=>{
@@ -847,7 +847,7 @@ function startHero(list){
   if(list.length>1) heroTimer=setInterval(()=>{
     if(document.hidden) return;
     heroIdx=(heroIdx+1)%heroList.length; showHero(heroIdx);
-  },8000);
+  },15000);
 }
 function renderRow(boxId,title,items,type,more){
   const box=$(boxId); if(!box) return;
@@ -1513,7 +1513,7 @@ function pcardHTML(it,type){
   const title=it.title||it.name||'';
   const pic=it.poster_path;
   return '<button class="pcard focusable" data-id="'+it.id+'" data-type="'+type+'">'+
-    '<span class="pthumb">'+badgeHTML(it)+(pic?'<img src="'+imgUrl(pic,'w342')+'" alt="" loading="lazy" onerror="this.remove()">':'')+'</span>'+
+    '<span class="pthumb">'+badgeHTML(it)+(pic?'<img src="'+imgUrl(pic,'w780')+'" alt="" loading="lazy" onerror="this.remove()">':'')+'</span>'+
     '<span class="ptitle">'+esc(title)+'</span></button>';
 }
 function castHTML(c){
@@ -1590,7 +1590,7 @@ async function openDetail(type,id){
     const ytList=((vids&&vids.results)||[]).filter(v=>v.site==='YouTube');
     const trItem=ytList.filter(v=>v.type==='Trailer')[0]||ytList[0];
     const trailerBlock=trItem?'<div class="block-title">Трейлер</div>'+'<button class="trailer-thumb focusable" data-yt="'+trItem.key+'" style="display:block;width:min(640px,100%);aspect-ratio:16/9;border:0;border-radius:14px;overflow:hidden;padding:0;background:#22222c;position:relative">'+'<img src="https://i.ytimg.com/vi/'+trItem.key+'/hqdefault.jpg" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.remove()">'+'<span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:26px;line-height:64px;text-align:center">▶</span></button>':'';
-    let html='<div class="backdrop">'+(pic?'<img src="'+imgUrl(pic,'w1280')+'" alt="" onerror="this.remove()">':'')+'<div class="shade"></div></div>'+
+    let html='<div class="backdrop">'+(pic?'<img src="'+imgUrl(pic,'original')+'" alt="" onerror="this.remove()">':'')+'<div class="shade"></div></div>'+
       '<div class="detail-info"><h1 id="detail-title">'+esc(title)+'</h1>'+
       '<div class="meta">'+[star?'<span class="star">★</span> '+esc(star.slice(2)):null,year,gs,dur].filter(Boolean).join(' · ')+'</div>'+
       '<p>'+esc(d.overview||'Описание отсутствует.')+'</p>'+trailerBlock+
