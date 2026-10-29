@@ -14,7 +14,8 @@ button{font-family:inherit;cursor:pointer}
 button:focus,input:focus{outline:none}
 /* Верхнее меню: мягкое свечение из файла Denis, белая пилюля убрана полностью */
 .topmenu{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;gap:clamp(18px,4vw,44px);align-items:center;
-  padding:1.1em 2em;background:linear-gradient(180deg,rgba(0,0,0,.75),rgba(0,0,0,0));overflow-x:auto;
+  padding:1.1em 2em;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.05));overflow-x:auto;
+  -webkit-backdrop-filter:blur(18px) saturate(1.5);backdrop-filter:blur(18px) saturate(1.5);
   scrollbar-width:none}
 .topmenu::-webkit-scrollbar{display:none}
 .menu-btn{position:relative;flex:0 0 auto;background:transparent;border:0;color:rgba(255,255,255,.74);
@@ -51,7 +52,11 @@ button:focus,input:focus{outline:none}
 @media (prefers-reduced-motion:reduce){.pk-logo .body,.pk-logo .toe,.pk-logo .tri,.pk-logo .word span{opacity:1!important}.pk-logo.go *{animation:none!important}}
 body.phone .topmenu{padding:.9em 1em}
 /* Экраны */
-main{padding-top:0}
+main{position:relative;z-index:1;padding-top:0}
+/* v0.13: ambient-фон за карточкой в фокусе/под курсором */
+#ambient-bg{position:fixed;inset:0;z-index:0;display:none;overflow:hidden;background:#0f0f14}
+#ambient-bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(24px) saturate(1.2);transform:scale(1.12)}
+#ambient-bg .ambient-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,15,20,.78),rgba(15,15,20,.86) 55%,rgba(15,15,20,.93))}
 section.screen{display:none}
 section.screen.show{display:block}
 /* Hero: фон на весь экран, НЕ кликабелен, НЕ фокусируем */
@@ -135,6 +140,8 @@ body.phone .detail .backdrop{height:38vh}
 .detail-info{padding:0 2em}
 body.phone .detail-info{padding:0 1em}
 .detail-info h1{margin:.2em 0 .3em;font-size:2.2em}
+.hero-info h1 img.hero-logo{height:2.1em;max-width:9.5em;object-fit:contain;object-position:left bottom;display:block}
+.detail-info h1 img.detail-logo{height:1.9em;max-width:10em;object-fit:contain;object-position:left center;display:block}
 .detail-info .meta{color:#e8eaf0;margin-bottom:.8em}
 .detail-info .meta .star{color:#ffb340}
 .detail-info p{color:#d5d8e0;line-height:1.6;max-width:50em}
@@ -351,6 +358,7 @@ body.phone .alp-screen h1{font-size:1.5em}
 </style>
 </head>
 <body>
+<div id="ambient-bg"><img id="ambient-img" alt="" onerror="this.style.display='none'"><div class="ambient-shade"></div></div>
 <header class="topmenu" id="menu">
 <div class="pk-logo go" id="pk-logo" role="img" aria-label="Pawflix">
 <svg class="paw" viewBox="0 0 120 120" aria-hidden="true">
@@ -571,11 +579,40 @@ let rsT=null;window.addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTime
 
 /* Пространственная навигация (D-pad) */
 let cur=null;
-function setFocus(el){
+function setFocus(el,noScroll){
   if(!el) return;
   if(cur) cur.classList.remove('focused');
   cur=el; cur.classList.add('focused');
-  try{cur.scrollIntoView({block:'nearest',inline:'nearest'});}catch(e){}
+  if(!noScroll){try{cur.scrollIntoView({block:'nearest',inline:'nearest'});}catch(e){}}
+  const card=el.closest?el.closest('.card,.pcard'):null;
+  if(card&&card.dataset.bg) ambientShow(card.dataset.bg); else ambientHide();
+}
+/* v0.13: ambient-фон за карточкой в фокусе/под курсором */
+function ambientShow(url){
+  const w=$('#ambient-bg'), im=$('#ambient-img');
+  if(!w||!im) return;
+  if(!url){ambientHide();return;}
+  if(im.dataset.u!==url){im.dataset.u=url; im.style.display='block'; im.src=url;}
+  w.style.display='block';
+  const bg=$('#list-bg-img'); if(bg) bg.style.display='none';
+}
+function ambientHide(){
+  const w=$('#ambient-bg'); if(w) w.style.display='none';
+  if(typeof currentScreen!=='undefined'&&currentScreen==='list'){const bg=$('#list-bg-img'); if(bg&&bg.getAttribute('src')) bg.style.display='block';}
+}
+/* v0.13: логотип TMDB вместо названия (как в «Кино»): logos[0], .svg → .png, fallback — текст */
+const logoCache={};
+async function fetchLogo(type,id){
+  const k=type+':'+id;
+  if(k in logoCache) return logoCache[k];
+  try{
+    const d=await api('/'+type+'/'+id+'/images');
+    const logos=(d&&d.logos)||[];
+    const pick=logos.find(l=>l.iso_639_1==='ru')||logos.find(l=>l.iso_639_1==='en')||logos[0]||null;
+    let url='';
+    if(pick&&pick.file_path) url=imgUrl(pick.file_path.replace(/\.svg$/i,'.png'),'w300');
+    logoCache[k]=url; return url;
+  }catch(e){logoCache[k]='';return '';}
 }
 function visibleFocusable(){
   const ov=currentOverlay();
@@ -703,7 +740,8 @@ function badgeHTML(it){
 function cardHTML(it,type){
   const title=it.title||it.name||'';
   const pic=it.backdrop_path||it.poster_path;
-  return '<button class="card focusable" data-id="'+it.id+'" data-type="'+type+'">'+
+  const bg=it.backdrop_path?imgUrl(it.backdrop_path,'w1280'):(it.poster_path?imgUrl(it.poster_path,'w500'):'');
+  return '<button class="card focusable" data-id="'+it.id+'" data-type="'+type+'" data-bg="'+bg+'">'+
     '<span class="thumb">'+badgeHTML(it)+(pic?'<img src="'+imgUrl(pic,'w780')+'" alt="" loading="lazy" onerror="this.remove()">':'')+'</span>'+
     '<span class="ctitle">'+esc(title)+'</span></button>';
 }
@@ -732,7 +770,15 @@ function showHero(i){
   const it=heroList[i]; if(!it) return;
   const im=$('#hero-img');
   if(it.backdrop_path) im.src=imgUrl(it.backdrop_path,'w1280'); else im.removeAttribute('src');
-  $('#hero-title').textContent=it.title||it.name||'';
+  const heroTitle=it.title||it.name||'';
+  $('#hero-title').textContent=heroTitle;
+  fetchLogo('movie',it.id).then(u=>{
+    if(!u||heroList[heroIdx]!==it) return;
+    const h1=$('#hero-title'); if(!h1) return;
+    const img=new Image(); img.className='hero-logo'; img.alt='';
+    img.onload=()=>{if(heroList[heroIdx]===it){h1.innerHTML='';h1.appendChild(img);}};
+    img.src=u;
+  });
   const year=(it.release_date||it.first_air_date||'').slice(0,4);
   const gs=(it.genre_ids||[]).map(id=>genreMovie[id]).filter(Boolean).slice(0,3).join(', ');
   const star=it.vote_average?'★ '+it.vote_average.toFixed(1):'';
@@ -1285,7 +1331,7 @@ function playUrl(url,title,subs,info){
 function pcardHTML(it,type){
   const title=it.title||it.name||'';
   const pic=it.poster_path;
-  return '<button class="pcard focusable" data-id="'+it.id+'" data-type="'+type+'">'+
+  return '<button class="pcard focusable" data-id="'+it.id+'" data-type="'+type+'" data-bg="'+(it.poster_path?imgUrl(it.poster_path,'w500'):'')+'">'+
     '<span class="pthumb">'+badgeHTML(it)+(pic?'<img src="'+imgUrl(pic,'w342')+'" alt="" loading="lazy" onerror="this.remove()">':'')+'</span>'+
     '<span class="ptitle">'+esc(title)+'</span></button>';
 }
@@ -1319,7 +1365,8 @@ async function openPerson(id){
       html+='<div class="empty">Фильмов не найдено</div>';
     }
     box.innerHTML=html;
-    if(detectTV()){const f=box.querySelector('.focusable');if(f)setFocus(f);}
+    if(detectTV()){const f=box.querySelector('.focusable');if(f)setFocus(f,true);}
+    window.scrollTo(0,0);
   }catch(e){
     box.innerHTML='<div class="empty">Ошибка загрузки — проверьте TMDB-ключ в Настройках.</div>';
   }
@@ -1362,9 +1409,8 @@ async function openDetail(type,id){
     const ytList=((vids&&vids.results)||[]).filter(v=>v.site==='YouTube');
     const trItem=ytList.filter(v=>v.type==='Trailer')[0]||ytList[0];
     const trailerBlock=trItem?'<div class="block-title">Трейлер</div>'+'<button class="trailer-thumb focusable" data-yt="'+trItem.key+'" style="display:block;width:min(640px,100%);aspect-ratio:16/9;border:0;border-radius:14px;overflow:hidden;padding:0;background:#22222c;position:relative">'+'<img src="https://i.ytimg.com/vi/'+trItem.key+'/hqdefault.jpg" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.remove()">'+'<span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:26px;line-height:64px;text-align:center">▶</span></button>':'';
-    let html='<div style="padding-top:4.5em"></div>'+
-      '<div class="backdrop">'+(pic?'<img src="'+imgUrl(pic,'w1280')+'" alt="" onerror="this.remove()">':'')+'<div class="shade"></div></div>'+
-      '<div class="detail-info"><h1>'+esc(title)+'</h1>'+
+    let html='<div class="backdrop">'+(pic?'<img src="'+imgUrl(pic,'w1280')+'" alt="" onerror="this.remove()">':'')+'<div class="shade"></div></div>'+
+      '<div class="detail-info"><h1 id="detail-title">'+esc(title)+'</h1>'+
       '<div class="meta">'+[star?'<span class="star">★</span> '+esc(star.slice(2)):null,year,gs,dur].filter(Boolean).join(' · ')+'</div>'+
       '<p>'+esc(d.overview||'Описание отсутствует.')+'</p>'+trailerBlock+
       '<div class="detail-actions"><button class="fav-btn focusable'+(fav?' in':'')+'" id="fav-toggle" data-type="'+type+'" data-id="'+id+'">'+(fav?'✓ В избранном':'♡ В избранное')+'</button></div>'+
@@ -1393,6 +1439,13 @@ async function openDetail(type,id){
     }
     html+='</div>';
     box.innerHTML=html;
+    fetchLogo(type,id).then(u=>{
+      if(!u) return;
+      const h1=$('#detail-title'); if(!h1) return;
+      const img=new Image(); img.className='detail-logo'; img.alt='';
+      img.onload=()=>{if(h1.isConnected){h1.innerHTML='';h1.appendChild(img);}};
+      img.src=u;
+    });
     const favBtn=$('#fav-toggle');
     if(favBtn) favBtn.addEventListener('click',()=>{
       const f=getFavs(), idx=f.findIndex(x=>x.type===type&&String(x.id)===String(id));
@@ -1406,7 +1459,8 @@ async function openDetail(type,id){
     if(trBtn) trBtn.addEventListener('click',()=>{
       openPlayerTrailer(trBtn.dataset.yt,currentDetail?currentDetail.title:'');
     });
-    if(detectTV()){const b=$('#fav-toggle'); if(b) setFocus(b);}
+    if(detectTV()){const b=$('#fav-toggle'); if(b) setFocus(b,true);}
+    window.scrollTo(0,0);
   }catch(e){
     box.innerHTML='<div class="empty" style="padding-top:6em">Ошибка загрузки — проверьте TMDB-ключ в Настройках.</div>';
   }
@@ -1490,7 +1544,7 @@ async function openFilmix(meta,tile,run){
     if(card){fxOpenCard(card.id,maxQ,meta,tile,run);return;}
     if(Array.isArray(res)&&res.length){
       setTileBusy(tile,false); srcStatus('');
-      showPicker('Уточните, что именно',res.slice(0,12).map(c=>({label:(c.title||c.original_title||'Вариант')+(c.year?' · '+c.year:''),onPick:()=>{setTileBusy(tile,true);fxOpenCard(c.id,maxQ,meta,tile,++srcRun);}})));
+      showPicker('Уточните, что именно',res.slice(0,12).map(c=>({label:(c.title||c.original_title||'Вариант')+(c.year?' · '+c.year:''),onPick:()=>{setTileBusy(tile,true);fxOpenCard(c.id,maxQ,meta,tile,++srcRun);}})),true);
       return;
     }
     setTileBusy(tile,false); srcStatus('На Filmix ничего не нашлось.',true);
@@ -1554,8 +1608,8 @@ function fxSeriesFlow(playlist,maxQ,meta,tile,run){
       const vs=epsMap[en];
       if(vs.length===1){const v=vs[0];fxQualityPick(v,meta);return;}
       showPicker('Озвучка',vs.map(v=>{const cl=fxCleanVoice(v.voice);return {label:cl.name,sub:(cl.studio?cl.studio+' · ':'')+v.q+'p',onPick:()=>fxQualityPick(v,meta)};}),true);
-    }})));
-  }})));
+    }})),true);
+  }})),true);
 }
 function fxQualityPick(v,meta){
   if(v.qs.length<=1){playUrl(fxFileUrl(v.link,v.q),meta.title,undefined,{source:'Filmix'});return;}
@@ -1666,7 +1720,7 @@ async function openAlpac(meta,tile,run){
     if(!srcs.length){setTileBusy(tile,false);srcStatus('На Alpac ничего не нашлось.',true);return;}
     setTileBusy(tile,false); srcStatus('');
     if(srcs.length===1){alpacLoadSource(srcs[0],meta,tile,++srcRun);return;}
-    showPicker('Источник',srcs.map(s=>({label:s.name||'Источник',sub:s.balanser||'',onPick:()=>{setTileBusy(tile,true);alpacLoadSource(s,meta,tile,++srcRun);}})));
+    showPicker('Источник',srcs.map(s=>({label:s.name||'Источник',sub:s.balanser||'',onPick:()=>{setTileBusy(tile,true);alpacLoadSource(s,meta,tile,++srcRun);}})),true);
   }catch(e){
     setTileBusy(tile,false); srcStatus('Не получилось связаться с Alpac.',true);
   }
@@ -1685,24 +1739,24 @@ async function alpacLoadSource(s,meta,tile,run){
     if(videos.length){
       if(parsed.buttons.length){
         setTileBusy(tile,false); srcStatus('');
-        showPicker('Озвучка',parsed.buttons.map(b=>({label:b.title,onPick:()=>{setTileBusy(tile,true);alpacFollowVoice(b.url,meta,tile,++srcRun);}})));
+        showPicker('Озвучка',parsed.buttons.map(b=>({label:b.title,onPick:()=>{setTileBusy(tile,true);alpacFollowVoice(b.url,meta,tile,++srcRun);}})),true);
         return;
       }
       if(meta.type==='tv'){
         const eps=videos.map((v,i)=>({v:v,num:(v.episode&&v.episode>0)?v.episode:(i+1)}));
         setTileBusy(tile,false); srcStatus('');
-        showPicker('Серия',eps.map(e=>({label:'Серия '+e.num+(e.v.title&&e.v.title!=='Смотреть'?' · '+e.v.title:''),onPick:()=>alpacResolve(e.v,meta,tile)})));
+        showPicker('Серия',eps.map(e=>({label:'Серия '+e.num+(e.v.title&&e.v.title!=='Смотреть'?' · '+e.v.title:''),onPick:()=>alpacResolve(e.v,meta,tile)})),true);
         return;
       }
       setTileBusy(tile,false); srcStatus('');
-      showPicker('Озвучка',videos.map(v=>({label:(v.voice||v.title||'Смотреть'),onPick:()=>alpacResolve(v,meta,tile)})));
+      showPicker('Озвучка',videos.map(v=>({label:(v.voice||v.title||'Смотреть'),onPick:()=>alpacResolve(v,meta,tile)})),true);
       return;
     }
     const links=parsed.items.filter(it=>it.method==='link');
     if(links.length===1){alpacFollowVoice(links[0].url,meta,tile,run);return;}
     if(parsed.items.length){
       setTileBusy(tile,false); srcStatus('');
-      showPicker('Сезон',parsed.items.map(it=>{const m=String(it.title||'').match(/\d+/);return {label:(m?m[0]+' сезон':it.title||'Сезон'),onPick:()=>{setTileBusy(tile,true);alpacFollowVoice(it.url,meta,tile,++srcRun);}};}));
+      showPicker('Сезон',parsed.items.map(it=>{const m=String(it.title||'').match(/\d+/);return {label:(m?m[0]+' сезон':it.title||'Сезон'),onPick:()=>{setTileBusy(tile,true);alpacFollowVoice(it.url,meta,tile,++srcRun);}};}),true);
       return;
     }
     setTileBusy(tile,false); srcStatus('На Alpac ничего не нашлось.',true);
@@ -1722,11 +1776,11 @@ async function alpacFollowVoice(url,meta,tile,run){
     if(meta.type==='tv'){
       const eps=videos.map((v,i)=>({v:v,num:(v.episode&&v.episode>0)?v.episode:(i+1)}));
       setTileBusy(tile,false); srcStatus('');
-      showPicker('Серия',eps.map(e=>({label:'Серия '+e.num+(e.v.title&&e.v.title!=='Смотреть'?' · '+e.v.title:''),onPick:()=>alpacResolve(e.v,meta,tile)})));
+      showPicker('Серия',eps.map(e=>({label:'Серия '+e.num+(e.v.title&&e.v.title!=='Смотреть'?' · '+e.v.title:''),onPick:()=>alpacResolve(e.v,meta,tile)})),true);
       return;
     }
     setTileBusy(tile,false); srcStatus('');
-    showPicker('Озвучка',videos.map(v=>({label:(v.voice||v.title||'Смотреть'),onPick:()=>alpacResolve(v,meta,tile)})));
+    showPicker('Озвучка',videos.map(v=>({label:(v.voice||v.title||'Смотреть'),onPick:()=>alpacResolve(v,meta,tile)})),true);
   }catch(e){
     setTileBusy(tile,false); srcStatus('Не получилось связаться с Alpac.',true);
   }
