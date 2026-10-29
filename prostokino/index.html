@@ -673,6 +673,13 @@ body.phone .collections{padding:5em 1em 2em}
         <input class="field focusable" id="ts-url-http" type="text" placeholder="TorrServer http (необязательно)" autocomplete="off">
       </div>
       <div class="rowline" style="margin-bottom:.8em">
+        <select class="field focusable" id="ts-sel">
+          <option value="ours">TorrServer по умолчанию: наш (из полей выше)</option>
+          <option value="alpac">TorrServer по умолчанию: Alpac (beta.l-vid.online)</option>
+        </select>
+      </div>
+      <div class="hint" style="padding:0 0 1em">Alpac: https://beta.l-vid.online/ts, вход — uid устройства + «ts» (как в плагине ts.js); нужна привязка Alpac.</div>
+      <div class="rowline" style="margin-bottom:.8em">
         <input class="field focusable" id="jac-url" type="text" placeholder="JacRed-адрес" autocomplete="off">
         <input class="field focusable" id="jac-key" type="text" placeholder="JacRed-ключ" autocomplete="off">
       </div>
@@ -689,6 +696,13 @@ body.phone .collections{padding:5em 1em 2em}
         </select>
       </div>
       <h2 style="margin-top:1em">Плеер</h2>
+      <div class="rowline" style="margin-bottom:.8em">
+        <select class="field focusable" id="player-sel">
+          <option value="ours">Плеер по умолчанию: наш встроенный</option>
+          <option value="ext">Плеер по умолчанию: Внешний плеер (VLC, как у Alpac)</option>
+        </select>
+      </div>
+      <div class="hint" style="padding:0 0 1em">«Внешний плеер» — схема из плагина external_player.js: на Android открывает поток в VLC (vlc://); требуется установленный VLC. Трейлеры всегда играют во встроенном плеере.</div>
       <div class="rowline" style="margin-bottom:.8em">
         <select class="field focusable" id="autonext"><option value="1">Автоследующая серия: вкл</option><option value="0">Автоследующая серия: выкл</option></select>
         <input class="field focusable" id="intro-len" type="number" placeholder="Длина заставки, сек (по умолчанию 85)" autocomplete="off">
@@ -1469,10 +1483,12 @@ function saveSettings(){
   setS('prostokino.filmix_proxy',$('#filmix-proxy').value.trim());
   setS('prostokino.ts_url',$('#ts-url').value.trim());
   setS('prostokino.ts_url_http',$('#ts-url-http').value.trim());
+  const tss=$('#ts-sel'); if(tss) setS('prostokino.ts_sel',tss.value);
   setS('prostokino.jac_url',$('#jac-url').value.trim());
   setS('prostokino.jac_key',$('#jac-key').value.trim());
   const qm=$('#tor-qmode'); if(qm) setS('prostokino.tor_qmode',qm.value);
   const an=$('#autonext'); if(an) setS('prostokino.autonext',an.value);
+  const ps=$('#player-sel'); if(ps) setS('prostokino.player_sel',ps.value);
   const il=$('#intro-len'); if(il) setS('prostokino.intro_len',il.value.trim());
   setS('prostokino.subdl_key',$('#subdl-key').value.trim());
   $('#tmdb-status').textContent='Сохранено ✓';
@@ -1485,10 +1501,12 @@ function populateSettings(){
   $('#filmix-proxy').value=getS('prostokino.filmix_proxy');
   $('#ts-url').value=getS('prostokino.ts_url');
   $('#ts-url-http').value=getS('prostokino.ts_url_http');
+  const tss=$('#ts-sel'); if(tss) tss.value=getS('prostokino.ts_sel')||'ours';
   $('#jac-url').value=getS('prostokino.jac_url');
   $('#jac-key').value=getS('prostokino.jac_key');
   const qm=$('#tor-qmode'); if(qm) qm.value=getS('prostokino.tor_qmode')||'orig_ru_year';
   const an=$('#autonext'); if(an) an.value=getS('prostokino.autonext')||'1';
+  const ps=$('#player-sel'); if(ps) ps.value=getS('prostokino.player_sel')||'ours';
   const il=$('#intro-len'); if(il) il.value=getS('prostokino.intro_len');
   $('#subdl-key').value=getS('prostokino.subdl_key');
   $('#tmdb-status').textContent='';
@@ -1520,6 +1538,32 @@ let currentDetail=null;
 let srcRun=0;
 const FX_PROXY_DEFAULT='https://cors.jacred.stream';
 const TS_PROXY='https://torrserver.flyugertdiana.workers.dev';
+/* v0.33: выбор TorrServer и плеера. Alpac TorrServer — из плагина ts.js
+   (beta.l-vid.online): он НЕ задаёт адрес в коде клиента, а прописывает
+   настройки Lampa: torrserver_url='https://beta.l-vid.online/ts',
+   torrserver_use_link='one', torrserver_auth='true',
+   torrserver_login=<uid устройства>, torrserver_password='ts'.
+   Сервер резолвит Basic "uid:ts" обратно в токен через привязку устройства,
+   поэтому вход — наш prostokino.alpac_uid (аналог lampac_unic_id), пароль 'ts'.
+   Нового поля токена не заводится, в коде токен не хардкодится. */
+const ALPAC_TS='https://beta.l-vid.online/ts';
+function tsSel(){return getS('prostokino.ts_sel')||'ours';}
+function tsIsAlpac(){return tsSel()==='alpac';}
+function playerSel(){return getS('prostokino.player_sel')||'ours';}
+function tsAuthHeaders(){
+  if(!tsIsAlpac()) return {};
+  try{return {'Authorization':'Basic '+btoa(alpacUid()+':ts')};}catch(e){return {};}
+}
+/* Единый fetch к TorrServer: для Alpac-варианта добавляет Basic-авторизацию
+   и credentials:'include' (шанс, что серверная cookie подхватит и stream
+   во встроенном плеере; VLC-путь ниже вшивает данные входа прямо в URL). */
+function tsFetch(url,opts){
+  opts=opts||{};
+  const h=Object.assign({},opts.headers||{},tsAuthHeaders());
+  const o=Object.assign({},opts,{headers:h});
+  if(tsIsAlpac()) o.credentials='include';
+  return fetch(url,o);
+}
 const ALPAC='https://beta.l-vid.online';
 function getS(k){return (localStorage.getItem(k)||'').trim();}
 function setS(k,v){localStorage.setItem(k,v);}
@@ -2051,7 +2095,24 @@ function currentOverlay(){
   if(bmMenuIsOpen())return '#bm-menu';
   return null;
 }
+/* v0.33: выбор плеера. «Внешний плеер» — плагин external_player.js (Lampa):
+   настройки «Внешний плеер» (ext_player), «Выберите внешний плеер для
+   торрентов»; на Android единственный пресет — VLC через схему vlc://
+   (vlc://${furl}, furl — сырой URL потока). У нас мост openVlc уже есть
+   (ACTION_VIEW video/* в пакет org.videolan.vlc) — новый метод моста не нужен.
+   Трейлеры через playUrl не идут (они встраиваются в экран плеера напрямую),
+   поэтому выбор их не касается. Без моста (браузерное превью) — откат
+   во встроенный плеер, как раньше. */
 function playUrl(url,title,subs,info,ctx){
+  if(playerSel()==='ext'&&plBridgeAvailable()){
+    let u=url;
+    /* Alpac TorrServer + VLC: данные входа вшиваются в URL (VLC их понимает),
+       потому что intent не несёт заголовков; встроенный <video> userinfo
+       игнорирует, поэтому там эта подмена не применяется. */
+    if(tsIsAlpac()&&u.indexOf(ALPAC_TS+'/stream/')===0) u=u.replace(ALPAC_TS+'/stream/','https://'+alpacUid()+':ts@beta.l-vid.online/ts/stream/');
+    try{window.ProstoKino.openVlc(u);}catch(e){}
+    return;
+  }
   openBuiltInPlayer(url,title,subs,info,ctx);
 }
 
@@ -3009,6 +3070,7 @@ function jacQueryURL(base,key,q){
 function tsUrl(){return getS('prostokino.ts_url');}
 function tsUrlHttp(){return getS('prostokino.ts_url_http');}
 function tsBase(){
+  if(tsIsAlpac()) return ALPAC_TS;
   const h=tsUrlHttp().replace(/\/+$/,'');
   if(h){
     if(/^https:\/\//i.test(h)||h.indexOf(TS_PROXY)===0) return h;
@@ -3018,7 +3080,7 @@ function tsBase(){
   return tsUrl().replace(/\/+$/,'')||'http://127.0.0.1:8090';
 }
 async function tsAPI(body){
-  const r=await fetch(tsBase()+'/torrents',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)});
+  const r=await tsFetch(tsBase()+'/torrents',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)});
   if(!r.ok)throw new Error('HTTP '+r.status);
   return r.json();
 }
@@ -3114,7 +3176,7 @@ async function playTorrent(t,meta,tile){
   setTileBusy(tile,true); playStatus('Подключаю TorrServer…');
   try{
     const ts=tsBase();
-    const echo=await fetch(ts+'/echo',{cache:'no-store'});
+    const echo=await tsFetch(ts+'/echo',{cache:'no-store'});
     if(!echo.ok) throw new Error('echo');
     const added=await tsAPI({action:'add',link:t.magnet});
     const hash=String((added&&added.hash)||(added&&added.torrent&&added.torrent.hash)||'').toLowerCase();
@@ -3308,12 +3370,12 @@ async function plTick(){
   const again=function(ms){ if(plState===st&&!st.done&&!st.stalled) st.timer=setTimeout(plTick,ms); };
   let tor=null, ok=false;
   try{
-    const r=await fetch(tsBase()+'/torrents',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'get',hash:st.hash})});
+    const r=await tsFetch(tsBase()+'/torrents',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'get',hash:st.hash})});
     if(r.ok){const j=await r.json(); tor=j&&(j.torrent||j); ok=true;}
   }catch(e){}
   if(!ok||!plHasStatFields(tor)){
     try{
-      const r2=await fetch(tsBase()+'/cache',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'get',hash:st.hash})});
+      const r2=await tsFetch(tsBase()+'/cache',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'get',hash:st.hash})});
       if(r2.ok){const j2=await r2.json(); const c=j2&&(j2.Torrent||j2.torrent||j2); if(c&&plHasStatFields(c)){tor=c; ok=true;}}
     }catch(e){}
   }
@@ -3413,7 +3475,7 @@ function openPreload(url,hash,meta,file,size){
     const pu=url+'&preload';
     const tstr=function(){return new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});};
     st.preReq={state:'висит',time:tstr(),error:''};
-    fetch(pu,{signal:ctl.signal,cache:'no-store'}).then(async function(r){
+    tsFetch(pu,{signal:ctl.signal,cache:'no-store'}).then(async function(r){
       if(plState!==st) return;
       st.preReq.state='HTTP '+r.status; st.preReq.time=tstr();
       if(!r.ok){ st.preReq.error='HTTP '+r.status; return; }
