@@ -76,6 +76,31 @@ body.phone .hero-info h1{font-size:1.8em}
 .rows{padding:1em 2em 3em}
 body.phone .rows{padding:.5em 1em 2em}
 .row-title{font-size:1.4em;font-weight:700;margin:1.2em 0 .6em}
+/* v0.31: анимированная иконка «Ведёрко попкорна» (порт 1:1 из WeeklyLeadersPopcornIcon) — только в заголовках рядов «Лидеры недели» */
+.row-title-wlp{display:flex;align-items:center;gap:.8em}
+.wlp-icon{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;width:2.3em;height:2.3em}
+.wlp-icon .wlp-pulse{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle, rgba(255,99,99,0.45) 0%, rgba(255,196,59,0.28) 45%, rgba(255,196,59,0) 72%)}
+.wlp-icon svg{position:relative;width:2.3em;height:2.3em;filter:drop-shadow(0 2px 6px rgba(255,120,60,0.4))}
+@keyframes wlp-pulse{0%,100%{transform:scale(0.88);opacity:0.5}50%{transform:scale(1.12);opacity:1}}
+@keyframes wlp-top-bounce{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-1.4px) scale(1.015)}}
+@keyframes wlp-kernel-float{0%{transform:translateY(0) rotate(0deg);opacity:0}15%{opacity:1}70%{opacity:1}100%{transform:translateY(-10px) rotate(25deg);opacity:0}}
+@keyframes wlp-star-spin{0%,100%{transform:scale(1) rotate(0deg)}50%{transform:scale(1.2) rotate(18deg)}}
+@keyframes wlp-star-glow{0%,100%{opacity:0.5;transform:scale(0.85)}50%{opacity:1;transform:scale(1.25)}}
+@keyframes wlp-bar-1{0%,100%{transform:scaleY(0.6)}50%{transform:scaleY(1)}}
+@keyframes wlp-bar-2{0%,100%{transform:scaleY(1)}50%{transform:scaleY(0.65)}}
+@keyframes wlp-bar-3{0%,100%{transform:scaleY(0.75)}50%{transform:scaleY(1.05)}}
+.wlp-pulse{animation:wlp-pulse 2.4s ease-in-out infinite}
+.wlp-top{animation:wlp-top-bounce 1.6s ease-in-out infinite;transform-origin:32px 40px}
+.wlp-kernel{animation:wlp-kernel-float 2.6s ease-in-out infinite;transform-origin:center}
+.wlp-kernel--a{animation-delay:0s}
+.wlp-kernel--b{animation-delay:0.6s}
+.wlp-kernel--c{animation-delay:1.2s}
+.wlp-star{animation:wlp-star-spin 2s ease-in-out infinite}
+.wlp-star-glow{animation:wlp-star-glow 2s ease-in-out infinite;transform-origin:47px 14px}
+.wlp-bar--1{animation:wlp-bar-1 1.8s ease-in-out infinite;transform-origin:bottom}
+.wlp-bar--2{animation:wlp-bar-2 1.8s ease-in-out infinite;animation-delay:0.2s;transform-origin:bottom}
+.wlp-bar--3{animation:wlp-bar-3 1.8s ease-in-out infinite;animation-delay:0.4s;transform-origin:bottom}
+@media (prefers-reduced-motion: reduce){.wlp-pulse,.wlp-top,.wlp-kernel,.wlp-star,.wlp-star-glow,.wlp-bar--1,.wlp-bar--2,.wlp-bar--3{animation:none !important}}
 .row{display:flex;gap:1em;overflow-x:auto;padding:.4em .2em 1em;scrollbar-width:none;scroll-behavior:smooth}
 .row::-webkit-scrollbar{display:none}
 .card,.col-card{flex:0 0 auto;width:320px;background:none;border:0;padding:0;text-align:left;color:#fff}
@@ -518,6 +543,8 @@ body.phone .collections{padding:5em 1em 2em}
 </style>
 </head>
 <body>
+<!-- v0.31: общий блок defs иконки «Ведёрко попкорна» (один на страницу, оба экземпляра ссылаются на него) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="wlpBucket" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#FFE7D1"/></linearGradient><linearGradient id="bucketShade" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#000000" stop-opacity="0.12"/><stop offset="50%" stop-color="#000000" stop-opacity="0"/><stop offset="100%" stop-color="#000000" stop-opacity="0.12"/></linearGradient><radialGradient id="glowPc" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FFD37A" stop-opacity="0.9"/><stop offset="100%" stop-color="#FFD37A" stop-opacity="0"/></radialGradient><radialGradient id="starPc" cx="35%" cy="30%" r="75%"><stop offset="0%" stop-color="#FFF7D6"/><stop offset="100%" stop-color="#FFC94B"/></radialGradient></defs></svg>
 <header class="topmenu" id="menu">
 <div class="pk-logo go" id="pk-logo" role="img" aria-label="Pawflix">
 <svg class="paw" viewBox="0 0 120 120" aria-hidden="true">
@@ -1095,9 +1122,11 @@ function startHero(list){
     heroIdx=(heroIdx+1)%heroList.length; showHero(heroIdx);
   },15000);
 }
-function renderRow(boxId,title,items,type,more,vert){
+/* v0.31: иконка «Ведёрко попкорна» (порт 1:1 из WeeklyLeadersPopcornIcon, defs — в общем блоке после <body>) */
+const WLP_ICON='<span class="wlp-icon" aria-hidden="true"><span class="wlp-pulse"></span><svg viewBox="0 0 64 64"><g><rect x="4" y="46" width="4" height="10" rx="1.2" fill="#38E0A4" class="wlp-bar wlp-bar--1"/><rect x="10" y="40" width="4" height="16" rx="1.2" fill="#2BD1C8" class="wlp-bar wlp-bar--2"/></g><g><rect x="56" y="42" width="4" height="14" rx="1.2" fill="#2BD1C8" class="wlp-bar wlp-bar--3"/><rect x="50" y="47" width="4" height="9" rx="1.2" fill="#38E0A4" class="wlp-bar wlp-bar--1"/></g><circle cx="47" cy="14" r="8" fill="url(#glowPc)" class="wlp-star-glow"/><g class="wlp-kernel wlp-kernel--a"><circle cx="21" cy="14" r="3.4" fill="#FFF3D6" stroke="#F2C464" stroke-width="0.8"/></g><g class="wlp-kernel wlp-kernel--b"><circle cx="31" cy="8" r="2.8" fill="#FFF3D6" stroke="#F2C464" stroke-width="0.8"/></g><g class="wlp-kernel wlp-kernel--c"><circle cx="39" cy="15" r="2.3" fill="#FFF3D6" stroke="#F2C464" stroke-width="0.8"/></g><g class="wlp-top"><circle cx="20" cy="22" r="5.4" fill="#FFF7E6" stroke="#F2C464" stroke-width="0.8"/><circle cx="27" cy="17" r="6.4" fill="#FFFDF4" stroke="#F2C464" stroke-width="0.8"/><circle cx="35" cy="17.5" r="6.2" fill="#FFF7E6" stroke="#F2C464" stroke-width="0.8"/><circle cx="42" cy="21.5" r="5.2" fill="#FFFDF4" stroke="#F2C464" stroke-width="0.8"/><circle cx="31" cy="20.5" r="5.6" fill="#FFF3D6" stroke="#F2C464" stroke-width="0.8"/></g><path d="M16 25 H48 L44 58 C44 60.2 38.6 62 32 62 C25.4 62 20 60.2 20 58 Z" fill="url(#wlpBucket)" stroke="#E8440C" stroke-width="1.2"/><path d="M22.3 25 L25.8 62" stroke="#E8440C" stroke-width="4.2" stroke-linecap="round" opacity="0.9"/><path d="M32 25 L32 62" stroke="#E8440C" stroke-width="4.2" stroke-linecap="round" opacity="0.9"/><path d="M41.7 25 L38.2 62" stroke="#E8440C" stroke-width="4.2" stroke-linecap="round" opacity="0.9"/><path d="M16 25 H48 L44 58 C44 60.2 38.6 62 32 62 C25.4 62 20 60.2 20 58 Z" fill="url(#bucketShade)"/><rect x="15" y="22.5" width="34" height="4.4" rx="2.2" fill="#FFFDF4" stroke="#E8440C" stroke-width="1"/><g class="wlp-star" style="transform-origin:47px 14px"><path d="M47 8 L49 12.6 54 13.2 50.3 16.6 51.3 21.5 47 19 42.7 21.5 43.7 16.6 40 13.2 45 12.6 Z" fill="url(#starPc)" stroke="#E8860B" stroke-width="0.6"/></g></svg></span>';
+function renderRow(boxId,title,items,type,more,vert,icon){
   const box=$(boxId); if(!box) return;
-  let html='<div class="row-title">'+esc(title)+'</div><div class="row">';
+  let html='<div class="row-title'+(icon==='wlp'?' row-title-wlp':'')+'">'+(icon==='wlp'?WLP_ICON:'')+esc(title)+'</div><div class="row">';
   html+=items.map(it=>vert?pcardHTML(it,type):cardHTML(it,type,true)).join('');
   if(more) html+='<span class="more-wrap"'+(vert?' style="width:200px;aspect-ratio:2/3"':'')+'><button class="more-pill focusable" data-type="'+more.type+'" data-genre="'+more.genre+'" data-name="'+esc(more.name)+'" data-anim="'+(more.anim?'1':'0')+'" data-trend="'+(more.trend?'1':'0')+'">Ещё →</button></span>';
   html+='</div>';
@@ -1120,8 +1149,8 @@ async function loadHome(){
     rows.innerHTML='<div id="row-popular"></div><div id="row-trend-movie"></div><div id="row-trend-tv"></div>'+HOME_GENRES.map(g=>'<div id="row-g'+g[0]+'"></div>').join('');
     const pop=await api('/movie/popular',{page:1});
     renderRow('#row-popular','Популярное',pop.results,'movie',null);
-    try{const tm=await api('/trending/movie/week',{page:1});renderRow('#row-trend-movie','Лидеры недели по просмотрам (фильмы)',tm.results,'movie',{type:'movie',genre:'',name:'Лидеры недели по просмотрам (фильмы)',anim:false,trend:true},true);}catch(e){}
-    try{const tt=await api('/trending/tv/week',{page:1});renderRow('#row-trend-tv','Лидеры недели по просмотрам (сериалы)',tt.results,'tv',{type:'tv',genre:'',name:'Лидеры недели по просмотрам (сериалы)',anim:false,trend:true},true);}catch(e){}
+    try{const tm=await api('/trending/movie/week',{page:1});renderRow('#row-trend-movie','Лидеры недели по просмотрам (фильмы)',tm.results,'movie',{type:'movie',genre:'',name:'Лидеры недели по просмотрам (фильмы)',anim:false,trend:true},true,'wlp');}catch(e){}
+    try{const tt=await api('/trending/tv/week',{page:1});renderRow('#row-trend-tv','Лидеры недели по просмотрам (сериалы)',tt.results,'tv',{type:'tv',genre:'',name:'Лидеры недели по просмотрам (сериалы)',anim:false,trend:true},true,'wlp');}catch(e){}
     for(const g of HOME_GENRES){
       const d=await api('/discover/movie',{with_genres:g[0],sort_by:'popularity.desc',page:1});
       renderRow('#row-g'+g[0],g[1],d.results,'movie',{type:'movie',genre:g[0],name:g[1],anim:false},true);
