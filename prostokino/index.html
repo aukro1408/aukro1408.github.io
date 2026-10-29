@@ -1090,13 +1090,15 @@ document.addEventListener('keydown',e=>{
     else if(e.key==='Escape'){ae.blur();e.preventDefault();}
     return;
   }
+  /* v0.43: k объявлен до первого использования — раньше ветка плеера падала с ReferenceError (TDZ),
+     т.к. const k=e.key стоял ниже неё, и Назад/стрелки в плеере были мертвы. */
+  const k=e.key;
   if(playerIsOpen()&&plMode==='video'){
     if(k==='ArrowLeft'){plSeekBy(-10);plShowUI();e.preventDefault();return;}
     if(k==='ArrowRight'){plSeekBy(10);plShowUI();e.preventDefault();return;}
     if(k==='ArrowUp'||k==='ArrowDown'){plShowUI();}
     if((k==='Enter'||k===' ')&&!(cur&&cur.closest&&cur.closest('#player-ov'))){plToggle();plShowUI();e.preventDefault();return;}
   }
-  const k=e.key;
   if(k==='ArrowRight'){moveFocus('right');e.preventDefault();}
   else if(k==='Left'||k==='ArrowLeft'){moveFocus('left');e.preventDefault();}
   else if(k==='ArrowDown'){moveFocus('down');e.preventDefault();}
