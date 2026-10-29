@@ -1112,7 +1112,7 @@ function showScreen(id,push){
   if(id==='favs') renderFavs();
   if(id==='collections') renderCol();
   if(id==='settings'){populateSettings();}
-  if(id==='search') restoreSearch();
+  if(id==='search') enterSearch();
   if(detectTV()){
     const first=visibleFocusable();
     if(first.length) setFocus(first[0]);
@@ -1539,7 +1539,7 @@ async function doSearch(){
     const items=(d.results||[]).filter(r=>(r.media_type==='movie'||r.media_type==='tv')&&(r.backdrop_path||r.poster_path));
     loader.textContent=items.length?('Найдено: '+items.length):'Ничего не найдено';
     grid.innerHTML=items.map(it=>cardHTML(it,it.media_type)).join('');
-    saveSearchHist(q); saveSearchLast(q,items); renderSearchHist();
+    saveSearchHist(q); renderSearchHist();
     const first=grid.querySelector('.focusable');
     if(first&&detectTV()) setFocus(first);
   }catch(e){
@@ -1547,11 +1547,11 @@ async function doSearch(){
   }
 }
 $('#search-go').addEventListener('click',doSearch);
-/* v0.37: история поиска и восстановление прошлого поиска */
+/* v0.37: история поиска; v0.40: автовосстановление прошлого поиска убрано —
+   при входе на экран Поиска показываются только чипы истории, поле пустое,
+   результатов нет, поиск запускается только по «Найти» или тапу по чипу. */
 function loadSearchHist(){try{const v=JSON.parse(localStorage.getItem('prostokino.search_hist')||'[]');return Array.isArray(v)?v.filter(x=>typeof x==='string'&&x.trim()):[]}catch(e){return []}}
 function saveSearchHist(q){const h=loadSearchHist().filter(x=>x.toLowerCase()!==q.toLowerCase());h.unshift(q);try{localStorage.setItem('prostokino.search_hist',JSON.stringify(h.slice(0,10)))}catch(e){}}
-function loadSearchLast(){try{const v=JSON.parse(localStorage.getItem('prostokino.search_last')||'null');return (v&&typeof v.q==='string'&&Array.isArray(v.items))?v:null}catch(e){return null}}
-function saveSearchLast(q,items){try{localStorage.setItem('prostokino.search_last',JSON.stringify({q:q,items:items}))}catch(e){}}
 function renderSearchHist(){
   const box=$('#search-hist'); if(!box) return;
   const h=loadSearchHist();
@@ -1560,14 +1560,11 @@ function renderSearchHist(){
   box.querySelectorAll('.hist-chip').forEach(b=>{b.addEventListener('click',()=>{const q=loadSearchHist()[+b.dataset.hi];if(q===undefined)return;$('#search-input').value=q;doSearch();});});
   const cl=box.querySelector('.hist-clear'); if(cl) cl.addEventListener('click',()=>{try{localStorage.removeItem('prostokino.search_hist')}catch(e){} renderSearchHist();});
 }
-function restoreSearch(){
+function enterSearch(){
   renderSearchHist();
-  const inp=$('#search-input'); if(!inp||inp.value.trim()) return;
-  const last=loadSearchLast(); if(!last) return;
-  inp.value=last.q;
-  const grid=$('#search-grid'), loader=$('#search-loader');
-  loader.textContent=last.items.length?('Найдено: '+last.items.length):'Ничего не найдено';
-  grid.innerHTML=last.items.map(it=>cardHTML(it,it.media_type)).join('');
+  const inp=$('#search-input'); if(inp) inp.value='';
+  const grid=$('#search-grid'); if(grid) grid.innerHTML='';
+  const loader=$('#search-loader'); if(loader) loader.textContent='';
 }
 
 /* ============ v0.5: страница фильма, персоны, источники ============ */
