@@ -224,6 +224,8 @@ body.phone .fav-tabs{padding:5em 1em 0}
 .save-btn{background:#ff7a29;border:0;border-radius:999px;color:#fff;font-size:1.05em;padding:.7em 1.8em}
 .save-btn.focused{outline:3px solid #fff;outline-offset:2px}
 .field{background:#1e1e28;border:1px solid #33333f;border-radius:12px;color:#fff;font-size:1.05em;padding:.8em 1em;width:min(28em,90vw)}
+/* v0.41: у полей не было .focused — при убитом глобально outline (строка 15) кольцо фокуса на ТВ не было видно вовсе */
+.field.focused,.field:focus{outline:3px solid #fff;outline-offset:2px}
 .field:focus{border-color:#ff7a29}
 .hint{color:#9aa3b5;font-size:1.05em;line-height:1.5;padding:2em}
 .empty{color:#9aa3b5;font-size:1.1em;padding:2em}
@@ -1054,6 +1056,23 @@ function moveFocus(dir){
     if(!ok) continue;
     const d=dx*dx+dy*dy;
     if(d<bd){bd=d;best=el;}
+  }
+  /* v0.41: fallback — если строгий конус пуст, ближайший строго в полунаправлении (без конуса).
+     Срабатывает ТОЛЬКО когда конус ничего не нашёл; обычные перемещения не меняются. */
+  if(!best){
+    for(const el of list){
+      if(el===cur) continue;
+      const q=el.getBoundingClientRect(), ex=q.left+q.width/2, ey=q.top+q.height/2;
+      const dx=ex-cx, dy=ey-cy;
+      let ok=false;
+      if(dir==='right') ok=dx>0;
+      if(dir==='left') ok=dx<0;
+      if(dir==='down') ok=dy>0;
+      if(dir==='up') ok=dy<0;
+      if(!ok) continue;
+      const d=dx*dx+dy*dy;
+      if(d<bd){bd=d;best=el;}
+    }
   }
   if(best) setFocus(best);
 }
