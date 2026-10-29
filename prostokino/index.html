@@ -378,6 +378,10 @@ body.phone .tor-screen h1{font-size:1.5em}
 .filter-pill{display:flex;align-items:center;gap:.5em;background:#1e1e28;border:1px solid rgba(255,255,255,.10);border-radius:14px;color:#fff;font-size:1em;font-weight:700;padding:.7em 1em}
 .filter-pill .pv{color:#17a06b;max-width:14em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .filter-pill.focused{outline:3px solid #fff;outline-offset:2px}
+.tor-seasons{display:flex;gap:.5em;flex-wrap:wrap;margin-bottom:1.2em}
+.tor-season{display:flex;align-items:center;background:#1e1e28;border:1px solid rgba(255,255,255,.10);border-radius:14px;color:#fff;font-size:1em;font-weight:700;padding:.7em 1em}
+.tor-season.on{background:rgba(23,160,107,.18);border-color:#17a06b}
+.tor-season.focused{outline:3px solid #fff;outline-offset:2px}
 .tor-status{color:#9aa3b5;font-size:1em;line-height:1.5;margin-bottom:1em;max-width:50em}
 .tor-status.err{color:#ff9a90}
 .tor-card{display:block;width:100%;background:#26262e;border:1px solid rgba(255,255,255,.06);border-radius:14px;color:#fff;padding:.85em 1em;margin-bottom:.7em;text-align:left}
@@ -755,6 +759,7 @@ body.phone .collections{padding:5em 1em 2em}
         <button class="filter-pill focusable" id="tor-sort-pill">Сортировка <span class="pv" id="tor-sort-v">Топ</span> <span>▾</span></button>
         <button class="filter-pill focusable" id="tor-qmode-pill">Запрос <span class="pv" id="tor-qmode-v"></span> <span>▾</span></button>
       </div>
+      <div class="tor-seasons" id="tor-seasons" style="display:none"></div>
       <div class="tor-status" id="tor-status"></div>
       <div class="framed" id="tor-frame" style="display:none"><div id="tor-list"></div></div>
       <div class="empty" id="tor-empty" style="display:none"></div>
@@ -2200,7 +2205,7 @@ async function openDetail(type,id){
     const dur=type==='movie'?fmtDur(d.runtime):fmtDur((d.episode_run_time||[])[0]);
     const bmed=anyBm(type,id);
     const pic=d.backdrop_path||d.poster_path;
-    currentDetail={type:type,id:d.id,title:title,orig:d.original_title||d.original_name||title,year:year,rating:d.vote_average||0,dur:dur,backdrop:d.backdrop_path||null,poster:d.poster_path||null,overview:d.overview||''};
+    currentDetail={type:type,id:d.id,title:title,orig:d.original_title||d.original_name||title,year:year,rating:d.vote_average||0,dur:dur,backdrop:d.backdrop_path||null,poster:d.poster_path||null,overview:d.overview||'',seasons:(d.seasons||[]).map(function(s){return s.season_number;})};
     let credits=null, sim=null, vids=null;
     try{credits=await api('/'+type+'/'+id+'/credits');}catch(e){}
     try{sim=await api('/'+type+'/'+id+'/similar',{page:1});}catch(e){}
@@ -3102,7 +3107,7 @@ let torState=null;
 function torStatusMsg(msg,err){const el=$('#tor-status');if(el){el.textContent=msg||'';el.classList.toggle('err',!!err);}}
 function playStatus(msg,err){if(currentScreen==='tor') torStatusMsg(msg,err); else srcStatus(msg,err);}
 async function openTorrent(meta,tile,run){
-  torState={meta:meta,run:run,list:[],sort:'top',query:torQuery(meta)};
+  torState={meta:meta,run:run,list:[],sort:'top',query:torQuery(meta),season:'all'};
   showScreen('tor');
   $('#tor-title').textContent=meta.title||'';
   const mp=[];
@@ -3113,6 +3118,8 @@ async function openTorrent(meta,tile,run){
   $('#tor-best').style.display='none';
   $('#tor-sub').textContent='';
   $('#tor-frame').style.display='none';
+  $('#tor-seasons').style.display='none';
+  $('#tor-seasons').innerHTML='';
   $('#tor-list').innerHTML='';
   $('#tor-empty').style.display='none';
   $('#tor-sort-v').textContent='Топ';
@@ -3153,19 +3160,76 @@ async function torSearch(focusFirst){
   }
 }
 function torSeedTier(n){return n<5?'seed-low':n<10?'seed-mid':n<20?'seed-good':'';}
-function torRender(focusFirst){
+/* v0.38: фильтр раздач по сезонам (сериалы) — парсинг сезона из названия, как в Лампе */
+function torSeasonSet(title){
+  const s=String(title||''), out=new Set();
+  const add=function(n){if(n>=0&&n<=99) out.add(n);};
+  const addRange=function(a,b){if(a>b){const t=a;a=b;b=t;} if(b-a>50) b=a+50; for(let n=a;n<=b;n++) add(n);};
+  let m, found=false;
+  const reS=/[Ss](\d{1,2})(?!\d)(?:\s*[-–]\s*[Ss]?(\d{1,2})(?!\d))?(?:[Ee](\d{1,3})(?!\d)(?:\s*[-–]\s*[Ee]?(\d{1,3})(?!\d))?)?/g;
+  while((m=reS.exec(s))!==null){ found=true; if(m[2]) addRange(+m[1],+m[2]); else add(+m[1]); }
+  const reA=/(?:сезон[а-я]*|season)\s*:?\s*(\d{1,2})(?!\d)(?:\s*[-–]\s*(\d{1,2})(?!\d))?/gi;
+  while((m=reA.exec(s))!==null){ found=true; if(m[2]) addRange(+m[1],+m[2]); else add(+m[1]); }
+  const reB=/(?:^|[^\d])(\d{1,2})(?!\d)\s*[-–]\s*(\d{1,2})(?!\d)\s*(?:сезон[а-я]*|season)/gi;
+  while((m=reB.exec(s))!==null){ found=true; addRange(+m[1],+m[2]); }
+  const reC=/(?:^|[^\d])(\d{1,2})(?!\d)\s*(?:сезон[а-я]*|season)/gi;
+  while((m=reC.exec(s))!==null){ found=true; add(+m[1]); }
+  const reD=/(?:^|[^\d])(\d{1,2})(?!\d)\s*(?:-й|й)\s*сезон/gi;
+  while((m=reD.exec(s))!==null){ found=true; add(+m[1]); }
+  if(!found&&/(спецвыпуск|special)/i.test(s)) add(0);
+  return out;
+}
+function torSeasonChips(){
+  const st=torState; if(!st||!st.meta||st.meta.type!=='tv') return [];
+  let nums=[];
+  if(Array.isArray(st.meta.seasons)&&st.meta.seasons.length) nums=st.meta.seasons.slice();
+  else{
+    const u=new Set();
+    st.list.forEach(function(t){torSeasonSet(t.title).forEach(function(n){u.add(n);});});
+    nums=Array.from(u);
+  }
+  nums=nums.filter(function(n){return n!==null&&!isNaN(n);}).sort(function(a,b){return a-b;});
+  const chips=[{val:'all',label:'Все сезоны'}];
+  nums.filter(function(n){return n>0;}).forEach(function(n){chips.push({val:n,label:'Сезон '+n});});
+  if(nums.indexOf(0)>=0) chips.push({val:0,label:'Спецвыпуски'});
+  return chips;
+}
+function torRenderSeasons(keepFocus){
+  const row=$('#tor-seasons'); if(!row) return;
+  const chips=torSeasonChips();
+  if(chips.length<=1){row.style.display='none';row.innerHTML='';return;}
+  const st=torState;
+  row.style.display='flex';
+  row.innerHTML=chips.map(function(c){
+    return '<button class="tor-season focusable'+(String(c.val)===String(st.season)?' on':'')+'" data-season="'+c.val+'">'+esc(c.label)+'</button>';
+  }).join('');
+  row.querySelectorAll('.tor-season').forEach(function(b){
+    b.addEventListener('click',function(){
+      if(!torState) return;
+      torState.season=(b.dataset.season==='all'?'all':+b.dataset.season);
+      torRender(false,b.dataset.season);
+    });
+  });
+  if(keepFocus!=null&&detectTV()){
+    const f=row.querySelector('[data-season="'+keepFocus+'"]');
+    if(f) setFocus(f);
+  }
+}
+function torRender(focusFirst,keepSeason){
   const st=torState; if(!st) return;
   const meta=st.meta;
-  const arr=torSortedList(st.list,st.sort);
+  const filtered=(meta.type==='tv'&&st.season!=='all')?st.list.filter(function(t){return torSeasonSet(t.title).has(st.season);}):st.list;
+  const arr=torSortedList(filtered,st.sort);
   let best=null,bestScore=-1;
-  st.list.forEach(function(t){const s=torScore(t);if(s>bestScore){bestScore=s;best=t;}});
+  filtered.forEach(function(t){const s=torScore(t);if(s>bestScore){bestScore=s;best=t;}});
+  torRenderSeasons(keepSeason||null);
   const bestBtn=$('#tor-best');
   if(best){bestBtn.style.display='flex';bestBtn.onclick=function(){torPlayCard(best,null);};} else bestBtn.style.display='none';
   $('#tor-sub').innerHTML=arr.length+' '+plural(arr.length,'раздача','раздачи','раздач')+(st.query?' · <b>'+esc(st.query)+'</b>':'');
   $('#tor-sort-v').textContent=torSortName(st.sort);
   $('#tor-qmode-v').textContent=torQmodeName2(torQmode());
   const frame=$('#tor-frame'), list=$('#tor-list'), empty=$('#tor-empty');
-  if(!arr.length){frame.style.display='none';empty.textContent='Раздач не нашлось.';empty.style.display='block';return;}
+  if(!arr.length){frame.style.display='none';empty.textContent=st.list.length?'В этом сезоне раздач не найдено.':'Раздач не нашлось.';empty.style.display='block';return;}
   empty.style.display='none'; frame.style.display='block';
   list.innerHTML=arr.map(function(t){
     const i=st.list.indexOf(t);
