@@ -78,13 +78,13 @@ body.phone .rows{padding:.5em 1em 2em}
 .row-title{font-size:1.4em;font-weight:700;margin:1.2em 0 .6em}
 .row{display:flex;gap:1em;overflow-x:auto;padding:.4em .2em 1em;scrollbar-width:none;scroll-behavior:smooth}
 .row::-webkit-scrollbar{display:none}
-.card{flex:0 0 auto;width:320px;background:none;border:0;padding:0;text-align:left;color:#fff}
-body.phone .card{width:78vw;max-width:380px}
-.card .thumb{position:relative;display:block;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;
+.card,.col-card{flex:0 0 auto;width:320px;background:none;border:0;padding:0;text-align:left;color:#fff}
+body.phone .card,body.phone .col-card{width:78vw;max-width:380px}
+.card .thumb,.col-card .thumb{position:relative;display:block;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;
   background:#22222c;box-shadow:0 14px 30px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.45);transition:transform .15s}
-.card .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.card .ctitle{display:block;margin-top:.55em;font-size:1.02em;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card.focused .thumb{outline:3px solid #fff;outline-offset:3px;transform:scale(1.03)}
+.card .thumb img,.col-card .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.card .ctitle,.col-card .ctitle{display:block;margin-top:.55em;font-size:1.02em;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card.focused .thumb,.col-card.focused .thumb{outline:3px solid #fff;outline-offset:3px;transform:scale(1.03)}
 .cbadge{position:absolute;top:.55em;left:.55em;z-index:2;background:rgba(0,0,0,.72);color:#fff;font-size:.82em;font-weight:700;line-height:1;padding:.35em .65em;border-radius:999px;white-space:nowrap;pointer-events:none}
 .cbadge .star{color:#ffb340}
 .card .thumb img.card-logo{position:absolute;left:.6em;bottom:.5em;z-index:2;width:auto;height:2.2em;max-width:48%;object-fit:contain;object-position:left bottom;filter:drop-shadow(0 2px 6px rgba(0,0,0,.85));pointer-events:none;visibility:hidden}
@@ -97,7 +97,7 @@ body.phone .more-wrap{width:78vw;max-width:380px}
 .grid{display:grid;gap:1em;padding:1.5em 2em 3em}
 body.tv .grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
 body.phone .grid{grid-template-columns:1fr;padding:1em 1em 2em}
-.grid .card{width:auto}
+.grid .card,.grid .col-card{width:auto}
 /* Полный список жанра: фиксированный фон-бэкдроп, карточки листаются поверх */
 .list-bg{position:fixed;inset:0;z-index:0;overflow:hidden;background:#0f0f14}
 .list-bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(24px) saturate(1.2);transform:scale(1.12)}
@@ -496,6 +496,21 @@ body.phone #screen-preload .pl23-wrap{top:5.2em}
 .pl-icbtn.focused,.pl-cbtn.focused,.pl-bigplay.focused,.pl-rate.focused{outline:3px solid #fff; outline-offset:3px}
 .pl-bridge-btn{background:#ff7a29; border:0; border-radius:999px; color:#fff; font-size:15px; font-weight:800; padding:12px 22px; cursor:pointer}
 .pl-bridge-btn.focused{background:#ffa05c; outline:3px solid #fff; outline-offset:2px}
+/* v0.29: полоса торрент-кэша, кнопка пропуска заставки, оверлей авто-next, подборки */
+.pl-tor{position:absolute;left:0;height:4px;border-radius:2px;background:rgba(255,122,41,.6);width:0}
+.pl-skip{position:absolute;right:16px;bottom:210px;z-index:5;display:none;border:0;border-radius:999px;background:#ff7a29;color:#fff;font-size:14px;font-weight:800;padding:12px 20px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.pl-skip.focused{outline:3px solid #fff;outline-offset:3px}
+.pl-next{position:absolute;right:16px;bottom:210px;z-index:7;display:none;background:rgba(24,24,30,.94);border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:14px 16px;max-width:min(420px,86vw);box-shadow:0 12px 40px rgba(0,0,0,.6)}
+.pl-next-t{font-weight:800;font-size:15px;margin-bottom:4px}
+.pl-next-c{font-size:13px;color:rgba(255,255,255,.65);margin-bottom:10px}
+.pl-next-row{display:flex;gap:8px}
+.pl-next-btn{border:0;border-radius:999px;background:#ff7a29;color:#fff;font-size:13px;font-weight:800;padding:9px 16px;cursor:pointer}
+.pl-next-ghost{border:1px solid rgba(255,255,255,.25);border-radius:999px;background:transparent;color:#fff;font-size:13px;font-weight:700;padding:9px 16px;cursor:pointer}
+.pl-next-btn.focused,.pl-next-ghost.focused{outline:3px solid #fff;outline-offset:2px}
+.collections{padding:5.5em 2em 3em}
+body.phone .collections{padding:5em 1em 2em}
+.collections .back-btn{margin:0 0 1em}
+.col-card .csub{display:block;margin-top:.35em;color:rgba(255,255,255,.6);font-size:.9em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pl-yt{position:absolute; inset:0; z-index:2; background:#000}
 .pl-yt iframe{width:100%; height:100%; border:0}
 #player-ov.yt #plVideo,#player-ov.yt .pl-tapzone,#player-ov.yt .pl-flash,#player-ov.yt .pl-center,#player-ov.yt .pl-bottom,#player-ov.yt #plQ,#player-ov.yt #plInfo{display:none}
@@ -525,6 +540,7 @@ body.phone #screen-preload .pl23-wrap{top:5.2em}
 <div class="word" aria-hidden="true"><span style="--k:0">p</span><span style="--k:1">a</span><span style="--k:2">w</span><span class="f" style="--k:3">f</span><span class="f2" style="--k:4">l</span><span class="f3" style="--k:5">i</span><span class="f4" style="--k:6">x</span></div>
 </div>
   <button class="menu-btn focusable active" data-screen="home">Главная</button>
+  <button class="menu-btn focusable" data-screen="collections">Коллекции</button>
   <button class="menu-btn focusable" data-screen="genres-movie">Фильмы</button>
   <button class="menu-btn focusable" data-screen="genres-tv">Сериалы</button>
   <button class="menu-btn focusable" data-screen="genres-anim">Мультфильмы</button>
@@ -630,6 +646,14 @@ body.phone #screen-preload .pl23-wrap{top:5.2em}
           <option value="ru_orig_year">Русский + Оригинал + Год</option>
         </select>
       </div>
+      <h2 style="margin-top:1em">Плеер</h2>
+      <div class="rowline" style="margin-bottom:.8em">
+        <select class="field focusable" id="autonext"><option value="1">Автоследующая серия: вкл</option><option value="0">Автоследующая серия: выкл</option></select>
+        <input class="field focusable" id="intro-len" type="number" placeholder="Длина заставки, сек (по умолчанию 85)" autocomplete="off">
+      </div>
+      <div class="rowline" style="margin-bottom:.8em">
+        <input class="field focusable" id="subdl-key" type="text" placeholder="SubDL-ключ (субтитры из сети, subdl.com)" autocomplete="off">
+      </div>
       <div class="status" id="tmdb-status"></div>
     </div>
   </section>
@@ -644,6 +668,7 @@ body.phone #screen-preload .pl23-wrap{top:5.2em}
       <div class="grid" id="search-grid" style="padding:1.5em 0"></div>
     </div>
   </section>
+  <section class="screen" id="screen-collections"><div class="collections" id="col-box"></div></section>
   <section class="screen" id="screen-detail">
     <div class="detail" id="detail-box"></div>
   </section>
@@ -754,7 +779,7 @@ body.phone #screen-preload .pl23-wrap{top:5.2em}
       <div class="pl-center"><button class="pl-bigplay focusable" id="plBigPlay" aria-label="Пауза/играть"><svg viewBox="0 0 24 24" id="plBigPlayIco"><path d="M8 5v14l11-7z"/></svg></button></div>
       <div class="pl-bottom">
         <div class="pl-panel">
-          <div class="pl-seek" id="plSeek"><div class="pl-buf" id="plBuf"></div><div class="pl-fill" id="plFill"></div><div class="pl-knob" id="plKnob"></div></div>
+          <div class="pl-seek" id="plSeek"><div class="pl-tor" id="plTor"></div><div class="pl-buf" id="plBuf"></div><div class="pl-fill" id="plFill"></div><div class="pl-knob" id="plKnob"></div></div>
           <div class="pl-timerow"><span id="plCur">0:00</span><button class="pl-rate focusable" id="plRate" aria-label="Скорость">1.0×</button><span id="plRem">-0:00</span></div>
           <div class="pl-controls">
             <button class="pl-cbtn focusable" id="plRw" aria-label="-10 секунд"><svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.3 0 6 2.7 6 6s-2.7 6-6 6-6-2.7-6-6H4c0 4.4 3.6 8 8 8s8-3.6 8-8-3.6-8-8-8z"/><text x="12" y="15.8" text-anchor="middle" font-size="7" font-weight="800" fill="#fff" font-family="system-ui,sans-serif">10</text></svg></button>
@@ -771,6 +796,8 @@ body.phone #screen-preload .pl23-wrap{top:5.2em}
       <div id="plInfoRows"></div>
     </div>
     <div class="pl-yt" id="plYt" style="display:none"></div>
+    <button class="pl-skip focusable" id="plSkipBtn" style="display:none">Пропустить заставку →</button>
+    <div class="pl-next" id="plNext" style="display:none"><div class="pl-next-t" id="plNextT"></div><div class="pl-next-c" id="plNextC"></div><div class="pl-next-row"><button class="pl-next-btn focusable" id="plNextNow">Смотреть сейчас</button><button class="pl-next-ghost focusable" id="plNextCancel">Отмена</button></div></div>
   </div>
 </div>
 <div id="trailer-ov">
@@ -778,6 +805,26 @@ body.phone #screen-preload .pl23-wrap{top:5.2em}
   <div class="wrap"><iframe id="trailer-frame" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe></div>
 </div>
 <script>
+/* v0.29: миграция localStorage file:// -> https-origin.
+   Трейлеры YouTube с июля 2025 отдают ошибку 153 при null-origin (file://):
+   YouTube требует проверяемый HTTP Referer. С v0.29 приложение в WebView
+   грузится через loadDataWithBaseURL с базой https://aukro1408.github.io/prostokino/
+   (см. MainActivity) — у страницы появляется настоящий origin, а этот bootstrap
+   при первом запуске на новом origin подсеивает ключи/избранное/память,
+   экспортированные со старого file://-origin через мост (только отсутствующие
+   ключи — ничего уже введённого не затирает). В браузере моста нет — no-op. */
+(function(){
+  try{
+    var b=window.ProstoKino;
+    if(!b||typeof b.getMigration!=='function') return;
+    var raw=b.getMigration(); if(!raw) return;
+    var data=JSON.parse(raw);
+    Object.keys(data).forEach(function(k){
+      if(localStorage.getItem(k)===null) localStorage.setItem(k,data[k]);
+    });
+    if(typeof b.setMigrationDone==='function') b.setMigrationDone();
+  }catch(e){}
+})();
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 const LS_KEY='prostokino.tmdb_key', LS_FAV='prostokino.favs';
@@ -931,7 +978,7 @@ document.addEventListener('keydown',e=>{
 });
 
 /* Экраны */
-const MENU_MAIN={home:1,'genres-movie':1,'genres-tv':1,'genres-anim':1,favs:1,settings:1,search:1};
+const MENU_MAIN={home:1,collections:1,'genres-movie':1,'genres-tv':1,'genres-anim':1,favs:1,settings:1,search:1};
 function showScreen(id,push){
   if(push===undefined) push=true;
   if(push&&currentScreen&&currentScreen!==id) hist.push(currentScreen);
@@ -946,6 +993,7 @@ function showScreen(id,push){
   if(id==='genres-tv') openCatalog('tv');
   if(id==='genres-anim') openCatalog('anim');
   if(id==='favs') renderFavs();
+  if(id==='collections') renderCol();
   if(id==='settings'){populateSettings();}
   if(detectTV()){
     const first=visibleFocusable();
@@ -997,6 +1045,10 @@ function cardHTML(it,type,logo){
 document.addEventListener('click',e=>{
   const pc=e.target.closest?e.target.closest('.pcard'):null;
   if(pc){openDetail(pc.dataset.type,pc.dataset.id);return;}
+  const cc=e.target.closest?e.target.closest('.col-card'):null;
+  if(cc){openColDetail(+cc.dataset.col,cc.dataset.title);return;}
+  const cm=e.target.closest?e.target.closest('.col-more'):null;
+  if(cm){openColCategory(cm.dataset.cat);return;}
   const card=e.target.closest?e.target.closest('.card'):null;
   if(card){openDetail(card.dataset.type,card.dataset.id);return;}
   const sim=e.target.closest?e.target.closest('.sim-more'):null;
@@ -1043,11 +1095,11 @@ function startHero(list){
     heroIdx=(heroIdx+1)%heroList.length; showHero(heroIdx);
   },15000);
 }
-function renderRow(boxId,title,items,type,more){
+function renderRow(boxId,title,items,type,more,vert){
   const box=$(boxId); if(!box) return;
   let html='<div class="row-title">'+esc(title)+'</div><div class="row">';
-  html+=items.map(it=>cardHTML(it,type,true)).join('');
-  if(more) html+='<span class="more-wrap"><button class="more-pill focusable" data-type="'+more.type+'" data-genre="'+more.genre+'" data-name="'+esc(more.name)+'" data-anim="'+(more.anim?'1':'0')+'">Ещё →</button></span>';
+  html+=items.map(it=>vert?pcardHTML(it,type):cardHTML(it,type,true)).join('');
+  if(more) html+='<span class="more-wrap"'+(vert?' style="width:200px;aspect-ratio:2/3"':'')+'><button class="more-pill focusable" data-type="'+more.type+'" data-genre="'+more.genre+'" data-name="'+esc(more.name)+'" data-anim="'+(more.anim?'1':'0')+'">Ещё →</button></span>';
   html+='</div>';
   box.innerHTML=html;
   watchCardLogos(box);
@@ -1070,7 +1122,7 @@ async function loadHome(){
     renderRow('#row-popular','Популярное',pop.results,'movie',null);
     for(const g of HOME_GENRES){
       const d=await api('/discover/movie',{with_genres:g[0],sort_by:'popularity.desc',page:1});
-      renderRow('#row-g'+g[0],g[1],d.results,'movie',{type:'movie',genre:g[0],name:g[1],anim:false});
+      renderRow('#row-g'+g[0],g[1],d.results,'movie',{type:'movie',genre:g[0],name:g[1],anim:false},true);
     }
   }catch(e){
     rows.innerHTML='<div class="empty">Не удалось загрузить каталог — проверьте TMDB-ключ в Настройках.</div>';
@@ -1311,6 +1363,9 @@ function saveSettings(){
   setS('prostokino.jac_url',$('#jac-url').value.trim());
   setS('prostokino.jac_key',$('#jac-key').value.trim());
   const qm=$('#tor-qmode'); if(qm) setS('prostokino.tor_qmode',qm.value);
+  const an=$('#autonext'); if(an) setS('prostokino.autonext',an.value);
+  const il=$('#intro-len'); if(il) setS('prostokino.intro_len',il.value.trim());
+  setS('prostokino.subdl_key',$('#subdl-key').value.trim());
   $('#tmdb-status').textContent='Сохранено ✓';
   homeLoaded=false;
   if(getKey()) loadHome();
@@ -1324,6 +1379,9 @@ function populateSettings(){
   $('#jac-url').value=getS('prostokino.jac_url');
   $('#jac-key').value=getS('prostokino.jac_key');
   const qm=$('#tor-qmode'); if(qm) qm.value=getS('prostokino.tor_qmode')||'orig_ru_year';
+  const an=$('#autonext'); if(an) an.value=getS('prostokino.autonext')||'1';
+  const il=$('#intro-len'); if(il) il.value=getS('prostokino.intro_len');
+  $('#subdl-key').value=getS('prostokino.subdl_key');
   $('#tmdb-status').textContent='';
 }
 $('#tmdb-save').addEventListener('click',saveSettings);
@@ -1421,9 +1479,12 @@ document.addEventListener('click',e=>{
    путём метода «Кино» (YouTube embed iframe) внутри этого же экрана плеера (openPlayerTrailer),
    а не через старый трейлер-оверлей. */
 let hlsInst=null, plMode='video', plFailUrl=null, plInfoData=null, plQ='';
+let plCtx=null, plTorTimer=null, plNextTimer=null, plNextTarget=null, plNextLeft=0;
 let plSubsList=[], plCurSub=-1, plHideT=null, plSeeking=false;
 let plStallT=null, plRetried=false, plErrMode=null;
 const PL_RATES=[1,1.5,2,0.5];
+function plAutoNext(){ return getS('prostokino.autonext')!=='0'; }
+function plIntroLen(){ const n=parseInt(getS('prostokino.intro_len'),10); return isNaN(n)?85:Math.max(0,Math.min(600,n)); }
 function plFmt(s){
   s=Math.max(0,Math.floor(s||0));
   const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60;
@@ -1491,6 +1552,7 @@ function plUpdSeek(){
   $('#plKnob').style.left=p+'%';
   $('#plCur').textContent=plFmt(v.currentTime);
   $('#plRem').textContent='-'+plFmt(v.duration-v.currentTime);
+  plSyncSkip();
 }
 function plSetSubs(list){
   plSubsList=[]; plCurSub=-1;
@@ -1500,7 +1562,7 @@ function plSetSubs(list){
     else if(s&&s.url){u=s.url; label=s.label||s.name||'';}
     if(u) plSubsList.push({name:label||('Субтитры '+(plSubsList.length+1)),url:u});
   });
-  const b=$('#plSubs'); if(b) b.style.display=plSubsList.length?'':'none';
+  const b=$('#plSubs'); if(b) b.style.display='';
 }
 function srtToVtt(srt){
   return 'WEBVTT\n\n'+srt.replace(/\r\n?/g,'\n').replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g,'$1.$2');
@@ -1509,8 +1571,10 @@ async function plLoadSub(i){
   const v=$('#plVideo');
   v.querySelectorAll('track').forEach(t=>t.remove());
   plCurSub=i;
+  if(hlsInst){ try{ hlsInst.subtitleTrack=-1; }catch(e){} }
   if(i<0) return;
   const s=plSubsList[i];
+  if(s&&s.hls!=null){ if(hlsInst){ try{ hlsInst.subtitleTrack=s.hls; }catch(e){} } return; }
   try{
     const r=await fetch(s.url);
     if(!r.ok) throw 0;
@@ -1531,13 +1595,143 @@ async function plLoadSub(i){
 }
 function plRenderSubMenu(){
   const m=$('#plMenu');
-  m.innerHTML='<div class="pm-t">Субтитры</div>'+
-    '<div class="pm-i '+(plCurSub===-1?'on':'')+'" data-s="-1">Выключены</div>'+
-    plSubsList.map((s,i)=>'<div class="pm-i '+(plCurSub===i?'on':'')+'" data-s="'+i+'">'+esc(s.name)+'</div>').join('');
+  let html='<div class="pm-t">Субтитры</div>'+
+    '<div class="pm-i '+(plCurSub===-1?'on':'')+'" data-s="-1">Выключены</div>';
+  if(!plSubsList.length) html+='<div class="pm-i" style="opacity:.6">Субтитров нет</div>';
+  else html+=plSubsList.map((s,i)=>'<div class="pm-i '+(plCurSub===i?'on':'')+'" data-s="'+i+'">'+esc(s.name)+'</div>').join('');
+  html+='<div class="pm-i" data-s="net">\uD83D\uDD0D Найти в сети…</div>';
+  m.innerHTML=html;
   m.querySelectorAll('.pm-i').forEach(el=>el.onclick=ev=>{
     ev.stopPropagation();
+    if(el.dataset.s==='net'){ plSearchSubs(); return; }
+    if(el.dataset.s===undefined) return;
     m.style.display='none'; plLoadSub(+el.dataset.s); plShowUI();
   });
+}
+/* v0.29: SubDL — ТОЧНЫЙ механизм «Кино» (api.subdl.com, unpack, фильтр srt/vtt,
+   скачивание через dl.subdl.com, ZIP-отказ, utf-8 -> windows-1251, BOM, SRT->VTT).
+   Ключ — только из Настроек (prostokino.subdl_key), в коде его нет. */
+async function plSearchSubs(){
+  const m=$('#plMenu');
+  const key=getS('prostokino.subdl_key');
+  if(!key){ m.innerHTML='<div class="pm-t">Субтитры \u00B7 SubDL</div><div class="pm-i">Добавьте ключ SubDL в Настройках</div>'; return; }
+  const ctx=plCtx;
+  if(!ctx||!ctx.meta){ m.innerHTML='<div class="pm-t">Субтитры \u00B7 SubDL</div><div class="pm-i">Нет данных о фильме</div>'; return; }
+  m.innerHTML='<div class="pm-t">Субтитры \u00B7 SubDL</div><div class="pm-i">\u23F3 Ищу…</div>';
+  try{
+    const pp=new URLSearchParams({api_key:key,languages:'RU',unpack:'1',type:ctx.kind==='series'?'tv':'movie'});
+    const tid=String(ctx.meta.id||'');
+    if(/^\d+$/.test(tid)) pp.set('tmdb_id',tid); else pp.set('film_name',ctx.meta.orig||ctx.meta.title||'');
+    if(ctx.kind==='series'&&ctx.season!=null&&ctx.episode!=null){ pp.set('season',ctx.season); pp.set('episode',ctx.episode); }
+    const r=await fetch('https://api.subdl.com/api/v1/subtitles?'+pp.toString());
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    const list=(j.subtitles||[]).filter(x=>{
+      const fs=x.unpack_files||[];
+      return fs.some(f=>/srt/i.test(f.format||'')||/\.srt$/i.test(f.name||'')||/vtt/i.test(f.format||'')||/\.vtt$/i.test(f.name||''));
+    });
+    if(!list.length){ m.innerHTML='<div class="pm-t">Субтитры \u00B7 SubDL</div><div class="pm-i">Ничего не нашлось \uD83D\uDE15</div>'; return; }
+    m.innerHTML='<div class="pm-t">Субтитры \u00B7 SubDL</div>'+list.slice(0,25).map((x,i)=>{
+      const ep=(x.season&&x.episode)?('S'+x.season+'E'+x.episode+' \u00B7 '):'';
+      const hi=x.hi?' \u00B7 SDH':'';
+      return '<div class="pm-i dl" data-i="'+i+'">'+esc(ep+(x.release_name||x.name||'Субтитры')+hi)+'</div>';
+    }).join('');
+    m.querySelectorAll('.pm-i.dl').forEach(el=>el.onclick=ev=>{ ev.stopPropagation(); plDownloadSub(list[+el.dataset.i]); });
+  }catch(e){ m.innerHTML='<div class="pm-t">Субтитры \u00B7 SubDL</div><div class="pm-i">Ошибка поиска</div>'; }
+}
+async function plDownloadSub(x){
+  const m=$('#plMenu'); m.style.display='none';
+  try{
+    const fs=x.unpack_files||[];
+    const pick=fs.find(f=>/srt/i.test(f.format||'')||/\.srt$/i.test(f.name||''))||fs[0];
+    if(!pick||!pick.url) throw 0;
+    let url=pick.url; if(url.startsWith('/')) url='https://dl.subdl.com'+url;
+    const r=await fetch(url); if(!r.ok) throw 0;
+    const bytes=new Uint8Array(await r.arrayBuffer());
+    if(bytes[0]===0x50&&bytes[1]===0x4B) throw 'zip';
+    let txt=new TextDecoder('utf-8').decode(bytes);
+    if(txt.includes('\uFFFD')) txt=new TextDecoder('windows-1251').decode(bytes);
+    if(txt.charCodeAt(0)===0xFEFF) txt=txt.slice(1);
+    const isSrt=/\.srt$/i.test(pick.name||'');
+    const blobUrl=URL.createObjectURL(new Blob([isSrt?srtToVtt(txt):txt],{type:'text/vtt'}));
+    const name=(pick.name||'subdl.srt').replace(/\.srt$/i,'.vtt');
+    plSubsList.push({name:name,url:blobUrl});
+    plLoadSub(plSubsList.length-1);
+  }catch(e){
+    $('#plErrTx').textContent=(e==='zip'?'Это архив — выбери другие субтитры':'Не удалось скачать субтитры');
+    $('#plErr').style.display='flex';
+    setTimeout(()=>{ if(plErrMode!=='fatal') plHideErr(); },3000);
+  }
+}
+function plSyncHlsSubs(){
+  if(!hlsInst) return;
+  const tr=hlsInst.subtitleTracks||[];
+  plSubsList=plSubsList.filter(x=>x.hls==null);
+  tr.forEach((t,i)=>plSubsList.push({name:t.name||('Субтитры '+(plSubsList.length+1)),hls:i}));
+}
+/* v0.29: пропуск заставки, авто-next, полоса торрент-кэша */
+function plSyncSkip(){
+  const b=$('#plSkipBtn'); if(!b) return;
+  const v=$('#plVideo'); const len=plIntroLen();
+  const show=!!(plCtx&&plCtx.kind==='series'&&len>0&&v&&isFinite(v.duration)&&v.currentTime<len);
+  b.style.display=show?'block':'none';
+}
+function plSkipIntro(){
+  const v=$('#plVideo'); const len=plIntroLen();
+  if(v&&len>0) v.currentTime=Math.min(len,v.duration||len);
+  plShowUI();
+}
+function plCancelNext(){
+  if(plNextTimer){clearInterval(plNextTimer); plNextTimer=null;}
+  const o=$('#plNext'); if(o) o.style.display='none';
+  plNextTarget=null;
+}
+function plOnEnded(){
+  if(!plCtx||plCtx.kind!=='series'||plCtx.source==='torrent'||!plAutoNext()) return;
+  const eps=plCtx.epsInSeason||[]; const si=eps.indexOf(plCtx.episode);
+  let nx=null;
+  if(si>=0&&si+1<eps.length) nx={season:plCtx.season,episode:eps[si+1]};
+  else{
+    const ss=plCtx.seasons||[]; const qi=ss.indexOf(plCtx.season);
+    if(qi>=0&&qi+1<ss.length) nx={season:ss[qi+1],episode:1};
+  }
+  if(!nx) return;
+  plNextTarget=nx; plNextLeft=10;
+  $('#plNextT').textContent='Следующая серия: Сезон '+nx.season+' · Серия '+nx.episode;
+  $('#plNextC').textContent='Автозапуск через 10 сек';
+  $('#plNext').style.display='block';
+  if(detectTV()) setFocus($('#plNextCancel'));
+  plNextTimer=setInterval(plNextTick,1000);
+}
+function plNextTick(){
+  plNextLeft--;
+  if(plNextLeft<=0){ plNextGo(); return; }
+  $('#plNextC').textContent='Автозапуск через '+plNextLeft+' сек';
+}
+function plNextNow(){ plNextGo(); }
+function plNextCancel(){ plCancelNext(); plShowUI(true); }
+function plNextGo(){
+  const nx=plNextTarget; const st=watchState;
+  const ok=!!(nx&&st&&plCtx&&st.meta.id===plCtx.meta.id&&st.source===plCtx.source);
+  plCancelNext();
+  if(!ok) return;
+  closeBuiltInPlayer();
+  st.season=nx.season;
+  watchPlayEpisode(nx.episode,true);
+}
+function plStopTor(){
+  if(plTorTimer){clearInterval(plTorTimer); plTorTimer=null;}
+  const el=$('#plTor'); if(el) el.style.width='0%';
+}
+async function plUpdTorCache(){
+  const t=plCtx&&plCtx.torrent; if(!t||!t.hash) return;
+  try{
+    const g=await tsAPI({action:'get',hash:t.hash});
+    const tor=g&&(g.torrent||g); if(!tor) return;
+    const got=tor.preloaded_bytes||0;
+    const size=tor.torrent_size||t.size||0;
+    const el=$('#plTor'); if(el) el.style.width=(size>0?Math.min(100,got/size*100):0)+'%';
+  }catch(e){}
 }
 function plRenderInfo(){
   const box=$('#plInfoBox'), rows=$('#plInfoRows');
@@ -1552,8 +1746,9 @@ function plRenderInfo(){
   rows.innerHTML=list.map(r=>'<div class="pl-info-row"><b>'+r[0]+'</b><span>'+esc(String(r[1]))+'</span></div>').join('');
   box.style.display='block';
 }
-function openBuiltInPlayer(url,title,subs,info){
+function openBuiltInPlayer(url,title,subs,info,ctx){
   plMode='video'; plFailUrl=url; plSyncYtBtn();
+  plCtx=ctx||null; plCancelNext(); plStopTor();
   const ov=$('#player-ov'); ov.classList.remove('yt');
   const yt=$('#plYt'); yt.innerHTML=''; yt.style.display='none';
   $('#plTitle').textContent=title||'';
@@ -1570,14 +1765,15 @@ function openBuiltInPlayer(url,title,subs,info){
   plSetSubs([]);
   ov.classList.add('open');
   v.onloadedmetadata=()=>{ if(v.videoWidth&&v.videoHeight) plSetQ(plQLabel(v.videoWidth,v.videoHeight)); };
-  if(location.protocol==='https:'&&/^http:\/\//i.test(url)){
-    plShowErr('Браузер заблокировал http-поток на https-странице 😕<br><span style="font-size:12px;opacity:.75">В приложении на ТВ такой проблемы нет — там страница локальная.<br>Попробуй другой источник.</span>',plBridgeAvailable());
+  if(location.protocol==='https:'&&!plBridgeAvailable()&&/^http:\/\//i.test(url)){
+    plShowErr('Браузер заблокировал http-поток на https-странице 😕<br><span style="font-size:12px;opacity:.75">В приложении на ТВ такой проблемы нет — там WebView разрешает http-потоки.<br>Попробуй другой источник.</span>',plBridgeAvailable());
     if(detectTV()){const c=$('#plBack'); if(c) setFocus(c);}
     return;
   }
   if(/\.m3u8($|\?)/i.test(url)&&window.Hls&&Hls.isSupported()){
     hlsInst=new Hls({maxBufferLength:30});
     hlsInst.loadSource(url); hlsInst.attachMedia(v);
+    hlsInst.on(Hls.Events.SUBTITLE_TRACKS_UPDATED,plSyncHlsSubs);
     hlsInst.on(Hls.Events.LEVEL_SWITCHED,(ev,data)=>{
       const lv=hlsInst.levels&&hlsInst.levels[data.level];
       if(lv) plSetQ(plQLabel(lv.width,lv.height)||(lv.bitrate?Math.round(lv.bitrate/1000)+' кбит/с':''));
@@ -1597,6 +1793,8 @@ function openBuiltInPlayer(url,title,subs,info){
   plShowUI(true);
   v.play().catch(()=>{});
   if(detectTV()){const c=$('#plBigPlay'); if(c) setFocus(c);}
+  if(plCtx&&plCtx.torrent){ plUpdTorCache(); plTorTimer=setInterval(plUpdTorCache,3000); }
+  plSyncSkip();
 }
 function closeBuiltInPlayer(){
   const ov=$('#player-ov'); if(!ov.classList.contains('open')) return;
@@ -1610,6 +1808,7 @@ function closeBuiltInPlayer(){
   const m=$('#plMenu'); if(m) m.style.display='none';
   const ib=$('#plInfoBox'); if(ib) ib.style.display='none';
   plSetQ(''); plSubsList=[]; plCurSub=-1; plSetPlayIcon(false); plFailUrl=null; const yb=$('#plYtBtn'); if(yb) yb.style.display='none';
+  plCtx=null; plCancelNext(); plStopTor(); const sk=$('#plSkipBtn'); if(sk) sk.style.display='none';
   if(detectTV()){const f=visibleFocusable(); if(f.length) setFocus(f[0]);}
 }
 function playerIsOpen(){return $('#player-ov').classList.contains('open');}
@@ -1619,7 +1818,7 @@ function openPlayerTrailer(ytKey,title){
   const ov=$('#player-ov'); ov.classList.add('yt');
   $('#plTitle').textContent=title||'';
   const yt=$('#plYt');
-  yt.innerHTML='<iframe src="https://www.youtube-nocookie.com/embed/'+ytKey+'?autoplay=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+  yt.innerHTML='<iframe referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube-nocookie.com/embed/'+ytKey+'?autoplay=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
   yt.style.display='block';
   plSyncYtBtn();
   $('#plUI').classList.remove('hide');
@@ -1630,6 +1829,9 @@ $('#plBack').onclick=()=>{ closeBuiltInPlayer(); };
 $('#plBridgeBtn').onclick=()=>{ plOpenBridge(); };
 function plSyncYtBtn(){ const b=$('#plYtBtn'); if(!b) return; b.style.display=(plMode==='trailer'&&plBridgeAvailable())?'block':'none'; }
 $('#plYtBtn').onclick=()=>{ plOpenBridge(); };
+$('#plSkipBtn').onclick=()=>{ plSkipIntro(); };
+$('#plNextNow').onclick=()=>{ plNextGo(); };
+$('#plNextCancel').onclick=()=>{ plNextCancel(); };
 $('#plPlay').onclick=()=>{ plToggle(); };
 $('#plBigPlay').onclick=()=>{ plToggle(); };
 $('#plRw').onclick=()=>{ plSeekBy(-10); };
@@ -1687,9 +1889,9 @@ plBindTapZone('#plTapR',+1);
       const b=v.buffered; if(b.length&&v.duration) $('#plBuf').style.width=(b.end(b.length-1)/v.duration*100)+'%';
     }catch(e){}
   });
-  v.addEventListener('play',()=>{ plSetPlayIcon(true); plShowUI(); });
+  v.addEventListener('play',()=>{ plSetPlayIcon(true); plShowUI(); plCancelNext(); });
   v.addEventListener('pause',()=>{ plSetPlayIcon(false); plShowUI(true); });
-  v.addEventListener('ended',()=>{ plSetPlayIcon(false); plShowUI(true); });
+  v.addEventListener('ended',()=>{ plSetPlayIcon(false); plShowUI(true); plOnEnded(); });
   v.addEventListener('error',()=>{
     plClearStall();
     const code=v.error&&v.error.code;
@@ -1740,8 +1942,8 @@ function currentOverlay(){
   if(bmMenuIsOpen())return '#bm-menu';
   return null;
 }
-function playUrl(url,title,subs,info){
-  openBuiltInPlayer(url,title,subs,info);
+function playUrl(url,title,subs,info,ctx){
+  openBuiltInPlayer(url,title,subs,info,ctx);
 }
 
 /* Портретные карточки, актёры */
@@ -2026,9 +2228,10 @@ function fxSeriesFlow(playlist,maxQ,meta,tile,run){
     }})),true);
   }})),true);
 }
-function fxQualityPick(v,meta){
-  if(v.qs.length<=1){playUrl(fxFileUrl(v.link,v.q),meta.title,undefined,{source:'Filmix'});return;}
-  showPicker('Качество',v.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===v.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(v.link,q),meta.title,undefined,{source:'Filmix'})})),true);
+function fxQualityPick(v,meta,ctx){
+  ctx=ctx||{kind:(meta&&meta.type==='tv'?'series':'movie'),source:'filmix',meta:meta,season:null,episode:null,seasons:[],epsInSeason:[]};
+  if(v.qs.length<=1){playUrl(fxFileUrl(v.link,v.q),meta.title,undefined,{source:'Filmix'},ctx);return;}
+  showPicker('Качество',v.qs.slice().sort((a,b)=>b-a).map(q=>({label:q+'p'+(q===v.q?' · максимум':''),onPick:()=>playUrl(fxFileUrl(v.link,q),meta.title,undefined,{source:'Filmix'},ctx)})),true);
 }
 
 /* ============ Alpac (порт из «Кино») ============ */
@@ -2200,17 +2403,18 @@ async function alpacFollowVoice(url,meta,tile,run){
     setTileBusy(tile,false); srcStatus('Не получилось связаться с Alpac.',true);
   }
 }
-async function alpacResolve(it,meta,tile,fromWatch){
+async function alpacResolve(it,meta,tile,fromWatch,ctx){
+  ctx=ctx||{kind:(meta&&meta.type==='tv'?'series':'movie'),source:'alpac',meta:meta,season:null,episode:null,seasons:[],epsInSeason:[]};
   setTileBusy(tile,true);
   try{
-    if(it.method==='play'){const url=(it.quality?alpacBestQ(it.quality):'')||it.url;setTileBusy(tile,false);playUrl(url,meta.title,undefined,{source:'Alpac'});return;}
+    if(it.method==='play'){const url=(it.quality?alpacBestQ(it.quality):'')||it.url;setTileBusy(tile,false);playUrl(url,meta.title,undefined,{source:'Alpac'},ctx);return;}
     if(it.method==='iframe'){setTileBusy(tile,false);openIframeOverlay(it.url);return;}
     const base=alpacAbs(it.url);
     const full=base+(base.indexOf('?')>=0?'&':'?')+alpacAuthQS();
     const j=await alpacFetchJson(full);
     if(j&&j.accsdb){showAlpacAuth(j,meta,tile);if(fromWatch&&alpAuthCtx)alpAuthCtx.watch='alpac';return;}
     if(j&&j.method==='iframe'&&j.url){setTileBusy(tile,false);openIframeOverlay(j.url);return;}
-    if(j&&j.url){setTileBusy(tile,false);playUrl(j.url,meta.title,j.subtitles||[],{source:'Alpac'});return;}
+    if(j&&j.url){setTileBusy(tile,false);playUrl(j.url,meta.title,j.subtitles||[],{source:'Alpac'},ctx);return;}
     setTileBusy(tile,false); srcStatus('На Alpac ничего не нашлось.',true);
   }catch(e){
     setTileBusy(tile,false); srcStatus('Не получилось связаться с Alpac.',true);
@@ -2529,7 +2733,12 @@ async function alpWatchVoice(st,url){
     st.srcErr='Не получилось связаться с Alpac.'; st.srcLoading=false; watchRender();
   }
 }
-function watchPlayEpisode(epNum){
+function watchPlayCtx(st,epNum){
+  const seasons=watchSeasonsList(st).map(x=>+x.val).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
+  const eps=watchEpisodesList(st).map(e=>e.num).sort((a,b)=>a-b);
+  return {kind:'series',source:st.source,meta:st.meta,season:st.season,episode:epNum,seasons:seasons,epsInSeason:eps};
+}
+function watchPlayEpisode(epNum,auto){
   const st=watchState; if(!st||st.meta.type!=='tv') return;
   const meta=st.meta, season=st.season;
   watchMarkWatched(meta,season,epNum);
@@ -2542,8 +2751,10 @@ function watchPlayEpisode(epNum){
     const vs=m&&m[epNum];
     if(!vs||!vs.length){ st.srcErr='На Filmix этой серии нет.'; watchRender(); return; }
     watchRender();
-    if(vs.length===1){fxQualityPick(vs[0],meta);return;}
-    showPicker('Озвучка',vs.map(v=>{const cl=fxCleanVoice(v.voice);return {label:cl.name,sub:(cl.studio?cl.studio+' · ':'')+v.q+'p',onPick:()=>fxQualityPick(v,meta)};}),true);
+    const ctx=watchPlayCtx(st,epNum);
+    if(vs.length===1){st.fxVoice=vs[0].voice;fxQualityPick(vs[0],meta,ctx);return;}
+    if(auto){const pick=vs.find(v=>v.voice===st.fxVoice)||vs[0];st.fxVoice=pick.voice;fxQualityPick(pick,meta,ctx);return;}
+    showPicker('Озвучка',vs.map(v=>{const cl=fxCleanVoice(v.voice);return {label:cl.name,sub:(cl.studio?cl.studio+' · ':'')+v.q+'p',onPick:()=>{st.fxVoice=v.voice;fxQualityPick(v,meta,ctx);}};}),true);
     return;
   }
   if(st.source==='alpac'){
@@ -2551,8 +2762,10 @@ function watchPlayEpisode(epNum){
     const vs=st.alp.videos.filter(v=>v.episode===epNum&&(v.season==null||v.season===season));
     if(!vs.length){ st.srcErr='На Alpac этой серии нет.'; watchRender(); return; }
     watchRender();
-    if(vs.length===1){alpacResolve(vs[0],meta,null,true);return;}
-    showPicker('Озвучка',vs.map(v=>({label:(v.voice||v.title||'Смотреть'),onPick:()=>alpacResolve(v,meta,null,true)})),true);
+    const ctx=watchPlayCtx(st,epNum);
+    if(vs.length===1){st.alpVoice=vs[0].voice;alpacResolve(vs[0],meta,null,true,ctx);return;}
+    if(auto){const pick=vs.find(v=>v.voice===st.alpVoice)||vs[0];st.alpVoice=pick.voice;alpacResolve(pick,meta,null,true,ctx);return;}
+    showPicker('Озвучка',vs.map(v=>({label:(v.voice||v.title||'Смотреть'),onPick:()=>{st.alpVoice=v.voice;alpacResolve(v,meta,null,true,ctx);}})),true);
     return;
   }
 }
@@ -2739,7 +2952,7 @@ async function torSearch(focusFirst){
   st.query=torQuery(meta);
   try{
     const base=jacBase(), key=jacKey();
-    if(location.protocol==='https:'&&/^http:\/\//i.test(base)){
+    if(location.protocol==='https:'&&!plBridgeAvailable()&&/^http:\/\//i.test(base)){
       torStatusMsg('Парсеры: '+base.replace(/^https?:\/\//,'').split('/')[0]+' — http-адрес заблокирован на https-странице',true);
       $('#tor-empty').textContent='Парсер заблокирован.'; $('#tor-empty').style.display='block';
       return;
@@ -2816,7 +3029,7 @@ async function playTorrent(t,meta,tile){
       showPicker('Файл',files.map(f=>({label:f.name,sub:f.size?fmtSize(f.size):'',onPick:()=>openPreload(tsStreamURL(ts,hash,f.id,f.name||t.title),hash,meta,f.name||t.title,f.size||0)})));
       return;
     }
-    playUrl(tsStreamURL(ts,t.magnet,1,t.title),meta.title,undefined,{source:'Torrent',file:t.title});
+    playUrl(tsStreamURL(ts,t.magnet,1,t.title),meta.title,undefined,{source:'Torrent',file:t.title},{kind:(meta.type==='tv'?'series':'movie'),source:'torrent',meta:meta});
   }catch(e){
     setTileBusy(tile,false); playStatus('TorrServer не отвечает · проверь адрес в Настройках.',true);
   }
@@ -3051,7 +3264,7 @@ function plPlay(){
   st.done=true;
   const url=st.url, meta=st.meta, file=st.file;
   stopPreload();
-  playUrl(url,(meta&&meta.title)||'',undefined,{source:'Torrent',file:file});
+  playUrl(url,(meta&&meta.title)||'',undefined,{source:'Torrent',file:file},{kind:(meta&&meta.type==='tv'?'series':'movie'),source:'torrent',meta:meta,torrent:{hash:st.hash,size:st.size||0}});
   goBack();
 }
 function plCancel(){ stopPreload(); goBack(); }
@@ -3068,7 +3281,7 @@ function openPreload(url,hash,meta,file,size){
   const sub=qparts.length?qparts.join(' · '):(file||'');
   // заголовок — ТЕКСТ названия (логотипа в дизайне файла нет, fetchLogo для предзагрузки выброшен)
   window.torrentPreload.update({reset:true,title:(meta&&meta.title)||'',sub:sub,poster:domSrc||null,stage:0,progress:0,peers:0,total:0,speed:0,loaded:0,note:null,waited:false});
-  const st={url:url,hash:hash,meta:meta,file:file||'',done:false,stalled:false,fails:0,timer:null,ctl:null,seenPeers:false,started:Date.now(),preReq:null,lastGot:0,lastGrowth:0};
+  const st={url:url,hash:hash,meta:meta,file:file||'',size:size||0,done:false,stalled:false,fails:0,timer:null,ctl:null,seenPeers:false,started:Date.now(),preReq:null,lastGot:0,lastGrowth:0};
   plState=st;
   showScreen('preload');
   if(detectTV()) setFocus($('#pl-watch'));
@@ -3127,6 +3340,147 @@ $('#tor-qmode-pill').addEventListener('click',function(){
 
 /* Оверлеи: кнопки закрытия */
 $('#trailer-close').addEventListener('click',closeIframeOverlay);
+
+
+/* v0.29: подборки Cub — открытый API https://cub.red/api/collections (без ключа).
+   Формат проверен по живому API: list?category=<hpu> -> {results:[{id,title,backdrop_path
+   (путь TMDB),items_count,username,views,...}],total}; view/<id>?page=N -> TMDB-объекты
+   фильмов/сериалов (id,title|name,poster_path,vote_average,release_date|first_air_date) —
+   тап по фильму ведёт на обычную страницу фильма через openDetail. Категории
+   «Мои»/«Сохранённые» из плагина требуют входа в Cub (токен) — их здесь нет, честно. */
+const CUB_API='https://cub.red/api/collections/';
+const CUB_CATS=[{hpu:'new',title:'Новинки'},{hpu:'top',title:'В топе'},{hpu:'week',title:'Популярные за неделю'},{hpu:'month',title:'Популярные за месяц'},{hpu:'big',title:'Большие коллекции'},{hpu:'all',title:'Все коллекции'}];
+let colState={view:'overview',cat:null,col:null,page:1,items:[],loading:false,done:false};
+let colCache={};
+async function cubFetch(path){
+  const r=await fetch(CUB_API+path);
+  if(!r.ok) throw new Error('cub '+r.status);
+  return r.json();
+}
+function colCardHTML(c){
+  const pic=c.backdrop_path?imgUrl(c.backdrop_path,'w500'):'';
+  const sub=[(c.items_count!=null?c.items_count+' фильмов':null),(c.username?'@'+c.username:null),(c.views!=null?'\uD83D\uDC41 '+Number(c.views).toLocaleString('ru-RU'):null)].filter(Boolean).join(' \u00B7 ');
+  return '<button class="col-card focusable" data-col="'+c.id+'" data-title="'+esc(c.title||'')+'">'+
+    '<span class="thumb">'+(pic?'<img src="'+pic+'" alt="" loading="lazy" onerror="this.remove()">':'')+'</span>'+
+    '<span class="ctitle">'+esc(c.title||'')+'</span>'+
+    (sub?'<span class="csub">'+esc(sub)+'</span>':'')+'</button>';
+}
+function colFocusFirst(){
+  if(!detectTV()) return;
+  const f=$('#col-box .focusable'); if(f) setFocus(f);
+}
+function renderCol(){
+  if(colState.view==='category') renderColCategory();
+  else if(colState.view==='detail') renderColDetail();
+  else renderColOverview();
+}
+async function renderColOverview(){
+  const box=$('#col-box'); if(!box) return;
+  box.innerHTML='<button class="back-btn focusable" id="col-back">\u2190 Назад</button><div class="row-title">Подборки Cub</div><div class="loader">Загружаю…</div>';
+  const bk=box.querySelector('#col-back'); if(bk) bk.addEventListener('click',goBack);
+  let html='<button class="back-btn focusable" id="col-back">\u2190 Назад</button><div class="row-title">Подборки Cub</div>'+
+    '<div style="color:rgba(255,255,255,.6);margin-bottom:1em">Подборки пользователей Cub — без входа: «Мои» и «Сохранённые» требуют аккаунт Cub и здесь не показываются.</div>';
+  let ok=false;
+  for(const cat of CUB_CATS){
+    try{
+      if(!colCache[cat.hpu]){
+        const d=await cubFetch('list?category='+cat.hpu);
+        colCache[cat.hpu]={items:d.results||[],total:d.total||0};
+      }
+      const items=colCache[cat.hpu].items;
+      if(!items.length) continue;
+      ok=true;
+      html+='<div class="row-title">'+esc(cat.title)+'</div><div class="row">'+items.map(colCardHTML).join('')+
+        '<span class="more-wrap"><button class="more-pill focusable col-more" data-cat="'+cat.hpu+'">Все \u2192</button></span></div>';
+    }catch(e){}
+  }
+  if(!ok) html+='<div class="empty">Не удалось загрузить подборки — проверьте сеть.</div>';
+  box.innerHTML=html;
+  const bk2=box.querySelector('#col-back'); if(bk2) bk2.addEventListener('click',goBack);
+  colFocusFirst();
+}
+function openColCategory(hpu){
+  const c=colCache[hpu]||{items:[],total:0};
+  colState={view:'category',cat:hpu,col:null,page:1,items:c.items.slice(),loading:false,done:c.total?c.items.length>=c.total:false};
+  renderColCategory();
+  if(!colState.items.length) colMore();
+}
+function renderColCategory(){
+  const box=$('#col-box'); if(!box) return;
+  const cat=CUB_CATS.find(x=>x.hpu===colState.cat);
+  let html='<button class="back-btn focusable" id="col-back">\u2190 Назад</button><div class="row-title">'+esc(cat?cat.title:'Подборки')+'</div>';
+  if(colState.items.length) html+='<div class="grid">'+colState.items.map(colCardHTML).join('')+'</div>';
+  if(colState.loading) html+='<div class="loader">Загружаю…</div>';
+  if(!colState.items.length&&!colState.loading) html+='<div class="empty">Ничего не нашлось.</div>';
+  if(!colState.done) html+='<div style="text-align:center;padding:0 0 3em"><button class="more-pill focusable" id="col-more-btn">Загрузить ещё</button></div>';
+  box.innerHTML=html;
+  const bk=box.querySelector('#col-back'); if(bk) bk.addEventListener('click',colBack);
+  const mb=box.querySelector('#col-more-btn'); if(mb) mb.addEventListener('click',colMore);
+  colFocusFirst();
+}
+async function colMore(){
+  const st=colState; if(st.loading||st.done) return;
+  st.loading=true; renderColCategory();
+  try{
+    const d=await cubFetch('list?category='+st.cat+'&page='+(st.page+1));
+    const items=d.results||[];
+    st.page++;
+    st.items=st.items.concat(items);
+    if(!items.length||(d.total&&st.items.length>=d.total)) st.done=true;
+    colCache[st.cat]={items:st.items.slice(),total:d.total||0};
+  }catch(e){ st.done=true; }
+  st.loading=false; renderColCategory();
+}
+function openColDetail(id,title){
+  colState={view:'detail',cat:colState.cat,col:{id:id,title:title},page:1,items:[],loading:false,done:false};
+  renderColDetail();
+  colDetailMore();
+}
+function renderColDetail(){
+  const box=$('#col-box'); if(!box) return;
+  const st=colState;
+  let html='<button class="back-btn focusable" id="col-back">\u2190 Назад</button><div class="row-title">'+esc(st.col?st.col.title:'Подборка')+'</div>';
+  if(st.items.length){
+    html+='<div class="pgrid">'+st.items.map(it=>{
+      const tp=(it.first_air_date||it.name)?'tv':'movie';
+      return pcardHTML(it,tp);
+    }).join('')+'</div>';
+  }
+  if(st.loading) html+='<div class="loader">Загружаю…</div>';
+  if(!st.items.length&&!st.loading) html+='<div class="empty">В подборке пока пусто.</div>';
+  if(!st.done) html+='<div style="text-align:center;padding:0 0 3em"><button class="more-pill focusable" id="col-more-btn">Загрузить ещё</button></div>';
+  box.innerHTML=html;
+  const bk=box.querySelector('#col-back'); if(bk) bk.addEventListener('click',colBack);
+  const mb=box.querySelector('#col-more-btn'); if(mb) mb.addEventListener('click',colDetailMore);
+  colFocusFirst();
+}
+async function colDetailMore(){
+  const st=colState; if(st.loading||st.done||!st.col) return;
+  st.loading=true; renderColDetail();
+  try{
+    const d=await cubFetch('view/'+st.col.id+'?page='+st.page);
+    const items=(d.results||[]).filter(it=>it.poster_path);
+    st.page++;
+    st.items=st.items.concat(items);
+    if(!items.length||(d.total_pages&&st.page>d.total_pages)) st.done=true;
+  }catch(e){ st.done=true; }
+  st.loading=false; renderColDetail();
+}
+function colBack(){
+  if(colState.view==='overview'){ goBack(); return; }
+  colState.view='overview';
+  renderColOverview();
+}
+
+/* v0.29: разовый экспорт localStorage со старого file://-origin в мост — нативный
+   код сохранит его и перезагрузит страницу уже с https-базой (см. bootstrap вверху).
+   Вызывается один раз при старте; на https-origin и в браузере — no-op. */
+(function(){ try{
+  if(location.protocol!=='file:'||!window.ProstoKino||typeof ProstoKino.exportStorage!=='function') return;
+  var data={};
+  for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k&&k.indexOf('prostokino.')===0) data[k]=localStorage.getItem(k); }
+  ProstoKino.exportStorage(JSON.stringify(data));
+}catch(e){} })();
 
 /* Старт */
 if(hasKey()) loadHome();
