@@ -373,7 +373,7 @@ body.phone .alp-screen h1{font-size:1.5em}
 @keyframes glide{from{transform:translateX(-100%)}to{transform:translateX(300%)}}
 @keyframes pop{0%{transform:scale(1)}35%{transform:scale(1.09)}100%{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){#screen-preload .seg{animation:none;left:33%}}
-@media (max-height:600px){#screen-preload .art{width:min(30vh,150px)}#screen-preload .pct{font-size:44px}#screen-preload .stats{margin-top:12px}}
+@media (max-height:600px){#screen-preload .art{width:min(30vh,150px)}#screen-preload .pct{font-size:44px}#screen-preload .stats{margin-top:12px}#screen-preload .stage{margin-top:12px}#screen-preload .pl23-actions{margin-top:12px}}
 /* Плеер (порт из «Кино»: pl-stage, контролы, таймлайн) + оверлей Alpac-iframe */
 #player-ov{position:fixed;inset:0;z-index:300;display:none;background:#000;overflow:hidden}
 #player-ov.open{display:block}
@@ -2578,7 +2578,6 @@ function stopPreload(){
   if(!plState) return;
   const st=plState; plState=null;
   if(st.timer) clearTimeout(st.timer);
-  if(st.readyTimer) clearTimeout(st.readyTimer);
   if(st.ctl) try{st.ctl.abort();}catch(e){}
 }
 function plStageOf(tor){
@@ -2641,8 +2640,10 @@ async function plTick(){
   }
   window.torrentPreload.update({stage:dispStage,progress:ready?1:prog,peers:tor.active_peers||0,total:tor.total_peers||0,speed:tor.download_speed||0,loaded:got,waited:el>8,note:null,diag:diag});
   if(ready){
-    // короткая пауза, чтобы взрыв попкорна был виден, но без долгого ожидания
-    if(!st.readyTimer) st.readyTimer=setTimeout(function(){ if(plState===st) plPlay(); },1600);
+    // v0.25, вердикт Denis: автозапуска НЕТ — экран остаётся на готовом состоянии
+    // (100%, взрыв попкорна, стадия «Запуск»), поллинг остановлен, запуск — только
+    // по кнопке «Смотреть». На ТВ фокус переводится на «Смотреть»: одно нажатие OK — запуск.
+    if(detectTV()) setFocus($('#pl-watch'));
     return;
   }
   if((!st.seenPeers&&el>30)||(st.seenPeers&&el>90)){
@@ -2674,7 +2675,7 @@ function openPreload(url,hash,meta,file,size){
   const sub=qparts.length?qparts.join(' · '):(file||'');
   // заголовок — ТЕКСТ названия (логотипа в дизайне файла нет, fetchLogo для предзагрузки выброшен)
   window.torrentPreload.update({reset:true,title:(meta&&meta.title)||'',sub:sub,poster:domSrc||null,stage:0,progress:0,peers:0,total:0,speed:0,loaded:0,note:null,waited:false});
-  const st={url:url,hash:hash,meta:meta,file:file||'',done:false,stalled:false,fails:0,timer:null,readyTimer:null,ctl:null,seenPeers:false,started:Date.now(),preReq:null,lastGot:0,lastGrowth:0};
+  const st={url:url,hash:hash,meta:meta,file:file||'',done:false,stalled:false,fails:0,timer:null,ctl:null,seenPeers:false,started:Date.now(),preReq:null,lastGot:0,lastGrowth:0};
   plState=st;
   showScreen('preload');
   if(detectTV()) setFocus($('#pl-watch'));
