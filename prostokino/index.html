@@ -288,6 +288,36 @@ body.phone .alp-screen h1{font-size:1.5em}
 .pick-btn{display:block;width:100%;background:#1e1e28;border:0;border-radius:12px;color:#fff;font-size:1.05em;padding:.85em 1.1em;margin-bottom:.6em;text-align:left}
 .pick-btn .sub{display:block;color:#9aa3b5;font-size:.9em;margin-top:.2em}
 .pick-btn.focused{background:#ff7a29}
+/* v0.17: экран предзагрузки торрента (паттерн Reelo, код свой) */
+#screen-preload{background:#0b0b10}
+.pl-wrap{position:fixed;inset:0;overflow:hidden;background:#0b0b10}
+.pl-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top}
+.pl-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45),rgba(0,0,0,.25) 40%,rgba(8,8,12,.92) 88%,#0b0b10)}
+.pl-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2em;gap:.9em}
+.pl-title{font-size:2.2em;font-weight:700;text-shadow:0 2px 12px rgba(0,0,0,.85);margin:0}
+.pl-title img.pl-logo{max-width:min(420px,72vw);max-height:6em;object-fit:contain;filter:drop-shadow(0 4px 14px rgba(0,0,0,.8))}
+.pl-file{font-size:1em;color:rgba(255,255,255,.78);max-width:82vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 8px rgba(0,0,0,.85)}
+.pl-qpills{display:flex;gap:.5em;flex-wrap:wrap;justify-content:center}
+.pl-progress{width:min(520px,86vw);margin-top:.6em}
+.pl-progress.waiting{visibility:hidden}
+.pl-row{display:flex;justify-content:space-between;font-variant-numeric:tabular-nums;font-size:1.05em;font-weight:700}
+.pl-bar{height:5px;background:rgba(255,255,255,.18);border-radius:3px;overflow:hidden;margin:.55em 0}
+.pl-barfill{display:block;height:100%;width:0%;background:#ff7a29;border-radius:3px}
+.pl-status{font-size:1em;color:rgba(255,255,255,.85)}
+.pl-status.err{color:#ff6b5e}
+.pl-dots{display:flex;gap:.55em;justify-content:center;margin-top:.7em}
+.pl-dots i{width:10px;height:10px;border-radius:50%;animation:pldot 1.2s infinite}
+.pl-dots i:nth-child(1){background:#ff1694}
+.pl-dots i:nth-child(2){background:#6414e8;animation-delay:.14s}
+.pl-dots i:nth-child(3){background:#ffd114;animation-delay:.28s}
+@keyframes pldot{0%,100%{transform:translateY(0);opacity:.55}50%{transform:translateY(-10px);opacity:1}}
+.pl-actions{position:absolute;left:0;right:0;bottom:2.2em;display:flex;gap:1em;justify-content:center;z-index:3}
+.pl-btn{border:0;border-radius:999px;padding:.7em 1.7em;font-size:1.05em;font-weight:800;cursor:pointer;background:#ff7a29;color:#fff;box-shadow:0 4px 18px rgba(255,122,41,.35)}
+.pl-btn.ghost{background:rgba(255,255,255,.1);color:#fff;box-shadow:none;border:1px solid rgba(255,255,255,.28)}
+.pl-btn.focused{outline:3px solid #fff;outline-offset:2px}
+.pl-back{position:absolute;top:1.2em;left:1.2em;z-index:3;margin:0!important}
+body.phone .pl-title{font-size:1.6em}
+body.phone .pl-actions{bottom:1.4em}
 /* Плеер (порт из «Кино»: pl-stage, контролы, таймлайн) + оверлей Alpac-iframe */
 #player-ov{position:fixed;inset:0;z-index:300;display:none;background:#000;overflow:hidden}
 #player-ov.open{display:block}
@@ -531,6 +561,28 @@ body.phone .alp-screen h1{font-size:1.5em}
       <div class="empty" id="tor-empty" style="display:none"></div>
     </div>
   </section>
+  <section class="screen" id="screen-preload">
+    <div class="pl-wrap">
+      <img class="pl-bg" id="pl-bg" alt="" style="display:none">
+      <div class="pl-shade"></div>
+      <button class="back-btn focusable pl-back" id="pl-back">← Назад</button>
+      <div class="pl-center">
+        <h1 class="pl-title" id="pl-title"></h1>
+        <div class="pl-file" id="pl-file"></div>
+        <div class="pl-qpills" id="pl-qpills"></div>
+        <div class="pl-progress waiting" id="pl-progress">
+          <div class="pl-row"><span>Предзагрузка</span><span id="pl-pct">0%</span></div>
+          <div class="pl-bar"><span class="pl-barfill" id="pl-barfill"></span></div>
+          <div class="pl-status" id="pl-status">Подключаюсь…</div>
+          <div class="pl-dots"><i></i><i></i><i></i></div>
+        </div>
+      </div>
+      <div class="pl-actions">
+        <button class="pl-btn focusable" id="pl-watch">Смотреть</button>
+        <button class="pl-btn ghost focusable" id="pl-cancel">Отмена</button>
+      </div>
+    </div>
+  </section>
   <section class="screen" id="screen-person">
     <div class="person" id="person-box"></div>
   </section>
@@ -744,6 +796,7 @@ function showScreen(id,push){
   if(push&&currentScreen&&currentScreen!==id) hist.push(currentScreen);
   currentScreen=id;
   if(id!=='alpac-auth') stopAlpacPoll();
+  if(id!=='preload') stopPreload();
   $$('section.screen').forEach(s=>s.classList.toggle('show',s.id==='screen-'+id));
   if(MENU_MAIN[id]) $$('.menu-btn').forEach(b=>b.classList.toggle('active',b.dataset.screen===id));
   window.scrollTo(0,0);
@@ -1589,7 +1642,7 @@ async function openDetail(type,id){
     try{vids=await api('/'+type+'/'+id+'/videos');}catch(e){}
     const ytList=((vids&&vids.results)||[]).filter(v=>v.site==='YouTube');
     const trItem=ytList.filter(v=>v.type==='Trailer')[0]||ytList[0];
-    const trailerBlock=trItem?'<div class="block-title">Трейлер</div>'+'<button class="trailer-thumb focusable" data-yt="'+trItem.key+'" style="display:block;width:min(640px,100%);aspect-ratio:16/9;border:0;border-radius:14px;overflow:hidden;padding:0;background:#22222c;position:relative">'+'<img src="https://i.ytimg.com/vi/'+trItem.key+'/hqdefault.jpg" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.remove()">'+'<span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:26px;line-height:64px;text-align:center">▶</span></button>':'';
+    const trailerBlock=trItem?'<div class="block-title">Трейлер</div>'+'<button class="trailer-thumb focusable" data-yt="'+trItem.key+'" style="display:block;width:min(320px,100%);aspect-ratio:16/9;border:0;border-radius:14px;overflow:hidden;padding:0;background:#22222c;position:relative">'+'<img src="https://i.ytimg.com/vi/'+trItem.key+'/hqdefault.jpg" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.remove()">'+'<span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:26px;line-height:64px;text-align:center">▶</span></button>':'';
     let html='<div class="backdrop">'+(pic?'<img src="'+imgUrl(pic,'original')+'" alt="" onerror="this.remove()">':'')+'<div class="shade"></div></div>'+
       '<div class="detail-info"><h1 id="detail-title">'+esc(title)+'</h1>'+
       '<div class="meta">'+[star?'<span class="star">★</span> '+esc(star.slice(2)):null,year,gs,dur].filter(Boolean).join(' · ')+'</div>'+
@@ -2233,12 +2286,12 @@ async function playTorrent(t,meta,tile){
     }
     setTileBusy(tile,false); playStatus('');
     if(files&&files.length===1){
-      playUrl(tsStreamURL(ts,hash,files[0].id,files[0].name||t.title),meta.title,undefined,{source:'Torrent',file:files[0].name||t.title});
+      openPreload(tsStreamURL(ts,hash,files[0].id,files[0].name||t.title),hash,meta,files[0].name||t.title);
       return;
     }
     if(files&&files.length>1){
       files.sort((a,b)=>(b.size||0)-(a.size||0));
-      showPicker('Файл',files.map(f=>({label:f.name,sub:f.size?fmtSize(f.size):'',onPick:()=>playUrl(tsStreamURL(ts,hash,f.id,f.name||t.title),meta.title,undefined,{source:'Torrent',file:f.name||t.title})})));
+      showPicker('Файл',files.map(f=>({label:f.name,sub:f.size?fmtSize(f.size):'',onPick:()=>openPreload(tsStreamURL(ts,hash,f.id,f.name||t.title),hash,meta,f.name||t.title)})));
       return;
     }
     playUrl(tsStreamURL(ts,t.magnet,1,t.title),meta.title,undefined,{source:'Torrent',file:t.title});
@@ -2246,6 +2299,118 @@ async function playTorrent(t,meta,tile){
     setTileBusy(tile,false); playStatus('TorrServer не отвечает · проверь адрес в Настройках.',true);
   }
 }
+/* v0.17: экран предзагрузки торрента (паттерн Reelo: готовность 95%, таймауты 30/90 сек, код свой) */
+let plState=null;
+function stopPreload(){
+  if(!plState) return;
+  const st=plState; plState=null;
+  if(st.timer) clearInterval(st.timer);
+  if(st.ctl) try{st.ctl.abort();}catch(e){}
+}
+function plSetUI(pct,status,err){
+  const p=$('#pl-pct'); if(p) p.textContent=pct+'%';
+  const b=$('#pl-barfill'); if(b) b.style.width=pct+'%';
+  const s=$('#pl-status'); if(s){s.textContent=status||'';s.classList.toggle('err',!!err);}
+}
+function plStatusLine(tor){
+  const seeds=tor.connected_seeders||0, peers=tor.active_peers||0;
+  let s=fmtSize(tor.download_speed||0)+'/с · '+seeds+' '+plural(seeds,'раздающий','раздающих','раздающих');
+  if(peers) s+=' · '+peers+' в сети';
+  return s;
+}
+async function plTick(){
+  const st=plState; if(!st||st.done||st.stalled) return;
+  try{
+    let tor=null;
+    const r=await fetch(tsBase()+'/cache',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'get',hash:st.hash})});
+    if(r.ok){const j=await r.json(); tor=j.Torrent||j.torrent||j;}
+    if(!tor||(tor.preloaded_bytes===undefined&&tor.preload_size===undefined&&tor.stat===undefined)){
+      const g=await tsAPI({action:'get',hash:st.hash});
+      tor=g&&(g.torrent||g);
+    }
+    if(!plState||plState!==st||st.done||st.stalled) return;
+    if(!tor) throw new Error('nostat');
+    const pre=tor.preloaded_bytes||0, size=tor.preload_size||0, stat=tor.stat;
+    const hasFields=size>0;
+    if(stat===2||(hasFields&&pre<size)) st.seenPreload=true;
+    if(hasFields) st.hadFields=true;
+    if((tor.active_peers||0)+(tor.total_peers||0)+(tor.connected_seeders||0)>0) st.seenPeers=true;
+    const pct=hasFields?Math.min(100,Math.floor(pre*100/size)):0;
+    st.fails=0;
+    if(hasFields||stat!==undefined){const prog=$('#pl-progress'); if(prog) prog.classList.remove('waiting');}
+    const ready=(hasFields&&pct>=95)||(st.seenPreload&&stat===3)||(st.seenPreload&&st.hadFields&&!hasFields&&stat===undefined);
+    if(ready){plSetUI(hasFields?pct:100,'Готово — запускаю…',false);plPlay();return;}
+    const el=(Date.now()-st.started)/1000;
+    if((!st.seenPeers&&el>30)||(st.seenPeers&&el>90)){
+      st.stalled=true;
+      if(st.timer) clearInterval(st.timer);
+      plSetUI(pct,'Предзагрузка затянулась — можно смотреть сразу.',true);
+      return;
+    }
+    plSetUI(pct,(hasFields||stat!==undefined)?((tor.download_speed||0)>0?plStatusLine(tor):'Подключаюсь к пирам…'):'Подключаюсь…',false);
+  }catch(e){
+    if(!plState||plState!==st||st.done||st.stalled) return;
+    st.fails=(st.fails||0)+1;
+    if(st.fails>=3){
+      st.stalled=true;
+      if(st.timer) clearInterval(st.timer);
+      plSetUI(0,'Статистика недоступна — можно смотреть сразу.',true);
+    }
+  }
+}
+function plPlay(){
+  const st=plState; if(!st||st.done) return;
+  st.done=true;
+  const url=st.url, meta=st.meta, file=st.file;
+  stopPreload();
+  playUrl(url,(meta&&meta.title)||'',undefined,{source:'Torrent',file:file});
+  goBack();
+}
+function plCancel(){ stopPreload(); goBack(); }
+function openPreload(url,hash,meta,file){
+  stopPreload();
+  const bg=$('#pl-bg');
+  const domImg=document.querySelector('#detail-box .backdrop img');
+  const domSrc=domImg?domImg.getAttribute('src'):'';
+  if(domSrc){bg.src=domSrc;bg.style.display='block';}
+  else {bg.removeAttribute('src');bg.style.display='none';}
+  $('#pl-title').textContent=(meta&&meta.title)||'';
+  $('#pl-file').textContent=file||'';
+  const gp=torParse(file||'').gold;
+  let pills=gp.map(g=>'<span class="tpill gold">'+esc(g)+'</span>').join('');
+  if(!pills){const rp=torParse(file||'').res; if(rp) pills='<span class="tpill res">'+rp+'p</span>';}
+  $('#pl-qpills').innerHTML=pills;
+  plSetUI(0,'Подключаюсь…',false);
+  const prog=$('#pl-progress'); if(prog) prog.classList.add('waiting');
+  const st={url:url,hash:hash,meta:meta,file:file||'',done:false,stalled:false,fails:0,timer:null,ctl:null,seenPreload:false,seenPeers:false,hadFields:false,started:Date.now()};
+  plState=st;
+  showScreen('preload');
+  if(detectTV()) setFocus($('#pl-watch'));
+  if(!domSrc){
+    api('/'+meta.type+'/'+meta.id).then(d=>{
+      if(!plState||plState!==st) return;
+      const pic=d.backdrop_path||d.poster_path;
+      if(pic){bg.src=imgUrl(pic,d.backdrop_path?'original':'w780');bg.style.display='block';}
+    }).catch(()=>{});
+  }
+  fetchLogo(meta.type,meta.id).then(u=>{
+    if(!u||!plState||plState!==st) return;
+    const img=new Image(); img.className='pl-logo'; img.alt='';
+    img.onload=()=>{const h=$('#pl-title'); if(h&&h.isConnected){h.innerHTML='';h.appendChild(img);}};
+    img.src=u;
+  });
+  try{
+    const ctl=new AbortController(); st.ctl=ctl;
+    let pu=url.replace(/&play$/,'');
+    pu+=(pu.indexOf('?')>-1?'&preload':'?preload');
+    fetch(pu,{signal:ctl.signal,cache:'no-store'}).catch(()=>{});
+  }catch(e){}
+  plTick();
+  st.timer=setInterval(plTick,1000);
+}
+$('#pl-back').addEventListener('click',plCancel);
+$('#pl-cancel').addEventListener('click',plCancel);
+$('#pl-watch').addEventListener('click',plPlay);
 $('#tor-back').addEventListener('click',goBack);
 $('#tor-sort-pill').addEventListener('click',function(){
   if(!torState) return;
