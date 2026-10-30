@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pawflix — общий фон (превью v1)</title>
+<title>pawflix — общий фон (превью v2)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #07080d; color: #fff; font-family: "Nunito", system-ui, sans-serif; font-size: 16px; min-height: 100vh; }
-  /* СЛОЙ 0: общий фон — на самом низу, везде */
+  /* СЛОЙ 0: общий фон — на самом низу, везде. По умолчанию — тёмный, почти чёрный */
   .bg-layer {
     position: fixed; inset: 0; z-index: 0;
-    background: url("bg-doodle.jpg") center/cover no-repeat;
+    background: url("bg-black.jpg") center/cover no-repeat;
     transition: background-image .3s ease;
   }
   .bg-layer::after {
@@ -83,12 +83,14 @@
   /* Переключатель фонов — в превью внизу, в приложении будет в Настройках → Фон */
   .bg-switch {
     position: fixed; left: 50%; transform: translateX(-50%); bottom: 76px; z-index: 60;
-    display: flex; gap: 8px; padding: 6px; border-radius: 99px;
+    display: flex; gap: 8px; padding: 6px; border-radius: 99px; max-width: 94vw;
+    overflow-x: auto; scrollbar-width: none;
     background: rgba(10,10,14,.7); border: 1px solid rgba(255,255,255,.16);
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   }
+  .bg-switch::-webkit-scrollbar { display: none; }
   .bg-switch button {
-    background: transparent; border: 0; color: rgba(255,255,255,.75); font-family: inherit;
+    background: transparent; border: 0; color: rgba(255,255,255,.75); font-family: inherit; flex: none;
     font-size: 15px; font-weight: 700; padding: 8px 16px; border-radius: 99px; cursor: pointer; white-space: nowrap;
   }
   .bg-switch button.active { background: #fff; color: #000; }
@@ -129,13 +131,24 @@
     <div class="menu-clock" id="menu-clock" aria-hidden="true"><span id="clock-time">--:--</span><span id="clock-wx"><span class="wx-ico" id="wx-ico"></span><span class="wx-temp" id="wx-temp">--°</span><span class="wx-city">Раздельная</span></span></div>
   </header>
   <div class="bg-switch" id="bg-switch">
-    <button class="active" data-bg="bg-doodle.jpg">Дудл</button>
+    <button data-bg="bg-doodle.jpg">Дудл</button>
     <button data-bg="bg-gradient.jpg">Градиент</button>
     <button data-bg="dark">Тёмный</button>
+    <button class="active" data-bg="bg-black.jpg">Чёрный</button>
+    <button data-bg="bg-orange.jpg">Оранж</button>
+    <button data-bg="bg-pastel.jpg">Пастель</button>
+    <button data-bg="bg-pink.jpg">Розовый</button>
+    <button data-bg="bg-amber.jpg">Янтарь</button>
+    <button data-bg="bg-neon.jpg">Неон</button>
+    <button data-bg="bg-diagonal.jpg">Диагональ</button>
+    <button data-bg="bg-violet.jpg">Фиолет</button>
+    <button data-bg="bg-sun.jpg">Солнце</button>
+    <button data-bg="bg-peach.jpg">Персик</button>
   </div>
   <div class="caption">
-    <b>Превью v1: общий фон.</b> Порядок слоёв: фон (самый низ, везде) → hero-карточка над ним → верхний навбар поверх всего с блюром.
-    Переключатель внизу — только для превью, в приложении он будет в Настройках → Фон. Hero-карточка здесь заглушка, её дизайн — отдельный элемент.
+    <b>Превью v2: общий фон.</b> По умолчанию — Чёрный (тёмная текстура, почти чёрная). Все варианты — в переключателе внизу,
+    в приложении это будет Настройки → Фон. Порядок слоёв: фон (самый низ, везде) → hero-карточка над ним → верхний навбар поверх всего с блюром.
+    Hero-карточка здесь заглушка, её дизайн — отдельный элемент.
   </div>
   <script>
     document.querySelectorAll('.menu-btn').forEach(function (btn) {
