@@ -95,6 +95,13 @@
  *    склеенных токенов реальных названий — «5.1CH», «7.1CH», «TrueHD7.1»,
  *    «ATMOS7.1», «DD5.1» (раньше \b требовал границы слова и такие токены
  *    пропускал); защита от ложных: 17.1 — не 7.1, 7.10 — не 7.1.
+ *  - v3.8: звук берётся из ffprobe-потоков торрента (как чипы 7.1/5.1 в
+ *    списке торрентов: audio-поток channels 8 → 7.1, 6 → 5.1; кодек по
+ *    codec_name/profile; плюс аудио-плашки из названий дорожек
+ *    tags.title) — из TorrServer (tor.ffprobe в опросе) и из play-данных
+ *    Лампы (obj.ffprobe). Название «Обсессии» звука не содержит, а
+ *    дорожки — содержат: теперь плашки есть и в таком случае.
+ *    Объединение с плашками из названия — с дедупликацией по названию.
  */
 (function () {
     'use strict';
@@ -647,7 +654,7 @@
         pollTimer = setTimeout(function () { poll(bases, 0, hash, t0); }, 2000);
     }
     function pollStat(tor, bases, bi, hash, t0) {
-        tpSetBadges(tor.name || tor.title || '');
+        tpSetBadges(tor.name || tor.title || '', tor.ffprobe);
         var need = tor.preload_size || 0, got = tor.preloaded_bytes || 0, size = tor.torrent_size || 0;
         /* как в приложении (v0.23): без preload_size готовность — min(50МБ, 5% размера),
            а прогресс — got/size, а не вечный 0 */
@@ -826,15 +833,12 @@
     var TP_DV_ICO = '<svg class="b-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5h5.5c3.8 0 6.5 2.9 6.5 7s-2.7 7-6.5 7H3V5zm21 0h-5.5C14.7 5 12 7.9 12 12s2.7 7 6.5 7H24V5z"/></svg>';
     var TP_AU_ICO = '<svg class="b-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>';
     function tpQualityBadges(src) {
-        if (!src) return '';
+        if (!src) return [];
         var s = ' ' + String(src).toUpperCase().replace(/[-_]+/g, ' ').replace(/\s+/g, ' ') + ' ';
-        var tv = false, small = false;
-        try { tv = window.matchMedia && window.matchMedia('(min-width:1100px) and (min-height:600px)').matches; } catch (e) {}
-        try { small = window.innerWidth <= 600; } catch (e) {}
-        var big = tv ? ' l' : (small ? ' s' : '');
-        var cd = small ? ' s' : '';
+        var sz = tpBadgeSizes();
+        var big = sz.big, cd = sz.cd;
         var out = [];
-        var b = function (cls, label, ico) { out.push('<span class="b ' + cls + '">' + (ico || '') + label + '</span>'); };
+        var b = function (cls, label, ico) { out.push({c: cls, l: label, i: ico || ''}); };
         /* разрешение — одна плашка, по старшинству */
         if (/\b2160P?(?![0-9])|\b4K(?![0-9])|\bUHD(?![0-9])/.test(s)) b('res-4k' + big, '4K');
         else if (/\b1440P?(?![0-9])|\b2K(?![0-9])|\bQHD(?![0-9])/.test(s)) b('res-plat' + big, '2K');
@@ -892,16 +896,114 @@
         else if (/\bBRRIP\b/.test(s)) b('cd' + cd, 'BRRIP');
         else if (/WEB\s*DL/.test(s)) b('cd' + cd, 'WEB-DL');
         else if (/WEB\s*RIP/.test(s)) b('cd' + cd, 'WEBRIP');
-        return out.join('');
+        return out;
     }
-    var lastBadgeName = null;
-    function tpSetBadges(name) {
-        if (name === lastBadgeName) return;
-        lastBadgeName = name;
+    function tpBadgeSizes() {
+        var tv = false, small = false;
+        try { tv = window.matchMedia && window.matchMedia('(min-width:1100px) and (min-height:600px)').matches; } catch (e) {}
+        try { small = window.innerWidth <= 600; } catch (e) {}
+        return { big: tv ? ' l' : (small ? ' s' : ''), cd: small ? ' s' : '' };
+    }
+    function tpBadgesGroup(cls) {
+        var k = cls.split(' ')[0];
+        if (k === 'dv' || k === 'hdr') return 'dyn';
+        if (k === 'au') return 'au';
+        if (k === 'cd') return 'cd';
+        return 'res';
+    }
+    /* ---------- звук из ffprobe ----------
+       Чипы 7.1/5.1 в списке торрентов берутся не из названия, а из
+       ffprobe-потоков торрента (стоковая Лампа: audio-поток с channels 8
+       → '7.1', 6 → '5.1'; тот же объект ffprobe есть у TorrServer —
+       SERVER.object.ffprobe — и у play-данных Лампы). Поэтому для
+       «Обсессии» название дало только 4K/DV/HDR, а звук — молчание:
+       в названии звука нет, а дорожки — есть. Берём звук оттуда же:
+       кодек по codec_name/profile, каналы по channels, плюс аудио-плашки
+       из названий дорожек (tags.title — там бывает «TrueHD Atmos 7.1»). */
+    function tpFfprobeBadges(ff) {
+        var out = [];
         try {
+            if (!ff || typeof ff.length !== 'number' || !ff.length) return out;
+            var big = tpBadgeSizes().big;
+            var codecs = [], chans = [];
+            var addC = function (l) { if (l && codecs.indexOf(l) === -1) codecs.push(l); };
+            var addH = function (l) { if (l && chans.indexOf(l) === -1) chans.push(l); };
+            for (var i = 0; i < ff.length; i++) {
+                var st = ff[i] || {};
+                if (st.codec_type !== 'audio') continue;
+                var cn = String(st.codec_name || '').toLowerCase();
+                var pr = String(st.profile || '').toUpperCase();
+                if (cn === 'truehd' || cn === 'mlp') addC('TRUEHD');
+                else if (cn === 'dts') {
+                    if (pr.indexOf('MA') >= 0) addC('DTS-HD MA');
+                    else if (pr.indexOf('HRA') >= 0 || pr.indexOf('HR') >= 0) addC('DTS-HD HR');
+                    else if (pr.indexOf(':X') >= 0 || pr === 'X') addC('DTS:X');
+                    else addC('DTS');
+                }
+                else if (cn === 'eac3') addC('DD+');
+                else if (cn === 'ac3') addC('AC3');
+                else if (cn === 'aac') addC('AAC');
+                else if (cn === 'flac') addC('FLAC');
+                else if (cn === 'opus') addC('OPUS');
+                else if (cn.indexOf('pcm') === 0) addC('LPCM');
+                var ch = parseInt(st.channels, 10);
+                if (ch === 8) addH('7.1');
+                else if (ch === 7) addH('6.1');
+                else if (ch === 6) addH('5.1');
+                else if (ch === 2) addH('2.0');
+                var ttl = (st.tags && (st.tags.title || st.tags.handler_name)) || '';
+                if (ttl) {
+                    var tb = tpQualityBadges(ttl);
+                    for (var j = 0; j < tb.length; j++) {
+                        if (tb[j].c.indexOf('au') === 0) {
+                            if (['7.1', '6.1', '5.1', '2.0'].indexOf(tb[j].l) >= 0) addH(tb[j].l);
+                            else addC(tb[j].l);
+                        }
+                    }
+                }
+            }
+            var order = ['ATMOS', 'DTS:X', 'DTS-HD MA', 'DTS-HD HR', 'TRUEHD', 'DTS', 'DD+', 'AC3', 'DD', 'AAC', 'FLAC', 'OPUS', 'LPCM'];
+            codecs.sort(function (x, y) { return order.indexOf(x) - order.indexOf(y); });
+            var chanOrder = ['7.1', '6.1', '5.1', '2.0'];
+            chans.sort(function (x, y) { return chanOrder.indexOf(x) - chanOrder.indexOf(y); });
+            codecs.forEach(function (l) { out.push({c: 'au' + big, l: l, i: ''}); });
+            chans.forEach(function (l) { out.push({c: 'au' + big, l: l, i: ''}); });
+        } catch (e) { /* ffprobe — необязательный источник */ }
+        return out;
+    }
+    function tpFfprobeSig(ff) {
+        try {
+            if (!ff || typeof ff.length !== 'number') return '';
+            var parts = [];
+            for (var i = 0; i < ff.length; i++) {
+                var st = ff[i] || {};
+                if (st.codec_type === 'audio') parts.push((st.codec_name || '') + '|' + (st.profile || '') + '|' + (st.channels || '') + '|' + ((st.tags && (st.tags.title || '')) || ''));
+            }
+            return parts.join(';');
+        } catch (e) { return ''; }
+    }
+    var lastBadgeSig = null;
+    function tpSetBadges(name, ff) {
+        try {
+            var sig = (name || '') + '||' + tpFfprobeSig(ff);
+            if (sig === lastBadgeSig) return;
+            lastBadgeSig = sig;
             var el = $('tp-badges');
             if (!el) return;
-            var html = tpQualityBadges(name);
+            var nb = tpQualityBadges(name);
+            var fb = tpFfprobeBadges(ff);
+            var res = [], dyn = [], au = [], cd = [], seenAu = {};
+            nb.forEach(function (x) {
+                var g = tpBadgesGroup(x.c);
+                if (g === 'res') res.push(x);
+                else if (g === 'dyn') dyn.push(x);
+                else if (g === 'au') { au.push(x); seenAu[x.l] = true; }
+                else cd.push(x);
+            });
+            fb.forEach(function (x) { if (!seenAu[x.l]) { au.push(x); seenAu[x.l] = true; } });
+            var html = res.concat(dyn, au, cd).map(function (x) {
+                return '<span class="b ' + x.c + '">' + (x.i || '') + x.l + '</span>';
+            }).join('');
             el.innerHTML = html;
             el.style.display = html ? 'flex' : 'none';
         } catch (e) { /* плашки — украшение, экран работает и без них */ }
@@ -920,7 +1022,8 @@
         if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
         try {
             window.torrentPreload.reset();
-            tpSetBadges('');
+            lastBadgeSig = null;
+            tpSetBadges('', obj && obj.ffprobe);
             var info = pickStr(obj);
             window.torrentPreload.update({ stage: 0, progress: 0, peers: 0, total: 0, speed: 0, loaded: 0, title: info.title, sub: info.sub, size: info.size || '—', poster: info.poster });
             var root = $('tp-root');
