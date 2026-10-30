@@ -107,6 +107,9 @@
  *    звук на секунду проскакивал при открытии, а потом пропадал,
  *    оставались только плашки из названия); сброс липкого ffprobe —
  *    при показе нового торрента.
+ *  - v3.10: звук — отдельным рядом под видео-плашками (ряд 1:
+ *    разрешение, динамический диапазон, кодек/источник; ряд 2: звук),
+ *    чтобы звуку всегда хватало места.
  */
 (function () {
     'use strict';
@@ -159,7 +162,8 @@
         '@media (max-height:600px){#tp-root .art{width:min(30vh,150px)}#tp-root .pct{font-size:44px}#tp-root .stats{margin-top:12px}#tp-root .tp-actions{margin-top:12px}#tp-root .tp-btn{padding:9px 20px;font-size:14px}}',
         '@media (max-width:600px){#tp-root .stats{gap:20px}}',
         '@media (min-width:1100px) and (min-height:600px){#tp-root h1{font-size:34px}#tp-root header p{font-size:18px}#tp-root #tp-logo{max-width:min(40vw,640px);max-height:150px}#tp-root .art{width:230px}#tp-root .pct{font-size:88px}#tp-root .bar{width:460px}#tp-root .stage{font-size:24px}#tp-root .stats b{font-size:19px}#tp-root .stats span{font-size:14px}#tp-root .stats .tp-size b{font-size:21px;padding:4px 16px}#tp-root .tp-actions{margin-top:30px;gap:18px}#tp-root .tp-btn{font-size:19px;padding:15px 34px}}',
-        '#tp-root .tp-badges{display:none;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:12px;text-shadow:none}',
+        '#tp-root .tp-badges{display:none;flex-direction:column;align-items:center;gap:8px;margin-top:12px;text-shadow:none}',
+        '#tp-root .tp-badges .tp-badges-row{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px}',
         '#tp-root .tp-badges .b{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 14px;border-radius:7px;font-size:13px;font-weight:700;letter-spacing:.08em;line-height:1;white-space:nowrap;user-select:none;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .25s cubic-bezier(.16,1,.3,1),border-color .25s ease,background .25s ease,box-shadow .25s ease}',
         '#tp-root .tp-badges .b:hover{transform:translateY(-1px)}',
         '#tp-root .tp-badges .b-ico{width:13px;height:13px;flex-shrink:0;opacity:.9}',
@@ -1015,9 +1019,12 @@
                 else cd.push(x);
             });
             fb.forEach(function (x) { if (!seenAu[x.l]) { au.push(x); seenAu[x.l] = true; } });
-            var html = res.concat(dyn, au, cd).map(function (x) {
-                return '<span class="b ' + x.c + '">' + (x.i || '') + x.l + '</span>';
-            }).join('');
+            var span = function (x) { return '<span class="b ' + x.c + '">' + (x.i || '') + x.l + '</span>'; };
+            var html = '';
+            var row1 = res.concat(dyn, cd).map(span).join('');
+            if (row1) html += '<div class="tp-badges-row">' + row1 + '</div>';
+            var row2 = au.map(span).join('');
+            if (row2) html += '<div class="tp-badges-row">' + row2 + '</div>';
             el.innerHTML = html;
             el.style.display = html ? 'flex' : 'none';
         } catch (e) { /* плашки — украшение, экран работает и без них */ }
