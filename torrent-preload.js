@@ -12,8 +12,17 @@
  *    tppop (чтобы не пересечься с анимациями Лампы). Демо-режим HTML-файла
  *    вырезан — плагин никогда ничего не показывает сам по себе.
  *  - Плагин НЕ перехватывает и НЕ задерживает воспроизведение: он только
- *    наблюдает за Lampa.Player.play и рисует экран поверх плеера.
- *    Воспроизведение идёт своим ходом, как раньше.
+ *    наблюдает и рисует экран поверх плеера. Воспроизведение идёт своим
+ *    ходом, как раньше.
+ *  - ВАЖНО (v2, причина, почему v1 не показывался): штатная предзагрузка
+ *    Лампы работает ДО вызова Lampa.Player.play — сначала Loading-экран
+ *    Лампы и опрос TorrServer, и только при >=95% вызывается Player.play.
+ *    Поэтому хук только на Player.play физически не мог показать экран во
+ *    время предзагрузки. v2 цепляется раньше — за Lampa.Loading.start:
+ *    как только Лампа открывает свой Loading-экран с торрентом
+ *    (media.url содержит &preload), поверх встаёт наш экран, а штатный
+ *    остаётся под ним (наш фон непрозрачный). Player.play-хок оставлен
+ *    как запасной путь для торрентов без предзагрузки.
  *  - При запуске торрента плагин показывает экран и опрашивает TorrServer
  *    (адрес берётся из настроек Лампы: torrserver_url / torrserver_url_two,
  *    хеш — из объекта воспроизведения или из URL потока) — ровно тем же
@@ -341,6 +350,7 @@
 
     /* ---------- сторона Лампы: показать при запуске торрента, спрятать при старте видео ---------- */
     var pollTimer = 0, hideTimer = 0, videoTimer = 0, videoEl = null, playerDone = null;
+    var currentHash = '', pendingCancelHide = 0;
 
     function tsBase() {
         try {
@@ -358,21 +368,26 @@
             for (var i = 0; i < cands.length; i++) {
                 var s = String(cands[i] || '');
                 if (!s) continue;
-                var m = s.match(/btih:([0-9a-fA-F]{40})/) || s.match(/([0-9a-fA-F]{40})/);
+                var m = s.match(/[?&]link=([0-9a-fA-F]{40})/) || s.match(/btih:([0-9a-fA-F]{40})/) || s.match(/([0-9a-fA-F]{40})/);
                 if (m) return m[1].toLowerCase();
             }
         } catch (e) { /* молча — fallback ниже */ }
         return '';
     }
+    /* Заголовок — название фильма, а не имя файла; постер — бэкдроп карточки.
+       У торрент-файлов Лампы img по умолчанию — битая заглушка, её пропускаем. */
     function pickStr(obj) {
-        var out = [];
         try {
-            if (obj.title) out.push(obj.title);
-            else if (obj.name) out.push(obj.name);
-            else out.push('Торрент');
-            var sub = obj.sub || obj.quality || '';
-            var poster = obj.img || obj.poster || obj.image || (obj.card && (obj.card.img || obj.card.poster)) || '';
-            return { title: out[0], sub: sub, poster: poster };
+            var card = obj.card || {};
+            var title = obj.first_title || card.title || card.name || obj.title || obj.name || 'Торрент';
+            var sub = obj.size || obj.sub || obj.quality || '';
+            var poster = '';
+            if (card.backdrop_path) poster = 'https://image.tmdb.org/t/p/w1280' + card.backdrop_path;
+            else if (card.poster_path) poster = 'https://image.tmdb.org/t/p/w500' + card.poster_path;
+            else if (obj.img && obj.img.indexOf('img_broken') === -1) poster = obj.img;
+            else if (obj.poster) poster = obj.poster;
+            else if (obj.image) poster = obj.image;
+            return { title: title, sub: sub, poster: poster };
         } catch (e) { return { title: 'Торрент', sub: '', poster: '' }; }
     }
     function isTorrent(obj) {
@@ -398,6 +413,8 @@
     function hide() {
         if (!visible) return;
         visible = false;
+        currentHash = '';
+        if (pendingCancelHide) { clearTimeout(pendingCancelHide); pendingCancelHide = 0; }
         stopPoll(); stopVideoWatch();
         if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
         var root = $('tp-root');
@@ -464,6 +481,10 @@
 
     function show(obj) {
         try { build(); } catch (e) { return; }
+        /* повторный показ того же торрента (Loading → Player.play) — не сбрасывать прогресс */
+        var hash = findHash(obj);
+        if (visible && hash && hash === currentHash) return;
+        currentHash = hash;
         stopPoll(); stopVideoWatch();
         if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
         try {
@@ -501,11 +522,49 @@
             var origPlay = Lampa.Player.play;
             var wrapped = function () {
                 var obj = arguments[0];
-                try { if (isTorrent(obj)) show(obj); } catch (e) { /* молча */ }
+                try {
+                    /* финиш предзагрузки: отменяем отложенное скрытие по отмене */
+                    if (pendingCancelHide) { clearTimeout(pendingCancelHide); pendingCancelHide = 0; }
+                    if (isTorrent(obj)) show(obj);
+                } catch (e) { /* молча */ }
                 return origPlay.apply(this, arguments);
             };
             wrapped.__denis_tp = true;
             Lampa.Player.play = wrapped;
+        }
+    } catch (e) { /* молча */ }
+
+    /* главный хук v2: штатный Loading-экран предзагрузки открывается ДО Player.play.
+       Показываем наш экран поверх него в тот же момент. Оригинальный Loading
+       всё равно вызываем — его stop/setProgress продолжают работать под нами. */
+    try {
+        if (window.Lampa && Lampa.Loading && typeof Lampa.Loading.start === 'function' && !Lampa.Loading.start.__denis_tp) {
+            var origStart = Lampa.Loading.start;
+            var wrappedStart = function () {
+                try {
+                    var opts = arguments[2];
+                    var media = opts && opts.media;
+                    if (media && typeof media.url === 'string' && media.url.indexOf('&preload') !== -1) {
+                        show(media);
+                        if (typeof arguments[0] === 'function' && !arguments[0].__denis_tp) {
+                            var origStop = arguments[0];
+                            var wrappedStop = function () {
+                                var r = origStop.apply(this, arguments);
+                                /* финиш: следом придёт Player.play и отменит таймер;
+                                   отмена по Назад: Player.play не придёт — прячемся сами */
+                                if (pendingCancelHide) clearTimeout(pendingCancelHide);
+                                pendingCancelHide = setTimeout(function () { if (visible) hide(); }, 400);
+                                return r;
+                            };
+                            wrappedStop.__denis_tp = true;
+                            arguments[0] = wrappedStop;
+                        }
+                    }
+                } catch (e) { /* молча */ }
+                return origStart.apply(this, arguments);
+            };
+            wrappedStart.__denis_tp = true;
+            Lampa.Loading.start = wrappedStart;
         }
     } catch (e) { /* молча */ }
 })();
