@@ -84,6 +84,10 @@
  *  - v3.4: секция «Сервер TorrServer» убрана ПОЛНОСТЬЮ (откат к состоянию
  *    до v3.2: плагин снова только экран предзагрузки, как в v3.1).
  *    Остатки её ключей в Lampa.Storage чистятся при загрузке.
+ *  - v3.5: плашки качества под названием фильма — из названия раздачи
+ *    (tor.name с TorrServer): разрешение, динамический диапазон, звук,
+ *    кодек/источник; сами плашки — из файла Denis 1:1 (стили, градиенты,
+ *    иконки), размеры .l на ТВ и .s на узких экранах.
  */
 (function () {
     'use strict';
@@ -136,6 +140,29 @@
         '@media (max-height:600px){#tp-root .art{width:min(30vh,150px)}#tp-root .pct{font-size:44px}#tp-root .stats{margin-top:12px}#tp-root .tp-actions{margin-top:12px}#tp-root .tp-btn{padding:9px 20px;font-size:14px}}',
         '@media (max-width:600px){#tp-root .stats{gap:20px}}',
         '@media (min-width:1100px) and (min-height:600px){#tp-root h1{font-size:34px}#tp-root header p{font-size:18px}#tp-root #tp-logo{max-width:min(40vw,640px);max-height:150px}#tp-root .art{width:230px}#tp-root .pct{font-size:88px}#tp-root .bar{width:460px}#tp-root .stage{font-size:24px}#tp-root .stats b{font-size:19px}#tp-root .stats span{font-size:14px}#tp-root .stats .tp-size b{font-size:21px;padding:4px 16px}#tp-root .tp-actions{margin-top:30px;gap:18px}#tp-root .tp-btn{font-size:19px;padding:15px 34px}}',
+        '#tp-root .tp-badges{display:none;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:12px;text-shadow:none}',
+        '#tp-root .tp-badges .b{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 14px;border-radius:7px;font-size:13px;font-weight:700;letter-spacing:.08em;line-height:1;white-space:nowrap;user-select:none;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .25s cubic-bezier(.16,1,.3,1),border-color .25s ease,background .25s ease,box-shadow .25s ease}',
+        '#tp-root .tp-badges .b:hover{transform:translateY(-1px)}',
+        '#tp-root .tp-badges .b-ico{width:13px;height:13px;flex-shrink:0;opacity:.9}',
+        '#tp-root .tp-badges .res-4k{background:linear-gradient(180deg,#e6cfa3 0%,#c5a059 100%);color:#110e08;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.65),inset 0 -1px 0 rgba(0,0,0,.2)}',
+        '#tp-root .tp-badges .res-4k:hover{background:linear-gradient(180deg,#f0dcb6 0%,#d1ad66 100%)}',
+        '#tp-root .tp-badges .res-plat{background:linear-gradient(180deg,#f4f4f6 0%,#d4d4d8 100%);color:#121215;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.4),inset 0 1px 0 #fff,inset 0 -1px 0 rgba(0,0,0,.15)}',
+        '#tp-root .tp-badges .res-plat:hover{background:linear-gradient(180deg,#fff 0%,#e4e4e7 100%)}',
+        '#tp-root .tp-badges .res-dim{background:rgba(255,255,255,.03);color:#a1a1aa;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18),inset 0 1px 0 rgba(255,255,255,.08)}',
+        '#tp-root .tp-badges .res-dim:hover{color:#e4e4e7;box-shadow:inset 0 0 0 1px rgba(255,255,255,.32)}',
+        '#tp-root .tp-badges .dv{background:linear-gradient(180deg,rgba(212,175,55,.14) 0%,rgba(212,175,55,.04) 100%);color:#e5c883;box-shadow:inset 0 0 0 1px rgba(212,175,55,.48),inset 0 1px 0 rgba(255,235,180,.2),0 2px 6px rgba(0,0,0,.35)}',
+        '#tp-root .tp-badges .dv:hover{box-shadow:inset 0 0 0 1px rgba(212,175,55,.75),0 4px 12px rgba(0,0,0,.45)}',
+        '#tp-root .tp-badges .hdr{background:linear-gradient(180deg,rgba(255,255,255,.08) 0%,rgba(255,255,255,.02) 100%);color:#e4e4e7;box-shadow:inset 0 0 0 1px rgba(255,255,255,.28),inset 0 1px 0 rgba(255,255,255,.15)}',
+        '#tp-root .tp-badges .hdr:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,.48)}',
+        '#tp-root .tp-badges .au{background:linear-gradient(180deg,#232329 0%,#17171c 100%);color:#d4d4d8;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),inset 0 1px 0 rgba(255,255,255,.1),0 2px 5px rgba(0,0,0,.3)}',
+        '#tp-root .tp-badges .au:hover{background:linear-gradient(180deg,#2a2a32 0%,#1c1c22 100%);color:#fff}',
+        '#tp-root .tp-badges .cd{height:28px;padding:0 11px;border-radius:5px;font-size:11.5px;font-weight:600;letter-spacing:.09em;background:rgba(255,255,255,.025);color:#8e8e99;box-shadow:inset 0 0 0 1px rgba(255,255,255,.11)}',
+        '#tp-root .tp-badges .cd:hover{color:#d4d4d8;box-shadow:inset 0 0 0 1px rgba(255,255,255,.24)}',
+        '#tp-root .tp-badges .s{height:22px;padding:0 8px;border-radius:5px;font-size:10.5px;letter-spacing:.06em}',
+        '#tp-root .tp-badges .s .b-ico{width:11px;height:11px}',
+        '#tp-root .tp-badges .l{height:42px;padding:0 18px;border-radius:9px;font-size:16px;letter-spacing:.07em}',
+        '#tp-root .tp-badges .l .b-ico{width:16px;height:16px}',
+        '@media (min-width:1100px) and (min-height:600px){#tp-root .tp-badges{margin-top:16px}}',
         '#tp-root .tpfx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}'
     ].join('\n');
 
@@ -166,7 +193,7 @@
         '<div class="tp-poster" id="tp-poster"></div>',
         '<div class="tp-scrim"></div>',
         '<main id="tp-main">',
-        '<header id="tp-head"><h1 id="tp-title"></h1><img id="tp-logo" alt=""><p id="tp-sub"></p></header>',
+        '<header id="tp-head"><h1 id="tp-title"></h1><img id="tp-logo" alt=""><div id="tp-badges" class="tp-badges"></div><p id="tp-sub"></p></header>',
         '<div class="art" id="tp-art">' + BUCKET_SVG + '</div>',
         '<div class="pct" id="tp-pct" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">0<small>%</small></div>',
         '<div class="bar"><div class="fill" id="tp-fill"></div><div class="seg"></div></div>',
@@ -613,6 +640,7 @@
         pollTimer = setTimeout(function () { poll(bases, 0, hash, t0); }, 2000);
     }
     function pollStat(tor, bases, bi, hash, t0) {
+        tpSetBadges(tor.name || tor.title || '');
         var need = tor.preload_size || 0, got = tor.preloaded_bytes || 0, size = tor.torrent_size || 0;
         /* как в приложении (v0.23): без preload_size готовность — min(50МБ, 5% размера),
            а прогресс — got/size, а не вечный 0 */
@@ -783,6 +811,71 @@
         } catch (e) { /* логотип — украшение, экран работает и без него */ }
     }
 
+    /* ---------- плашки качества под названием ----------
+       Данные — из названия раздачи (tor.name с TorrServer), сами плашки —
+       из файла Denis 1:1 (стили, градиенты, иконки; селекторы только
+       скопнуты под #tp-root .tp-badges, чтобы не пересекаться с CSS Лампы).
+       Размер: на ТВ — .l для крупных групп, на узких экранах — .s. */
+    var TP_DV_ICO = '<svg class="b-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5h5.5c3.8 0 6.5 2.9 6.5 7s-2.7 7-6.5 7H3V5zm21 0h-5.5C14.7 5 12 7.9 12 12s2.7 7 6.5 7H24V5z"/></svg>';
+    var TP_AU_ICO = '<svg class="b-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>';
+    function tpQualityBadges(src) {
+        if (!src) return '';
+        var s = ' ' + String(src).toUpperCase().replace(/[-_]+/g, ' ').replace(/\s+/g, ' ') + ' ';
+        var tv = false, small = false;
+        try { tv = window.matchMedia && window.matchMedia('(min-width:1100px) and (min-height:600px)').matches; } catch (e) {}
+        try { small = window.innerWidth <= 600; } catch (e) {}
+        var big = tv ? ' l' : (small ? ' s' : '');
+        var cd = small ? ' s' : '';
+        var out = [];
+        var b = function (cls, label, ico) { out.push('<span class="b ' + cls + '">' + (ico || '') + label + '</span>'); };
+        /* разрешение — одна плашка, по старшинству */
+        if (/\b2160P?\b|\b4K\b|\bUHD\b/.test(s)) b('res-4k' + big, '4K');
+        else if (/\b1440P?\b|\b2K\b|\bQHD\b/.test(s)) b('res-plat' + big, '2K');
+        else if (/\b1080[PI]?\b|\bFULL HD\b|\bFHD\b/.test(s)) b('res-plat' + big, 'FULL HD');
+        else if (/\b720[PI]?\b|\bHD\b/.test(s.replace(/DTS\s*HD/g, 'DTSX'))) b('res-dim' + big, 'HD');
+        else if (/\b480P?\b|\b576P?\b|\bDVD\b|\bDVDRIP\b/.test(s)) b('res-dim' + big, 'SD');
+        /* динамический диапазон */
+        if (/DOLBY VISION|\bDOVI\b|\bDV\b/.test(s)) b('dv' + big, 'DOLBY VISION', TP_DV_ICO);
+        var hdr10p = /HDR10\+|HDR10 PLUS/.test(s);
+        var hdr10 = !hdr10p && /HDR10/.test(s);
+        if (hdr10p) b('hdr' + big, 'HDR10+');
+        else if (hdr10) b('hdr' + big, 'HDR10');
+        else if (/\bHDR\b/.test(s)) b('hdr' + big, 'HDR');
+        if (/\bHLG\b/.test(s)) b('hdr' + big, 'HLG');
+        /* звук */
+        if (/\bATMOS\b/.test(s)) b('au' + big, 'ATMOS', TP_AU_ICO);
+        var dtshd = /DTS\s*HD\s*MA|DTSHD\s*MA/.test(s);
+        if (dtshd) b('au' + big, 'DTS-HD MA');
+        if (/TRUEHD|TRUE HD/.test(s)) b('au' + big, 'TRUEHD');
+        if (!dtshd && /\bDTS\b/.test(s)) b('au' + big, 'DTS');
+        if (/\b7\.1\b/.test(s)) b('au' + big, '7.1');
+        if (/\b5\.1\b/.test(s)) b('au' + big, '5.1');
+        if (/\b2\.0\b/.test(s)) b('au' + big, '2.0');
+        /* кодек и источник — по одной плашке */
+        if (/HEVC|\bX265\b|\bH\.?265\b/.test(s)) b('cd' + cd, 'HEVC');
+        else if (/\bAV1\b/.test(s)) b('cd' + cd, 'AV1');
+        else if (/\bH\.?264\b|\bX264\b|\bAVC\b/.test(s)) b('cd' + cd, 'H.264');
+        if (/\bREMUX\b/.test(s)) b('cd' + cd, 'REMUX');
+        else if (/\bBDRIP\b|BD RIP/.test(s)) b('cd' + cd, 'BDRIP');
+        else if (/\bBLURAY\b|BLU RAY/.test(s)) b('cd' + cd, 'BLURAY');
+        else if (/\bBRRIP\b/.test(s)) b('cd' + cd, 'BRRIP');
+        else if (/WEB\s*DL/.test(s)) b('cd' + cd, 'WEB-DL');
+        else if (/WEB\s*RIP/.test(s)) b('cd' + cd, 'WEBRIP');
+        return out.join('');
+    }
+    var lastBadgeName = null;
+    function tpSetBadges(name) {
+        if (name === lastBadgeName) return;
+        lastBadgeName = name;
+        try {
+            var el = $('tp-badges');
+            if (!el) return;
+            var html = tpQualityBadges(name);
+            el.innerHTML = html;
+            el.style.display = html ? 'flex' : 'none';
+        } catch (e) { /* плашки — украшение, экран работает и без них */ }
+    }
+
     function show(obj, src) {
         try { build(); } catch (e) { return; }
         /* повторный показ того же торрента (Loading → Player.play) — не сбрасывать прогресс */
@@ -796,6 +889,7 @@
         if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
         try {
             window.torrentPreload.reset();
+            tpSetBadges('');
             var info = pickStr(obj);
             window.torrentPreload.update({ stage: 0, progress: 0, peers: 0, total: 0, speed: 0, loaded: 0, title: info.title, sub: info.sub, size: info.size || '—', poster: info.poster });
             var root = $('tp-root');
