@@ -51,6 +51,15 @@
  *    починен — клиент TMDB берётся как Lampa.TMDB (в v2.4 код смотрел на
  *    window.TMDB, которого нет, и молча пропускал загрузку логотипа).
  *    плашка диагностики убрана (диагноз 0% закрыт в v2.3: работает).
+ *  - v2.6 (новый дизайн-файл Denis от 30.10, порт 1:1): кнопки .btn — primary
+ *    кремовый фон + тёмный текст (золото ушло), фокус scale 1.07 + янтарное
+ *    свечение, label «Смотреть сейчас» → «Смотреть» на 100%; layout обратно
+ *    по центру (header absolute сверху, main center); TV-медиазапрос
+ *    (min-width:1100px: крупнее шрифты/кнопки); акцентный цвет из постера
+ *    (canvas-гистограмма, --acc/--accg) для полосы, свечения и фокуса.
+ *    Логотип вместо названия сохранён (просьба Denis из v2.4, файл её не
+ *    отменяет); фокус кнопок — классом .focused (механика Лампы), а не
+ *    DOM-фокусом из файла; кнопки «Повторить» нет (демо-режима у плагина нет).
  */
 (function () {
     'use strict';
@@ -60,15 +69,15 @@
 
     /* ---------- стили: CSS HTML-файла, ограничен контейнером #tp-root ---------- */
     var CSS = [
-        '#tp-root{--bg:#08080a;--ink:#f4e9d6;--dim:rgba(244,233,214,.58);--track:rgba(244,233,214,.16);--amber:#f0b24a;',
+        '#tp-root{--bg:#08080a;--ink:#f4e9d6;--dim:rgba(244,233,214,.58);--track:rgba(244,233,214,.16);--amber:#f0b24a;--acc:#f0b24a;--accg:rgba(240,178,74,.55);',
         'color-scheme:dark;position:fixed;inset:0;z-index:99999;background:var(--bg);color:var(--ink);',
         'font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;display:none;pointer-events:none;opacity:1;transition:opacity .4s}',
         '#tp-root,#tp-root *,#tp-root *::before,#tp-root *::after{box-sizing:border-box}',
         '#tp-root .tp-poster{position:absolute;inset:-5%;background:var(--bg) center/cover no-repeat;filter:blur(18px) brightness(.38);transform:scale(1.1);will-change:filter,transform}',
         '#tp-root .tp-scrim{position:absolute;inset:0;pointer-events:none;',
         'background:radial-gradient(ellipse at 50% 55%,rgba(6,6,8,.5) 0%,rgba(6,6,8,0) 68%),linear-gradient(to bottom,rgba(6,6,8,.6) 0%,rgba(6,6,8,.18) 34%,rgba(6,6,8,.72) 100%)}',
-        '#tp-root main{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:24px 24px 9vh;text-align:center}',
-        '#tp-root header{position:relative;padding:0 24px;text-shadow:0 2px 18px rgba(0,0,0,.6)}',
+        '#tp-root main{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:max(24px,4.5vh) max(24px,5vw) max(28px,4.5vh);text-align:center}',
+        '#tp-root header{position:absolute;top:max(30px,5vh);left:0;right:0;padding:0 max(24px,5vw);text-shadow:0 2px 18px rgba(0,0,0,.6)}',
         '#tp-root #tp-logo{display:none;max-width:min(60vw,340px);max-height:88px;width:auto;height:auto;margin:0 auto;filter:drop-shadow(0 2px 18px rgba(0,0,0,.6))}',
         '#tp-root h1{margin:0;font-size:clamp(20px,4vw,26px);font-weight:700;letter-spacing:-.01em}',
         '#tp-root header p{margin:5px 0 0;font-size:14px;font-weight:500;color:var(--dim)}',
@@ -77,7 +86,7 @@
         '#tp-root .pct{margin-top:10px;font-size:clamp(56px,14vw,76px);font-weight:300;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 2px 26px rgba(0,0,0,.55)}',
         '#tp-root .pct small{font-size:.38em;font-weight:500;letter-spacing:0;margin-left:.2em;opacity:.5}',
         '#tp-root .bar{position:relative;width:min(80vw,360px);height:5px;margin-top:16px;border-radius:5px;background:var(--track);overflow:hidden}',
-        '#tp-root .fill{position:absolute;inset:0;border-radius:inherit;transform-origin:0 50%;transform:scaleX(0);background:linear-gradient(90deg,#f4e9d6,var(--amber));box-shadow:0 0 14px rgba(240,178,74,.55);transition:opacity .7s}',
+        '#tp-root .fill{position:absolute;inset:0;border-radius:inherit;transform-origin:0 50%;transform:scaleX(0);background:linear-gradient(90deg,#f4e9d6,var(--acc));box-shadow:0 0 14px var(--accg);transition:opacity .7s}',
         '#tp-root .seg{position:absolute;top:0;bottom:0;left:0;width:34%;border-radius:inherit;background:linear-gradient(90deg,transparent,rgba(244,233,214,.9),transparent);animation:tpglide 1.9s cubic-bezier(.45,0,.55,1) infinite;transition:opacity .7s}',
         '#tp-root .buffering .seg{opacity:0}',
         '#tp-root .dead .seg{animation-duration:4.5s;opacity:.35}',
@@ -87,15 +96,17 @@
         '#tp-root .stats b{display:block;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}',
         '#tp-root .stats span{display:block;margin-top:3px;font-size:12px;font-weight:500;color:var(--dim)}',
         '#tp-root button{margin-top:22px;font:inherit;font-size:14px;font-weight:700;color:var(--ink);background:rgba(8,8,10,.35);border:1px solid rgba(244,233,214,.4);border-radius:999px;padding:11px 24px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .6s,border-color .2s}',
-        '#tp-root .tp-actions{display:flex;gap:.8em;margin-top:22px}',
-        '#tp-root .tp-btn{font:inherit;font-size:14px;font-weight:700;color:var(--ink);background:rgba(8,8,10,.35);border:1px solid rgba(244,233,214,.4);border-radius:999px;padding:11px 24px;cursor:pointer;opacity:1;pointer-events:auto;transition:border-color .2s,background .2s}',
-        '#tp-root .tp-btn.primary{border-color:rgba(240,178,74,.8);color:var(--amber);background:rgba(240,178,74,.12)}',
-        '#tp-root .tp-btn.focused{outline:2px solid var(--ink);outline-offset:3px}',
+        '#tp-root .tp-actions{margin-top:24px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}',
+        '#tp-root .tp-btn{margin-top:0;font:inherit;font-size:15px;font-weight:700;color:var(--ink);background:rgba(8,8,10,.42);border:1px solid rgba(244,233,214,.4);border-radius:999px;padding:13px 28px;cursor:pointer;opacity:1;pointer-events:auto;box-shadow:none;transition:transform .15s,box-shadow .2s,background .2s,color .2s,border-color .2s}',
+        '#tp-root .tp-btn.primary{background:var(--ink);color:#1a1209;border-color:var(--ink)}',
+        '#tp-root .tp-btn.focused{outline:none;transform:scale(1.07);border-color:var(--acc);box-shadow:0 0 0 3px var(--acc),0 0 26px var(--accg)}',
+        '#tp-root .tp-btn.primary.focused{background:#fff}',
         '@keyframes tpglide{from{transform:translateX(-100%)}to{transform:translateX(300%)}}',
         '@keyframes tppop{0%{transform:scale(1)}35%{transform:scale(1.09)}100%{transform:scale(1)}}',
         '#tp-root .pct.pop{animation:tppop .8s cubic-bezier(.2,.9,.3,1.3)}',
         '@media (prefers-reduced-motion:reduce){#tp-root .seg{animation:none;left:33%}}',
-        '@media (max-height:600px){#tp-root .art{width:min(30vh,150px)}#tp-root .pct{font-size:44px}#tp-root .stats{margin-top:12px}}',
+        '@media (max-height:600px){#tp-root .art{width:min(30vh,150px)}#tp-root .pct{font-size:44px}#tp-root .stats{margin-top:12px}#tp-root .tp-actions{margin-top:12px}#tp-root .tp-btn{padding:9px 20px;font-size:14px}}',
+        '@media (min-width:1100px) and (min-height:600px){#tp-root h1{font-size:34px}#tp-root header p{font-size:18px}#tp-root .art{width:230px}#tp-root .pct{font-size:88px}#tp-root .bar{width:460px}#tp-root .stage{font-size:24px}#tp-root .stats b{font-size:19px}#tp-root .stats span{font-size:14px}#tp-root .tp-actions{margin-top:30px;gap:18px}#tp-root .tp-btn{font-size:19px;padding:15px 34px}}',
         '#tp-root .tpfx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}'
     ].join('\n');
 
@@ -103,7 +114,7 @@
     var BUCKET_SVG = [
         '<svg viewBox="0 0 240 262" aria-hidden="true">',
         '<defs>',
-        '<radialGradient id="tp-gl"><stop offset="0" stop-color="#f0b24a" stop-opacity=".5"/><stop offset=".55" stop-color="#f0b24a" stop-opacity=".14"/><stop offset="1" stop-color="#f0b24a" stop-opacity="0"/></radialGradient>',
+        '<radialGradient id="tp-gl"><stop offset="0" style="stop-color:var(--acc)" stop-opacity=".5"/><stop offset=".55" style="stop-color:var(--acc)" stop-opacity=".14"/><stop offset="1" style="stop-color:var(--acc)" stop-opacity="0"/></radialGradient>',
         '<linearGradient id="tp-sh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".38"/></linearGradient>',
         '<linearGradient id="tp-vg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".28"/><stop offset=".3" stop-color="#000" stop-opacity="0"/></linearGradient>',
         '</defs>',
@@ -136,7 +147,7 @@
         '<div><b id="tp-mSpeed">—</b><span>скорость</span></div>',
         '<div><b id="tp-mLoaded">—</b><span>в буфере</span></div>',
         '</div>',
-        '<div class="tp-actions"><button class="tp-btn primary" id="tp-watch">Смотреть</button><button class="tp-btn" id="tp-cancel">Отмена</button></div>',
+        '<div class="tp-actions"><button class="tp-btn primary" id="tp-watch">Смотреть сейчас</button><button class="tp-btn" id="tp-cancel">Отмена</button></div>',
         '</main>',
         '<svg id="tp-fx" class="tpfx" aria-hidden="true"><defs><g id="tp-pf"></g></defs><g id="tp-fxg"></g></svg>'
     ].join('');
@@ -287,10 +298,10 @@
         var r = $('tp-art').getBoundingClientRect(), u = r.width / 240, ox = r.left + r.width / 2, oy = r.top + r.height * .44, kk = Math.max(.7, Math.min(1.5, innerHeight / 720));
         fxg.innerHTML = ''; FX = [];
         FX.push({ t: 'flash', el: addFx('circle', { cx: ox, cy: oy, r: 230 * kk, fill: 'url(#tp-gl)', opacity: 0 }), age: 0, life: .85 });
-        FX.push({ t: 'ring', el: addFx('circle', { cx: ox, cy: oy, r: 10, fill: 'none', stroke: '#f0b24a', 'stroke-width': 3, opacity: 0 }), age: 0, life: .95, k: kk });
+        FX.push({ t: 'ring', el: addFx('circle', { cx: ox, cy: oy, r: 10, fill: 'none', stroke: ACC, 'stroke-width': 3, opacity: 0 }), age: 0, life: .95, k: kk });
         for (var i = 0; i < 40; i++) {
             var kern = i >= 28, a = -Math.PI / 2 + (Math.random() - .5) * 2.4, sp = (kern ? 300 + Math.random() * 500 : 340 + Math.random() * 560) * kk, el;
-            if (kern) el = addFx('circle', { r: 2.5 + Math.random() * 2, fill: '#f0b24a', opacity: 0 });
+            if (kern) el = addFx('circle', { r: 2.5 + Math.random() * 2, fill: ACC, opacity: 0 });
             else { el = addFx('use', { href: '#tp-pf', opacity: 0 }); el.setAttributeNS('http://www.w3.org/1999/xlink', 'href', '#tp-pf'); }
             FX.push({ t: 'p', el: el, x: ox + (Math.random() - .5) * r.width * .45, y: oy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, rot: Math.random() * 360, vr: (Math.random() - .5) * 620, s: u * (.7 + Math.random() * .85), age: 0, life: 1.7 + Math.random() * .7, kern: kern, g: 1150 * kk });
         }
@@ -379,13 +390,19 @@
             if (o.waited != null) S.waited = o.waited;
             if (o.title) $('tp-title').textContent = o.title;
             if (o.sub != null) $('tp-sub').textContent = o.sub;
-            if (o.poster) poster.style.backgroundImage = 'url("' + o.poster + '")';
+            if (o.poster) { poster.style.backgroundImage = 'url("' + o.poster + '")'; if (!accFixed) accentFrom(o.poster); }
+            if (o.accent) { accFixed = true; setAccent(o.accent); }
         },
         reset: function () {
             S.stage = 0; S.target = 0; S.shown = 0; S.peers = 0; S.total = 0;
             S.speed = 0; S.loaded = null; S.waited = false;
             lastCount = 0; doneKicked = false; lastTxt = '';
             poster.style.backgroundImage = '';
+            /* акцент и надпись кнопки — к умолчаниям нового запуска */
+            accFixed = false; ACC = '#f0b24a';
+            var r = $('tp-root'), w = $('tp-watch');
+            if (r) { r.style.setProperty('--acc', '#f0b24a'); r.style.setProperty('--accg', 'rgba(240,178,74,.55)'); }
+            if (w) w.textContent = 'Смотреть сейчас';
         }
     };
 
@@ -579,6 +596,7 @@
                на 100% «Запуск» (взрыв играет сам движком), запуск только по «Смотреть» */
             stopPoll();
             setBtnFocus(0);
+            var w = $('tp-watch'); if (w) w.textContent = 'Смотреть';
             dbgLog('READY 100% — ждём Смотреть/Отмена');
             return;
         }
@@ -630,6 +648,59 @@
             if (TM && typeof TM.img === 'function') return TM.img(path, 'w500');
         } catch (e) {}
         return 'https://image.tmdb.org/t/p/w500' + path;
+    }
+    /* акцентный цвет из постера — как в новом файле: гистограмма оттенков
+       по уменьшенной копии постера; не вышло (CORS/нет постера) — остаётся
+       янтарь по умолчанию. Переменные ставятся на #tp-root, а не на
+       documentElement, чтобы не задеть стили самой Лампы. */
+    var ACC = '#f0b24a', accFixed = false;
+    function setAccent(hex) {
+        var m = /^#?([0-9a-f]{6}|[0-9a-f]{3})$/i.exec((hex || '').trim());
+        if (!m) return;
+        var v = m[1];
+        if (v.length === 3) v = v.replace(/./g, '$&$&');
+        var n = parseInt(v, 16), r = $('tp-root');
+        ACC = '#' + v;
+        if (r) {
+            r.style.setProperty('--acc', ACC);
+            r.style.setProperty('--accg', 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',.55)');
+        }
+    }
+    function toAccent(r, g, b) {
+        var mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, df = mx - mn, h = 0, s = df ? df / (1 - Math.abs(2 * l - 1)) : 0;
+        if (df) h = mx === r ? ((g - b) / df + 6) % 6 : mx === g ? (b - r) / df + 2 : (r - g) / df + 4;
+        s = Math.min(.9, Math.max(.55, s)); l = Math.min(.68, Math.max(.58, l));
+        var c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs(h % 2 - 1)), m = l - c / 2, o = [[c, x, 0], [x, c, 0], [0, c, x], [0, x, c], [x, 0, c], [c, 0, x]][Math.floor(h) % 6];
+        return '#' + o.map(function (v) { return ('0' + Math.round((v + m) * 255).toString(16)).slice(-2); }).join('');
+    }
+    function accentFrom(url) {
+        try {
+            var im = new Image();
+            im.crossOrigin = 'anonymous';
+            im.onload = function () {
+                try {
+                    var w = 36, h = 54, cv = document.createElement('canvas');
+                    cv.width = w; cv.height = h;
+                    var cx = cv.getContext('2d');
+                    cx.drawImage(im, 0, 0, w, h);
+                    var d = cx.getImageData(0, 0, w, h).data, bins = [], i, b;
+                    for (b = 0; b < 12; b++) bins.push({ w: 0, r: 0, g: 0, b: 0 });
+                    for (i = 0; i < d.length; i += 4) {
+                        var r = d[i] / 255, g = d[i + 1] / 255, bl = d[i + 2] / 255, mx = Math.max(r, g, bl), mn = Math.min(r, g, bl), l = (mx + mn) / 2, df = mx - mn;
+                        if (df < .12) continue;
+                        var s = df / (1 - Math.abs(2 * l - 1) + 1e-6), wgt = s * (1 - Math.abs(l - .55) * 1.6);
+                        if (wgt <= .05) continue;
+                        var hh = mx === r ? ((g - bl) / df + 6) % 6 : mx === g ? (bl - r) / df + 2 : (r - g) / df + 4, bin = bins[Math.floor(hh * 2) % 12];
+                        bin.w += wgt; bin.r += r * wgt; bin.g += g * wgt; bin.b += bl * wgt;
+                    }
+                    var best = bins[0];
+                    bins.forEach(function (x) { if (x.w > best.w) best = x; });
+                    if (best.w < 3) return;
+                    setAccent(toAccent(best.r / best.w, best.g / best.w, best.b / best.w));
+                } catch (e) { /* почти ч/б постер или tainted canvas — оставляем янтарь */ }
+            };
+            im.src = url;
+        } catch (e) { /* молча */ }
     }
     function setLogo(url) {
         if (!visible) return;
