@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawflix — общий фон (превью v1)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #07080d; color: #fff; font-family: "Nunito", system-ui, sans-serif; font-size: 16px; min-height: 100vh; }
+  /* СЛОЙ 0: общий фон — на самом низу, везде */
+  .bg-layer {
+    position: fixed; inset: 0; z-index: 0;
+    background: url("bg-doodle.jpg") center/cover no-repeat;
+    transition: background-image .3s ease;
+  }
+  .bg-layer::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,0) 30%, rgba(0,0,0,.55) 100%);
+  }
+  /* СЛОЙ 1: hero-карточка — НАД фоном, ПОД навбаром (здесь заглушка, чтобы показать порядок слоёв, не дизайн hero) */
+  .hero-ph {
+    position: relative; z-index: 1; margin: 108px auto 0; width: 92%; max-width: 1100px; height: 300px;
+    border-radius: 20px; overflow: hidden;
+    background: url("poster.jpg") center 30%/cover no-repeat;
+    box-shadow: 0 16px 40px rgba(0,0,0,.5);
+  }
+  .hero-ph::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.75) 100%);
+  }
+  .hero-ph .txt { position: absolute; left: 24px; bottom: 20px; z-index: 2; }
+  .hero-ph .txt b { display: block; font-size: 30px; font-weight: 800; }
+  .hero-ph .txt span { font-size: 16px; color: rgba(255,255,255,.85); }
+  /* СЛОЙ 2: верхний навбар — поверх всего, порт .topmenu из WebView 1:1 */
+  .topmenu {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    display: flex; gap: clamp(18px,4vw,44px); align-items: center;
+    padding: 1.1em 2em;
+    background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,0));
+    -webkit-backdrop-filter: blur(10px) saturate(1.3); backdrop-filter: blur(10px) saturate(1.3);
+    -webkit-mask-image: linear-gradient(180deg,#000 0,#000 calc(100% - .9em),transparent 100%);
+    mask-image: linear-gradient(180deg,#000 0,#000 calc(100% - .9em),transparent 100%);
+    scrollbar-width: none;
+  }
+  .topmenu::-webkit-scrollbar { display: none; }
+  .menu-scroll {
+    display: flex; gap: clamp(18px,4vw,44px); align-items: center;
+    overflow-x: auto; flex: 1 1 auto; scrollbar-width: none;
+  }
+  .menu-scroll::-webkit-scrollbar { display: none; }
+  .menu-clock {
+    flex: none; display: flex; align-items: center; gap: .5em;
+    font-size: clamp(15px,2.4vw,20px); color: rgba(255,255,255,.85); white-space: nowrap;
+  }
+  #clock-time { font-weight: 600; font-variant-numeric: tabular-nums; }
+  #clock-wx { display: inline-flex; align-items: center; gap: .45em; }
+  .wx-ico svg { width: 1.25em; height: 1.25em; display: block; fill: none; stroke: #fff; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .wx-temp { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .wx-city { color: rgba(255,255,255,.55); font-size: .85em; }
+  @media (max-width: 760px) { .wx-city { display: none; } }
+  .menu-btn {
+    position: relative; flex: 0 0 auto; background: transparent; border: 0;
+    color: rgba(255,255,255,.74); font-family: inherit;
+    font-size: clamp(17px,3vw,25px); font-weight: 400; padding: 10px 0 13px; white-space: nowrap;
+    text-shadow: 0 0 8px rgba(255,255,255,.06); cursor: pointer;
+  }
+  .menu-btn.active { color: #fff; font-weight: 600; text-shadow: 0 0 8px rgba(255,255,255,.18), 0 0 18px rgba(255,255,255,.08); }
+  .menu-btn:after {
+    content: ""; position: absolute; left: 25%; right: 25%; bottom: 3px; height: 2px; border-radius: 2px;
+    background: rgba(255,255,255,.88); transform: scaleX(0); opacity: 0; box-shadow: 0 0 8px rgba(255,255,255,.22);
+  }
+  .menu-btn.active:after { transform: scaleX(1); opacity: .7; }
+  .pk-logo {
+    position: relative; z-index: 1; display: flex; align-items: center; gap: .1em;
+    font-size: calc(clamp(17px,3vw,25px) * 1.3); line-height: 1; flex: none; cursor: pointer;
+    margin-right: calc(.5em - clamp(18px,4vw,44px));
+  }
+  .pk-logo .paw { width: 1.15em; height: 1.15em; flex: none; overflow: visible; filter: drop-shadow(0 .06em .18em rgba(66,133,244,.5)); }
+  .pk-logo .word { display: flex; font-family: 'Fredoka', system-ui, sans-serif; font-weight: 600; letter-spacing: -.02em; padding-bottom: .04em; }
+  .pk-logo .word .f { color: #b4d0fb; } .pk-logo .word .f2 { color: #8ab4f8; }
+  .pk-logo .word .f3 { color: #6b9ff5; } .pk-logo .word .f4 { color: #4f8bf2; }
+  /* Переключатель фонов — в превью внизу, в приложении будет в Настройках → Фон */
+  .bg-switch {
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: 76px; z-index: 60;
+    display: flex; gap: 8px; padding: 6px; border-radius: 99px;
+    background: rgba(10,10,14,.7); border: 1px solid rgba(255,255,255,.16);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  }
+  .bg-switch button {
+    background: transparent; border: 0; color: rgba(255,255,255,.75); font-family: inherit;
+    font-size: 15px; font-weight: 700; padding: 8px 16px; border-radius: 99px; cursor: pointer; white-space: nowrap;
+  }
+  .bg-switch button.active { background: #fff; color: #000; }
+  .caption {
+    position: fixed; left: 16px; bottom: 16px; z-index: 60; font-size: 13px; line-height: 1.6;
+    color: rgba(255,255,255,.7); text-shadow: 0 1px 8px rgba(0,0,0,.9); max-width: 94vw;
+  }
+  .caption b { color: #fff; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="bg-layer" id="bg-layer"></div>
+  <div class="hero-ph"><div class="txt"><b>Название фильма</b><span>★ 8.6 · 2026 · жанры (hero-карточка здесь — заглушка, только чтобы показать порядок слоёв)</span></div></div>
+  <header class="topmenu" id="menu">
+    <div class="pk-logo" role="img" aria-label="Pawflix">
+      <svg class="paw" viewBox="0 0 120 120" aria-hidden="true">
+        <defs>
+          <linearGradient id="pk-g" gradientUnits="userSpaceOnUse" x1="8" y1="14" x2="112" y2="116"><stop offset="0" stop-color="#AECBFA"/><stop offset="1" stop-color="#3F7DF0"/></linearGradient>
+          <mask id="pk-m"><rect width="120" height="120" fill="#fff"/><path d="M54 77L54 97L71.500 87Z" fill="#000" stroke="#000" stroke-width="4.500" stroke-linejoin="round"/></mask>
+        </defs>
+        <g fill="url(#pk-g)">
+          <g><ellipse cx="19" cy="57" rx="10" ry="12.500" transform="rotate(-22 19 57)"/></g>
+          <g><ellipse cx="42" cy="32" rx="11.500" ry="14.500" transform="rotate(-8 42 32)"/></g>
+          <g><ellipse cx="78" cy="32" rx="11.500" ry="14.500" transform="rotate(8 78 32)"/></g>
+          <g><ellipse cx="101" cy="57" rx="10" ry="12.500" transform="rotate(22 101 57)"/></g>
+          <g mask="url(#pk-m)"><circle cx="41" cy="96" r="13"/><circle cx="79" cy="96" r="13"/><circle cx="60" cy="102" r="12"/><ellipse cx="60" cy="82" rx="26" ry="21"/></g>
+        </g>
+      </svg>
+      <div class="word" aria-hidden="true"><span>p</span><span>a</span><span>w</span><span class="f">f</span><span class="f2">l</span><span class="f3">i</span><span class="f4">x</span></div>
+    </div>
+    <nav class="menu-scroll" id="menu-scroll">
+      <button class="menu-btn active" data-screen="home">Главная</button>
+      <button class="menu-btn" data-screen="collections">Коллекции</button>
+      <button class="menu-btn" data-screen="catalog">Каталог</button>
+      <button class="menu-btn" data-screen="search">Поиск</button>
+      <button class="menu-btn" data-screen="settings">Настройки</button>
+    </nav>
+    <div class="menu-clock" id="menu-clock" aria-hidden="true"><span id="clock-time">--:--</span><span id="clock-wx"><span class="wx-ico" id="wx-ico"></span><span class="wx-temp" id="wx-temp">--°</span><span class="wx-city">Раздельная</span></span></div>
+  </header>
+  <div class="bg-switch" id="bg-switch">
+    <button class="active" data-bg="bg-doodle.jpg">Дудл</button>
+    <button data-bg="bg-gradient.jpg">Градиент</button>
+    <button data-bg="dark">Тёмный</button>
+  </div>
+  <div class="caption">
+    <b>Превью v1: общий фон.</b> Порядок слоёв: фон (самый низ, везде) → hero-карточка над ним → верхний навбар поверх всего с блюром.
+    Переключатель внизу — только для превью, в приложении он будет в Настройках → Фон. Hero-карточка здесь заглушка, её дизайн — отдельный элемент.
+  </div>
+  <script>
+    document.querySelectorAll('.menu-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.menu-btn').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+      });
+    });
+    document.querySelectorAll('#bg-switch button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('#bg-switch button').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        var layer = document.getElementById('bg-layer');
+        var bg = btn.getAttribute('data-bg');
+        if (bg === 'dark') { layer.style.backgroundImage = 'none'; layer.style.backgroundColor = '#07080d'; }
+        else { layer.style.backgroundColor = ''; layer.style.backgroundImage = 'url("' + bg + '")'; }
+      });
+    });
+    function tick() {
+      var d = new Date();
+      document.getElementById('clock-time').textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+    tick(); setInterval(tick, 15000);
+    var ICONS = {
+      sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+      cloud: '<svg viewBox="0 0 24 24"><path d="M7 18a4.5 4.5 0 1 1 .8-8.93A6 6 0 0 1 19.5 12 3.75 3.75 0 0 1 18 18z"/></svg>',
+      rain: '<svg viewBox="0 0 24 24"><path d="M7 15a4.5 4.5 0 1 1 .8-8.93A6 6 0 0 1 19.5 12 3.75 3.75 0 0 1 18 15z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/></svg>'
+    };
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=46.85479&longitude=30.07091&current=temperature_2m,weather_code&timezone=auto')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.current) return;
+        document.getElementById('wx-temp').textContent = Math.round(d.current.temperature_2m) + '°';
+        var c = d.current.weather_code, ic = 'cloud';
+        if (c === 0) ic = 'sun';
+        else if (c >= 51 && c <= 67 || c >= 80 && c <= 82 || c >= 95) ic = 'rain';
+        document.getElementById('wx-ico').innerHTML = ICONS[ic];
+      })
+      .catch(function () {});
+    document.getElementById('wx-ico').innerHTML = ICONS.cloud;
+  </script>
+</body>
+</html>
