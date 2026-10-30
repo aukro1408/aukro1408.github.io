@@ -66,6 +66,11 @@
  *    tryLogo теперь вызывается ПОСЛЕ visible=true (раньше setLogo молча
  *    падал на гарде !visible для пути logo_path); плюс onerror логотипа —
  *    возврат к тексту названия.
+ *  - v2.8: контент чуть ниже (верхний отступ main 12vh вместо 4.5vh,
+ *    заголовок-логотип на месте — он absolute сверху); размер фильма
+ *    переехал из подзаголовка в статы (4-я цифра «размер», пустой
+ *    подзаголовок скрывается); название пульсирует при загрузке
+ *    (header.tp-pulse: scale 1↔1.04 за 2.8с, на 100% останавливается).
  */
 (function () {
     'use strict';
@@ -82,8 +87,9 @@
         '#tp-root .tp-poster{position:absolute;inset:-5%;background:var(--bg) center/cover no-repeat;filter:blur(18px) brightness(.38);transform:scale(1.1);will-change:filter,transform}',
         '#tp-root .tp-scrim{position:absolute;inset:0;pointer-events:none;',
         'background:radial-gradient(ellipse at 50% 55%,rgba(6,6,8,.5) 0%,rgba(6,6,8,0) 68%),linear-gradient(to bottom,rgba(6,6,8,.6) 0%,rgba(6,6,8,.18) 34%,rgba(6,6,8,.72) 100%)}',
-        '#tp-root main{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:max(24px,4.5vh) max(24px,5vw) max(28px,4.5vh);text-align:center}',
+        '#tp-root main{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:max(24px,12vh) max(24px,5vw) max(28px,4.5vh);text-align:center}',
         '#tp-root header{position:absolute;top:max(30px,5vh);left:0;right:0;padding:0 max(24px,5vw);text-shadow:0 2px 18px rgba(0,0,0,.6)}',
+        '#tp-root header.tp-pulse{animation:tppulse 2.8s ease-in-out infinite}',
         '#tp-root #tp-logo{display:none;max-width:min(60vw,340px);max-height:88px;width:auto;height:auto;margin:0 auto;filter:drop-shadow(0 2px 18px rgba(0,0,0,.6))}',
         '#tp-root h1{margin:0;font-size:clamp(20px,4vw,26px);font-weight:700;letter-spacing:-.01em}',
         '#tp-root header p{margin:5px 0 0;font-size:14px;font-weight:500;color:var(--dim)}',
@@ -98,7 +104,7 @@
         '#tp-root .dead .seg{animation-duration:4.5s;opacity:.35}',
         '#tp-root .stage{margin-top:18px;min-height:24px;font-size:clamp(16px,4vw,18px);font-weight:500;text-shadow:0 2px 16px rgba(0,0,0,.6);transition:opacity .35s}',
         '#tp-root .stage.swap{opacity:0}',
-        '#tp-root .stats{margin-top:20px;display:flex;gap:34px;justify-content:center;text-shadow:0 2px 14px rgba(0,0,0,.6)}',
+        '#tp-root .stats{margin-top:20px;display:flex;gap:34px;justify-content:center;flex-wrap:wrap;text-shadow:0 2px 14px rgba(0,0,0,.6)}',
         '#tp-root .stats b{display:block;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}',
         '#tp-root .stats span{display:block;margin-top:3px;font-size:12px;font-weight:500;color:var(--dim)}',
         '#tp-root button{margin-top:22px;font:inherit;font-size:14px;font-weight:700;color:var(--ink);background:rgba(8,8,10,.35);border:1px solid rgba(244,233,214,.4);border-radius:999px;padding:11px 24px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .6s,border-color .2s}',
@@ -108,10 +114,12 @@
         '#tp-root .tp-btn.focused{outline:none;transform:scale(1.07);border-color:var(--acc);box-shadow:0 0 0 3px var(--acc),0 0 26px var(--accg)}',
         '#tp-root .tp-btn.primary.focused{background:#fff}',
         '@keyframes tpglide{from{transform:translateX(-100%)}to{transform:translateX(300%)}}',
+        '@keyframes tppulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}',
         '@keyframes tppop{0%{transform:scale(1)}35%{transform:scale(1.09)}100%{transform:scale(1)}}',
         '#tp-root .pct.pop{animation:tppop .8s cubic-bezier(.2,.9,.3,1.3)}',
         '@media (prefers-reduced-motion:reduce){#tp-root .seg{animation:none;left:33%}}',
         '@media (max-height:600px){#tp-root .art{width:min(30vh,150px)}#tp-root .pct{font-size:44px}#tp-root .stats{margin-top:12px}#tp-root .tp-actions{margin-top:12px}#tp-root .tp-btn{padding:9px 20px;font-size:14px}}',
+        '@media (max-width:600px){#tp-root .stats{gap:20px}}',
         '@media (min-width:1100px) and (min-height:600px){#tp-root h1{font-size:34px}#tp-root header p{font-size:18px}#tp-root .art{width:230px}#tp-root .pct{font-size:88px}#tp-root .bar{width:460px}#tp-root .stage{font-size:24px}#tp-root .stats b{font-size:19px}#tp-root .stats span{font-size:14px}#tp-root .tp-actions{margin-top:30px;gap:18px}#tp-root .tp-btn{font-size:19px;padding:15px 34px}}',
         '#tp-root .tpfx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}'
     ].join('\n');
@@ -143,7 +151,7 @@
         '<div class="tp-poster" id="tp-poster"></div>',
         '<div class="tp-scrim"></div>',
         '<main id="tp-main">',
-        '<header><h1 id="tp-title"></h1><img id="tp-logo" alt=""><p id="tp-sub"></p></header>',
+        '<header id="tp-head"><h1 id="tp-title"></h1><img id="tp-logo" alt=""><p id="tp-sub"></p></header>',
         '<div class="art" id="tp-art">' + BUCKET_SVG + '</div>',
         '<div class="pct" id="tp-pct" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">0<small>%</small></div>',
         '<div class="bar"><div class="fill" id="tp-fill"></div><div class="seg"></div></div>',
@@ -152,6 +160,7 @@
         '<div><b id="tp-mPeers">0</b><span>пиры</span></div>',
         '<div><b id="tp-mSpeed">—</b><span>скорость</span></div>',
         '<div><b id="tp-mLoaded">—</b><span>в буфере</span></div>',
+        '<div><b id="tp-mSize">—</b><span>размер</span></div>',
         '</div>',
         '<div class="tp-actions"><button class="tp-btn primary" id="tp-watch">Смотреть сейчас</button><button class="tp-btn" id="tp-cancel">Отмена</button></div>',
         '</main>',
@@ -182,7 +191,7 @@
     var easeBack = function (t) { var u = t - 1; return 1 + 2.4 * u * u * u + 1.4 * u * u; };
 
     var built = false, raf = 0, visible = false;
-    var main, poster, fill, pct, stageEl, corn, bucket, parts, shadow, glow, fxg;
+    var main, poster, fill, pct, stageEl, corn, bucket, parts, shadow, glow, fxg, headerEl;
 
     function build() {
         if (built) return;
@@ -218,6 +227,7 @@
         main = $('tp-main'); poster = $('tp-poster'); fill = $('tp-fill'); pct = $('tp-pct');
         stageEl = $('tp-stage'); corn = $('tp-corn'); bucket = $('tp-bucket');
         parts = $('tp-parts'); shadow = $('tp-shadow'); glow = $('tp-glow'); fxg = $('tp-fxg');
+        headerEl = $('tp-head');
         buildBucket();
         $('tp-pf').innerHTML = inner;
     }
@@ -377,6 +387,7 @@
 
         main.classList.toggle('buffering', buf);
         main.classList.toggle('dead', dead);
+        if (headerEl) headerEl.classList.toggle('tp-pulse', !done);
         setText(dead ? 'Пока нет источников, ждём' : STAGES[S.stage]);
         $('tp-mPeers').textContent = S.total ? S.peers + ' из ' + S.total : S.peers;
         $('tp-mSpeed').textContent = fmtSpeed(S.speed);
@@ -395,7 +406,8 @@
             if (o.loaded != null) S.loaded = o.loaded;
             if (o.waited != null) S.waited = o.waited;
             if (o.title) $('tp-title').textContent = o.title;
-            if (o.sub != null) $('tp-sub').textContent = o.sub;
+            if (o.sub != null) { var s = $('tp-sub'); if (s) { s.textContent = o.sub; s.style.display = o.sub ? '' : 'none'; } }
+            if (o.size != null) { var mz = $('tp-mSize'); if (mz) mz.textContent = o.size; }
             if (o.poster) { poster.style.backgroundImage = 'url("' + o.poster + '")'; if (!accFixed) accentFrom(o.poster); }
             if (o.accent) { accFixed = true; setAccent(o.accent); }
         },
@@ -404,6 +416,8 @@
             S.speed = 0; S.loaded = null; S.waited = false;
             lastCount = 0; doneKicked = false; lastTxt = '';
             poster.style.backgroundImage = '';
+            var mz0 = $('tp-mSize'); if (mz0) mz0.textContent = '—';
+            var s0 = $('tp-sub'); if (s0) { s0.textContent = ''; s0.style.display = 'none'; }
             /* акцент и надпись кнопки — к умолчаниям нового запуска */
             accFixed = false; ACC = '#f0b24a';
             var r = $('tp-root'), w = $('tp-watch');
@@ -465,15 +479,17 @@
         try {
             var card = obj.card || {};
             var title = obj.first_title || card.title || card.name || obj.title || obj.name || 'Торрент';
-            var sub = obj.size || obj.sub || obj.quality || '';
+            var sz = obj.size || '';
+            if (typeof sz === 'number') sz = fmtSize(sz);
+            var sub = obj.sub || obj.quality || '';
             var poster = '';
             if (card.backdrop_path) poster = 'https://image.tmdb.org/t/p/w1280' + card.backdrop_path;
             else if (card.poster_path) poster = 'https://image.tmdb.org/t/p/w500' + card.poster_path;
             else if (obj.img && obj.img.indexOf('img_broken') === -1) poster = obj.img;
             else if (obj.poster) poster = obj.poster;
             else if (obj.image) poster = obj.image;
-            return { title: title, sub: sub, poster: poster };
-        } catch (e) { return { title: 'Торрент', sub: '', poster: '' }; }
+            return { title: title, sub: sub, size: sz, poster: poster };
+        } catch (e) { return { title: 'Торрент', sub: '', size: '', poster: '' }; }
     }
     function isTorrent(obj) {
         try {
@@ -770,7 +786,7 @@
         try {
             window.torrentPreload.reset();
             var info = pickStr(obj);
-            window.torrentPreload.update({ stage: 0, progress: 0, peers: 0, total: 0, speed: 0, loaded: 0, title: info.title, sub: info.sub, poster: info.poster });
+            window.torrentPreload.update({ stage: 0, progress: 0, peers: 0, total: 0, speed: 0, loaded: 0, title: info.title, sub: info.sub, size: info.size || '—', poster: info.poster });
             var root = $('tp-root');
             root.style.display = 'block';
             root.style.opacity = '1';
