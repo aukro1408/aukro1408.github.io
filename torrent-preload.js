@@ -74,6 +74,11 @@
  *  - v2.9: размер красиво выделен — золотая пилюля: текст акцентным
  *    цветом (идёт за акцентом постера), крупнее остальных цифр
  *    (17px/21px на ТВ), мягкая янтарная подложка и тонкая обводка.
+ *  - v3.0: кнопка «Смотреть» всегда (переименование «Смотреть сейчас»→
+ *    «Смотреть» на 100% убрано); постер всегда в состоянии 100%
+ *    (blur 2px brightness .62 scale 1.03 с самого начала, проявление
+ *    по прогрессу убрано); логотип на ТВ крупнее (до 640×150 вместо
+ *    340×88 — на телефоне без изменений).
  */
 (function () {
     'use strict';
@@ -87,7 +92,7 @@
         'color-scheme:dark;position:fixed;inset:0;z-index:99999;background:var(--bg);color:var(--ink);',
         'font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;display:none;pointer-events:none;opacity:1;transition:opacity .4s}',
         '#tp-root,#tp-root *,#tp-root *::before,#tp-root *::after{box-sizing:border-box}',
-        '#tp-root .tp-poster{position:absolute;inset:-5%;background:var(--bg) center/cover no-repeat;filter:blur(18px) brightness(.38);transform:scale(1.1);will-change:filter,transform}',
+        '#tp-root .tp-poster{position:absolute;inset:-5%;background:var(--bg) center/cover no-repeat;filter:blur(2px) brightness(.62);transform:scale(1.03);will-change:filter,transform}',
         '#tp-root .tp-scrim{position:absolute;inset:0;pointer-events:none;',
         'background:radial-gradient(ellipse at 50% 55%,rgba(6,6,8,.5) 0%,rgba(6,6,8,0) 68%),linear-gradient(to bottom,rgba(6,6,8,.6) 0%,rgba(6,6,8,.18) 34%,rgba(6,6,8,.72) 100%)}',
         '#tp-root main{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:max(24px,12vh) max(24px,5vw) max(28px,4.5vh);text-align:center}',
@@ -125,7 +130,7 @@
         '@media (prefers-reduced-motion:reduce){#tp-root .seg{animation:none;left:33%}}',
         '@media (max-height:600px){#tp-root .art{width:min(30vh,150px)}#tp-root .pct{font-size:44px}#tp-root .stats{margin-top:12px}#tp-root .tp-actions{margin-top:12px}#tp-root .tp-btn{padding:9px 20px;font-size:14px}}',
         '@media (max-width:600px){#tp-root .stats{gap:20px}}',
-        '@media (min-width:1100px) and (min-height:600px){#tp-root h1{font-size:34px}#tp-root header p{font-size:18px}#tp-root .art{width:230px}#tp-root .pct{font-size:88px}#tp-root .bar{width:460px}#tp-root .stage{font-size:24px}#tp-root .stats b{font-size:19px}#tp-root .stats span{font-size:14px}#tp-root .stats .tp-size b{font-size:21px;padding:4px 16px}#tp-root .tp-actions{margin-top:30px;gap:18px}#tp-root .tp-btn{font-size:19px;padding:15px 34px}}',
+        '@media (min-width:1100px) and (min-height:600px){#tp-root h1{font-size:34px}#tp-root header p{font-size:18px}#tp-root #tp-logo{max-width:min(40vw,640px);max-height:150px}#tp-root .art{width:230px}#tp-root .pct{font-size:88px}#tp-root .bar{width:460px}#tp-root .stage{font-size:24px}#tp-root .stats b{font-size:19px}#tp-root .stats span{font-size:14px}#tp-root .stats .tp-size b{font-size:21px;padding:4px 16px}#tp-root .tp-actions{margin-top:30px;gap:18px}#tp-root .tp-btn{font-size:19px;padding:15px 34px}}',
         '#tp-root .tpfx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}'
     ].join('\n');
 
@@ -167,7 +172,7 @@
         '<div><b id="tp-mLoaded">—</b><span>в буфере</span></div>',
         '<div class="tp-size"><b id="tp-mSize">—</b><span>размер</span></div>',
         '</div>',
-        '<div class="tp-actions"><button class="tp-btn primary" id="tp-watch">Смотреть сейчас</button><button class="tp-btn" id="tp-cancel">Отмена</button></div>',
+        '<div class="tp-actions"><button class="tp-btn primary" id="tp-watch">Смотреть</button><button class="tp-btn" id="tp-cancel">Отмена</button></div>',
         '</main>',
         '<svg id="tp-fx" class="tpfx" aria-hidden="true"><defs><g id="tp-pf"></g></defs><g id="tp-fxg"></g></svg>'
     ].join('');
@@ -281,7 +286,7 @@
 
     var STAGES = ['Поиск источников', 'Подключение к пирам', 'Получение метаданных', 'Буферизация', 'Запуск'];
     var S = { stage: 0, target: 0, shown: 0, peers: 0, total: 0, speed: 0, loaded: null, waited: false };
-    var lastTxt = '', lastCount = 0, dy = 0, vy = 0, last = 0, lastBlur = '', doneKicked = false, pi = 0;
+    var lastTxt = '', lastCount = 0, dy = 0, vy = 0, last = 0, doneKicked = false, pi = 0;
     var reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
     function fmtSpeed(b) {
@@ -387,9 +392,6 @@
 
         stepFx(dt);
 
-        var b = (18 - 16 * pr).toFixed(1), f = 'blur(' + b + 'px) brightness(' + (.38 + .24 * pr).toFixed(2) + ')';
-        if (f !== lastBlur) { lastBlur = f; poster.style.filter = f; poster.style.transform = 'scale(' + (1.1 - .07 * pr).toFixed(3) + ')'; }
-
         main.classList.toggle('buffering', buf);
         main.classList.toggle('dead', dead);
         if (headerEl) headerEl.classList.toggle('tp-pulse', !done);
@@ -427,7 +429,7 @@
             accFixed = false; ACC = '#f0b24a';
             var r = $('tp-root'), w = $('tp-watch');
             if (r) { r.style.setProperty('--acc', '#f0b24a'); r.style.setProperty('--accg', 'rgba(240,178,74,.55)'); }
-            if (w) w.textContent = 'Смотреть сейчас';
+            if (w) w.textContent = 'Смотреть';
         }
     };
 
@@ -623,7 +625,6 @@
                на 100% «Запуск» (взрыв играет сам движком), запуск только по «Смотреть» */
             stopPoll();
             setBtnFocus(0);
-            var w = $('tp-watch'); if (w) w.textContent = 'Смотреть';
             dbgLog('READY 100% — ждём Смотреть/Отмена');
             return;
         }
