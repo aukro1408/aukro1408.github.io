@@ -43,6 +43,10 @@
  *    и «Отмена», как на фото. Опрос приведён к приложению: ответ
  *    разворачивается ({torrent}), фолбэк на /cache, готовность без
  *    preload_size — min(50МБ, 5% размера).
+ *  - v2.3: адрес TorrServer берётся из обоих полей настроек (torrserver_url
+ *    и torrserver_url_two), нормализуется (добавляется http://, режутся
+ *    слеши), при ошибке опроса пробуется второй адрес; адрес всегда пишется
+ *    в плашку диагностики (раньше его затирал статус ошибки).
  *  - DEBUG-плашка (временно) остаётся до диагноза 0%.
  */
 (function () {
@@ -178,7 +182,7 @@
         dbgEl = document.createElement('div');
         dbgEl.id = 'tp-dbg';
         dbgEl.setAttribute('style', 'position:fixed;left:8px;bottom:8px;z-index:100000;max-width:92vw;background:rgba(0,0,0,.78);color:#fff;font:13px/1.45 monospace;white-space:pre-wrap;word-break:break-all;padding:8px 10px;border-radius:8px;pointer-events:none;');
-        dbgEl.textContent = 'TP DEBUG v2.2';
+        dbgEl.textContent = 'TP DEBUG v2.3';
         document.body.appendChild(dbgEl);
         $('tp-watch').addEventListener('click', doWatch);
         $('tp-cancel').addEventListener('click', doCancel);
@@ -399,12 +403,23 @@
     var pollTimer = 0, hideTimer = 0, videoTimer = 0, videoEl = null, playerDone = null;
     var currentHash = '', pendingCancelHide = 0;
     var playStash = null, earlyWatch = false, cancelledHash = '', focusBtn = 0;
+    var curBases = [];
 
-    function tsBase() {
+    function normBase(u) {
+        u = String(u || '').replace(/\/+$/, '');
+        if (u && !/^https?:\/\//i.test(u)) u = 'http://' + u;
+        return u;
+    }
+    function getBases() {
         try {
-            var u = (Lampa.Storage && (Lampa.Storage.get('torrserver_url') || Lampa.Storage.get('torrserver_url_two'))) || '';
-            return String(u).replace(/\/$/, '');
-        } catch (e) { return ''; }
+            var s = Lampa.Storage, list = [];
+            if (s) {
+                var a = normBase(s.get('torrserver_url')), b = normBase(s.get('torrserver_url_two'));
+                if (a) list.push(a);
+                if (b && b !== a) list.push(b);
+            }
+            return list;
+        } catch (e) { return []; }
     }
     function findHash(obj) {
         try {
@@ -446,9 +461,9 @@
             if (!url) return false;
             if (url.indexOf('magnet:') === 0) return true;
             if (url.indexOf('/stream/') !== -1) return true;
-            var base = tsBase();
-            if (base) {
-                var host = base.replace(/^https?:\/\//, '').split('/')[0];
+            var bases = getBases();
+            for (var i = 0; i < bases.length; i++) {
+                var host = bases[i].replace(/^https?:\/\//, '').split('/')[0];
                 if (host && url.indexOf(host) !== -1) return true;
             }
         } catch (e) { /* молча */ }
@@ -505,43 +520,49 @@
     function hasStat(t) {
         return !!(t && (t.torrent_size || t.preload_size || t.preloaded_bytes || t.active_peers || t.total_peers));
     }
-    function poll(base, hash, t0) {
-        if (!visible) return;
+    function poll(bases, bi, hash, t0) {
+        if (!visible || hash !== currentHash) return;
+        var base = bases[bi];
         fetch(base + '/torrents', { method: 'POST', body: JSON.stringify({ action: 'get', hash: hash }) })
             .then(function (r) { return r.json(); })
             .then(function (t) {
-                if (!visible) return;
-                /* как в приложении на фото: сервер может вернуть обёртку {torrent:{...}} */
+                if (!visible || hash !== currentHash) return;
                 var tor = t && (t.torrent || t);
-                if (!hasStat(tor)) return pollCache(base, hash, t0);
-                pollStat(tor, base, hash, t0);
+                if (!hasStat(tor)) return pollCache(bases, bi, hash, t0);
+                pollStat(tor, bases, bi, hash, t0);
             })
             .catch(function (e) {
-                if (!visible) return;
-                dbgStatus('poll ERROR: ' + (e && e.message ? e.message : 'fetch failed'));
-                pollTimer = setTimeout(function () { poll(base, hash, t0); }, 2000);
+                if (!visible || hash !== currentHash) return;
+                dbgStatus('poll ERROR[' + base + ']: ' + (e && e.message ? e.message : 'fetch failed'));
+                nextBase(bases, bi, hash, t0);
             });
     }
-    function pollCache(base, hash, t0) {
+    function pollCache(bases, bi, hash, t0) {
+        if (!visible || hash !== currentHash) return;
+        var base = bases[bi];
         fetch(base + '/cache', { method: 'POST', body: JSON.stringify({ action: 'get', hash: hash }) })
             .then(function (r) { return r.json(); })
             .then(function (j) {
-                if (!visible) return;
+                if (!visible || hash !== currentHash) return;
                 var c = j && (j.Torrent || j.torrent || j);
                 if (!hasStat(c)) {
-                    dbgStatus('poll: нет статистики (/torrents+/cache)');
-                    pollTimer = setTimeout(function () { poll(base, hash, t0); }, 2000);
+                    dbgStatus('poll: нет статистики (/torrents+/cache) [' + base + ']');
+                    nextBase(bases, bi, hash, t0);
                     return;
                 }
-                pollStat(c, base, hash, t0);
+                pollStat(c, bases, bi, hash, t0);
             })
             .catch(function (e) {
-                if (!visible) return;
-                dbgStatus('poll ERROR(cache): ' + (e && e.message ? e.message : 'fetch failed'));
-                pollTimer = setTimeout(function () { poll(base, hash, t0); }, 2000);
+                if (!visible || hash !== currentHash) return;
+                dbgStatus('poll ERROR(cache)[' + base + ']: ' + (e && e.message ? e.message : 'fetch failed'));
+                nextBase(bases, bi, hash, t0);
             });
     }
-    function pollStat(tor, base, hash, t0) {
+    function nextBase(bases, bi, hash, t0) {
+        if (bi + 1 < bases.length) { poll(bases, bi + 1, hash, t0); return; }
+        pollTimer = setTimeout(function () { poll(bases, 0, hash, t0); }, 2000);
+    }
+    function pollStat(tor, bases, bi, hash, t0) {
         var need = tor.preload_size || 0, got = tor.preloaded_bytes || 0, size = tor.torrent_size || 0;
         /* как в приложении (v0.23): без preload_size готовность — min(50МБ, 5% размера),
            а прогресс — got/size, а не вечный 0 */
@@ -562,7 +583,7 @@
             dbgLog('READY 100% — ждём Смотреть/Отмена');
             return;
         }
-        pollTimer = setTimeout(function () { poll(base, hash, t0); }, 1000);
+        pollTimer = setTimeout(function () { poll(bases, 0, hash, t0); }, 1000);
     }
 
     function setBtnFocus(i) {
@@ -616,13 +637,14 @@
             setBtnFocus(0);
             startLoop();
             watchVideo();
-            var base = tsBase(), hash = findHash(obj);
-            if (base && hash) {
-                dbgStatus('poll: base=' + base + ' hash=' + hash.slice(0, 8) + '...');
+            curBases = getBases();
+            dbgLog('BASES=' + (curBases.length ? curBases.join(' | ') : 'НЕТ'));
+            if (curBases.length && hash) {
+                dbgStatus('poll: base=' + curBases[0] + ' hash=' + hash.slice(0, 8) + '...');
                 window.torrentPreload.update({ stage: 1 });
-                poll(base, hash, Date.now());
+                poll(curBases, 0, hash, Date.now());
             } else {
-                dbgStatus('NO POLL: base=' + (base || 'НЕТ') + ' hash=' + (hash ? hash.slice(0, 8) + '...' : 'НЕТ'));
+                dbgStatus('NO POLL: bases=' + (curBases.length ? curBases.join(' | ') : 'НЕТ') + ' hash=' + (hash ? hash.slice(0, 8) + '...' : 'НЕТ'));
                 /* fallback: живых данных нет — бегущая полоса, уход при старте видео */
                 window.torrentPreload.update({ stage: 1 });
             }
