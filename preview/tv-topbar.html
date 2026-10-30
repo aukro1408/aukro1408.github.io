@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pawflix — верхний навбар ТВ (превью v2)</title>
+<title>pawflix — верхний навбар ТВ (превью v4)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Nunito:wght@400;600;700&display=swap">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -29,13 +29,19 @@
     scrollbar-width: none;
   }
   .topmenu::-webkit-scrollbar { display: none; }
+  /* Правая колонка навбара: часы над меню, чтобы все пункты помещались (по слову Denis 22:43) */
+  .menu-right {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+    flex: 1 1 auto; min-width: 0;
+  }
   .menu-scroll {
     display: flex; gap: clamp(18px,4vw,44px); align-items: center;
-    overflow-x: auto; flex: 1 1 auto; scrollbar-width: none;
+    overflow-x: auto; max-width: 100%; scrollbar-width: none;
   }
   .menu-scroll::-webkit-scrollbar { display: none; }
+  @media (max-width: 900px) { .menu-scroll { gap: 20px; } }
   .menu-clock {
-    flex: none; display: flex; align-items: center; gap: .5em;
+    display: flex; align-items: center; gap: .5em;
     font-size: clamp(15px,2.4vw,20px); color: rgba(255,255,255,.85); white-space: nowrap;
   }
   #clock-time { font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -94,6 +100,7 @@
       </svg>
       <div class="word" aria-hidden="true"><span>p</span><span>a</span><span>w</span><span class="f">f</span><span class="f2">l</span><span class="f3">i</span><span class="f4">x</span></div>
     </div>
+    <div class="menu-right"><div class="menu-clock" id="menu-clock" aria-hidden="true"><span id="clock-time">--:--</span><span id="clock-wx"><span class="wx-ico" id="wx-ico"></span><span class="wx-temp" id="wx-temp">--°</span><span class="wx-city">Раздельная</span></span></div>
     <nav class="menu-scroll" id="menu-scroll">
       <button class="menu-btn active" data-screen="home">Главная</button>
       <button class="menu-btn" data-screen="collections">Коллекции</button>
@@ -101,10 +108,10 @@
       <button class="menu-btn" data-screen="search">Поиск</button>
       <button class="menu-btn" data-screen="settings">Настройки</button>
     </nav>
-    <div class="menu-clock" id="menu-clock" aria-hidden="true"><span id="clock-time">--:--</span><span id="clock-wx"><span class="wx-ico" id="wx-ico"></span><span class="wx-temp" id="wx-temp">--°</span><span class="wx-city">Раздельная</span></span></div>
+  </div>
   </header>
   <div class="caption">
-    <b>Превью v3: верхний навбар ТВ — порт .topmenu из WebView 1:1.</b> Блюр blur(10px) saturate(1.3) + белый градиент .14→0 + маска, затухающая в последних .9em:
+    <b>Превью v4: верхний навбар ТВ — порт .topmenu из WebView 1:1.</b> Часы и погода переехали наверх справа, над «Настройками», чтобы все пункты помещались.  Блюр blur(10px) saturate(1.3) + белый градиент .14→0 + маска, затухающая в последних .9em:
     блюр уходит немного ниже полоски и там растворяется. Полоска: left/right 25%, bottom 3px, высота 2px, opacity .7.<br>
     Нажми на вкладку — active переедет. Логотип в финальном виде (в WebView он ещё анимируется при появлении — скажи, если анимацию тоже надо).
     Фон под навбаром — яркий постер-заглушка, чтобы было видно блюр. Сам элемент только навбар.

@@ -44,13 +44,19 @@
     scrollbar-width: none;
   }
   .topmenu::-webkit-scrollbar { display: none; }
+  /* Правая колонка навбара: часы над меню, чтобы все пункты помещались (по слову Denis 22:43) */
+  .menu-right {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+    flex: 1 1 auto; min-width: 0;
+  }
   .menu-scroll {
     display: flex; gap: clamp(18px,4vw,44px); align-items: center;
-    overflow-x: auto; flex: 1 1 auto; scrollbar-width: none;
+    overflow-x: auto; max-width: 100%; scrollbar-width: none;
   }
   .menu-scroll::-webkit-scrollbar { display: none; }
+  @media (max-width: 900px) { .menu-scroll { gap: 20px; } }
   .menu-clock {
-    flex: none; display: flex; align-items: center; gap: .5em;
+    display: flex; align-items: center; gap: .5em;
     font-size: clamp(15px,2.4vw,20px); color: rgba(255,255,255,.85); white-space: nowrap;
   }
   #clock-time { font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -120,6 +126,7 @@
       </svg>
       <div class="word" aria-hidden="true"><span>p</span><span>a</span><span>w</span><span class="f">f</span><span class="f2">l</span><span class="f3">i</span><span class="f4">x</span></div>
     </div>
+    <div class="menu-right"><div class="menu-clock" id="menu-clock" aria-hidden="true"><span id="clock-time">--:--</span><span id="clock-wx"><span class="wx-ico" id="wx-ico"></span><span class="wx-temp" id="wx-temp">--°</span><span class="wx-city">Раздельная</span></span></div>
     <nav class="menu-scroll" id="menu-scroll">
       <button class="menu-btn active" data-screen="home">Главная</button>
       <button class="menu-btn" data-screen="collections">Коллекции</button>
@@ -127,7 +134,7 @@
       <button class="menu-btn" data-screen="search">Поиск</button>
       <button class="menu-btn" data-screen="settings">Настройки</button>
     </nav>
-    <div class="menu-clock" id="menu-clock" aria-hidden="true"><span id="clock-time">--:--</span><span id="clock-wx"><span class="wx-ico" id="wx-ico"></span><span class="wx-temp" id="wx-temp">--°</span><span class="wx-city">Раздельная</span></span></div>
+  </div>
   </header>
   <div class="bg-switch" id="bg-switch">
     <button data-bg="bg-black.jpg">Чёрный</button>
