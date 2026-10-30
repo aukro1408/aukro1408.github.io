@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pawflix — hero-карточка (превью v2)</title>
+<title>pawflix — hero-карточка (превью v3)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -115,16 +115,20 @@
   /* ===== Телефон-вариант: как на фото — большая скруглённая карточка-постер, подпись снизу ===== */
   .hero-phone { position: relative; z-index: 1; width: 100%; padding: 16px 0 0; display: flex; flex-direction: column; align-items: center; }
   .phone-card {
-    width: min(92vw, 430px); aspect-ratio: 2/3; border-radius: 24px; overflow: hidden;
+    position: relative; width: min(92vw, 430px); aspect-ratio: 2/3; border-radius: 24px; overflow: hidden;
     background-size: cover; background-position: center; background-repeat: no-repeat;
     box-shadow: 0 16px 40px rgba(0,0,0,.55);
   }
-  .phone-caption { width: min(92vw, 430px); margin-top: 14px; }
-  .phone-caption .film-logo { font-size: 34px; }
-  .phone-caption .hero-meta { margin-top: 8px; font-size: 15px; }
-  .phone-caption .hero-desc { margin-top: 6px; font-size: 14px; }
-  .phone-caption .watch-btn { font-size: 15px; padding: 9px 24px; }
-  .phone-caption .dots { margin-top: 12px; }
+  .phone-card::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,.82) 100%);
+  }
+  .phone-info { position: absolute; left: 18px; right: 18px; bottom: 18px; z-index: 2; }
+  .phone-info .film-logo { font-size: 32px; }
+  .phone-info .hero-meta { margin-top: 8px; font-size: 15px; }
+  .phone-info .hero-desc { margin-top: 6px; font-size: 14px; }
+  .phone-info .watch-btn { font-size: 15px; padding: 9px 24px; }
+  .phone-info .dots { margin-top: 12px; }
 
   /* Переключатель вариантов — только для превью */
   .hero-switch {
@@ -201,13 +205,14 @@
   </section>
 
   <section class="hero-phone" id="hero-phone">
-    <div class="phone-card" id="phone-card"></div>
-    <div class="phone-caption">
-      <div class="film-logo" id="phone-logo"></div>
-      <div class="hero-meta" id="phone-meta"></div>
-      <div class="hero-desc" id="phone-desc"></div>
-      <button class="watch-btn" id="phone-watch">Смотреть</button>
-      <div class="dots" id="phone-dots"></div>
+    <div class="phone-card" id="phone-card">
+      <div class="phone-info">
+        <div class="film-logo" id="phone-logo"></div>
+        <div class="hero-meta" id="phone-meta"></div>
+        <div class="hero-desc" id="phone-desc"></div>
+        <button class="watch-btn" id="phone-watch">Смотреть</button>
+        <div class="dots" id="phone-dots"></div>
+      </div>
     </div>
   </section>
 
@@ -216,7 +221,7 @@
     <button class="active" data-variant="phone">Телефон</button>
   </div>
   <div class="caption">
-    <b>Превью v2: hero-карточка.</b> Автопрокрутка 15 секунд на карточку (в превью реально крутится), точки-индикаторы, кнопка «Смотреть»
+    <b>Превью v3: hero-карточка.</b> В режиме телефона инфо-блок (логотип, оценка, описание, «Смотреть», точки) переехал НА карточку, как на рефе WebView.  Автопрокрутка 15 секунд на карточку (в превью реально крутится), точки-индикаторы, кнопка «Смотреть»
     (в приложении просто откроет карточку фильма). Вместо названия — логотип: в приложении это картинка из TMDB (logo_path, как в WebView),
     а в превью картинки логотипа нет — стоит текстовый стенд-ин того же размера и на том же месте. Описание и оценка TMDB — под логотипом.
     Данные первого слайда — из твоего скриншота WebView («Надежда»), остальные два — заглушки.
