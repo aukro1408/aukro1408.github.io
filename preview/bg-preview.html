@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pawflix — общий фон (превью v2)</title>
+<title>pawflix — общий фон (превью v3)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -80,22 +80,21 @@
   .pk-logo .word { display: flex; font-family: 'Fredoka', system-ui, sans-serif; font-weight: 600; letter-spacing: -.02em; padding-bottom: .04em; }
   .pk-logo .word .f { color: #b4d0fb; } .pk-logo .word .f2 { color: #8ab4f8; }
   .pk-logo .word .f3 { color: #6b9ff5; } .pk-logo .word .f4 { color: #4f8bf2; }
-  /* Переключатель фонов — в превью внизу, в приложении будет в Настройках → Фон */
+  /* Переключатель фонов — в превью под hero-карточкой, обычным блоком (не поверх контента),
+     в приложении будет в Настройках → Фон. v3: все варианты видны сразу, без скрытой прокрутки */
   .bg-switch {
-    position: fixed; left: 50%; transform: translateX(-50%); bottom: 76px; z-index: 60;
-    display: flex; gap: 8px; padding: 6px; border-radius: 99px; max-width: 94vw;
-    overflow-x: auto; scrollbar-width: none;
+    position: relative; z-index: 60; margin: 24px auto 0; width: fit-content;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 6px; border-radius: 24px; max-width: 94vw;
     background: rgba(10,10,14,.7); border: 1px solid rgba(255,255,255,.16);
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   }
-  .bg-switch::-webkit-scrollbar { display: none; }
   .bg-switch button {
     background: transparent; border: 0; color: rgba(255,255,255,.75); font-family: inherit; flex: none;
     font-size: 15px; font-weight: 700; padding: 8px 16px; border-radius: 99px; cursor: pointer; white-space: nowrap;
   }
   .bg-switch button.active { background: #fff; color: #000; }
   .caption {
-    position: fixed; left: 16px; bottom: 16px; z-index: 60; font-size: 13px; line-height: 1.6;
+    position: relative; z-index: 60; margin: 16px auto 24px; font-size: 13px; line-height: 1.6;
     color: rgba(255,255,255,.7); text-shadow: 0 1px 8px rgba(0,0,0,.9); max-width: 94vw;
   }
   .caption b { color: #fff; font-weight: 600; }
@@ -131,10 +130,10 @@
     <div class="menu-clock" id="menu-clock" aria-hidden="true"><span id="clock-time">--:--</span><span id="clock-wx"><span class="wx-ico" id="wx-ico"></span><span class="wx-temp" id="wx-temp">--°</span><span class="wx-city">Раздельная</span></span></div>
   </header>
   <div class="bg-switch" id="bg-switch">
+    <button class="active" data-bg="bg-black.jpg">Чёрный</button>
     <button data-bg="bg-doodle.jpg">Дудл</button>
     <button data-bg="bg-gradient.jpg">Градиент</button>
     <button data-bg="dark">Тёмный</button>
-    <button class="active" data-bg="bg-black.jpg">Чёрный</button>
     <button data-bg="bg-orange.jpg">Оранж</button>
     <button data-bg="bg-pastel.jpg">Пастель</button>
     <button data-bg="bg-pink.jpg">Розовый</button>
@@ -146,8 +145,8 @@
     <button data-bg="bg-peach.jpg">Персик</button>
   </div>
   <div class="caption">
-    <b>Превью v2: общий фон.</b> По умолчанию — Чёрный (тёмная текстура, почти чёрная). Все варианты — в переключателе внизу,
-    в приложении это будет Настройки → Фон. Порядок слоёв: фон (самый низ, везде) → hero-карточка над ним → верхний навбар поверх всего с блюром.
+    <b>Превью v3: общий фон.</b> По умолчанию — Чёрный (тёмная текстура, почти чёрная). Все 13 вариантов видны сразу, листать не надо.
+    В приложении это будет Настройки → Фон. Порядок слоёв: фон (самый низ, везде) → hero-карточка над ним → верхний навбар поверх всего с блюром.
     Hero-карточка здесь заглушка, её дизайн — отдельный элемент.
   </div>
   <script>
