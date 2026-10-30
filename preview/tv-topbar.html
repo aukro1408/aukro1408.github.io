@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawflix — верхний навбар ТВ (превью v1)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0b0e14; color: #fff; font-family: "Nunito", system-ui, sans-serif; min-height: 100vh; }
+  /* Фон под навбаром — картинка-заглушка (сам навбар — элемент, контент под ним меняется от экрана) */
+  .backdrop {
+    position: fixed; inset: 0; z-index: 0;
+    background: #0b0e14 url("https://picsum.photos/seed/pawflix-tv/1600/900") center/cover no-repeat;
+  }
+  .backdrop::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,.35) 100%);
+  }
+  /* Верхний навбар ТВ как на фото WebView: оверлей поверх контента, всегда и везде */
+  .tvbar {
+    position: relative; z-index: 10; height: 64px; padding: 0 32px;
+    display: flex; align-items: center; gap: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,0));
+  }
+  .logo { display: flex; align-items: center; gap: 8px; margin-right: 32px; flex-shrink: 0; }
+  .logo svg { width: 30px; height: 30px; }
+  .logo .word { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
+  .logo .word b { color: #0d7bf2; font-weight: 800; }
+  .tabs { display: flex; align-items: stretch; height: 64px; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    display: flex; align-items: center; height: 64px; padding: 0 16px; position: relative;
+    background: none; border: none; cursor: pointer; white-space: nowrap;
+    color: rgba(255,255,255,.8); font-family: inherit; font-size: 18px; font-weight: 600;
+  }
+  .tab:hover, .tab:focus-visible { color: #fff; outline: none; }
+  .tab.active { color: #fff; }
+  .tab.active::after {
+    content: ""; position: absolute; left: 16px; right: 16px; bottom: 0;
+    height: 3px; background: #fff; border-radius: 3px 3px 0 0;
+  }
+  .right {
+    margin-left: auto; display: flex; align-items: center; gap: 12px; flex-shrink: 0; padding-left: 16px;
+    font-size: 17px; font-weight: 700; white-space: nowrap;
+  }
+  .right svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .caption {
+    position: fixed; left: 16px; bottom: 16px; z-index: 20; font-size: 13px; line-height: 1.6; color: rgba(255,255,255,.65);
+    text-shadow: 0 1px 8px rgba(0,0,0,.8); max-width: 92vw;
+  }
+  .caption b { color: #fff; font-weight: 600; }
+  @media (max-width: 640px) {
+    .tvbar { padding: 0 12px; }
+    .logo { margin-right: 12px; }
+    .logo .word { font-size: 19px; }
+    .tab { padding: 0 12px; font-size: 16px; }
+    .tab.active::after { left: 12px; right: 12px; }
+    .right { font-size: 15px; gap: 8px; padding-left: 8px; }
+  }
+</style>
+</head>
+<body>
+  <div class="backdrop"></div>
+  <header class="tvbar" id="tvbar">
+    <div class="logo">
+      <svg viewBox="0 0 48 48"><g fill="#0d7bf2"><ellipse cx="24" cy="30" rx="9" ry="7.5"/><ellipse cx="10" cy="20" rx="4.5" ry="5.5"/><ellipse cx="18" cy="11" rx="5" ry="6"/><ellipse cx="30" cy="11" rx="5" ry="6"/><ellipse cx="38" cy="20" rx="4.5" ry="5.5"/></g></svg>
+      <span class="word">paw<b>flix</b></span>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-tab="home"><span>Главная</span></button>
+      <button class="tab" data-tab="collections"><span>Коллекции</span></button>
+      <button class="tab" data-tab="catalog"><span>Каталог</span></button>
+      <button class="tab" data-tab="search"><span>Поиск</span></button>
+      <button class="tab" data-tab="settings"><span>Настройки</span></button>
+    </nav>
+    <div class="right">
+      <span id="clock">--:--</span>
+      <svg id="wxicon" viewBox="0 0 24 24"><path d="M7 18a4.5 4.5 0 1 1 .8-8.93A6 6 0 0 1 19.5 12 3.75 3.75 0 0 1 18 18z"/></svg>
+      <span id="wx">--°</span>
+    </div>
+  </header>
+  <div class="caption">
+    <b>Превью v1: верхний навбар ТВ.</b> Высота 64dp, оверлей поверх контента, логотип лапка + paw белым + flix #0d7bf2 (синий из твоего файла логотипа),
+    вкладки только текстом 18sp, активная белая + подчёркивание 3dp, неактивные белые 80%, справа живые часы + погода Раздельной (Open-Meteo).<br>
+    Нажми на вкладку — active переедет. Фон под навбаром — картинка-заглушка, сам элемент только навбар. Смотри в горизонтальной ориентации, так ближе к ТВ.
+  </div>
+  <script>
+    document.querySelectorAll('.tab').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.tab').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+      });
+    });
+    function tick() {
+      var d = new Date();
+      var hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
+      document.getElementById('clock').textContent = hh + ':' + mm;
+    }
+    tick(); setInterval(tick, 15000);
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=46.85479&longitude=30.07091&current=temperature_2m,weather_code&timezone=auto')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.current) return;
+        document.getElementById('wx').textContent = Math.round(d.current.temperature_2m) + '°';
+      })
+      .catch(function () {});
+  </script>
+</body>
+</html>
