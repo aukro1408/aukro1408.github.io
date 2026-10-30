@@ -60,6 +60,12 @@
  *    Логотип вместо названия сохранён (просьба Denis из v2.4, файл её не
  *    отменяет); фокус кнопок — классом .focused (механика Лампы), а не
  *    DOM-фокусом из файла; кнопки «Повторить» нет (демо-режима у плагина нет).
+ *  - v2.7 (логотип, по crowley38 NewLogo.js): у Lampa.TMDB нет .get — запрос
+ *    /images делается через Lampa.TMDB.api(path + '?api_key=' +
+ *    Lampa.TMDB.key() + '&include_image_language=...') + fetch; плюс
+ *    tryLogo теперь вызывается ПОСЛЕ visible=true (раньше setLogo молча
+ *    падал на гарде !visible для пути logo_path); плюс onerror логотипа —
+ *    возврат к тексту названия.
  */
 (function () {
     'use strict';
@@ -633,18 +639,23 @@
     }
 
     /* логотип вместо названия — как в приложении: TMDB logo_path из карточки
-       Лампы, иначе TMDB.get через клиент самой Лампы (ru → en → первый).
-       Клиент — Lampa.TMDB (не window.TMDB: там его нет, из-за этого логотип
-       в v2.4 молча не грузился). Ключ нигде не трогаем: используется только
-       клиент Лампы. Нет логотипа — остаётся текст названия. */
-    function tmdbClient() {
-        try { if (window.Lampa && Lampa.TMDB) return Lampa.TMDB; } catch (e) {}
-        try { if (window.TMDB) return window.TMDB; } catch (e) {}
+       Лампы, иначе запрос /images через клиент самой Лампы.
+       ВАЖНО (v2.7, по плагину crowley38 NewLogo.js): у exposed-объекта
+       Lampa.TMDB НЕТ метода .get (он есть только у внутреннего TMDB, к
+       которому из плагина доступа нет) — из-за этого v2.5 молча падала на
+       проверке typeof TM.get. Рабочий паттерн: Lampa.TMDB.api(path +
+       '?api_key=' + Lampa.TMDB.key() + '&include_image_language=...') +
+       обычный fetch. Ключ берётся из клиента Лампы и нигде не светится.
+       Нет логотипа — остаётся текст названия. */
+    function tmdbApi() {
+        try {
+            if (window.Lampa && Lampa.TMDB && typeof Lampa.TMDB.api === 'function' && typeof Lampa.TMDB.key === 'function') return Lampa.TMDB;
+        } catch (e) {}
         return null;
     }
     function logoUrl(path) {
         try {
-            var TM = tmdbClient();
+            var TM = tmdbApi();
             if (TM && typeof TM.img === 'function') return TM.img(path, 'w500');
         } catch (e) {}
         return 'https://image.tmdb.org/t/p/w500' + path;
@@ -706,8 +717,8 @@
         if (!visible) return;
         var img = $('tp-logo'), t = $('tp-title');
         if (!img) return;
-        if (url) { img.src = url; img.style.display = 'block'; if (t) t.style.display = 'none'; }
-        else { img.removeAttribute('src'); img.style.display = 'none'; if (t) t.style.display = ''; }
+        if (url) { img.onerror = function () { setLogo(''); }; img.src = url; img.style.display = 'block'; if (t) t.style.display = 'none'; }
+        else { img.onerror = null; img.removeAttribute('src'); img.style.display = 'none'; if (t) t.style.display = ''; }
     }
     function tryLogo(obj) {
         try {
@@ -717,26 +728,30 @@
             if (typeof lp === 'string' && lp.charAt(0) === '/') { setLogo(logoUrl(lp)); return; }
             if (typeof lp === 'string' && lp.indexOf('http') === 0) { setLogo(lp); return; }
             var id = card.id || obj.id || 0;
-            var TM = tmdbClient();
-            if (!id || !TM || typeof TM.get !== 'function') return;
+            var TM = tmdbApi();
+            if (!id || !TM) return;
+            var lang = 'ru';
+            try { lang = (Lampa.Storage && Lampa.Storage.get('language')) || 'ru'; } catch (e) {}
             var myHash = currentHash;
             var mt = card.media_type || obj.media_type || '';
-            var types = (mt === 'movie' || mt === 'tv') ? [mt] : ['movie', 'tv'];
+            var types = (mt === 'movie' || mt === 'tv') ? [mt] : ((card.name || obj.name) ? ['tv', 'movie'] : ['movie', 'tv']);
             (function next(i) {
                 if (i >= types.length) return;
+                var url = '';
                 try {
-                    TM.get(types[i] + '/' + id + '/images', {}, function (d) {
-                        try {
-                            if (!visible || myHash !== currentHash) return;
-                            var logos = (d && d.logos) || [], pick = null, j;
-                            for (j = 0; j < logos.length; j++) if (logos[j].iso_639_1 === 'ru') { pick = logos[j]; break; }
-                            if (!pick) for (j = 0; j < logos.length; j++) if (logos[j].iso_639_1 === 'en') { pick = logos[j]; break; }
-                            if (!pick) pick = logos[0] || null;
-                            if (pick && pick.file_path) setLogo(logoUrl(String(pick.file_path).replace(/\.svg$/i, '.png')));
-                            else next(i + 1);
-                        } catch (e) { next(i + 1); }
-                    });
-                } catch (e) { next(i + 1); }
+                    url = TM.api(types[i] + '/' + id + '/images?api_key=' + TM.key() + '&include_image_language=' + lang + ',en,null');
+                } catch (e) { next(i + 1); return; }
+                fetch(url).then(function (r) { return r.json(); }).then(function (d) {
+                    try {
+                        if (!visible || myHash !== currentHash) return;
+                        var logos = (d && d.logos) || [], pick = null, j;
+                        for (j = 0; j < logos.length; j++) if (logos[j].iso_639_1 === lang) { pick = logos[j]; break; }
+                        if (!pick) for (j = 0; j < logos.length; j++) if (logos[j].iso_639_1 === 'en') { pick = logos[j]; break; }
+                        if (!pick) pick = logos[0] || null;
+                        if (pick && pick.file_path) setLogo(logoUrl(String(pick.file_path).replace(/\.svg$/i, '.png')));
+                        else next(i + 1);
+                    } catch (e) { next(i + 1); }
+                }).catch(function () { next(i + 1); });
             })(0);
         } catch (e) { /* логотип — украшение, экран работает и без него */ }
     }
@@ -756,12 +771,12 @@
             window.torrentPreload.reset();
             var info = pickStr(obj);
             window.torrentPreload.update({ stage: 0, progress: 0, peers: 0, total: 0, speed: 0, loaded: 0, title: info.title, sub: info.sub, poster: info.poster });
-            tryLogo(obj);
             var root = $('tp-root');
             root.style.display = 'block';
             root.style.opacity = '1';
             visible = true;
             setBtnFocus(0);
+            tryLogo(obj);
             startLoop();
             watchVideo();
             curBases = getBases();
