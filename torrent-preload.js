@@ -112,6 +112,10 @@
  *    чтобы звуку всегда хватало места.
  *  - v3.11: нижний блок (статы + кнопки) опущен ниже — отступ от
  *    «Буферизации» до статов увеличен (max(48px,5vh) вместо 20px).
+ *  - v3.12: зависание на 98-99% — при >=98% и нулевой скорости 10
+ *    опросов подряд экран переходит в «Запуск» (100%), как при полной
+ *    готовности: сервер работу закончил, а счётчик встал чуть ниже
+ *    цели; начало уже в буфере, смотреть можно.
  */
 (function () {
     'use strict';
@@ -664,13 +668,26 @@
         if (bi + 1 < bases.length) { poll(bases, bi + 1, hash, t0); return; }
         pollTimer = setTimeout(function () { poll(bases, 0, hash, t0); }, 2000);
     }
+    var stallCount = 0;
     function pollStat(tor, bases, bi, hash, t0) {
         tpSetBadges(tor.name || tor.title || '', tor.ffprobe);
         var need = tor.preload_size || 0, got = tor.preloaded_bytes || 0, size = tor.torrent_size || 0;
         /* как в приложении (v0.23): без preload_size готовность — min(50МБ, 5% размера),
            а прогресс — got/size, а не вечный 0 */
         var prog = need > 0 ? Math.min(1, got / need) : (size > 0 ? Math.min(1, got / size) : 0);
-        var ready = need > 0 ? got >= need : (size > 0 && got > 0 && got >= Math.min(50 * 1048576, size * 0.05));
+        /* v3.12: зависание на 98-99%. Картина системная (90% торрентов):
+           скорость очень большая, потом резкий 0 — сервер свою работу
+           закончил, а счётчик preloaded_bytes встал чуть ниже preload_size
+           (последний кусок диапазона так и не засчитывается), и ready не
+           наступает никогда. При >=98% и нулевой скорости 10 опросов
+           подряд считаем готовым: начало (десятки МБ) уже в буфере,
+           смотреть можно, остальное докачается при просмотре. */
+        var stalled = false;
+        if (need > 0 && prog >= 0.98) {
+            if ((tor.download_speed || 0) === 0) { stallCount++; if (stallCount >= 10) stalled = true; }
+            else stallCount = 0;
+        } else stallCount = 0;
+        var ready = stalled || (need > 0 ? got >= need : (size > 0 && got > 0 && got >= Math.min(50 * 1048576, size * 0.05)));
         var st = ready ? 4 : (!tor.torrent_size ? ((tor.total_peers || 0) ? 2 : (tor.active_peers ? 1 : 0)) : 3);
         window.torrentPreload.update({
             stage: st, progress: ready ? 1 : prog,
@@ -1047,6 +1064,7 @@
             window.torrentPreload.reset();
             lastBadgeSig = null;
             lastFfprobe = null;
+            stallCount = 0;
             tpSetBadges('', obj && obj.ffprobe);
             var info = pickStr(obj);
             window.torrentPreload.update({ stage: 0, progress: 0, peers: 0, total: 0, speed: 0, loaded: 0, title: info.title, sub: info.sub, size: info.size || '—', poster: info.poster });
