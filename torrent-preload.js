@@ -11,9 +11,9 @@
  *    #tp-root (чтобы не задеть стили самой Лампы), имена анимаций tpglide/
  *    tppop (чтобы не пересечься с анимациями Лампы). Демо-режим HTML-файла
  *    вырезан — плагин никогда ничего не показывает сам по себе.
- *  - Плагин НЕ перехватывает и НЕ задерживает воспроизведение: он только
- *    наблюдает и рисует экран поверх плеера. Воспроизведение идёт своим
- *    ходом, как раньше.
+ *  - До v2.2 плагин только наблюдал и рисовал экран поверх плеера, не трогая
+ *    воспроизведение. С v2.2 Player.play торрентов задерживается до «Смотреть»
+ *    (иначе видео стартовало бы само при ~95% из-под экрана).
  *  - ВАЖНО (v2, причина, почему v1 не показывался): штатная предзагрузка
  *    Лампы работает ДО вызова Lampa.Player.play — сначала Loading-экран
  *    Лампы и опрос TorrServer, и только при >=95% вызывается Player.play.
@@ -28,8 +28,9 @@
  *    хеш — из объекта воспроизведения или из URL потока) — ровно тем же
  *    кодом, что режим 1 HTML-файла: POST /torrents {action:"get", hash},
  *    стадии и прогресс по preload_size / preloaded_bytes.
- *  - Экран прячется, как только видео реально пошло (событие playing),
- *    либо после взрыва на 100%, либо при закрытии/ошибке плеера.
+ *  - Экран прячется по «Смотреть» (тогда же стартует видео), по «Отмена»
+ *    (выход без запуска) либо при закрытии/ошибке плеера. На 100% сам НЕ
+ *    уходит — ждёт нажатия (вердикт Denis, как в приложении v0.25).
  *  - Если хеш найти не удалось или TorrServer недоступен (например,
  *    включена авторизация TorrServer) — живые %/пиры/скорость недоступны:
  *    экран всё равно показывается с бегущей полосой и прячется при старте
@@ -38,9 +39,11 @@
  *    Настройки → TorrServer → Предзагрузка: тогда поток стартует только
  *    после предзагрузки, и экран виден весь процесс. При выключенной
  *    предзагрузке экран просто мелькнёт и уйдёт при старте видео.
- *  - v2.1-DEBUG (временно): внизу слева плашка с диагностикой — хеш,
- *    адрес TorrServer, статус опроса и причина скрытия экрана. После
- *    диагноза плашка убирается.
+ *  - v2.2 (кнопки + ручной режим): на экране всегда две кнопки — «Смотреть»
+ *    и «Отмена», как на фото. Опрос приведён к приложению: ответ
+ *    разворачивается ({torrent}), фолбэк на /cache, готовность без
+ *    preload_size — min(50МБ, 5% размера).
+ *  - DEBUG-плашка (временно) остаётся до диагноза 0%.
  */
 (function () {
     'use strict';
@@ -76,6 +79,10 @@
         '#tp-root .stats b{display:block;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}',
         '#tp-root .stats span{display:block;margin-top:3px;font-size:12px;font-weight:500;color:var(--dim)}',
         '#tp-root button{margin-top:22px;font:inherit;font-size:14px;font-weight:700;color:var(--ink);background:rgba(8,8,10,.35);border:1px solid rgba(244,233,214,.4);border-radius:999px;padding:11px 24px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .6s,border-color .2s}',
+        '#tp-root .tp-actions{display:flex;gap:.8em;margin-top:22px}',
+        '#tp-root .tp-btn{font:inherit;font-size:14px;font-weight:700;color:var(--ink);background:rgba(8,8,10,.35);border:1px solid rgba(244,233,214,.4);border-radius:999px;padding:11px 24px;cursor:pointer;opacity:1;pointer-events:auto;transition:border-color .2s,background .2s}',
+        '#tp-root .tp-btn.primary{border-color:var(--amber)}',
+        '#tp-root .tp-btn.focused{border-color:var(--ink);background:rgba(244,233,214,.14)}',
         '@keyframes tpglide{from{transform:translateX(-100%)}to{transform:translateX(300%)}}',
         '@keyframes tppop{0%{transform:scale(1)}35%{transform:scale(1.09)}100%{transform:scale(1)}}',
         '#tp-root .pct.pop{animation:tppop .8s cubic-bezier(.2,.9,.3,1.3)}',
@@ -121,7 +128,7 @@
         '<div><b id="tp-mSpeed">—</b><span>скорость</span></div>',
         '<div><b id="tp-mLoaded">—</b><span>в буфере</span></div>',
         '</div>',
-        '<button id="tp-replay" tabindex="-1">Повторить</button>',
+        '<div class="tp-actions"><button class="tp-btn primary" id="tp-watch">Смотреть</button><button class="tp-btn" id="tp-cancel">Отмена</button></div>',
         '</main>',
         '<svg id="tp-fx" class="tpfx" aria-hidden="true"><defs><g id="tp-pf"></g></defs><g id="tp-fxg"></g></svg>'
     ].join('');
@@ -171,8 +178,23 @@
         dbgEl = document.createElement('div');
         dbgEl.id = 'tp-dbg';
         dbgEl.setAttribute('style', 'position:fixed;left:8px;bottom:8px;z-index:100000;max-width:92vw;background:rgba(0,0,0,.78);color:#fff;font:13px/1.45 monospace;white-space:pre-wrap;word-break:break-all;padding:8px 10px;border-radius:8px;pointer-events:none;');
-        dbgEl.textContent = 'TP DEBUG v2.1';
+        dbgEl.textContent = 'TP DEBUG v2.2';
         document.body.appendChild(dbgEl);
+        $('tp-watch').addEventListener('click', doWatch);
+        $('tp-cancel').addEventListener('click', doCancel);
+        document.addEventListener('keydown', function (e) {
+            if (!visible) return;
+            var k = e.key;
+            if (k === 'ArrowLeft' || k === 'ArrowRight') {
+                setBtnFocus(focusBtn === 0 ? 1 : 0);
+                e.preventDefault(); e.stopPropagation();
+            } else if (k === 'Enter') {
+                if (focusBtn === 0) doWatch(); else doCancel();
+                e.preventDefault(); e.stopPropagation();
+            } else if (k === 'Escape' || k === 'Backspace') {
+                doCancel();
+            }
+        }, true);
         main = $('tp-main'); poster = $('tp-poster'); fill = $('tp-fill'); pct = $('tp-pct');
         stageEl = $('tp-stage'); corn = $('tp-corn'); bucket = $('tp-bucket');
         parts = $('tp-parts'); shadow = $('tp-shadow'); glow = $('tp-glow'); fxg = $('tp-fxg');
@@ -376,6 +398,7 @@
     /* ---------- сторона Лампы: показать при запуске торрента, спрятать при старте видео ---------- */
     var pollTimer = 0, hideTimer = 0, videoTimer = 0, videoEl = null, playerDone = null;
     var currentHash = '', pendingCancelHide = 0;
+    var playStash = null, earlyWatch = false, cancelledHash = '', focusBtn = 0;
 
     function tsBase() {
         try {
@@ -479,32 +502,96 @@
         }, 300);
     }
 
+    function hasStat(t) {
+        return !!(t && (t.torrent_size || t.preload_size || t.preloaded_bytes || t.active_peers || t.total_peers));
+    }
     function poll(base, hash, t0) {
         if (!visible) return;
         fetch(base + '/torrents', { method: 'POST', body: JSON.stringify({ action: 'get', hash: hash }) })
             .then(function (r) { return r.json(); })
             .then(function (t) {
                 if (!visible) return;
-                var hasMeta = !!t.torrent_size, need = t.preload_size || 0, got = t.preloaded_bytes || 0;
-                var st = !hasMeta ? ((t.total_peers || 0) ? 2 : (t.active_peers ? 1 : 0)) : (need && got >= need ? 4 : 3);
-                window.torrentPreload.update({
-                    stage: st, progress: need ? Math.min(1, got / need) : 0,
-                    peers: t.active_peers || 0, total: t.total_peers || 0,
-                    speed: t.download_speed || 0, loaded: got, waited: Date.now() - t0 > 8000
-                });
-                dbgStatus('poll st=' + st + ' prog=' + (need ? Math.round(100 * Math.min(1, got / need)) : 0) + '% peers=' + (t.active_peers || 0) + '/' + (t.total_peers || 0) + ' got=' + got + ' need=' + need);
-                if (st >= 4) {
-                    if (hideTimer) clearTimeout(hideTimer);
-                    hideTimer = setTimeout(function () { hide('preload-done'); }, 1600);
-                } else {
-                    pollTimer = setTimeout(function () { poll(base, hash, t0); }, 1000);
-                }
+                /* как в приложении на фото: сервер может вернуть обёртку {torrent:{...}} */
+                var tor = t && (t.torrent || t);
+                if (!hasStat(tor)) return pollCache(base, hash, t0);
+                pollStat(tor, base, hash, t0);
             })
             .catch(function (e) {
                 if (!visible) return;
                 dbgStatus('poll ERROR: ' + (e && e.message ? e.message : 'fetch failed'));
                 pollTimer = setTimeout(function () { poll(base, hash, t0); }, 2000);
             });
+    }
+    function pollCache(base, hash, t0) {
+        fetch(base + '/cache', { method: 'POST', body: JSON.stringify({ action: 'get', hash: hash }) })
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+                if (!visible) return;
+                var c = j && (j.Torrent || j.torrent || j);
+                if (!hasStat(c)) {
+                    dbgStatus('poll: нет статистики (/torrents+/cache)');
+                    pollTimer = setTimeout(function () { poll(base, hash, t0); }, 2000);
+                    return;
+                }
+                pollStat(c, base, hash, t0);
+            })
+            .catch(function (e) {
+                if (!visible) return;
+                dbgStatus('poll ERROR(cache): ' + (e && e.message ? e.message : 'fetch failed'));
+                pollTimer = setTimeout(function () { poll(base, hash, t0); }, 2000);
+            });
+    }
+    function pollStat(tor, base, hash, t0) {
+        var need = tor.preload_size || 0, got = tor.preloaded_bytes || 0, size = tor.torrent_size || 0;
+        /* как в приложении (v0.23): без preload_size готовность — min(50МБ, 5% размера),
+           а прогресс — got/size, а не вечный 0 */
+        var prog = need > 0 ? Math.min(1, got / need) : (size > 0 ? Math.min(1, got / size) : 0);
+        var ready = need > 0 ? got >= need : (size > 0 && got > 0 && got >= Math.min(50 * 1048576, size * 0.05));
+        var st = ready ? 4 : (!tor.torrent_size ? ((tor.total_peers || 0) ? 2 : (tor.active_peers ? 1 : 0)) : 3);
+        window.torrentPreload.update({
+            stage: st, progress: ready ? 1 : prog,
+            peers: tor.active_peers || 0, total: tor.total_peers || 0,
+            speed: tor.download_speed || 0, loaded: got, waited: Date.now() - t0 > 8000
+        });
+        dbgStatus('poll st=' + st + ' prog=' + Math.round(100 * (ready ? 1 : prog)) + '% peers=' + (tor.active_peers || 0) + '/' + (tor.total_peers || 0) + ' got=' + got + ' need=' + need + ' size=' + size);
+        if (ready) {
+            /* вердикт Denis (как в приложении v0.25): автозапуска НЕТ — экран остаётся
+               на 100% «Запуск» (взрыв играет сам движком), запуск только по «Смотреть» */
+            stopPoll();
+            setBtnFocus(0);
+            dbgLog('READY 100% — ждём Смотреть/Отмена');
+            return;
+        }
+        pollTimer = setTimeout(function () { poll(base, hash, t0); }, 1000);
+    }
+
+    function setBtnFocus(i) {
+        focusBtn = i;
+        var w = $('tp-watch'), c = $('tp-cancel');
+        if (w) w.classList.toggle('focused', i === 0);
+        if (c) c.classList.toggle('focused', i === 1);
+    }
+    function doWatch() {
+        if (!visible) return;
+        dbgLog('WATCH pressed');
+        if (playStash) {
+            var s = playStash; playStash = null;
+            stopPoll(); stopVideoWatch();
+            hide('watch-play');
+            if (typeof origPlay === 'function') { try { origPlay.apply(s.ctx, s.args); } catch (e) {} }
+        } else {
+            earlyWatch = true;
+            hide('watch-early');
+        }
+    }
+    function doCancel() {
+        if (!visible) return;
+        dbgLog('CANCEL pressed');
+        if (currentHash) cancelledHash = currentHash;
+        playStash = null; earlyWatch = false;
+        stopPoll(); stopVideoWatch();
+        hide('cancel');
+        try { if (Lampa.Player && typeof Lampa.Player.close === 'function') Lampa.Player.close(); } catch (e) {}
     }
 
     function show(obj, src) {
@@ -514,6 +601,8 @@
         if (visible && hash && hash === currentHash) { dbgLog('SHOW-again from=' + (src || '?') + ' same hash, skip'); return; }
         dbgLog('SHOW from=' + (src || '?') + ' hash=' + (hash ? hash.slice(0, 8) + '...' : 'НЕТ'));
         currentHash = hash;
+        playStash = null;
+        if (src === 'loading') { earlyWatch = false; if (hash && hash === cancelledHash) cancelledHash = ''; }
         stopPoll(); stopVideoWatch();
         if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
         try {
@@ -524,6 +613,7 @@
             root.style.display = 'block';
             root.style.opacity = '1';
             visible = true;
+            setBtnFocus(0);
             startLoop();
             watchVideo();
             var base = tsBase(), hash = findHash(obj);
@@ -547,7 +637,9 @@
         } catch (e) { /* экран не должен ломать плеер */ }
     }
 
-    /* только наблюдаем за запуском — воспроизведение не трогаем */
+    /* v2.2: Player.play торрентов задерживаем до «Смотреть» — иначе Лампа сама
+       стартует видео при ~95% предзагрузки, и оно играло бы из-под нашего экрана
+       ещё до нажатия (а по вердикту Denis до нажатия не должно происходить ничего) */
     try {
         if (window.Lampa && Lampa.Player && typeof Lampa.Player.play === 'function' && !Lampa.Player.play.__denis_tp) {
             var origPlay = Lampa.Player.play;
@@ -556,8 +648,28 @@
                 try {
                     /* финиш предзагрузки: отменяем отложенное скрытие по отмене */
                     if (pendingCancelHide) { clearTimeout(pendingCancelHide); pendingCancelHide = 0; }
-                    if (isTorrent(obj)) show(obj, 'play');
-                } catch (e) { /* молча */ }
+                    if (isTorrent(obj)) {
+                        var h = findHash(obj);
+                        if (h && h === cancelledHash) { dbgLog('play swallowed (cancelled)'); return; }
+                        if (earlyWatch) {
+                            earlyWatch = false;
+                            dbgLog('play after early Watch — пускаем сразу');
+                            return origPlay.apply(this, arguments);
+                        }
+                        show(obj, 'play');
+                        if (earlyWatch) {
+                            earlyWatch = false;
+                            stopPoll(); stopVideoWatch();
+                            hide('watch-early-play');
+                            return origPlay.apply(this, arguments);
+                        }
+                        if (visible && h && h === currentHash) {
+                            playStash = { ctx: this, args: Array.prototype.slice.call(arguments) };
+                            dbgLog('play DELAYED — ждём Смотреть');
+                            return;
+                        }
+                    }
+                } catch (e) { /* молча — при ошибке пускаем как раньше */ }
                 return origPlay.apply(this, arguments);
             };
             wrapped.__denis_tp = true;
