@@ -88,6 +88,12 @@
  *    POST /settings get в Lampa.Storage; изменения сразу уходят на сервер
  *    (set), при ошибке — откат + уведомление. Настройки серверные и общие
  *    для всех клиентов этого сервера.
+ *  - v3.3 (фикс сохранения): ответ сервера на set/def может быть пустым
+ *    или не-JSON — это успех при 2xx, а не ошибка (раньше r.json() падал
+ *    с тостом, даже если сервер настройку принял); set/def теперь
+ *    перебирают все адреса сервера, начиная с рабочего (раньше — только
+ *    первый адрес из настроек); при неудаче — откат + повторная
+ *    синхронизация с сервера.
  */
 (function () {
     'use strict';
@@ -857,7 +863,37 @@
         try { if (window.Lampa && Lampa.Noty && typeof Lampa.Noty.show === 'function') Lampa.Noty.show(msg); } catch (e) {}
     }
     function tpSetsPost(base, body) {
-        return fetch(base + '/settings', { method: 'POST', body: JSON.stringify(body) }).then(function (r) { return r.json(); });
+        /* Ответ сервера на set/def может быть пустым или не-JSON — это всё
+           равно успех, если HTTP-код 2xx. Раньше код требовал r.json() и
+           падал с тостом «сервер не отвечает», даже когда сервер настройку
+           принял. Content-Type специально не ставим: без него запрос
+           «простой» (как рабочие /torrents), без CORS-preflight. */
+        return fetch(base + '/settings', { method: 'POST', body: JSON.stringify(body) }).then(function (r) {
+            if (!r.ok) throw new Error('http ' + r.status);
+            return r.text().then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
+        });
+    }
+    function tpSetsOrderedBases() {
+        var b = getBases(), out = [];
+        if (tpSetsBase) out.push(tpSetsBase);
+        b.forEach(function (x) { if (out.indexOf(x) === -1) out.push(x); });
+        return out;
+    }
+    function tpSetsCall(body, bases, bi) {
+        /* set/def: перебираем все адреса сервера, начиная с рабочего.
+           Раньше сохранение шло только на первый адрес из настроек — если
+           он мёртвый, а живой второй, был тост об ошибке. */
+        bases = bases || tpSetsOrderedBases();
+        bi = bi || 0;
+        if (bi >= bases.length) return Promise.reject(new Error('no base'));
+        var base = bases[bi];
+        return tpSetsPost(base, body).then(function (d) {
+            tpSetsBase = base;
+            return d;
+        }).catch(function (e) {
+            if (bi + 1 < bases.length) return tpSetsCall(body, bases, bi + 1);
+            throw e;
+        });
     }
     function tpSetsApply(sets) {
         try {
@@ -886,33 +922,31 @@
         } catch (e) {}
         return undefined;
     }
-    function tpSetsSync(bases, bi) {
+    function tpSetsSync() {
         try {
-            bases = bases || getBases();
+            var bases = tpSetsOrderedBases();
             if (!bases.length) return;
-            bi = bi || 0;
-            var base = bases[bi];
-            tpSetsPost(base, { action: 'get' }).then(function (d) {
-                var sets = d && (d.sets || d);
-                if (sets && (sets.CacheSize != null || sets.PreloadCache != null)) {
-                    tpSetsBase = base;
-                    tpSetsApply(sets);
-                } else if (bi + 1 < bases.length) tpSetsSync(bases, bi + 1);
-            }).catch(function () {
-                if (bi + 1 < bases.length) tpSetsSync(bases, bi + 1);
-            });
+            (function next(bi) {
+                if (bi >= bases.length) return;
+                tpSetsPost(bases[bi], { action: 'get' }).then(function (d) {
+                    var sets = d && (d.sets || d);
+                    if (sets && (sets.CacheSize != null || sets.PreloadCache != null)) {
+                        tpSetsBase = bases[bi];
+                        tpSetsApply(sets);
+                    } else next(bi + 1);
+                }).catch(function () { next(bi + 1); });
+            })(0);
         } catch (e) { /* молча — раздел работает и без синхронизации */ }
     }
     function tpSetsSet(field, value, paramName) {
-        var base = tpSetsBase || (getBases()[0] || '');
-        if (!base) { tpSetsNotify('Сервер TorrServer не найден'); return; }
         var prev = tpSetsPrevStr(field);
         var body = { action: 'set', sets: {} };
         body.sets[field] = value;
-        tpSetsPost(base, body).then(function () {
+        tpSetsCall(body).then(function () {
             if (tpSetsCache) tpSetsCache[field] = value;
         }).catch(function () {
             try { if (prev !== undefined) Lampa.Storage.set(paramName, prev); } catch (e) {}
+            tpSetsSync();
             tpSetsNotify('Не удалось сохранить: сервер не отвечает');
         });
     }
@@ -959,9 +993,7 @@
                 try {
                     Lampa.Select.show({ title: 'Сбросить настройки сервера?', items: [{ title: 'Да', confirm: true }, { title: 'Нет' }], onSelect: function (it) {
                         if (it.confirm) {
-                            var base = tpSetsBase || (getBases()[0] || '');
-                            if (!base) { tpSetsNotify('Сервер TorrServer не найден'); return; }
-                            tpSetsPost(base, { action: 'def' }).then(function () {
+                            tpSetsCall({ action: 'def' }).then(function () {
                                 tpSetsSync();
                                 tpSetsNotify('Настройки сервера сброшены. Зайдите в раздел заново');
                             }).catch(function () { tpSetsNotify('Не удалось сбросить: сервер не отвечает'); });
