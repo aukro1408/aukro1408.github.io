@@ -110,6 +110,8 @@
  *  - v3.10: звук — отдельным рядом под видео-плашками (ряд 1:
  *    разрешение, динамический диапазон, кодек/источник; ряд 2: звук),
  *    чтобы звуку всегда хватало места.
+ *  - v3.11: нижний блок (статы + кнопки) опущен ниже — отступ от
+ *    «Буферизации» до статов увеличен (max(48px,5vh) вместо 20px).
  */
 (function () {
     'use strict';
@@ -143,7 +145,7 @@
         '#tp-root .dead .seg{animation-duration:4.5s;opacity:.35}',
         '#tp-root .stage{margin-top:18px;min-height:24px;font-size:clamp(16px,4vw,18px);font-weight:500;text-shadow:0 2px 16px rgba(0,0,0,.6);transition:opacity .35s}',
         '#tp-root .stage.swap{opacity:0}',
-        '#tp-root .stats{margin-top:20px;display:flex;gap:34px;justify-content:center;flex-wrap:wrap;text-shadow:0 2px 14px rgba(0,0,0,.6)}',
+        '#tp-root .stats{margin-top:max(48px,5vh);display:flex;gap:34px;justify-content:center;flex-wrap:wrap;text-shadow:0 2px 14px rgba(0,0,0,.6)}',
         '#tp-root .stats b{display:block;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}',
         '#tp-root .stats span{display:block;margin-top:3px;font-size:12px;font-weight:500;color:var(--dim)}',
         '#tp-root .stats .tp-size{text-align:center}',
