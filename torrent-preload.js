@@ -88,6 +88,9 @@
  *    (tor.name с TorrServer): разрешение, динамический диапазон, звук,
  *    кодек/источник; сами плашки — из файла Denis 1:1 (стили, градиенты,
  *    иконки), размеры .l на ТВ и .s на узких экранах.
+ *  - v3.6: звук расширен на все форматы из названий раздач: DTS:X,
+ *    DTS-HD HR, DD+, AC3, DD, AAC, FLAC, OPUS, LPCM, канал 6.1 (были
+ *    только ATMOS, DTS-HD MA, TRUEHD, DTS, 7.1/5.1/2.0).
  */
 (function () {
     'use strict';
@@ -842,13 +845,26 @@
         else if (hdr10) b('hdr' + big, 'HDR10');
         else if (/\bHDR\b/.test(s)) b('hdr' + big, 'HDR');
         if (/\bHLG\b/.test(s)) b('hdr' + big, 'HLG');
-        /* звук */
+        /* звук — все форматы из названий раздач, стиль .au из файла Denis */
         if (/\bATMOS\b/.test(s)) b('au' + big, 'ATMOS', TP_AU_ICO);
+        var dtsx = /DTS:? ?X\b/.test(s);
         var dtshd = /DTS\s*HD\s*MA|DTSHD\s*MA/.test(s);
+        var dtshdhr = /DTS\s*HD\s*HR|DTSHD\s*HR/.test(s);
+        if (dtsx) b('au' + big, 'DTS:X');
         if (dtshd) b('au' + big, 'DTS-HD MA');
+        if (dtshdhr) b('au' + big, 'DTS-HD HR');
         if (/TRUEHD|TRUE HD/.test(s)) b('au' + big, 'TRUEHD');
-        if (!dtshd && /\bDTS\b/.test(s)) b('au' + big, 'DTS');
+        if (!dtsx && !dtshd && !dtshdhr && /\bDTS\b/.test(s)) b('au' + big, 'DTS');
+        var ddplus = /DD\+|DDPLUS|\bEAC3\b|E AC 3|\bDDP\b|DOLBY DIGITAL PLUS/.test(s);
+        if (ddplus) b('au' + big, 'DD+');
+        if ((/\bAC3\b|AC 3/.test(s)) && !/E AC 3/.test(s)) b('au' + big, 'AC3');
+        if (!ddplus && (/\bDD\b/.test(s) || /DOLBY DIGITAL/.test(s))) b('au' + big, 'DD');
+        if (/\bAAC\b/.test(s)) b('au' + big, 'AAC');
+        if (/\bFLAC\b/.test(s)) b('au' + big, 'FLAC');
+        if (/\bOPUS\b/.test(s)) b('au' + big, 'OPUS');
+        if (/\bLPCM\b/.test(s)) b('au' + big, 'LPCM');
         if (/\b7\.1\b/.test(s)) b('au' + big, '7.1');
+        if (/\b6\.1\b/.test(s)) b('au' + big, '6.1');
         if (/\b5\.1\b/.test(s)) b('au' + big, '5.1');
         if (/\b2\.0\b/.test(s)) b('au' + big, '2.0');
         /* кодек и источник — по одной плашке */
