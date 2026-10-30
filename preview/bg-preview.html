@@ -11,7 +11,7 @@
   /* СЛОЙ 0: общий фон — на самом низу, везде. По умолчанию — тёмный, почти чёрный */
   .bg-layer {
     position: fixed; inset: 0; z-index: 0;
-    background: url("bg-black.jpg") center/cover no-repeat;
+    background: url("bg-orange.jpg") center/cover no-repeat;
     transition: background-image .3s ease;
   }
   .bg-layer::after {
@@ -130,11 +130,11 @@
     <div class="menu-clock" id="menu-clock" aria-hidden="true"><span id="clock-time">--:--</span><span id="clock-wx"><span class="wx-ico" id="wx-ico"></span><span class="wx-temp" id="wx-temp">--°</span><span class="wx-city">Раздельная</span></span></div>
   </header>
   <div class="bg-switch" id="bg-switch">
-    <button class="active" data-bg="bg-black.jpg">Чёрный</button>
+    <button data-bg="bg-black.jpg">Чёрный</button>
     <button data-bg="bg-doodle.jpg">Дудл</button>
     <button data-bg="bg-gradient.jpg">Градиент</button>
     <button data-bg="dark">Тёмный</button>
-    <button data-bg="bg-orange.jpg">Оранж</button>
+    <button class="active" data-bg="bg-orange.jpg">Оранж</button>
     <button data-bg="bg-pastel.jpg">Пастель</button>
     <button data-bg="bg-pink.jpg">Розовый</button>
     <button data-bg="bg-amber.jpg">Янтарь</button>
@@ -145,7 +145,7 @@
     <button data-bg="bg-peach.jpg">Персик</button>
   </div>
   <div class="caption">
-    <b>Превью v3: общий фон.</b> По умолчанию — Чёрный (тёмная текстура, почти чёрная). Все 13 вариантов видны сразу, листать не надо.
+    <b>Превью v3: общий фон.</b> По умолчанию — Оранж (пока). Все 13 вариантов видны сразу, листать не надо.
     В приложении это будет Настройки → Фон. Порядок слоёв: фон (самый низ, везде) → hero-карточка над ним → верхний навбар поверх всего с блюром.
     Hero-карточка здесь заглушка, её дизайн — отдельный элемент.
   </div>
