@@ -71,6 +71,9 @@
  *    переехал из подзаголовка в статы (4-я цифра «размер», пустой
  *    подзаголовок скрывается); название пульсирует при загрузке
  *    (header.tp-pulse: scale 1↔1.04 за 2.8с, на 100% останавливается).
+ *  - v2.9: размер красиво выделен — золотая пилюля: текст акцентным
+ *    цветом (идёт за акцентом постера), крупнее остальных цифр
+ *    (17px/21px на ТВ), мягкая янтарная подложка и тонкая обводка.
  */
 (function () {
     'use strict';
@@ -107,6 +110,8 @@
         '#tp-root .stats{margin-top:20px;display:flex;gap:34px;justify-content:center;flex-wrap:wrap;text-shadow:0 2px 14px rgba(0,0,0,.6)}',
         '#tp-root .stats b{display:block;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}',
         '#tp-root .stats span{display:block;margin-top:3px;font-size:12px;font-weight:500;color:var(--dim)}',
+        '#tp-root .stats .tp-size{text-align:center}',
+        '#tp-root .stats .tp-size b{display:inline-block;color:var(--acc);font-size:17px;background:rgba(240,178,74,.12);border:1px solid rgba(240,178,74,.35);border-radius:999px;padding:3px 14px}',
         '#tp-root button{margin-top:22px;font:inherit;font-size:14px;font-weight:700;color:var(--ink);background:rgba(8,8,10,.35);border:1px solid rgba(244,233,214,.4);border-radius:999px;padding:11px 24px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .6s,border-color .2s}',
         '#tp-root .tp-actions{margin-top:24px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}',
         '#tp-root .tp-btn{margin-top:0;font:inherit;font-size:15px;font-weight:700;color:var(--ink);background:rgba(8,8,10,.42);border:1px solid rgba(244,233,214,.4);border-radius:999px;padding:13px 28px;cursor:pointer;opacity:1;pointer-events:auto;box-shadow:none;transition:transform .15s,box-shadow .2s,background .2s,color .2s,border-color .2s}',
@@ -120,7 +125,7 @@
         '@media (prefers-reduced-motion:reduce){#tp-root .seg{animation:none;left:33%}}',
         '@media (max-height:600px){#tp-root .art{width:min(30vh,150px)}#tp-root .pct{font-size:44px}#tp-root .stats{margin-top:12px}#tp-root .tp-actions{margin-top:12px}#tp-root .tp-btn{padding:9px 20px;font-size:14px}}',
         '@media (max-width:600px){#tp-root .stats{gap:20px}}',
-        '@media (min-width:1100px) and (min-height:600px){#tp-root h1{font-size:34px}#tp-root header p{font-size:18px}#tp-root .art{width:230px}#tp-root .pct{font-size:88px}#tp-root .bar{width:460px}#tp-root .stage{font-size:24px}#tp-root .stats b{font-size:19px}#tp-root .stats span{font-size:14px}#tp-root .tp-actions{margin-top:30px;gap:18px}#tp-root .tp-btn{font-size:19px;padding:15px 34px}}',
+        '@media (min-width:1100px) and (min-height:600px){#tp-root h1{font-size:34px}#tp-root header p{font-size:18px}#tp-root .art{width:230px}#tp-root .pct{font-size:88px}#tp-root .bar{width:460px}#tp-root .stage{font-size:24px}#tp-root .stats b{font-size:19px}#tp-root .stats span{font-size:14px}#tp-root .stats .tp-size b{font-size:21px;padding:4px 16px}#tp-root .tp-actions{margin-top:30px;gap:18px}#tp-root .tp-btn{font-size:19px;padding:15px 34px}}',
         '#tp-root .tpfx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}'
     ].join('\n');
 
@@ -160,7 +165,7 @@
         '<div><b id="tp-mPeers">0</b><span>пиры</span></div>',
         '<div><b id="tp-mSpeed">—</b><span>скорость</span></div>',
         '<div><b id="tp-mLoaded">—</b><span>в буфере</span></div>',
-        '<div><b id="tp-mSize">—</b><span>размер</span></div>',
+        '<div class="tp-size"><b id="tp-mSize">—</b><span>размер</span></div>',
         '</div>',
         '<div class="tp-actions"><button class="tp-btn primary" id="tp-watch">Смотреть сейчас</button><button class="tp-btn" id="tp-cancel">Отмена</button></div>',
         '</main>',
