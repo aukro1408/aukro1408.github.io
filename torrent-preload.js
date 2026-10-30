@@ -79,6 +79,8 @@
  *    (blur 2px brightness .62 scale 1.03 с самого начала, проявление
  *    по прогрессу убрано); логотип на ТВ крупнее (до 640×150 вместо
  *    340×88 — на телефоне без изменений).
+ *  - v3.1: подпись «размер» под пилюлей размера убрана — осталась только
+ *    сама пилюля со значением.
  */
 (function () {
     'use strict';
@@ -170,7 +172,7 @@
         '<div><b id="tp-mPeers">0</b><span>пиры</span></div>',
         '<div><b id="tp-mSpeed">—</b><span>скорость</span></div>',
         '<div><b id="tp-mLoaded">—</b><span>в буфере</span></div>',
-        '<div class="tp-size"><b id="tp-mSize">—</b><span>размер</span></div>',
+        '<div class="tp-size"><b id="tp-mSize">—</b></div>',
         '</div>',
         '<div class="tp-actions"><button class="tp-btn primary" id="tp-watch">Смотреть</button><button class="tp-btn" id="tp-cancel">Отмена</button></div>',
         '</main>',
