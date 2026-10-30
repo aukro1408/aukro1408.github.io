@@ -38,6 +38,9 @@
  *    Настройки → TorrServer → Предзагрузка: тогда поток стартует только
  *    после предзагрузки, и экран виден весь процесс. При выключенной
  *    предзагрузке экран просто мелькнёт и уйдёт при старте видео.
+ *  - v2.1-DEBUG (временно): внизу слева плашка с диагностикой — хеш,
+ *    адрес TorrServer, статус опроса и причина скрытия экрана. После
+ *    диагноза плашка убирается.
  */
 (function () {
     'use strict';
@@ -126,6 +129,23 @@
     /* ---------- движок анимации: логика HTML-файла, без демо и query-режимов ---------- */
     var NS = 'http://www.w3.org/2000/svg';
     var $ = function (id) { return document.getElementById(id); };
+    /* ---------- DEBUG v2.1 (временно): плашка внизу слева ---------- */
+    var dbgEl = null, dbgLines = [], dbgStatusText = '';
+    function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function dbgRender() {
+        if (!dbgEl) return;
+        var html = dbgStatusText ? '<div><b>' + esc(dbgStatusText) + '</b></div>' : '';
+        html += dbgLines.map(function (l) { return '<div>' + esc(l) + '</div>'; }).join('');
+        dbgEl.innerHTML = html;
+    }
+    function dbgStatus(t) { dbgStatusText = t; dbgRender(); }
+    function dbgLog(t) {
+        var d = new Date();
+        var p = function (n) { return ('0' + n).slice(-2); };
+        dbgLines.push(p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) + ' ' + t);
+        if (dbgLines.length > 5) dbgLines.shift();
+        dbgRender();
+    }
     var clamp = function (v) { return v < 0 ? 0 : v > 1 ? 1 : v; };
     var easeBack = function (t) { var u = t - 1; return 1 + 2.4 * u * u * u + 1.4 * u * u; };
 
@@ -148,6 +168,11 @@
         root.id = 'tp-root';
         root.innerHTML = HTML;
         document.body.appendChild(root);
+        dbgEl = document.createElement('div');
+        dbgEl.id = 'tp-dbg';
+        dbgEl.setAttribute('style', 'position:fixed;left:8px;bottom:8px;z-index:100000;max-width:92vw;background:rgba(0,0,0,.78);color:#fff;font:13px/1.45 monospace;white-space:pre-wrap;word-break:break-all;padding:8px 10px;border-radius:8px;pointer-events:none;');
+        dbgEl.textContent = 'TP DEBUG v2.1';
+        document.body.appendChild(dbgEl);
         main = $('tp-main'); poster = $('tp-poster'); fill = $('tp-fill'); pct = $('tp-pct');
         stageEl = $('tp-stage'); corn = $('tp-corn'); bucket = $('tp-bucket');
         parts = $('tp-parts'); shadow = $('tp-shadow'); glow = $('tp-glow'); fxg = $('tp-fxg');
@@ -410,9 +435,10 @@
     function stopPoll() { if (pollTimer) { clearTimeout(pollTimer); pollTimer = 0; } }
     function stopVideoWatch() { if (videoTimer) { clearInterval(videoTimer); videoTimer = 0; } }
 
-    function hide() {
+    function hide(reason) {
         if (!visible) return;
         visible = false;
+        dbgLog('HIDE: ' + (reason || '?'));
         currentHash = '';
         if (pendingCancelHide) { clearTimeout(pendingCancelHide); pendingCancelHide = 0; }
         stopPoll(); stopVideoWatch();
@@ -434,7 +460,7 @@
             playerDone = null;
         } catch (e) { /* молча */ }
     }
-    function onPlaying() { hide(); }
+    function onPlaying() { hide('playing-event'); }
 
     function watchVideo() {
         stopVideoWatch();
@@ -447,7 +473,7 @@
                 if (v && v !== videoEl) {
                     videoEl = v;
                     videoEl.addEventListener('playing', onPlaying);
-                    if (!videoEl.paused && videoEl.readyState > 2) { hide(); return; }
+                    if (!videoEl.paused && videoEl.readyState > 2) { hide('video-already-playing'); return; }
                 }
             } catch (e) { /* молча */ }
         }, 300);
@@ -466,24 +492,27 @@
                     peers: t.active_peers || 0, total: t.total_peers || 0,
                     speed: t.download_speed || 0, loaded: got, waited: Date.now() - t0 > 8000
                 });
+                dbgStatus('poll st=' + st + ' prog=' + (need ? Math.round(100 * Math.min(1, got / need)) : 0) + '% peers=' + (t.active_peers || 0) + '/' + (t.total_peers || 0) + ' got=' + got + ' need=' + need);
                 if (st >= 4) {
                     if (hideTimer) clearTimeout(hideTimer);
-                    hideTimer = setTimeout(hide, 1600);
+                    hideTimer = setTimeout(function () { hide('preload-done'); }, 1600);
                 } else {
                     pollTimer = setTimeout(function () { poll(base, hash, t0); }, 1000);
                 }
             })
-            .catch(function () {
+            .catch(function (e) {
                 if (!visible) return;
+                dbgStatus('poll ERROR: ' + (e && e.message ? e.message : 'fetch failed'));
                 pollTimer = setTimeout(function () { poll(base, hash, t0); }, 2000);
             });
     }
 
-    function show(obj) {
+    function show(obj, src) {
         try { build(); } catch (e) { return; }
         /* повторный показ того же торрента (Loading → Player.play) — не сбрасывать прогресс */
         var hash = findHash(obj);
-        if (visible && hash && hash === currentHash) return;
+        if (visible && hash && hash === currentHash) { dbgLog('SHOW-again from=' + (src || '?') + ' same hash, skip'); return; }
+        dbgLog('SHOW from=' + (src || '?') + ' hash=' + (hash ? hash.slice(0, 8) + '...' : 'НЕТ'));
         currentHash = hash;
         stopPoll(); stopVideoWatch();
         if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
@@ -499,15 +528,17 @@
             watchVideo();
             var base = tsBase(), hash = findHash(obj);
             if (base && hash) {
+                dbgStatus('poll: base=' + base + ' hash=' + hash.slice(0, 8) + '...');
                 window.torrentPreload.update({ stage: 1 });
                 poll(base, hash, Date.now());
             } else {
+                dbgStatus('NO POLL: base=' + (base || 'НЕТ') + ' hash=' + (hash ? hash.slice(0, 8) + '...' : 'НЕТ'));
                 /* fallback: живых данных нет — бегущая полоса, уход при старте видео */
                 window.torrentPreload.update({ stage: 1 });
             }
             try {
                 if (Lampa.Player && Lampa.Player.listener && typeof Lampa.Player.listener.follow === 'function') {
-                    playerDone = function () { hide(); };
+                    playerDone = function () { hide('player-destroy/ended/error'); };
                     Lampa.Player.listener.follow('destroy', playerDone);
                     Lampa.Player.listener.follow('ended', playerDone);
                     Lampa.Player.listener.follow('error', playerDone);
@@ -525,7 +556,7 @@
                 try {
                     /* финиш предзагрузки: отменяем отложенное скрытие по отмене */
                     if (pendingCancelHide) { clearTimeout(pendingCancelHide); pendingCancelHide = 0; }
-                    if (isTorrent(obj)) show(obj);
+                    if (isTorrent(obj)) show(obj, 'play');
                 } catch (e) { /* молча */ }
                 return origPlay.apply(this, arguments);
             };
@@ -545,7 +576,7 @@
                     var opts = arguments[2];
                     var media = opts && opts.media;
                     if (media && typeof media.url === 'string' && media.url.indexOf('&preload') !== -1) {
-                        show(media);
+                        show(media, 'loading');
                         if (typeof arguments[0] === 'function' && !arguments[0].__denis_tp) {
                             var origStop = arguments[0];
                             var wrappedStop = function () {
@@ -553,7 +584,7 @@
                                 /* финиш: следом придёт Player.play и отменит таймер;
                                    отмена по Назад: Player.play не придёт — прячемся сами */
                                 if (pendingCancelHide) clearTimeout(pendingCancelHide);
-                                pendingCancelHide = setTimeout(function () { if (visible) hide(); }, 400);
+                                pendingCancelHide = setTimeout(function () { if (visible) hide('loading-stop+400ms'); }, 400);
                                 return r;
                             };
                             wrappedStop.__denis_tp = true;
