@@ -47,7 +47,13 @@
  *    и torrserver_url_two), нормализуется (добавляется http://, режутся
  *    слеши), при ошибке опроса пробуется второй адрес; адрес всегда пишется
  *    в плашку диагностики (раньше его затирал статус ошибки).
- *  - DEBUG-плашка (временно) остаётся до диагноза 0%.
+ *  - v2.4 (как на фото приложения): кнопки один в один — primary с золотым
+ *    текстом и tint-подложкой, фокус только outline (золотая рамка не
+ *    перебивается); весь контент опущен к дну экрана (main flex-end);
+ *    вместо названия — логотип TMDB (logo_path карточки или TMDB.get
+ *    клиента Лампы, ru → en → первый; нет логотипа — текст названия);
+ *    плашка диагностики убрана.
+ *    плашка диагностики убрана (диагноз 0% закрыт в v2.3: работает).
  */
 (function () {
     'use strict';
@@ -64,8 +70,9 @@
         '#tp-root .tp-poster{position:absolute;inset:-5%;background:var(--bg) center/cover no-repeat;filter:blur(18px) brightness(.38);transform:scale(1.1);will-change:filter,transform}',
         '#tp-root .tp-scrim{position:absolute;inset:0;pointer-events:none;',
         'background:radial-gradient(ellipse at 50% 55%,rgba(6,6,8,.5) 0%,rgba(6,6,8,0) 68%),linear-gradient(to bottom,rgba(6,6,8,.6) 0%,rgba(6,6,8,.18) 34%,rgba(6,6,8,.72) 100%)}',
-        '#tp-root main{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 24px 28px;text-align:center}',
-        '#tp-root header{position:absolute;top:30px;left:0;right:0;padding:0 24px;text-shadow:0 2px 18px rgba(0,0,0,.6)}',
+        '#tp-root main{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:24px 24px 5vh;text-align:center}',
+        '#tp-root header{position:relative;padding:0 24px;text-shadow:0 2px 18px rgba(0,0,0,.6)}',
+        '#tp-root #tp-logo{display:none;max-width:min(60vw,340px);max-height:88px;width:auto;height:auto;margin:0 auto;filter:drop-shadow(0 2px 18px rgba(0,0,0,.6))}',
         '#tp-root h1{margin:0;font-size:clamp(20px,4vw,26px);font-weight:700;letter-spacing:-.01em}',
         '#tp-root header p{margin:5px 0 0;font-size:14px;font-weight:500;color:var(--dim)}',
         '#tp-root .art{width:min(46vw,200px);filter:drop-shadow(0 18px 28px rgba(0,0,0,.5))}',
@@ -85,8 +92,8 @@
         '#tp-root button{margin-top:22px;font:inherit;font-size:14px;font-weight:700;color:var(--ink);background:rgba(8,8,10,.35);border:1px solid rgba(244,233,214,.4);border-radius:999px;padding:11px 24px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .6s,border-color .2s}',
         '#tp-root .tp-actions{display:flex;gap:.8em;margin-top:22px}',
         '#tp-root .tp-btn{font:inherit;font-size:14px;font-weight:700;color:var(--ink);background:rgba(8,8,10,.35);border:1px solid rgba(244,233,214,.4);border-radius:999px;padding:11px 24px;cursor:pointer;opacity:1;pointer-events:auto;transition:border-color .2s,background .2s}',
-        '#tp-root .tp-btn.primary{border-color:var(--amber)}',
-        '#tp-root .tp-btn.focused{border-color:var(--ink);background:rgba(244,233,214,.14)}',
+        '#tp-root .tp-btn.primary{border-color:rgba(240,178,74,.8);color:var(--amber);background:rgba(240,178,74,.12)}',
+        '#tp-root .tp-btn.focused{outline:2px solid var(--ink);outline-offset:3px}',
         '@keyframes tpglide{from{transform:translateX(-100%)}to{transform:translateX(300%)}}',
         '@keyframes tppop{0%{transform:scale(1)}35%{transform:scale(1.09)}100%{transform:scale(1)}}',
         '#tp-root .pct.pop{animation:tppop .8s cubic-bezier(.2,.9,.3,1.3)}',
@@ -122,7 +129,7 @@
         '<div class="tp-poster" id="tp-poster"></div>',
         '<div class="tp-scrim"></div>',
         '<main id="tp-main">',
-        '<header><h1 id="tp-title"></h1><p id="tp-sub"></p></header>',
+        '<header><h1 id="tp-title"></h1><img id="tp-logo" alt=""><p id="tp-sub"></p></header>',
         '<div class="art" id="tp-art">' + BUCKET_SVG + '</div>',
         '<div class="pct" id="tp-pct" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">0<small>%</small></div>',
         '<div class="bar"><div class="fill" id="tp-fill"></div><div class="seg"></div></div>',
@@ -179,11 +186,6 @@
         root.id = 'tp-root';
         root.innerHTML = HTML;
         document.body.appendChild(root);
-        dbgEl = document.createElement('div');
-        dbgEl.id = 'tp-dbg';
-        dbgEl.setAttribute('style', 'position:fixed;left:8px;bottom:8px;z-index:100000;max-width:92vw;background:rgba(0,0,0,.78);color:#fff;font:13px/1.45 monospace;white-space:pre-wrap;word-break:break-all;padding:8px 10px;border-radius:8px;pointer-events:none;');
-        dbgEl.textContent = 'TP DEBUG v2.3';
-        document.body.appendChild(dbgEl);
         $('tp-watch').addEventListener('click', doWatch);
         $('tp-cancel').addEventListener('click', doCancel);
         document.addEventListener('keydown', function (e) {
@@ -615,6 +617,54 @@
         try { if (Lampa.Player && typeof Lampa.Player.close === 'function') Lampa.Player.close(); } catch (e) {}
     }
 
+    /* логотип вместо названия — как в приложении: TMDB logo_path из карточки
+       Лампы, иначе TMDB.get через клиент самой Лампы (ru → en → первый).
+       Ключ нигде не трогаем: используется только клиент Лампы. Нет логотипа —
+       остаётся текст названия. */
+    function logoUrl(path) {
+        try {
+            if (window.TMDB && typeof TMDB.img === 'function') return TMDB.img(path, 'w500');
+        } catch (e) {}
+        return 'https://image.tmdb.org/t/p/w500' + path;
+    }
+    function setLogo(url) {
+        if (!visible) return;
+        var img = $('tp-logo'), t = $('tp-title');
+        if (!img) return;
+        if (url) { img.src = url; img.style.display = 'block'; if (t) t.style.display = 'none'; }
+        else { img.removeAttribute('src'); img.style.display = 'none'; if (t) t.style.display = ''; }
+    }
+    function tryLogo(obj) {
+        try {
+            setLogo('');
+            var card = (obj && obj.card) || {};
+            var lp = card.logo_path || card.logo || obj.logo_path || obj.logo || '';
+            if (typeof lp === 'string' && lp.charAt(0) === '/') { setLogo(logoUrl(lp)); return; }
+            if (typeof lp === 'string' && lp.indexOf('http') === 0) { setLogo(lp); return; }
+            var id = card.id || obj.id || 0;
+            if (!id || !window.TMDB || typeof TMDB.get !== 'function') return;
+            var myHash = currentHash;
+            var mt = card.media_type || obj.media_type || '';
+            var types = (mt === 'movie' || mt === 'tv') ? [mt] : ['movie', 'tv'];
+            (function next(i) {
+                if (i >= types.length) return;
+                try {
+                    TMDB.get(types[i] + '/' + id + '/images', {}, function (d) {
+                        try {
+                            if (!visible || myHash !== currentHash) return;
+                            var logos = (d && d.logos) || [], pick = null, j;
+                            for (j = 0; j < logos.length; j++) if (logos[j].iso_639_1 === 'ru') { pick = logos[j]; break; }
+                            if (!pick) for (j = 0; j < logos.length; j++) if (logos[j].iso_639_1 === 'en') { pick = logos[j]; break; }
+                            if (!pick) pick = logos[0] || null;
+                            if (pick && pick.file_path) setLogo(logoUrl(String(pick.file_path).replace(/\.svg$/i, '.png')));
+                            else next(i + 1);
+                        } catch (e) { next(i + 1); }
+                    });
+                } catch (e) { next(i + 1); }
+            })(0);
+        } catch (e) { /* логотип — украшение, экран работает и без него */ }
+    }
+
     function show(obj, src) {
         try { build(); } catch (e) { return; }
         /* повторный показ того же торрента (Loading → Player.play) — не сбрасывать прогресс */
@@ -630,6 +680,7 @@
             window.torrentPreload.reset();
             var info = pickStr(obj);
             window.torrentPreload.update({ stage: 0, progress: 0, peers: 0, total: 0, speed: 0, loaded: 0, title: info.title, sub: info.sub, poster: info.poster });
+            tryLogo(obj);
             var root = $('tp-root');
             root.style.display = 'block';
             root.style.opacity = '1';
