@@ -91,6 +91,10 @@
  *  - v3.6: звук расширен на все форматы из названий раздач: DTS:X,
  *    DTS-HD HR, DD+, AC3, DD, AAC, FLAC, OPUS, LPCM, канал 6.1 (были
  *    только ATMOS, DTS-HD MA, TRUEHD, DTS, 7.1/5.1/2.0).
+ *  - v3.7 (фикс звука): каналы и аудиокодеки теперь берутся и из
+ *    склеенных токенов реальных названий — «5.1CH», «7.1CH», «TrueHD7.1»,
+ *    «ATMOS7.1», «DD5.1» (раньше \b требовал границы слова и такие токены
+ *    пропускал); защита от ложных: 17.1 — не 7.1, 7.10 — не 7.1.
  */
 (function () {
     'use strict';
@@ -832,11 +836,11 @@
         var out = [];
         var b = function (cls, label, ico) { out.push('<span class="b ' + cls + '">' + (ico || '') + label + '</span>'); };
         /* разрешение — одна плашка, по старшинству */
-        if (/\b2160P?\b|\b4K\b|\bUHD\b/.test(s)) b('res-4k' + big, '4K');
-        else if (/\b1440P?\b|\b2K\b|\bQHD\b/.test(s)) b('res-plat' + big, '2K');
-        else if (/\b1080[PI]?\b|\bFULL HD\b|\bFHD\b/.test(s)) b('res-plat' + big, 'FULL HD');
-        else if (/\b720[PI]?\b|\bHD\b/.test(s.replace(/DTS\s*HD/g, 'DTSX'))) b('res-dim' + big, 'HD');
-        else if (/\b480P?\b|\b576P?\b|\bDVD\b|\bDVDRIP\b/.test(s)) b('res-dim' + big, 'SD');
+        if (/\b2160P?(?![0-9])|\b4K(?![0-9])|\bUHD(?![0-9])/.test(s)) b('res-4k' + big, '4K');
+        else if (/\b1440P?(?![0-9])|\b2K(?![0-9])|\bQHD(?![0-9])/.test(s)) b('res-plat' + big, '2K');
+        else if (/\b1080[PI]?(?![0-9])|\bFULL HD(?![A-Z])|\bFHD(?![0-9])/.test(s)) b('res-plat' + big, 'FULL HD');
+        else if (/\b720[PI]?(?![0-9])|\bHD(?![A-Z0-9])/.test(s.replace(/DTS\s*HD/g, 'DTSX')) || /HDTV/.test(s)) b('res-dim' + big, 'HD');
+        else if (/\b480P?(?![0-9])|\b576P?(?![0-9])|\bDVD(?![A-Z])|\bDVDRIP(?![A-Z])/.test(s)) b('res-dim' + big, 'SD');
         /* динамический диапазон */
         if (/DOLBY VISION|\bDOVI\b|\bDV\b/.test(s)) b('dv' + big, 'DOLBY VISION', TP_DV_ICO);
         var hdr10p = /HDR10\+|HDR10 PLUS/.test(s);
@@ -845,28 +849,39 @@
         else if (hdr10) b('hdr' + big, 'HDR10');
         else if (/\bHDR\b/.test(s)) b('hdr' + big, 'HDR');
         if (/\bHLG\b/.test(s)) b('hdr' + big, 'HLG');
-        /* звук — все форматы из названий раздач, стиль .au из файла Denis */
-        if (/\bATMOS\b/.test(s)) b('au' + big, 'ATMOS', TP_AU_ICO);
-        var dtsx = /DTS:? ?X\b/.test(s);
+        /* звук — все форматы из названий раздач, стиль .au из файла Denis.
+           v3.7: \b ломался на склеенных токенах из реальных названий —
+           «5.1CH», «7.1CH», «TrueHD7.1», «ATMOS7.1»: после цифры/буквы нет
+           границы слова. Поэтому токены — через tok() (перед токеном не
+           буква/цифра, после — не буква: цифры можно), а каналы — через
+           chan() (перед каналом не цифра: 17.1 — не 7.1; после — не цифра:
+           7.10 — не 7.1, а буквы можно: 7.1CH). */
+        var tok = function (pat) { return new RegExp('(^|[^A-Z0-9])' + pat + '(?![A-Z])').test(s); };
+        var chan = function (a, b) {
+            return new RegExp('(^|[^0-9])' + a + '([^0-9]|$)').test(s) ||
+                (b && new RegExp('(^|[^0-9])' + b + '([^0-9]|$)').test(s));
+        };
+        if (tok('ATMOS')) b('au' + big, 'ATMOS', TP_AU_ICO);
+        var dtsx = tok('DTS:? ?X');
         var dtshd = /DTS\s*HD\s*MA|DTSHD\s*MA/.test(s);
         var dtshdhr = /DTS\s*HD\s*HR|DTSHD\s*HR/.test(s);
         if (dtsx) b('au' + big, 'DTS:X');
         if (dtshd) b('au' + big, 'DTS-HD MA');
         if (dtshdhr) b('au' + big, 'DTS-HD HR');
         if (/TRUEHD|TRUE HD/.test(s)) b('au' + big, 'TRUEHD');
-        if (!dtsx && !dtshd && !dtshdhr && /\bDTS\b/.test(s)) b('au' + big, 'DTS');
-        var ddplus = /DD\+|DDPLUS|\bEAC3\b|E AC 3|\bDDP\b|DOLBY DIGITAL PLUS/.test(s);
+        if (!dtsx && !dtshd && !dtshdhr && tok('DTS')) b('au' + big, 'DTS');
+        var ddplus = /DD\+|DDPLUS|DOLBY DIGITAL PLUS/.test(s) || tok('EAC3') || /E AC 3/.test(s) || tok('DDP');
         if (ddplus) b('au' + big, 'DD+');
-        if ((/\bAC3\b|AC 3/.test(s)) && !/E AC 3/.test(s)) b('au' + big, 'AC3');
-        if (!ddplus && (/\bDD\b/.test(s) || /DOLBY DIGITAL/.test(s))) b('au' + big, 'DD');
-        if (/\bAAC\b/.test(s)) b('au' + big, 'AAC');
-        if (/\bFLAC\b/.test(s)) b('au' + big, 'FLAC');
-        if (/\bOPUS\b/.test(s)) b('au' + big, 'OPUS');
-        if (/\bLPCM\b/.test(s)) b('au' + big, 'LPCM');
-        if (/\b7\.1\b/.test(s)) b('au' + big, '7.1');
-        if (/\b6\.1\b/.test(s)) b('au' + big, '6.1');
-        if (/\b5\.1\b/.test(s)) b('au' + big, '5.1');
-        if (/\b2\.0\b/.test(s)) b('au' + big, '2.0');
+        if ((tok('AC3') || tok('AC 3')) && !/E AC 3/.test(s)) b('au' + big, 'AC3');
+        if (!ddplus && (tok('DD') || /DOLBY DIGITAL/.test(s))) b('au' + big, 'DD');
+        if (tok('AAC')) b('au' + big, 'AAC');
+        if (tok('FLAC')) b('au' + big, 'FLAC');
+        if (tok('OPUS')) b('au' + big, 'OPUS');
+        if (tok('LPCM')) b('au' + big, 'LPCM');
+        if (chan('7\\.1', '7 1')) b('au' + big, '7.1');
+        if (chan('6\\.1', '6 1')) b('au' + big, '6.1');
+        if (chan('5\\.1', '5 1')) b('au' + big, '5.1');
+        if (chan('2\\.0', '2 0')) b('au' + big, '2.0');
         /* кодек и источник — по одной плашке */
         if (/HEVC|\bX265\b|\bH\.?265\b/.test(s)) b('cd' + cd, 'HEVC');
         else if (/\bAV1\b/.test(s)) b('cd' + cd, 'AV1');
