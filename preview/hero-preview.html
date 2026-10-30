@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pawflix — hero-карточка (превью v3)</title>
+<title>pawflix — hero-карточка (превью v4)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -137,11 +137,16 @@
     background: rgba(10,10,14,.7); border: 1px solid rgba(255,255,255,.16);
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   }
+  .hero-switch .thumb {
+    position: absolute; z-index: 0; top: 6px; bottom: 6px; left: 0; width: 0;
+    border-radius: 99px; background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.35);
+  }
   .hero-switch button {
+    position: relative; z-index: 1;
     background: transparent; border: 0; color: rgba(255,255,255,.75); font-family: inherit;
     font-size: 15px; font-weight: 700; padding: 8px 20px; border-radius: 99px; cursor: pointer; white-space: nowrap;
   }
-  .hero-switch button.active { background: #fff; color: #000; }
+  .hero-switch button.active { color: #000; }
   .caption {
     position: relative; z-index: 60; margin: 16px auto 24px; font-size: 13px; line-height: 1.6;
     color: rgba(255,255,255,.7); text-shadow: 0 1px 8px rgba(0,0,0,.9); max-width: 94vw;
@@ -217,11 +222,12 @@
   </section>
 
   <div class="hero-switch" id="hero-switch">
+    <span class="thumb"></span>
     <button data-variant="tv">ТВ</button>
     <button class="active" data-variant="phone">Телефон</button>
   </div>
   <div class="caption">
-    <b>Превью v3: hero-карточка.</b> В режиме телефона инфо-блок (логотип, оценка, описание, «Смотреть», точки) переехал НА карточку, как на рефе WebView.  Автопрокрутка 15 секунд на карточку (в превью реально крутится), точки-индикаторы, кнопка «Смотреть»
+    <b>Превью v4: hero-карточка.</b> Переключатель ТВ/Телефон — с эффектом из файла Denis: пружина + сплющивание, дизайн наш.  В режиме телефона инфо-блок (логотип, оценка, описание, «Смотреть», точки) переехал НА карточку, как на рефе WebView.  Автопрокрутка 15 секунд на карточку (в превью реально крутится), точки-индикаторы, кнопка «Смотреть»
     (в приложении просто откроет карточку фильма). Вместо названия — логотип: в приложении это картинка из TMDB (logo_path, как в WebView),
     а в превью картинки логотипа нет — стоит текстовый стенд-ин того же размера и на том же месте. Описание и оценка TMDB — под логотипом.
     Данные первого слайда — из твоего скриншота WebView («Надежда»), остальные два — заглушки.
@@ -277,12 +283,30 @@
         btn.classList.add('active');
       });
     });
-    document.querySelectorAll('#hero-switch button').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        document.querySelectorAll('#hero-switch button').forEach(function (b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        document.body.setAttribute('data-variant', btn.getAttribute('data-variant'));
+    /* Эффект переключения пилюли из файла Denis: пружина + squash & stretch, дизайн наш */
+    (function pillSpring(root, onSelect) {
+      var t = root.querySelector('.thumb'), b = Array.prototype.slice.call(root.querySelectorAll('button'));
+      function box(el) { return { l: el.offsetLeft, w: el.offsetWidth }; }
+      function put(el) { var r = box(el); t.style.left = r.l + 'px'; t.style.width = r.w + 'px'; }
+      put(b.filter(function (x) { return x.classList.contains('active'); })[0] || b[0]);
+      b.forEach(function (el) {
+        el.addEventListener('click', function () {
+          if (el.classList.contains('active')) return;
+          var a = box(t), z = box(el);
+          b.forEach(function (x) { x.classList.toggle('active', x === el); });
+          t.getAnimations().forEach(function (x) { x.cancel(); });
+          t.animate([{ left: a.l + 'px', width: a.w + 'px' }, { left: z.l + 'px', width: z.w + 'px' }],
+            { duration: 550, easing: 'cubic-bezier(.34,1.45,.64,1)' });
+          t.animate([{ scale: '1 1' }, { scale: '1.14 .92', offset: .3 }, { scale: '1 1' }],
+            { duration: 550, easing: 'ease' });
+          t.style.left = z.l + 'px'; t.style.width = z.w + 'px';
+          try { navigator.vibrate && navigator.vibrate(8); } catch (e) {}
+          if (onSelect) onSelect(el);
+        });
       });
+      addEventListener('resize', function () { put(root.querySelector('.active')); });
+    })(document.getElementById('hero-switch'), function (el) {
+      document.body.setAttribute('data-variant', el.getAttribute('data-variant'));
     });
     var toast = document.getElementById('toast'), toastTimer = null;
     function showToast() {
