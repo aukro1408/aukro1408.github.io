@@ -102,6 +102,11 @@
  *    Лампы (obj.ffprobe). Название «Обсессии» звука не содержит, а
  *    дорожки — содержат: теперь плашки есть и в таком случае.
  *    Объединение с плашками из названия — с дедупликацией по названию.
+ *  - v3.9 (фикс мигания): ffprobe липкий — звук, раз увиденный в
+ *    play-данных, не затирается опросами TorrServer без ffprobe (раньше
+ *    звук на секунду проскакивал при открытии, а потом пропадал,
+ *    оставались только плашки из названия); сброс липкого ffprobe —
+ *    при показе нового торрента.
  */
 (function () {
     'use strict';
@@ -983,15 +988,24 @@
         } catch (e) { return ''; }
     }
     var lastBadgeSig = null;
+    var lastFfprobe = null;
     function tpSetBadges(name, ff) {
         try {
-            var sig = (name || '') + '||' + tpFfprobeSig(ff);
+            /* v3.9: ffprobe липкий. Симптом был такой: звук на секунду
+               проскакивал, а потом пропадал — он приходил в show() из
+               play-данных Лампы (obj.ffprobe), а каждый опрос TorrServer
+               перезатирал плашки только названием, т.к. в ответе опроса
+               ffprobe нет. Теперь раз увиденный ffprobe живёт до смены
+               торрента, а пустые опросы его не затирают. */
+            if (ff && typeof ff.length === 'number' && ff.length) lastFfprobe = ff;
+            var eff = (ff && typeof ff.length === 'number' && ff.length) ? ff : lastFfprobe;
+            var sig = (name || '') + '||' + tpFfprobeSig(eff);
             if (sig === lastBadgeSig) return;
             lastBadgeSig = sig;
             var el = $('tp-badges');
             if (!el) return;
             var nb = tpQualityBadges(name);
-            var fb = tpFfprobeBadges(ff);
+            var fb = tpFfprobeBadges(eff);
             var res = [], dyn = [], au = [], cd = [], seenAu = {};
             nb.forEach(function (x) {
                 var g = tpBadgesGroup(x.c);
@@ -1023,6 +1037,7 @@
         try {
             window.torrentPreload.reset();
             lastBadgeSig = null;
+            lastFfprobe = null;
             tpSetBadges('', obj && obj.ffprobe);
             var info = pickStr(obj);
             window.torrentPreload.update({ stage: 0, progress: 0, peers: 0, total: 0, speed: 0, loaded: 0, title: info.title, sub: info.sub, size: info.size || '—', poster: info.poster });
