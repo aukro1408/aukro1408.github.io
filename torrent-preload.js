@@ -81,6 +81,13 @@
  *    340×88 — на телефоне без изменений).
  *  - v3.1: подпись «размер» под пилюлей размера убрана — осталась только
  *    сама пилюля со значением.
+ *  - v3.2: секция «Сервер TorrServer» в настройках Лампы (SettingsApi):
+ *    адрес сервера, кеш (размер, предзагрузка, опережающий кеш, кеш на
+ *    диске), сеть (лимит соединений, раздача), сброс к умолчаниям с
+ *    подтверждением. Значения при старте подтягиваются с сервера через
+ *    POST /settings get в Lampa.Storage; изменения сразу уходят на сервер
+ *    (set), при ошибке — откат + уведомление. Настройки серверные и общие
+ *    для всех клиентов этого сервера.
  */
 (function () {
     'use strict';
@@ -824,6 +831,148 @@
             } catch (e) { /* молча */ }
         } catch (e) { /* экран не должен ломать плеер */ }
     }
+
+    /* ---------- секция «Сервер TorrServer» в настройках Лампы ----------
+       Как у Prisma: кеш/буфер/сеть меняются на самом сервере через его API
+       POST /settings (get/set/def) — тот же API, что у веб-интерфейса.
+       Значения при старте Лампы подтягиваются с сервера в Lampa.Storage
+       (иначе раздел показывал бы только локальные умолчания); при изменении
+       значение сразу уходит на сервер, при ошибке — откат Storage к
+       прошлому значению + уведомление. Настройки серверные и общие для
+       всех клиентов этого сервера. Если сервер недоступен — раздел всё
+       равно открывается, но изменения не сохранятся (уведомление). */
+    var TP_CACHE_OPTS = [32, 64, 128, 200, 256, 512, 1024];
+    var TP_PCT_OPTS = [25, 50, 75, 100];
+    var TP_AHEAD_OPTS = [50, 75, 90, 95, 100];
+    var TP_CONN_OPTS = [0, 25, 50, 100, 200];
+    var tpSetsCache = null, tpSetsBase = '';
+    function nearestNum(v, opts, def) {
+        v = parseInt(v, 10);
+        if (isNaN(v)) return def;
+        var best = opts[0];
+        opts.forEach(function (o) { if (Math.abs(o - v) < Math.abs(best - v)) best = o; });
+        return best;
+    }
+    function tpSetsNotify(msg) {
+        try { if (window.Lampa && Lampa.Noty && typeof Lampa.Noty.show === 'function') Lampa.Noty.show(msg); } catch (e) {}
+    }
+    function tpSetsPost(base, body) {
+        return fetch(base + '/settings', { method: 'POST', body: JSON.stringify(body) }).then(function (r) { return r.json(); });
+    }
+    function tpSetsApply(sets) {
+        try {
+            var S = Lampa.Storage;
+            if (!S || !sets || typeof sets !== 'object') return false;
+            if (sets.CacheSize != null) S.set('tp_cache_size', String(nearestNum(Math.round(sets.CacheSize / 1048576), TP_CACHE_OPTS, 64)));
+            if (sets.PreloadCache != null) S.set('tp_preload', String(nearestNum(sets.PreloadCache, TP_PCT_OPTS, 50)));
+            if (sets.ReaderReadAHead != null) S.set('tp_readahead', String(nearestNum(sets.ReaderReadAHead, TP_AHEAD_OPTS, 95)));
+            if (sets.UseDisk != null) S.set('tp_usedisk', sets.UseDisk ? 'true' : 'false');
+            if (sets.ConnectionsLimit != null) S.set('tp_connections', String(nearestNum(sets.ConnectionsLimit, TP_CONN_OPTS, 25)));
+            if (sets.DisableUpload != null) S.set('tp_upload', sets.DisableUpload ? 'false' : 'true');
+            tpSetsCache = sets;
+            return true;
+        } catch (e) { return false; }
+    }
+    function tpSetsPrevStr(field) {
+        try {
+            if (!tpSetsCache) return undefined;
+            var c = tpSetsCache;
+            if (field === 'CacheSize' && c.CacheSize != null) return String(nearestNum(Math.round(c.CacheSize / 1048576), TP_CACHE_OPTS, 64));
+            if (field === 'PreloadCache' && c.PreloadCache != null) return String(nearestNum(c.PreloadCache, TP_PCT_OPTS, 50));
+            if (field === 'ReaderReadAHead' && c.ReaderReadAHead != null) return String(nearestNum(c.ReaderReadAHead, TP_AHEAD_OPTS, 95));
+            if (field === 'UseDisk' && c.UseDisk != null) return c.UseDisk ? 'true' : 'false';
+            if (field === 'ConnectionsLimit' && c.ConnectionsLimit != null) return String(nearestNum(c.ConnectionsLimit, TP_CONN_OPTS, 25));
+            if (field === 'DisableUpload' && c.DisableUpload != null) return c.DisableUpload ? 'false' : 'true';
+        } catch (e) {}
+        return undefined;
+    }
+    function tpSetsSync(bases, bi) {
+        try {
+            bases = bases || getBases();
+            if (!bases.length) return;
+            bi = bi || 0;
+            var base = bases[bi];
+            tpSetsPost(base, { action: 'get' }).then(function (d) {
+                var sets = d && (d.sets || d);
+                if (sets && (sets.CacheSize != null || sets.PreloadCache != null)) {
+                    tpSetsBase = base;
+                    tpSetsApply(sets);
+                } else if (bi + 1 < bases.length) tpSetsSync(bases, bi + 1);
+            }).catch(function () {
+                if (bi + 1 < bases.length) tpSetsSync(bases, bi + 1);
+            });
+        } catch (e) { /* молча — раздел работает и без синхронизации */ }
+    }
+    function tpSetsSet(field, value, paramName) {
+        var base = tpSetsBase || (getBases()[0] || '');
+        if (!base) { tpSetsNotify('Сервер TorrServer не найден'); return; }
+        var prev = tpSetsPrevStr(field);
+        var body = { action: 'set', sets: {} };
+        body.sets[field] = value;
+        tpSetsPost(base, body).then(function () {
+            if (tpSetsCache) tpSetsCache[field] = value;
+        }).catch(function () {
+            try { if (prev !== undefined) Lampa.Storage.set(paramName, prev); } catch (e) {}
+            tpSetsNotify('Не удалось сохранить: сервер не отвечает');
+        });
+    }
+    function setupServerSettings() {
+        try {
+            if (!window.Lampa || !Lampa.SettingsApi) return;
+            var SA = Lampa.SettingsApi;
+            if (SA.getComponent && SA.getComponent('tp_server')) return;
+            SA.addComponent({
+                component: 'tp_server',
+                icon: '<svg height="169" viewBox="0 0 172 169" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="24" y="14" width="124" height="36" rx="10" stroke="white" stroke-width="12"/><rect x="24" y="66" width="124" height="36" rx="10" stroke="white" stroke-width="12"/><rect x="24" y="118" width="124" height="36" rx="10" stroke="white" stroke-width="12"/><circle cx="48" cy="32" r="6" fill="white"/><circle cx="48" cy="84" r="6" fill="white"/><circle cx="48" cy="136" r="6" fill="white"/></svg>',
+                name: 'Сервер TorrServer'
+            });
+            var sel = function (name, values, def, title, descr, onCh) {
+                SA.addParam({ component: 'tp_server', param: { name: name, type: 'select', values: values, 'default': def }, field: { name: title, description: descr }, onChange: onCh });
+            };
+            var trg = function (name, def, title, descr, onCh) {
+                SA.addParam({ component: 'tp_server', param: { name: name, type: 'trigger', 'default': def }, field: { name: title, description: descr }, onChange: onCh });
+            };
+            SA.addParam({ component: 'tp_server', param: { type: 'static' }, field: { name: 'Адрес сервера' }, onRender: function (item) {
+                try { item.append('<div class="settings-param__value">' + (tpSetsBase || (getBases()[0] || 'не найден')) + '</div>'); } catch (e) {}
+            } });
+            SA.addParam({ component: 'tp_server', param: { type: 'title' }, field: { name: 'Кеш и буфер' } });
+            sel('tp_cache_size', { '32': '32 МБ', '64': '64 МБ', '128': '128 МБ', '200': '200 МБ', '256': '256 МБ', '512': '512 МБ', '1024': '1 ГБ' }, '64', 'Размер кеша', 'Сколько памяти отдано под кеш торрентов', function () {
+                tpSetsSet('CacheSize', (parseInt(Lampa.Storage.get('tp_cache_size', '64'), 10) || 64) * 1048576, 'tp_cache_size');
+            });
+            sel('tp_preload', { '25': '25%', '50': '50%', '75': '75%', '100': '100%' }, '50', 'Предзагрузка', 'Доля кеша, которую сервер наполняет до старта воспроизведения', function () {
+                tpSetsSet('PreloadCache', parseInt(Lampa.Storage.get('tp_preload', '50'), 10) || 50, 'tp_preload');
+            });
+            sel('tp_readahead', { '50': '50%', '75': '75%', '90': '90%', '95': '95%', '100': '100%' }, '95', 'Опережающий кеш', 'Доля кеша вперёд от позиции воспроизведения', function () {
+                tpSetsSet('ReaderReadAHead', parseInt(Lampa.Storage.get('tp_readahead', '95'), 10) || 95, 'tp_readahead');
+            });
+            trg('tp_usedisk', false, 'Кеш на диске', 'Выкл — кеш в оперативной памяти (быстрее, не изнашивает диск); вкл — кеш пишется на диск', function () {
+                tpSetsSet('UseDisk', Lampa.Storage.get('tp_usedisk', 'false') === 'true', 'tp_usedisk');
+            });
+            SA.addParam({ component: 'tp_server', param: { type: 'title' }, field: { name: 'Сеть и раздача' } });
+            sel('tp_connections', { '0': 'Без лимита', '25': '25', '50': '50', '100': '100', '200': '200' }, '25', 'Лимит соединений', 'Максимум соединений на торрент', function () {
+                tpSetsSet('ConnectionsLimit', parseInt(Lampa.Storage.get('tp_connections', '25'), 10) || 0, 'tp_connections');
+            });
+            trg('tp_upload', true, 'Раздача', 'Вкл — сервер раздаёт скачанное другим пирам; выкл — только скачивание', function () {
+                tpSetsSet('DisableUpload', Lampa.Storage.get('tp_upload', 'true') !== 'true', 'tp_upload');
+            });
+            SA.addParam({ component: 'tp_server', param: { type: 'button' }, field: { name: 'Сбросить настройки сервера', description: 'Вернуть настройки сервера к умолчаниям' }, onChange: function () {
+                try {
+                    Lampa.Select.show({ title: 'Сбросить настройки сервера?', items: [{ title: 'Да', confirm: true }, { title: 'Нет' }], onSelect: function (it) {
+                        if (it.confirm) {
+                            var base = tpSetsBase || (getBases()[0] || '');
+                            if (!base) { tpSetsNotify('Сервер TorrServer не найден'); return; }
+                            tpSetsPost(base, { action: 'def' }).then(function () {
+                                tpSetsSync();
+                                tpSetsNotify('Настройки сервера сброшены. Зайдите в раздел заново');
+                            }).catch(function () { tpSetsNotify('Не удалось сбросить: сервер не отвечает'); });
+                        } else { try { Lampa.Controller.toggle('settings_component'); } catch (e) {} }
+                    }, onBack: function () { try { Lampa.Controller.toggle('settings_component'); } catch (e) {} } });
+                } catch (e) { /* молча */ }
+            } });
+            tpSetsSync();
+        } catch (e) { /* секция настроек не должна ломать плагин */ }
+    }
+    setupServerSettings();
 
     /* v2.2: Player.play торрентов задерживаем до «Смотреть» — иначе Лампа сама
        стартует видео при ~95% предзагрузки, и оно играло бы из-под нашего экрана
