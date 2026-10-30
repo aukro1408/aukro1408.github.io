@@ -47,12 +47,9 @@
  *    и torrserver_url_two), нормализуется (добавляется http://, режутся
  *    слеши), при ошибке опроса пробуется второй адрес; адрес всегда пишется
  *    в плашку диагностики (раньше его затирал статус ошибки).
- *  - v2.4 (как на фото приложения): кнопки один в один — primary с золотым
- *    текстом и tint-подложкой, фокус только outline (золотая рамка не
- *    перебивается); весь контент опущен к дну экрана (main flex-end);
- *    вместо названия — логотип TMDB (logo_path карточки или TMDB.get
- *    клиента Лампы, ru → en → первый; нет логотипа — текст названия);
- *    плашка диагностики убрана.
+ *  - v2.5: контент поднят чуть выше (отступ снизу 9vh вместо 5vh); логотип
+ *    починен — клиент TMDB берётся как Lampa.TMDB (в v2.4 код смотрел на
+ *    window.TMDB, которого нет, и молча пропускал загрузку логотипа).
  *    плашка диагностики убрана (диагноз 0% закрыт в v2.3: работает).
  */
 (function () {
@@ -70,7 +67,7 @@
         '#tp-root .tp-poster{position:absolute;inset:-5%;background:var(--bg) center/cover no-repeat;filter:blur(18px) brightness(.38);transform:scale(1.1);will-change:filter,transform}',
         '#tp-root .tp-scrim{position:absolute;inset:0;pointer-events:none;',
         'background:radial-gradient(ellipse at 50% 55%,rgba(6,6,8,.5) 0%,rgba(6,6,8,0) 68%),linear-gradient(to bottom,rgba(6,6,8,.6) 0%,rgba(6,6,8,.18) 34%,rgba(6,6,8,.72) 100%)}',
-        '#tp-root main{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:24px 24px 5vh;text-align:center}',
+        '#tp-root main{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:24px 24px 9vh;text-align:center}',
         '#tp-root header{position:relative;padding:0 24px;text-shadow:0 2px 18px rgba(0,0,0,.6)}',
         '#tp-root #tp-logo{display:none;max-width:min(60vw,340px);max-height:88px;width:auto;height:auto;margin:0 auto;filter:drop-shadow(0 2px 18px rgba(0,0,0,.6))}',
         '#tp-root h1{margin:0;font-size:clamp(20px,4vw,26px);font-weight:700;letter-spacing:-.01em}',
@@ -619,11 +616,18 @@
 
     /* логотип вместо названия — как в приложении: TMDB logo_path из карточки
        Лампы, иначе TMDB.get через клиент самой Лампы (ru → en → первый).
-       Ключ нигде не трогаем: используется только клиент Лампы. Нет логотипа —
-       остаётся текст названия. */
+       Клиент — Lampa.TMDB (не window.TMDB: там его нет, из-за этого логотип
+       в v2.4 молча не грузился). Ключ нигде не трогаем: используется только
+       клиент Лампы. Нет логотипа — остаётся текст названия. */
+    function tmdbClient() {
+        try { if (window.Lampa && Lampa.TMDB) return Lampa.TMDB; } catch (e) {}
+        try { if (window.TMDB) return window.TMDB; } catch (e) {}
+        return null;
+    }
     function logoUrl(path) {
         try {
-            if (window.TMDB && typeof TMDB.img === 'function') return TMDB.img(path, 'w500');
+            var TM = tmdbClient();
+            if (TM && typeof TM.img === 'function') return TM.img(path, 'w500');
         } catch (e) {}
         return 'https://image.tmdb.org/t/p/w500' + path;
     }
@@ -642,14 +646,15 @@
             if (typeof lp === 'string' && lp.charAt(0) === '/') { setLogo(logoUrl(lp)); return; }
             if (typeof lp === 'string' && lp.indexOf('http') === 0) { setLogo(lp); return; }
             var id = card.id || obj.id || 0;
-            if (!id || !window.TMDB || typeof TMDB.get !== 'function') return;
+            var TM = tmdbClient();
+            if (!id || !TM || typeof TM.get !== 'function') return;
             var myHash = currentHash;
             var mt = card.media_type || obj.media_type || '';
             var types = (mt === 'movie' || mt === 'tv') ? [mt] : ['movie', 'tv'];
             (function next(i) {
                 if (i >= types.length) return;
                 try {
-                    TMDB.get(types[i] + '/' + id + '/images', {}, function (d) {
+                    TM.get(types[i] + '/' + id + '/images', {}, function (d) {
                         try {
                             if (!visible || myHash !== currentHash) return;
                             var logos = (d && d.logos) || [], pick = null, j;
