@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Плавающий док — только блок</title>
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; overflow-x: hidden; }
+  #stage { position: relative; overflow: hidden; width: 100%; }
+  #stage iframe { position: absolute; left: 0; top: 0; width: 1000px; height: 124px; border: 0; transform-origin: 0 0; }
+</style>
+</head>
+<body>
+<div id="stage"><iframe src="dock-preview.html" scrolling="no" title="Плавающий док"></iframe></div>
+<script>
+  // Бар в доске 1000x124: x 276..964, y 30..94 (688x64), прижат к правому краю.
+  // Показываем только этот прямоугольник, в ширину экрана.
+  function fit() {
+    var s = document.documentElement.clientWidth / 688;
+    document.querySelector('#stage iframe').style.transform =
+      'scale(' + s + ') translate(-276px,-30px)';
+    document.getElementById('stage').style.height = (64 * s) + 'px';
+  }
+  addEventListener('resize', fit);
+  fit();
+</script>
+</body>
+</html>
