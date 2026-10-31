@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Варианты просмотра — 1922</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #07080d; color: #fff; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .view-switch { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 30; display: flex; gap: 4px; background: rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.2); border-radius: 99px; padding: 4px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .view-switch button { background: none; border: 0; color: rgba(255,255,255,.6); font-family: inherit; font-size: 13px; font-weight: 700; padding: 7px 16px; border-radius: 99px; cursor: pointer; }
+  .view-switch button.on { background: #f7c948; color: #111; }
+  .page { padding: 20px 14px 100px; }
+  .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .head h1 { font-size: 22px; font-weight: 700; }
+  .x-btn { width: 36px; height: 36px; border: 0; border-radius: 50%; background: #262626; color: #fff; font-size: 18px; cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .movie-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .movie-row .t { font-size: 16px; color: rgba(255,255,255,.85); }
+  .movie-row .c { font-size: 14px; color: rgba(255,255,255,.5); flex: 0 0 auto; }
+  .filters { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-bottom: 12px; }
+  .filters::-webkit-scrollbar { display: none; }
+  .f-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; border: 0; background: #1a1a1a; color: #fff; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; flex: 0 0 auto; }
+  .f-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+  .chip { padding: 10px 18px; border-radius: 999px; border: 0; background: #1a1a1a; color: #fff; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; flex: 0 0 auto; }
+  .chip.sel { background: #f7c948; color: #111; }
+  .sort-row { margin-bottom: 16px; }
+  .sort-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 999px; border: 0; background: #262626; color: #fff; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .sort-btn .chev { color: rgba(255,255,255,.6); }
+  .tor-card { position: relative; background: #1a1a1a; border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 16px 52px 16px 16px; margin-bottom: 12px; cursor: pointer; text-align: left; color: #fff; font-family: inherit; width: 100%; display: block; }
+  .tor-q { display: inline-block; padding: 6px 12px; border-radius: 8px; background: #262626; color: #fff; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+  .tor-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+  .tor-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .tor-tags span { padding: 4px 10px; border-radius: 6px; background: #262626; color: rgba(255,255,255,.75); font-size: 12px; font-weight: 600; }
+  .tor-audio { font-size: 14px; color: rgba(255,255,255,.6); margin-bottom: 8px; line-height: 1.4; }
+  .tor-peers { display: inline-block; padding: 4px 10px; border-radius: 6px; background: #262626; color: rgba(255,255,255,.75); font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+  .tor-name { font-size: 13px; line-height: 1.5; color: rgba(255,255,255,.55); margin-bottom: 12px; }
+  .tor-meta { display: flex; align-items: center; gap: 14px; font-size: 14px; }
+  .tor-meta b { font-size: 15px; }
+  .tor-seeds { display: inline-flex; align-items: center; gap: 6px; color: rgba(255,255,255,.75); }
+  .tor-seeds svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; }
+  .tor-trk { color: rgba(255,255,255,.5); }
+  .tor-info { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: rgba(255,255,255,.6); font-size: 20px; cursor: pointer; }
+  .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 20; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; background: #1a1a1a; border-radius: 20px 20px 0 0; padding: 12px 16px 32px; }
+  .sheet-bar { width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.25); margin: 0 auto 16px; }
+  .sheet-title { position: relative; text-align: center; font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+  .sheet-close { position: absolute; right: 0; top: -4px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: #262626; color: #fff; font-size: 16px; cursor: pointer; }
+  .sheet-opt { width: 100%; display: flex; align-items: center; justify-content: space-between; text-align: left; background: none; border: 0; color: #fff; font-family: inherit; font-size: 16px; padding: 14px 4px; cursor: pointer; }
+  .sheet-opt .chk { color: #f7c948; font-size: 20px; }
+  .sheet-opt + .sheet-opt { border-top: 1px solid rgba(255,255,255,.06); }
+  .fx-opt { width: 100%; display: block; text-align: left; background: #262626; border: 0; border-radius: 16px; padding: 16px; margin-bottom: 10px; color: #fff; font-family: inherit; cursor: pointer; }
+  .fx-opt-title { font-size: 16px; font-weight: 700; }
+  .fx-opt-sub { margin-top: 2px; font-size: 14px; color: rgba(255,255,255,.6); }
+</style>
+</head>
+<body>
+<div class="view-switch"><button id="vPhone" class="on">Телефон</button><button id="vTv">ТВ</button></div>
+<div class="page">
+  <div class="head">
+    <h1>Варианты просмотра</h1>
+    <a class="x-btn" href="film-preview.html?v=18" onclick="if (history.length > 1) { history.back(); return false; }">✕</a>
+  </div>
+  <div class="movie-row"><span class="t">1922</span><span class="c" id="torCount"></span></div>
+  <div class="filters">
+    <button class="f-btn" id="torFilters"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Фильтры</button>
+    <button class="chip sel" data-q="all">Все</button>
+    <button class="chip" data-q="4K">4K</button>
+    <button class="chip" data-q="1080">1080p</button>
+    <button class="chip" data-q="720">720p</button>
+  </div>
+  <div class="sort-row"><button class="sort-btn" id="torSortBtn"><span id="torSortLabel">Рекомендуемые</span><span class="chev">⌄</span></button></div>
+  <div id="torList"></div>
+</div>
+<div class="backdrop" id="sortBackdrop" hidden></div>
+<div class="sheet" id="sortSheet" hidden>
+  <div class="sheet-bar"></div>
+  <div class="sheet-title">Порядок вариантов <button class="sheet-close" id="sortClose">✕</button></div>
+  <div id="sortOpts"></div>
+</div>
+<div class="backdrop" id="plBackdrop" hidden></div>
+<div class="sheet" id="plSheet" hidden>
+  <div class="sheet-bar"></div>
+  <div class="sheet-title">Чем открыть? <button class="sheet-close" id="plClose">✕</button></div>
+  <button class="fx-opt" data-player="built-in"><div class="fx-opt-title">Встроенный плеер</div><div class="fx-opt-sub">синий плеер blackroom</div></button>
+  <button class="fx-opt" data-player="vlc"><div class="fx-opt-title">VLC</div><div class="fx-opt-sub">внешнее приложение</div></button>
+</div>
+<script>
+  var TORS = [
+    {q:1080, voice:'Дубляж +2', tags:['Remux'], audio:'Русский / Английский · Субтитры: Русский / Английский / Украинский', peers:11, name:'1922 / 1922 (2017) [США, BDRemux 1080p] Dub + MVO + Sub (Rus, Ukr, Eng) + Original Eng', size:27.4, seeds:90, tracker:'rutracker', more:2},
+    {q:1080, voice:'Дубляж +2', tags:['BDRip'], audio:'Субтитры', peers:22, name:'1922 / 1922 / 2017 / 2 x ДБ, ПМ, АП / BDRip (1080p) | Дубляж | HDRezka', size:16.4, seeds:270, tracker:'rutracker', more:3},
+    {q:1080, voice:'LostFilm', tags:['WEB-DL'], audio:'Русский', peers:58, name:'1922 WEB-DL 1080p', size:3.1, seeds:58, tracker:'kinozal', more:0},
+    {q:720, voice:'Дубляж', tags:['HDRip'], audio:'Русский', peers:31, name:'1922 HDRip 720p', size:1.4, seeds:31, tracker:'rutor', more:0},
+    {q:2160, voice:'Дубляж +1', tags:['Remux'], audio:'Русский / Английский · Субтитры: Русский', peers:7, name:'1922 (2017) [США, UHD Remux 2160p] Dub + Original Eng', size:45.2, seeds:42, tracker:'rutracker', more:1},
+    {q:1080, voice:'Оригинал, субтитры', tags:['WEB-DL'], audio:'Английский · Субтитры: Русский', peers:18, name:'1922 WEB-DL 1080p Original', size:5.6, seeds:64, tracker:'kinozal', more:0}
+  ];
+  var SORTS = [
+    {id:'rec', t:'Рекомендуемые'},
+    {id:'seeds', t:'Больше раздающих'},
+    {id:'sizeAsc', t:'Меньше размер'},
+    {id:'sizeDesc', t:'Больше размер'},
+    {id:'quality', t:'Выше качество'}
+  ];
+  var curQ = 'all', curSort = 'rec', curTor = null;
+  function fmtSize(v){ return String(v).replace('.', ',') + ' ГБ'; }
+  function plural(n, a, b, c){ var m10 = n % 10, m100 = n % 100; if (m10 === 1 && m100 !== 11) return a; if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return b; return c; }
+  function visible(){
+    var arr = TORS.filter(function(t){
+      if (curQ === 'all') return true;
+      if (curQ === '4K') return t.q >= 2160;
+      return t.q === parseInt(curQ, 10);
+    });
+    if (curSort === 'seeds') arr = arr.slice().sort(function(a,b){ return b.seeds - a.seeds; });
+    if (curSort === 'sizeAsc') arr = arr.slice().sort(function(a,b){ return a.size - b.size; });
+    if (curSort === 'sizeDesc') arr = arr.slice().sort(function(a,b){ return b.size - a.size; });
+    if (curSort === 'quality') arr = arr.slice().sort(function(a,b){ return b.q - a.q; });
+    return arr;
+  }
+  function render(){
+    var arr = visible();
+    document.getElementById('torCount').textContent = arr.length + ' ' + plural(arr.length, 'вариант', 'варианта', 'вариантов');
+    document.getElementById('torList').innerHTML = arr.map(function(t, i){
+      return '<article class="tor-card" data-i="' + i + '">'
+        + '<span class="tor-q">' + t.q + 'p</span>'
+        + '<div class="tor-title">' + t.voice + '</div>'
+        + '<div class="tor-tags">' + t.tags.map(function(g){ return '<span>' + g + '</span>'; }).join('') + '</div>'
+        + '<div class="tor-audio">' + t.audio + '</div>'
+        + '<span class="tor-peers">Пиры: ' + t.peers + '</span>'
+        + '<div class="tor-name">' + t.name + '</div>'
+        + '<div class="tor-meta"><b>' + fmtSize(t.size) + '</b><span class="tor-seeds"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 19c0-3 2.9-5 6.5-5s6.5 2 6.5 5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.6c2.9.3 5.5 2 5.5 4.4"/></svg>' + t.seeds + '</span><span class="tor-trk">' + t.tracker + (t.more ? ' +' + t.more : '') + '</span></div>'
+        + '<button class="tor-info" aria-label="Подробнее">ⓘ</button>'
+        + '</article>';
+    }).join('');
+    document.querySelectorAll('.tor-card').forEach(function(card){
+      card.addEventListener('click', function(){
+        curTor = arr[+card.dataset.i];
+        document.getElementById('plSheet').hidden = false;
+        document.getElementById('plBackdrop').hidden = false;
+      });
+    });
+    document.querySelectorAll('.tor-info').forEach(function(b){
+      b.addEventListener('click', function(e){
+        e.stopPropagation();
+        console.log('torrent info', curTor);
+      });
+    });
+  }
+  function renderSortOpts(){
+    document.getElementById('sortOpts').innerHTML = SORTS.map(function(s){
+      return '<button class="sheet-opt" data-sort="' + s.id + '"><span>' + s.t + '</span>' + (s.id === curSort ? '<span class="chk">✓</span>' : '') + '</button>';
+    }).join('');
+    document.querySelectorAll('.sheet-opt').forEach(function(b){
+      b.addEventListener('click', function(){
+        curSort = b.dataset.sort;
+        document.getElementById('torSortLabel').textContent = SORTS.find(function(s){ return s.id === curSort; }).t;
+        document.getElementById('sortSheet').hidden = true;
+        document.getElementById('sortBackdrop').hidden = true;
+        render();
+      });
+    });
+  }
+  document.querySelectorAll('.chip').forEach(function(c){
+    c.addEventListener('click', function(){
+      document.querySelectorAll('.chip').forEach(function(x){ x.classList.remove('sel'); });
+      c.classList.add('sel');
+      curQ = c.dataset.q;
+      render();
+    });
+  });
+  document.getElementById('torFilters').addEventListener('click', function(){ console.log('torrent filters'); });
+  document.getElementById('torSortBtn').addEventListener('click', function(){
+    renderSortOpts();
+    document.getElementById('sortSheet').hidden = false;
+    document.getElementById('sortBackdrop').hidden = false;
+  });
+  document.getElementById('sortClose').addEventListener('click', function(){
+    document.getElementById('sortSheet').hidden = true;
+    document.getElementById('sortBackdrop').hidden = true;
+  });
+  document.getElementById('sortBackdrop').addEventListener('click', function(){
+    document.getElementById('sortSheet').hidden = true;
+    document.getElementById('sortBackdrop').hidden = true;
+  });
+  document.getElementById('plClose').addEventListener('click', function(){
+    document.getElementById('plSheet').hidden = true;
+    document.getElementById('plBackdrop').hidden = true;
+  });
+  document.getElementById('plBackdrop').addEventListener('click', function(){
+    document.getElementById('plSheet').hidden = true;
+    document.getElementById('plBackdrop').hidden = true;
+  });
+  document.querySelectorAll('#plSheet .fx-opt').forEach(function(b){
+    b.addEventListener('click', function(){
+      console.log('torrent play', curTor && curTor.name, b.dataset.player);
+      document.getElementById('plSheet').hidden = true;
+      document.getElementById('plBackdrop').hidden = true;
+    });
+  });
+  document.getElementById('vPhone').addEventListener('click', function(){
+    document.body.classList.remove('tv');
+    document.getElementById('vPhone').classList.add('on');
+    document.getElementById('vTv').classList.remove('on');
+  });
+  document.getElementById('vTv').addEventListener('click', function(){
+    document.body.classList.add('tv');
+    document.getElementById('vTv').classList.add('on');
+    document.getElementById('vPhone').classList.remove('on');
+  });
+  render();
+</script>
+</body>
+</html>
