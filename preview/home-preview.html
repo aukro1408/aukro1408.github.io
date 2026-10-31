@@ -242,10 +242,31 @@
   .toast.show { opacity: 1; }
   body[data-variant="phone"] .hero-tv, body[data-variant="phone"] .rows-tv, body[data-variant="phone"] .topmenu, body[data-variant="phone"] .cats-tv { display: none; }
   body[data-variant="tv"] .hero-phone, body[data-variant="tv"] .rows-phone, body[data-variant="tv"] .cats-phone { display: none; }
+
+  /* v8: док-меню вместо текстового топменю (топменю v5 скрыт, код на месте для отката) */
+  .topmenu { display: none !important; }
+  .dock-wrap { position: fixed; left: 50%; top: 20px; z-index: 50; width: 688px; height: 64px; margin-left: -344px; transform-origin: 50% 0; }
+  .dock { padding: 6px; border-radius: 34px; background: transparent; -webkit-backdrop-filter: blur(10px) saturate(1.3); backdrop-filter: blur(10px) saturate(1.3); border: 1px solid rgba(255,255,255,0.16); }
+  .dock-inner { position: relative; display: flex; gap: 4px; }
+  .dock-thumb { position: absolute; left: 0; top: 0; width: 132px; height: 52px; border-radius: 26px; background: linear-gradient(135deg, #f8e8b6 0%, #e4b857 48%, #b8802a 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); transition: transform 0.45s cubic-bezier(0.5, 0, 0.1, 1); }
+  .dock button { border: 0; font-family: inherit; padding: 0; cursor: pointer; position: relative; z-index: 1; width: 132px; height: 52px; border-radius: 26px; background: transparent; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; transition: color 0.3s; color: #ece6d8; }
+  .dock button.active { color: #2a1c04; }
+  .dock button svg { flex: none; }
 </style>
 </head>
 <body data-variant="tv">
   <div class="bg-layer"></div>
+  <div class="dock-wrap" id="dockWrap">
+  <div class="dock"><div class="dock-inner">
+    <div class="dock-thumb"></div>
+    <button class="active"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"></path></svg>Главная</button>
+    <button><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 5-9 5-9-5z"></path><path d="M3 14l9 5 9-5"></path></svg>Коллекции</button>
+    <button><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1.5"></rect><rect x="14" y="4" width="6" height="6" rx="1.5"></rect><rect x="4" y="14" width="6" height="6" rx="1.5"></rect><rect x="14" y="14" width="6" height="6" rx="1.5"></rect></svg>Каталог</button>
+    <button><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"></circle><path d="M16 16l4 4"></path></svg>Поиск</button>
+    <button><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"></path><circle cx="15" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></svg>Настройки</button>
+  </div></div>
+</div>
+
 
   <header class="topmenu" id="menu">
     <div class="pk-logo" role="img" aria-label="Pawflix">
@@ -332,8 +353,7 @@
     <button data-variant="phone">Телефон</button>
   </div>
   <div class="caption">
-    <b>Главный экран v7: всё вместе.</b> Навбар ТВ v5 + hero v8 + «Пик недели» v5
-    + пять рядов категорий v2 (Триллеры, Ужасы, Фантастика, Сериалы, Мультфильмы).
+    <b>Главный экран v8: всё вместе.</b> Док-меню (прозрачный блюр, золотая кнопка) + hero v8 + «Пик недели» v8 + пять рядов категорий v4 (Триллеры, Ужасы, Фантастика, Сериалы, Мультфильмы).
     Заголовок «Пик недели» теперь того же размера, что и у категорий: 20px на телефоне,
     27px на ТВ. Новое — эффект для ТВ: тапни по ряду, и его полоска станет чуть ярче
     и слегка вытянется (19 → 24px) — в нативе этот фокус будет давать пульт, а не тап.
@@ -538,5 +558,24 @@
     document.getElementById('tv-watch').addEventListener('click', showToast);
     document.getElementById('phone-watch').addEventListener('click', showToast);
   </script>
+<script>
+  (function () {
+    var btns = document.querySelectorAll('.dock button');
+    var thumb = document.querySelector('.dock-thumb');
+    btns.forEach(function (b, i) {
+      b.addEventListener('click', function () {
+        btns.forEach(function (x) { x.classList.remove('active'); });
+        b.classList.add('active');
+        thumb.style.transform = 'translateX(' + (i * 136) + 'px)';
+      });
+    });
+    function fitDock() {
+      var s = Math.min(1, (document.documentElement.clientWidth - 32) / 688);
+      document.getElementById('dockWrap').style.transform = 'scale(' + s + ')';
+    }
+    addEventListener('resize', fitDock);
+    fitDock();
+  })();
+</script>
 </body>
 </html>
