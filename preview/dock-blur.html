@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Плавающий док — прозрачный блюр</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Manrope', sans-serif;
+    background: url('bg-orange.jpg') center / cover fixed;
+    overflow: hidden;
+  }
+  /* Контекст под доком: ряд постеров, чтобы было видно блюр */
+  .row {
+    display: flex; gap: 10px; padding: 90px 14px 0; overflow: hidden;
+  }
+  .card {
+    flex: none; width: 110px; height: 165px; border-radius: 12px;
+    background: linear-gradient(160deg, #3a3f5c, #1c1e2e 60%, #0e0f1a);
+    box-shadow: 0 4px 14px rgba(0,0,0,.35);
+  }
+  .card:nth-child(2) { background: linear-gradient(160deg, #5c3a3a, #2e1c1c 60%, #170e0e); }
+  .card:nth-child(3) { background: linear-gradient(160deg, #2e4a3a, #16241c 60%, #0c130e); }
+  .card:nth-child(4) { background: linear-gradient(160deg, #4a3a5c, #241c2e 60%, #120e17); }
+  /* Док: как в файле, изменён только фон пилюли */
+  .dock-wrap {
+    position: fixed; left: 50%; bottom: 28px; z-index: 10;
+    width: 688px; height: 64px; margin-left: -344px;
+    transform-origin: 50% 100%;
+  }
+  .dock {
+    padding: 6px; border-radius: 34px;
+    background: transparent;
+    -webkit-backdrop-filter: blur(10px) saturate(1.3);
+    backdrop-filter: blur(10px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.16);
+  }
+  .dock-inner { position: relative; display: flex; gap: 4px; }
+  .thumb {
+    position: absolute; left: 0; top: 0; width: 132px; height: 52px; border-radius: 26px;
+    background: linear-gradient(135deg, #f8e8b6 0%, #e4b857 48%, #b8802a 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+    transition: transform 0.45s cubic-bezier(0.5, 0, 0.1, 1);
+  }
+  .dock button {
+    border: 0; font-family: inherit; padding: 0; cursor: pointer;
+    position: relative; z-index: 1; width: 132px; height: 52px; border-radius: 26px;
+    background: transparent; font-size: 16px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: color 0.3s; color: #ece6d8;
+  }
+  .dock button.active { color: #2a1c04; }
+  .dock button svg { flex: none; }
+</style>
+</head>
+<body>
+<div class="row">
+  <div class="card"></div><div class="card"></div><div class="card"></div><div class="card"></div>
+</div>
+<div class="dock-wrap" id="dockWrap">
+  <div class="dock"><div class="dock-inner">
+    <div class="thumb" id="thumb"></div>
+    <button class="active"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"></path></svg>Главная</button>
+    <button><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 5-9 5-9-5z"></path><path d="M3 14l9 5 9-5"></path></svg>Коллекции</button>
+    <button><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1.5"></rect><rect x="14" y="4" width="6" height="6" rx="1.5"></rect><rect x="4" y="14" width="6" height="6" rx="1.5"></rect><rect x="14" y="14" width="6" height="6" rx="1.5"></rect></svg>Каталог</button>
+    <button><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"></circle><path d="M16 16l4 4"></path></svg>Поиск</button>
+    <button><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"></path><circle cx="15" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></svg>Настройки</button>
+  </div></div>
+</div>
+<script>
+  var btns = document.querySelectorAll('.dock button');
+  var thumb = document.getElementById('thumb');
+  btns.forEach(function (b, i) {
+    b.addEventListener('click', function () {
+      btns.forEach(function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+      thumb.style.transform = 'translateX(' + (i * 136) + 'px)';
+    });
+  });
+  function fit() {
+    var s = Math.min(1, (document.documentElement.clientWidth - 32) / 688);
+    document.getElementById('dockWrap').style.transform = 'scale(' + s + ')';
+  }
+  addEventListener('resize', fit);
+  fit();
+</script>
+</body>
+</html>
