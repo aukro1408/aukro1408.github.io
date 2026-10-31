@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawflix — Каталог (превью)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; color: #fff; font-family: "Nunito", system-ui, sans-serif; }
+  button { font-family: inherit; cursor: pointer; }
+  .page { max-width: 520px; margin: 0 auto; padding: 14px 14px 200px; }
+  body.tv .page { max-width: 1240px; padding: 20px 28px 220px; }
+
+  /* --- верх: пилюли --- */
+  .pills { position: relative; display: flex; gap: 10px; margin-bottom: 16px; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; background: #1a1a1a; border: 1px solid rgba(255,255,255,.08); color: #fff; border-radius: 999px; padding: 10px 16px; font-size: 15px; font-weight: 700; }
+  .pill svg { flex: none; }
+  .pill .cnt { color: #f7c948; }
+  body.tv .pill { font-size: 18px; padding: 12px 22px; }
+  .sort-menu { display: none; position: absolute; top: 52px; right: 0; width: 280px; background: #1e1e1e; border: 1px solid rgba(255,255,255,.08); border-radius: 16px; overflow: hidden; z-index: 50; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
+  .sort-menu.open { display: block; }
+  .sort-menu button { display: flex; justify-content: space-between; align-items: center; width: 100%; background: transparent; border: 0; border-bottom: 1px solid rgba(255,255,255,.06); color: #fff; font-size: 16px; padding: 14px 16px; text-align: left; }
+  .sort-menu button:last-child { border-bottom: 0; }
+  .sort-menu button .chk { color: #f7c948; font-size: 18px; visibility: hidden; }
+  .sort-menu button.sel .chk { visibility: visible; }
+  .sort-menu button.sel { color: #f7c948; }
+  body.tv .sort-menu { width: 340px; top: 60px; }
+  body.tv .sort-menu button { font-size: 19px; padding: 17px 20px; }
+
+  /* --- сетка --- */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  body.tv .grid { grid-template-columns: repeat(6, 1fr); gap: 20px; }
+  .card { cursor: pointer; }
+  .poster { position: relative; aspect-ratio: 2/3; border-radius: 14px; overflow: hidden; background: #1a1a1a; }
+  .poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .badge { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.62); backdrop-filter: blur(4px); border-radius: 6px; padding: 3px 7px; font-size: 11px; font-weight: 800; }
+  .badge.q-4K { color: #f7c948; } .badge.q-1080p { color: #6fbf6f; }
+  .badge.q-720p { color: #9db8ff; } .badge.q-TS { color: #ff6b6b; }
+  .card .t { font-size: 15px; font-weight: 700; line-height: 1.25; margin-top: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .card .m { font-size: 13px; color: #9a9a9a; margin-top: 3px; }
+  .card .m .star { color: #f7c948; }
+  body.tv .card .t { font-size: 17px; } body.tv .card .m { font-size: 15px; }
+  body.tv .badge { font-size: 13px; padding: 4px 9px; }
+  .empty { text-align: center; padding: 60px 20px; color: #9a9a9a; font-size: 15px; line-height: 1.5; }
+  .empty button { margin-top: 16px; background: #f7c948; border: 0; color: #1a1304; font-weight: 800; font-size: 15px; padding: 12px 22px; border-radius: 999px; }
+
+  /* --- нижний навбар (главный, везде) --- */
+  .appnav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; display: flex; justify-content: space-around; background: rgba(13,13,15,.94); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,.08); padding: 8px 0 10px; }
+  .appnav button, .appnav a { display: flex; flex-direction: column; align-items: center; gap: 3px; background: transparent; border: 0; color: #8a8a8a; font-size: 11px; font-weight: 700; text-decoration: none; padding: 2px 8px; }
+  .appnav .active { color: #f7c948; }
+  body.tv .appnav { padding: 12px 0 14px; }
+  body.tv .appnav button, body.tv .appnav a { font-size: 13px; gap: 5px; }
+  body.tv .appnav svg { width: 28px; height: 28px; }
+
+  /* --- страница фильтров --- */
+  .flt { display: none; position: fixed; inset: 0; z-index: 60; background: #0a0a0a; overflow-y: auto; padding: 16px 14px 250px; }
+  .flt.open { display: block; }
+  body.tv .flt { padding: 20px 28px 280px; }
+  .flt-head { display: flex; justify-content: space-between; align-items: center; font-size: 24px; font-weight: 800; margin-bottom: 16px; }
+  .flt-head button { background: transparent; border: 0; color: #fff; font-size: 28px; line-height: 1; padding: 4px 8px; }
+  .numsec { background: #141414; border: 1px solid rgba(255,255,255,.06); border-radius: 18px; padding: 16px; margin-bottom: 12px; }
+  .numsec .lab { display: flex; justify-content: space-between; font-size: 15px; color: #9a9a9a; margin-bottom: 12px; }
+  .numsec .lab b { color: #fff; font-size: 16px; }
+  .numin { display: flex; align-items: center; gap: 10px; }
+  .numin input { flex: 1; min-width: 0; background: #1e1e1e; border: 1px solid rgba(255,255,255,.1); color: #fff; border-radius: 12px; padding: 12px 14px; font-size: 16px; font-family: inherit; outline: none; }
+  .numin input:focus { border-color: #f7c948; }
+  .numin span { color: #9a9a9a; }
+  body.tv .numsec .lab, body.tv .numsec .lab b { font-size: 18px; }
+  body.tv .numin input { font-size: 18px; padding: 14px 16px; }
+  .rows { background: #141414; border: 1px solid rgba(255,255,255,.06); border-radius: 18px; overflow: hidden; }
+  .row { display: flex; justify-content: space-between; align-items: center; width: 100%; background: transparent; border: 0; border-bottom: 1px solid rgba(255,255,255,.06); color: #fff; padding: 16px; text-align: left; }
+  .row:last-child { border-bottom: 0; }
+  .row .rl { display: flex; flex-direction: column; gap: 2px; }
+  .row .rl b { font-size: 16px; }
+  .row .rl span { font-size: 14px; color: #9a9a9a; }
+  .row .arr { color: #9a9a9a; font-size: 22px; }
+  body.tv .row .rl b { font-size: 19px; } body.tv .row .rl span { font-size: 16px; }
+  .flt-foot { position: fixed; left: 14px; right: 14px; bottom: 76px; z-index: 61; display: flex; flex-direction: column; gap: 10px; }
+  body.tv .flt-foot { left: 28px; right: 28px; bottom: 92px; }
+  .flt-foot button { width: 100%; border-radius: 999px; padding: 16px; font-size: 17px; font-weight: 800; }
+  .flt-foot .show { background: #f7c948; border: 0; color: #1a1304; }
+  .flt-foot .reset { background: #1a1a1a; border: 1px solid rgba(255,255,255,.12); color: #fff; }
+
+  /* --- шторка выбора --- */
+  .sheet { display: none; position: fixed; inset: 0; z-index: 80; background: #0a0a0a; overflow-y: auto; padding: 16px 14px 120px; }
+  .sheet.open { display: block; }
+  .sheet-head { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 800; margin-bottom: 16px; }
+  .sheet-head button { background: transparent; border: 0; color: #fff; font-size: 28px; padding: 4px 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip { background: #1a1a1a; border: 1px solid rgba(255,255,255,.1); color: #fff; border-radius: 999px; padding: 11px 18px; font-size: 15px; font-weight: 700; }
+  .chip.on { background: #f7c948; border-color: #f7c948; color: #1a1304; }
+  .sheet-foot { position: fixed; left: 14px; right: 14px; bottom: 20px; z-index: 81; display: flex; gap: 10px; }
+  .sheet-foot button { flex: 1; border-radius: 999px; padding: 15px; font-size: 16px; font-weight: 800; }
+  .sheet-foot .done { background: #f7c948; border: 0; color: #1a1304; }
+  .sheet-foot .clear { background: #1a1a1a; border: 1px solid rgba(255,255,255,.12); color: #fff; }
+
+  /* --- превью-переключатель (только для превью, в приложении его нет) --- */
+  .pv-toggle { position: fixed; bottom: 74px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; background: rgba(26,26,26,.9); border: 1px solid rgba(255,255,255,.12); border-radius: 999px; padding: 3px; }
+  body:has(.flt.open) .pv-toggle, body:has(.sheet.open) .pv-toggle { display: none; }
+  .pv-toggle button { border: 0; background: transparent; color: #9a9a9a; font-size: 13px; font-weight: 800; padding: 6px 12px; border-radius: 999px; }
+  .pv-toggle button.on { background: #f7c948; color: #1a1304; }
+  .toast { display: none; position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 90; background: #1e1e1e; border: 1px solid rgba(255,255,255,.12); color: #fff; font-size: 14px; padding: 12px 20px; border-radius: 999px; white-space: nowrap; }
+  .toast.show { display: block; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="pills">
+    <button class="pill" id="fltBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
+      Фильтры <span class="cnt" id="fltCnt"></span>
+    </button>
+    <button class="pill" id="sortBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"></path><path d="M17 4l3 3-3 3"></path></svg>
+      <span id="sortLabel">Популярные</span>
+    </button>
+    <div class="sort-menu" id="sortMenu"></div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden>
+    Ничего не найдено.<br>Попробуйте ослабить фильтры.
+    <br><button id="emptyReset">Сбросить фильтры</button>
+  </div>
+</div>
+
+<div class="flt" id="fltPage">
+  <div class="flt-head">Фильтры <button id="fltClose" aria-label="Закрыть">✕</button></div>
+  <div class="numsec">
+    <div class="lab"><b>TMDB</b><span>рейтинг</span></div>
+    <div class="numin"><input id="inTmdbMin" type="number" min="0" max="10" step="0.1" inputmode="decimal"><span>—</span><input id="inTmdbMax" type="number" min="0" max="10" step="0.1" inputmode="decimal"></div>
+  </div>
+  <div class="numsec">
+    <div class="lab"><b>IMDb</b><span>рейтинг</span></div>
+    <div class="numin"><input id="inImdbMin" type="number" min="0" max="10" step="0.1" inputmode="decimal"><span>—</span><input id="inImdbMax" type="number" min="0" max="10" step="0.1" inputmode="decimal"></div>
+  </div>
+  <div class="numsec">
+    <div class="lab"><b>Год</b><span>выхода</span></div>
+    <div class="numin"><input id="inYearMin" type="number" min="1895" max="2030" step="1" inputmode="numeric"><span>—</span><input id="inYearMax" type="number" min="1895" max="2030" step="1" inputmode="numeric"></div>
+  </div>
+  <div class="rows">
+    <button class="row" data-row="cat"><span class="rl"><b>Категории</b><span id="v-cat"></span></span><span class="arr">›</span></button>
+    <button class="row" data-row="quality"><span class="rl"><b>Качество</b><span id="v-quality"></span></span><span class="arr">›</span></button>
+    <button class="row" data-row="genre"><span class="rl"><b>Жанры</b><span id="v-genre"></span></span><span class="arr">›</span></button>
+    <button class="row" data-row="country"><span class="rl"><b>Страны</b><span id="v-country"></span></span><span class="arr">›</span></button>
+    <button class="row" data-row="exclude"><span class="rl"><b>Исключить страны</b><span id="v-exclude"></span></span><span class="arr">›</span></button>
+  </div>
+  <div class="flt-foot">
+    <button class="show" id="fltShow">Показать результаты</button>
+    <button class="reset" id="fltReset">Сбросить фильтры</button>
+  </div>
+</div>
+
+<div class="sheet" id="sheet">
+  <div class="sheet-head"><button id="sheetBack" aria-label="Назад">‹</button><span id="sheetTitle"></span></div>
+  <div class="chips" id="chips"></div>
+  <div class="sheet-foot" id="sheetFoot" hidden>
+    <button class="done" id="sheetDone">Готово</button>
+    <button class="clear" id="sheetClear">Сбросить</button>
+  </div>
+</div>
+
+<nav class="appnav">
+  <a href="home-preview.html?v=10"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"></path></svg>Главная</a>
+  <button class="active"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1.5"></rect><rect x="14" y="4" width="6" height="6" rx="1.5"></rect><rect x="4" y="14" width="6" height="6" rx="1.5"></rect><rect x="14" y="14" width="6" height="6" rx="1.5"></rect></svg>Каталог</button>
+  <button data-toast="Демо: этот экран ещё не собран"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v16l-6-4-6 4z"></path></svg>Избранное</button>
+  <button data-toast="Демо: этот экран ещё не собран"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6"></circle><path d="M16 16l4 4"></path></svg>Поиск</button>
+  <button data-toast="Демо: этот экран ещё не собран"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"></path></svg>Профиль</button>
+</nav>
+
+<div class="pv-toggle">
+  <button id="pvPhone" class="on">Телефон</button>
+  <button id="pvTV">ТВ</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const MOVIES = [{"id": 155, "t": "Тёмный рыцарь", "p": "/aPtN76OjnNKLqCJ2FJBnQOIL031.jpg", "r": 8.5, "y": 2008, "g": [28, 53, 80], "pop": 4135.7, "vc": 37149, "q": "TS", "c": "Германия", "cat": "Фильмы"}, {"id": 791523, "t": "Ведьмин лес", "p": "/67SHha1PONyP33eCkjnjQXxWIKP.jpg", "r": 8.7, "y": 2026, "g": [16, 12, 14], "pop": 2183.8, "vc": 119, "q": "TS", "c": "Россия", "cat": "Мультфильмы"}, {"id": 1058424, "t": "Надежда", "p": "/2h3a7i3mSd1ZhK7sYEzDRgdtvvl.jpg", "r": 6.8, "y": 2026, "g": [878, 9648, 28], "pop": 459.5, "vc": 411, "q": "4K", "c": "Франция", "cat": "Фильмы"}, {"id": 969681, "t": "Человек-паук: Новый день", "p": "/gNBiOPEbEPGPTfTIyGDvNQ50m0V.jpg", "r": 8.5, "y": 2026, "g": [878, 28, 12], "pop": 390.9, "vc": 6374, "q": "1080p", "c": "Великобритания", "cat": "Фильмы"}, {"id": 1596275, "t": "Драйв: Притворщики", "p": "/zJkpdPkIQWsDojHl0hTvhH9H5ya.jpg", "r": 7.9, "y": 2026, "g": [10749, 53], "pop": 278.4, "vc": 51, "q": "TS", "c": "Германия", "cat": "Фильмы"}, {"id": 1101412, "t": "Вышка 2", "p": "/81FLOOicWMgiT67RiqP42pRcTaw.jpg", "r": 7.3, "y": 2026, "g": [53], "pop": 250.8, "vc": 704, "q": "4K", "c": "Канада", "cat": "Фильмы"}, {"id": 1283515, "t": "Тайный дневник Верити", "p": "/lkcSRoS5FXzzNi13ug6kenL2vi2.jpg", "r": 6.6, "y": 2026, "g": [9648, 53], "pop": 204.7, "vc": 406, "q": "TS", "c": "Германия", "cat": "Фильмы"}, {"id": 1368337, "t": "Одиссея", "p": "/n7NR7SH7CyiiF70yN96r3d1jWr0.jpg", "r": 8.0, "y": 2026, "g": [12, 28, 14], "pop": 202.9, "vc": 4314, "q": "1080p", "c": "Испания", "cat": "Фильмы"}, {"id": 1657630, "t": "El despertar", "p": "/w3YJx1PPPC6aiVKusxfc9QA0uYS.jpg", "r": 6.4, "y": 2026, "g": [27, 28, 10752, 14, 53], "pop": 199.1, "vc": 58, "q": "720p", "c": "США", "cat": "Фильмы"}, {"id": 1400940, "t": "Клэйфейс", "p": "/r2ib7b2QRLRlb8g7K2QI2rfFgeA.jpg", "r": 7.5, "y": 2026, "g": [27, 53, 878], "pop": 190.7, "vc": 298, "q": "4K", "c": "США", "cat": "Фильмы"}, {"id": 1514026, "t": "Бадди", "p": "/1xuVUvb2B1Sq3KMHyPKIvoazrMZ.jpg", "r": 7.0, "y": 2026, "g": [27, 35, 14], "pop": 179.3, "vc": 212, "q": "720p", "c": "Япония", "cat": "Фильмы"}, {"id": 1384216, "t": "Собачьи звёзды", "p": "/hdjCd21IfRdLwBYI3WqZuFZu5x8.jpg", "r": 7.0, "y": 2026, "g": [28, 53, 878], "pop": 178.3, "vc": 636, "q": "4K", "c": "Япония", "cat": "Фильмы"}, {"id": 1232569, "t": "Пиноккио: Раскрепощённый", "p": "/Ai7VesRDerUCvER1tnsPnfR3iHg.jpg", "r": 6.5, "y": 2026, "g": [27, 14, 9648], "pop": 160.4, "vc": 153, "q": "1080p", "c": "Корея", "cat": "Фильмы"}, {"id": 1291595, "t": "Астрал 6: Они уже здесь", "p": "/2hfvVae4Jjbfe4yIc2ygGfqI1Mt.jpg", "r": 7.7, "y": 2026, "g": [27, 53], "pop": 156.8, "vc": 967, "q": "TS", "c": "Германия", "cat": "Фильмы"}, {"id": 1294189, "t": "Мангуст", "p": "/awpG3pnvPuOcfce76mSpS69NQ3E.jpg", "r": 6.7, "y": 2026, "g": [28, 53], "pop": 147.5, "vc": 7, "q": "1080p", "c": "Корея", "cat": "Фильмы"}, {"id": 1148365, "t": "Matchbox: фильм", "p": "/dBZBEdsX3C06FlMAJVWq3NAFYaE.jpg", "r": 7.7, "y": 2026, "g": [28, 35, 12], "pop": 134.6, "vc": 555, "q": "1080p", "c": "Германия", "cat": "Фильмы"}, {"id": 1507696, "t": "Апокалипсис Z: Новый мир", "p": "/xsISXLFMGdqkjv7u9RfMX2xvBjv.jpg", "r": 6.7, "y": 2026, "g": [28, 53, 27], "pop": 133.4, "vc": 22, "q": "4K", "c": "Япония", "cat": "Фильмы"}, {"id": 354912, "t": "Тайна Коко", "p": "/jvYsGaUqN8ymH696kRfVJjJ3GIl.jpg", "r": 8.2, "y": 2017, "g": [10751, 16, 10402, 12], "pop": 133.1, "vc": 21683, "q": "4K", "c": "Канада", "cat": "Мультфильмы"}, {"id": 1465063, "t": "Остров забвения", "p": "/cLEsUIvvzEUzoID2FdxTcNJBHwB.jpg", "r": 7.6, "y": 2026, "g": [16, 12, 14, 35, 10751], "pop": 123.1, "vc": 152, "q": "TS", "c": "Россия", "cat": "Мультфильмы"}, {"id": 1228834, "t": "Операция «Возмездие»", "p": "/1LPzBhF0J0ObYxvMRxyo223UMXO.jpg", "r": 6.1, "y": 2026, "g": [28, 53], "pop": 122.8, "vc": 82, "q": "720p", "c": "Франция", "cat": "Фильмы"}, {"id": 1423191, "t": "Обитель зла", "p": "/vLl5tcuabARqGBefccSsYAYXdgA.jpg", "r": 7.3, "y": 2026, "g": [27, 878, 12], "pop": 120.4, "vc": 1107, "q": "TS", "c": "Великобритания", "cat": "Фильмы"}, {"id": 1003596, "t": "Мстители: Доктор Дум", "p": "/8rxRX0WVLwTj12XNju27NGrxDS5.jpg", "r": 0.0, "y": 2026, "g": [878, 28, 12], "pop": 119.2, "vc": 0, "q": "4K", "c": "Япония", "cat": "Фильмы"}, {"id": 1561726, "t": "Гениальный план", "p": "/lTKnq9myMke3pIIX28kFUFzaYbL.jpg", "r": 6.9, "y": 2026, "g": [28, 53], "pop": 114.2, "vc": 204, "q": "720p", "c": "Япония", "cat": "Фильмы"}, {"id": 9479, "t": "Кошмар перед Рождеством", "p": "/xvqFn90FxKTJflG4n0spZY7vySu.jpg", "r": 7.9, "y": 1993, "g": [14, 16, 10751], "pop": 112.1, "vc": 10850, "q": "TS", "c": "Корея", "cat": "Мультфильмы"}, {"id": 1376400, "t": "Арахнид", "p": "/6SJGt4yjUiT6QwV84XIzBOp9sma.jpg", "r": 6.2, "y": 2026, "g": [27, 53], "pop": 111.8, "vc": 43, "q": "4K", "c": "США", "cat": "Фильмы"}, {"id": 1453407, "t": "ग़ज़ब रात", "p": "/e4N7M52cBbyi24xLga8yI6yt1u1.jpg", "r": 4.3, "y": 2026, "g": [53, 80], "pop": 111.0, "vc": 11, "q": "TS", "c": "Испания", "cat": "Фильмы"}, {"id": 755898, "t": "Война миров", "p": "/12dBX2CibQ0CXAJfIRBqOY6ac3h.jpg", "r": 4.0, "y": 2025, "g": [878, 53], "pop": 106.4, "vc": 1189, "q": "720p", "c": "Италия", "cat": "Фильмы"}, {"id": 1204680, "t": "Хитрый Койот", "p": "/bPHQz2Sk661U3rMcT9EUpb3QKSv.jpg", "r": 7.9, "y": 2026, "g": [35, 12, 10751, 16], "pop": 105.7, "vc": 1030, "q": "4K", "c": "США", "cat": "Мультфильмы"}, {"id": 1727734, "t": "Али Джи: Кто я?", "p": "/baoPOk6ElW1zLHiSWyWM8qKrNvR.jpg", "r": 6.0, "y": 2026, "g": [35], "pop": 103.9, "vc": 79, "q": "720p", "c": "Франция", "cat": "Фильмы"}, {"id": 1302904, "t": "Практическая магия 2", "p": "/sxusbJzNx21lHnwQ1ssBTs2EGwg.jpg", "r": 7.2, "y": 2026, "g": [10749, 14, 35], "pop": 103.5, "vc": 344, "q": "4K", "c": "Франция", "cat": "Фильмы"}, {"id": 1780005, "t": "Выжить в урагане Отис", "p": "/ux2b13zMyKv1nU7ZTLSdAfKlkc.jpg", "r": 7.4, "y": 2026, "g": [18], "pop": 103.5, "vc": 82, "q": "1080p", "c": "Германия", "cat": "Фильмы"}, {"id": 1153576, "t": "Уличный боец", "p": "/2qGRXNrhyg3N5KNAZuahmUvf15s.jpg", "r": 6.3, "y": 2026, "g": [28, 14], "pop": 103.5, "vc": 208, "q": "4K", "c": "Япония", "cat": "Фильмы"}, {"id": 1339713, "t": "Обсессия", "p": "/cdRHtfzxbpjxD5yOyFrRummb0yO.jpg", "r": 8.2, "y": 2026, "g": [27, 53], "pop": 103.3, "vc": 6433, "q": "1080p", "c": "Россия", "cat": "Фильмы"}, {"id": 1712451, "t": "Обитель мёртвых", "p": "/qKhMVWwFikSUzOpkhOl35GBLkGH.jpg", "r": 5.4, "y": 2026, "g": [27], "pop": 100.5, "vc": 71, "q": "TS", "c": "Великобритания", "cat": "Фильмы"}, {"id": 1236045, "t": "Животные", "p": "/tivUBDoIEXHnL5ZjyNca3FMTH86.jpg", "r": 7.0, "y": 2026, "g": [53, 18, 28, 80], "pop": 98.7, "vc": 654, "q": "1080p", "c": "Германия", "cat": "Фильмы"}, {"id": 1765072, "t": "Увидеть всё", "p": "/57tGJt2nHQqrpsrRO9XLxhgGPMd.jpg", "r": 9.1, "y": 2026, "g": [99], "pop": 94.9, "vc": 70, "q": "4K", "c": "Канада", "cat": "Фильмы"}, {"id": 1290418, "t": "Цикл зверя", "p": "/ik9hlrX7FZbUUoJBtXzxki3nicB.jpg", "r": 7.0, "y": 2026, "g": [27, 53, 9648], "pop": 94.1, "vc": 80, "q": "720p", "c": "Италия", "cat": "Фильмы"}, {"id": 1084244, "t": "История игрушек 5", "p": "/84igQj0DU3TgPrtQ7bHXHCio1sV.jpg", "r": 8.3, "y": 2026, "g": [16, 10751, 35, 12], "pop": 93.0, "vc": 2768, "q": "4K", "c": "Франция", "cat": "Мультфильмы"}, {"id": 1377237, "t": "Курьер", "p": "/vnrrZCe2sDMdEY7xyGSZMpSsZyG.jpg", "r": 8.3, "y": 2026, "g": [28, 35], "pop": 91.9, "vc": 767, "q": "1080p", "c": "Испания", "cat": "Фильмы"}, {"id": 1503762, "t": "Разум и чувства", "p": "/sRHjUcJ5OdmH0H5AM1JxZMPspvL.jpg", "r": 7.3, "y": 2026, "g": [18, 10749, 36], "pop": 91.7, "vc": 106, "q": "720p", "c": "Канада", "cat": "Фильмы"}, {"id": 14836, "t": "Коралина в стране кошмаров", "p": "/kwgBclQIcghtYYoJiDTw48bHWUK.jpg", "r": 7.9, "y": 2009, "g": [16, 10751, 14, 27], "pop": 73.2, "vc": 9684, "q": "4K", "c": "Япония", "cat": "Мультфильмы"}, {"id": 1375646, "t": "Колония", "p": "/uQIlX1zpvM7FAKRbeyLDJN3zxrX.jpg", "r": 8.2, "y": 2026, "g": [27, 28, 878], "pop": 72.8, "vc": 1462, "q": "720p", "c": "Япония", "cat": "Фильмы"}, {"id": 348, "t": "Чужой", "p": "/zg4fcO8IuYRllK9wWVNqNlYpueL.jpg", "r": 8.2, "y": 1979, "g": [27, 878], "pop": 33.9, "vc": 17060, "q": "4K", "c": "Италия", "cat": "Фильмы"}, {"id": 694, "t": "Сияние", "p": "/bu3Qb0fpAFtTLcRAPgj8bK5KrIG.jpg", "r": 8.2, "y": 1980, "g": [27, 53], "pop": 30.5, "vc": 19614, "q": "720p", "c": "Франция", "cat": "Фильмы"}, {"id": 1091, "t": "Нечто", "p": "/cxywW6Dl0IJfpywo8o9cqc4EApE.jpg", "r": 8.1, "y": 1982, "g": [27, 9648, 878], "pop": 27.8, "vc": 8401, "q": "TS", "c": "Великобритания", "cat": "Фильмы"}, {"id": 1150394, "t": "La Leyenda de los Chaneques", "p": "/4f9ghI3utknpeBZSAzNuIKKATOA.jpg", "r": 8.4, "y": 2023, "g": [16, 35, 10751, 27], "pop": 24.8, "vc": 286, "q": "720p", "c": "Франция", "cat": "Мультфильмы"}, {"id": 1304313, "t": "Мумия", "p": "/vOyM4rebbIan7wANnFyCKr460mS.jpg", "r": 7.8, "y": 2026, "g": [27, 9648], "pop": 24.8, "vc": 2839, "q": "1080p", "c": "Россия", "cat": "Фильмы"}, {"id": 539, "t": "Психо", "p": "/9EyfrnAmZg9qru4RaEFqaeEVRWG.jpg", "r": 8.4, "y": 1960, "g": [27, 53, 9648], "pop": 21.0, "vc": 11400, "q": "TS", "c": "Корея", "cat": "Фильмы"}, {"id": 667276, "t": "Las leyendas: El origen", "p": "/fR49hZdFJ6ZtRS23JW79VYmZgI7.jpg", "r": 8.4, "y": 2021, "g": [16, 35, 14, 12, 10751, 27], "pop": 13.2, "vc": 293, "q": "4K", "c": "Япония", "cat": "Мультфильмы"}, {"id": 25237, "t": "Иди и смотри", "p": "/baK79h2An0J8mzTue13KThAeYC5.jpg", "r": 8.2, "y": 1985, "g": [18, 10752, 27, 36], "pop": 9.9, "vc": 2012, "q": "1080p", "c": "Испания", "cat": "Фильмы"}, {"id": 234, "t": "Кабинет доктора Калигари", "p": "/ao5H9QNfZ3CAQ8BYTWsj7wgEgj5.jpg", "r": 7.9, "y": 1920, "g": [18, 27, 53, 80], "pop": 6.4, "vc": 1849, "q": "720p", "c": "Франция", "cat": "Фильмы"}, {"id": 92060, "t": "Триллер", "p": "/djv4LM6uanJriwpsOyJzaaSp4gf.jpg", "r": 8.3, "y": 1983, "g": [27, 10402, 53], "pop": 6.1, "vc": 808, "q": "4K", "c": "США", "cat": "Фильмы"}, {"id": 10242, "t": "Что случилось с Бэби Джейн?", "p": "/msGYzyWwtjAaA3DScdgmvJ5MReG.jpg", "r": 7.9, "y": 1962, "g": [27, 53], "pop": 5.5, "vc": 1206, "q": "720p", "c": "Канада", "cat": "Фильмы"}, {"id": 1130276, "t": "Суккуб", "p": "/qo8DznNb6FRxdBKo26GDEMMxmno.jpg", "r": 8.3, "y": 2024, "g": [27, 53], "pop": 4.6, "vc": 277, "q": "4K", "c": "Япония", "cat": "Фильмы"}, {"id": 10728, "t": "Фауст", "p": "/wyqcaa9Cbj1G0mCD8uesGpJWFfP.jpg", "r": 7.9, "y": 1926, "g": [14, 18, 27], "pop": 3.4, "vc": 426, "q": "4K", "c": "Италия", "cat": "Фильмы"}, {"id": 297610, "t": "Abraham Lincoln Vampire Hunter: The Great Calamity", "p": "/9kD8bohNKE1truudhmeOtOjfNeH.jpg", "r": 8.1, "y": 2012, "g": [27, 16, 14], "pop": 3.3, "vc": 223, "q": "720p", "c": "США", "cat": "Мультфильмы"}, {"id": 37793, "t": "Призраки", "p": "/aLMS2GWnJwkAADd8Dnl2dK1eg13.jpg", "r": 8.1, "y": 1997, "g": [10402, 27], "pop": 2.5, "vc": 303, "q": "1080p", "c": "Россия", "cat": "Фильмы"}, {"id": 281979, "t": "Doctor Who: The Waters of Mars", "p": "/ikb6cZI8RXUqcxApMJmIdimAJ1X.jpg", "r": 7.9, "y": 2009, "g": [27, 878, 18, 9648, 12, 10770], "pop": 2.2, "vc": 242, "q": "TS", "c": "Корея", "cat": "Фильмы"}, {"id": 388284, "t": "Пока нет волка", "p": "/7y2SvYTYQeCNoEEOD26wjr3Nx1N.jpg", "r": 8.0, "y": 2017, "g": [9648, 18, 27], "pop": 2.1, "vc": 202, "q": "4K", "c": "Франция", "cat": "Фильмы"}];
+const GENRE_NAME = {28:'Боевик',12:'Приключения',16:'Мультфильм',35:'Комедия',80:'Криминал',99:'Документальный',18:'Драма',10751:'Семейный',14:'Фэнтези',36:'История',10402:'Музыка',9648:'Детектив',10749:'Мелодрама',878:'Фантастика',10770:'Телефильм',53:'Триллер',10752:'Военный',37:'Вестерн',27:'Ужасы'};
+const GENRE_ID = {}; Object.keys(GENRE_NAME).forEach(function(k){ GENRE_ID[GENRE_NAME[k]] = +k; });
+const BADGE = {'4K':'4K','1080p':'FHD','720p':'HD','TS':'TS'};
+const DEFAULTS = { tmdb:[0,10], imdb:[0,10], year:[1895,2030], cat:'Фильмы', quality:'Любое качество', genre:'Ужасы', country:'Все страны', exclude:[] };
+let applied = JSON.parse(JSON.stringify(DEFAULTS));
+let draft = JSON.parse(JSON.stringify(DEFAULTS));
+let sortId = 'pop';
+const SORTS = [
+  {id:'pop', label:'По популярности', short:'Популярные'},
+  {id:'upd', label:'По обновлению', short:'По обновлению'},
+  {id:'date', label:'По дате выхода', short:'По дате выхода'},
+  {id:'imdb', label:'По IMDb', short:'По IMDb'},
+];
+const ROWS = {
+  cat: { title:'Категории', opts:['Все','Фильмы','Сериалы','Мультфильмы'], key:'cat' },
+  quality: { title:'Качество', opts:['Любое качество','4K','1080p','720p','TS'], key:'quality' },
+  genre: { title:'Жанры', opts:['Все жанры','Ужасы','Боевик','Триллер','Фантастика','Драма','Комедия','Мультфильм','Приключения','Фэнтези','Криминал','Детектив','Семейный','Мелодрама','Военный','История','Музыка','Документальный','Вестерн','Телефильм'], key:'genre' },
+  country: { title:'Страны', opts:['Все страны','США','Великобритания','Канада','Россия','Франция','Германия','Япония','Испания','Италия','Корея'], key:'country' },
+  exclude: { title:'Исключить страны', opts:['США','Великобритания','Канада','Россия','Франция','Германия','Япония','Испания','Италия','Корея'], key:'exclude', multi:true },
+};
+const $ = function(id){ return document.getElementById(id); };
+
+function countActive(f){
+  let n = 0;
+  if (f.cat !== 'Все') n++;
+  if (f.quality !== 'Любое качество') n++;
+  if (f.genre !== 'Все жанры') n++;
+  if (f.country !== 'Все страны') n++;
+  if (f.exclude.length) n++;
+  if (f.tmdb[0] > 0 || f.tmdb[1] < 10) n++;
+  if (f.imdb[0] > 0 || f.imdb[1] < 10) n++;
+  if (f.year[0] > 1895 || f.year[1] < 2030) n++;
+  return n;
+}
+function filtered(){
+  const f = applied;
+  return MOVIES.filter(function(m){
+    if (m.r < f.tmdb[0] || m.r > f.tmdb[1]) return false;
+    if (m.r < f.imdb[0] || m.r > f.imdb[1]) return false;
+    if (m.y < f.year[0] || m.y > f.year[1]) return false;
+    if (f.genre !== 'Все жанры' && m.g.indexOf(GENRE_ID[f.genre]) < 0) return false;
+    if (f.quality !== 'Любое качество' && m.q !== f.quality) return false;
+    if (f.cat !== 'Все' && m.cat !== f.cat) return false;
+    if (f.country !== 'Все страны' && m.c !== f.country) return false;
+    if (f.exclude.indexOf(m.c) >= 0) return false;
+    return true;
+  });
+}
+function sorted(list){
+  const l = list.slice();
+  if (sortId === 'pop') l.sort(function(a,b){ return b.pop - a.pop; });
+  if (sortId === 'upd') l.sort(function(a,b){ return b.vc - a.vc; });
+  if (sortId === 'date') l.sort(function(a,b){ return b.y - a.y; });
+  if (sortId === 'imdb') l.sort(function(a,b){ return b.r - a.r; });
+  return l;
+}
+function renderGrid(){
+  const list = sorted(filtered());
+  const n = countActive(applied);
+  $('fltCnt').textContent = n ? '(' + n + ')' : '';
+  $('grid').innerHTML = list.map(function(m){
+    return '<article class="card"><div class="poster"><img src="https://image.tmdb.org/t/p/w500' + m.p + '" alt="" loading="lazy"><span class="badge q-' + m.q + '">' + BADGE[m.q] + '</span></div><div class="t">' + m.t + '</div><div class="m"><span class="star">★</span> ' + m.r.toFixed(1) + ' · ' + m.y + '</div></article>';
+  }).join('');
+  $('empty').hidden = list.length > 0;
+  $('grid').hidden = list.length === 0;
+}
+function syncDraftUI(){
+  $('inTmdbMin').value = draft.tmdb[0]; $('inTmdbMax').value = draft.tmdb[1];
+  $('inImdbMin').value = draft.imdb[0]; $('inImdbMax').value = draft.imdb[1];
+  $('inYearMin').value = draft.year[0]; $('inYearMax').value = draft.year[1];
+  $('v-cat').textContent = draft.cat;
+  $('v-quality').textContent = draft.quality;
+  $('v-genre').textContent = draft.genre;
+  $('v-country').textContent = draft.country;
+  $('v-exclude').textContent = draft.exclude.length ? draft.exclude.join(', ') : 'Ничего не исключено';
+}
+function readNums(){
+  function num(el, def){ const v = parseFloat(el.value); return isNaN(v) ? def : v; }
+  draft.tmdb = [Math.min(10, Math.max(0, num($('inTmdbMin'), 0))), Math.min(10, Math.max(0, num($('inTmdbMax'), 10)))];
+  draft.imdb = [Math.min(10, Math.max(0, num($('inImdbMin'), 0))), Math.min(10, Math.max(0, num($('inImdbMax'), 10)))];
+  draft.year = [Math.min(2030, Math.max(1895, Math.round(num($('inYearMin'), 1895)))), Math.min(2030, Math.max(1895, Math.round(num($('inYearMax'), 2030))))];
+}
+function openSheet(rowKey){
+  const row = ROWS[rowKey];
+  $('sheetTitle').textContent = row.title;
+  const cur = draft[row.key];
+  $('chips').innerHTML = row.opts.map(function(o){
+    const on = row.multi ? cur.indexOf(o) >= 0 : cur === o;
+    return '<button class="chip' + (on ? ' on' : '') + '" data-v="' + o + '">' + o + '</button>';
+  }).join('');
+  $('sheetFoot').hidden = !row.multi;
+  $('sheet').dataset.row = rowKey;
+  $('sheet').classList.add('open');
+  $('chips').querySelectorAll('.chip').forEach(function(ch){
+    ch.addEventListener('click', function(){
+      const v = ch.dataset.v;
+      if (row.multi) {
+        const i = draft.exclude.indexOf(v);
+        if (i >= 0) draft.exclude.splice(i, 1); else draft.exclude.push(v);
+        ch.classList.toggle('on');
+      } else {
+        draft[row.key] = v;
+        syncDraftUI();
+        $('sheet').classList.remove('open');
+      }
+    });
+  });
+}
+document.querySelectorAll('.row').forEach(function(r){
+  r.addEventListener('click', function(){ readNums(); openSheet(r.dataset.row); });
+});
+$('sheetBack').addEventListener('click', function(){ $('sheet').classList.remove('open'); syncDraftUI(); });
+$('sheetDone').addEventListener('click', function(){ $('sheet').classList.remove('open'); syncDraftUI(); });
+$('sheetClear').addEventListener('click', function(){ draft.exclude = []; $('sheet').classList.remove('open'); syncDraftUI(); });
+$('fltBtn').addEventListener('click', function(){ draft = JSON.parse(JSON.stringify(applied)); syncDraftUI(); $('fltPage').classList.add('open'); });
+$('fltClose').addEventListener('click', function(){ $('fltPage').classList.remove('open'); });
+$('fltShow').addEventListener('click', function(){ readNums(); applied = JSON.parse(JSON.stringify(draft)); $('fltPage').classList.remove('open'); renderGrid(); });
+$('fltReset').addEventListener('click', function(){ applied = JSON.parse(JSON.stringify(DEFAULTS)); draft = JSON.parse(JSON.stringify(DEFAULTS)); $('fltPage').classList.remove('open'); renderGrid(); });
+$('emptyReset').addEventListener('click', function(){ applied = JSON.parse(JSON.stringify(DEFAULTS)); renderGrid(); });
+$('sortBtn').addEventListener('click', function(e){ e.stopPropagation(); $('sortMenu').classList.toggle('open'); });
+document.addEventListener('click', function(e){ if (!$('sortMenu').contains(e.target) && e.target !== $('sortBtn')) $('sortMenu').classList.remove('open'); });
+SORTS.forEach(function(s){
+  const b = document.createElement('button');
+  b.innerHTML = s.label + '<span class="chk">✓</span>';
+  if (s.id === sortId) b.classList.add('sel');
+  b.addEventListener('click', function(){
+    sortId = s.id;
+    $('sortLabel').textContent = s.short;
+    $('sortMenu').querySelectorAll('button').forEach(function(x){ x.classList.remove('sel'); });
+    b.classList.add('sel');
+    $('sortMenu').classList.remove('open');
+    renderGrid();
+  });
+  $('sortMenu').appendChild(b);
+});
+document.querySelectorAll('[data-toast]').forEach(function(b){
+  b.addEventListener('click', function(){
+    const t = $('toast');
+    t.textContent = b.dataset.toast;
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 1800);
+  });
+});
+$('pvPhone').addEventListener('click', function(){ document.body.classList.remove('tv'); $('pvPhone').classList.add('on'); $('pvTV').classList.remove('on'); });
+$('pvTV').addEventListener('click', function(){ document.body.classList.add('tv'); $('pvTV').classList.add('on'); $('pvPhone').classList.remove('on'); });
+renderGrid();
+</script>
+</body>
+</html>
