@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>1922 — страница фильма v12</title>
+<title>1922 — страница фильма v13</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #07080d; color: #fff; font-family: 'Nunito', system-ui, sans-serif; min-height: 100vh; }
   .back { position: fixed; top: 14px; left: 14px; z-index: 10; display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.2); color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; padding: 9px 16px; border-radius: 99px; text-decoration: none; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
-  .poster { width: 100%; display: block; }
-  .poster-wrap { position: relative; }
-  .poster-wrap::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 170px; background: linear-gradient(180deg, transparent, rgba(7,8,13,.88)); }
-  .info { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 14px; }
+  .backdrop-wrap { position: relative; }
+  .backdrop-wrap::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 60px; background: linear-gradient(180deg, transparent, #07080d); }
+  .backdrop { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+  .info { padding: 14px; }
   h1 { font-family: 'Manrope', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.15; }
   .badge { display: inline-flex; margin-top: 10px; height: 26px; padding: 0 10px; border-radius: 13px; background: #ffc857; color: #1a1304; font-size: 13px; font-weight: 700; align-items: center; gap: 4px; }
   .facts { margin-top: 8px; font-size: 14px; color: rgba(255,255,255,.7); }
@@ -131,9 +131,10 @@
 </head>
 <body>
 <a class="back" href="collections-preview.html?v=4">← Назад</a>
-<div class="poster-wrap">
-  <img class="poster" src="https://image.tmdb.org/t/p/w500/q4FQOiSRhTLWulHl5Vpg37FMArH.jpg" alt="1922">
-  <div class="info">
+<div class="backdrop-wrap">
+  <img class="backdrop" src="https://image.tmdb.org/t/p/w1280/3uwyXMZN93PRkShUxvLrufwVAc2.jpg" alt="1922">
+</div>
+<div class="info">
     <h1>1922</h1>
     <div class="badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.95</div>
     <div class="facts">2017 · США, Канада · 1 ч 42 мин</div>
