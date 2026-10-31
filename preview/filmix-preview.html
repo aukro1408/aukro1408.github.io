@@ -136,22 +136,24 @@
   .more-pill { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16); color: #fff; text-decoration: none; font-size: 13px; font-weight: 700; padding: 7px 14px; border-radius: 99px; }
 
   .content.fx { padding: 20px 14px 40px; }
-  .fx-watch { width: 100%; height: 56px; border: 0; border-radius: 16px; background: #f7c948; color: #111; font-size: 17px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .fx-watch.wb { width: 100%; }
+  .head-pills { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .head-pills .badge { margin-top: 0; }
+  .q-pill { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 13px; background: rgba(0,0,0,.55); border: 1px solid rgba(247,201,72,.6); color: #f7c948; font-size: 13px; font-weight: 700; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
   .fx-line { margin-top: 12px; font-size: 14px; color: rgba(255,255,255,.6); }
   .fx-label { margin: 28px 0 10px; font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.5); }
-  .fx-card { width: 100%; display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; border: 1px solid rgba(255,255,255,.12); border-radius: 16px; padding: 16px; cursor: pointer; text-align: left; color: #fff; font-family: inherit; }
-  .fx-card-title { font-size: 16px; font-weight: 700; }
-  .fx-card-sub { margin-top: 2px; font-size: 14px; color: rgba(255,255,255,.6); }
-  .fx-chev { font-size: 22px; color: rgba(255,255,255,.5); transition: transform .2s; }
-  .fx-card.open .fx-chev { transform: rotate(90deg); }
-  .fx-panel { margin-top: 14px; background: #1a1a1a; border: 1px solid rgba(255,255,255,.12); border-radius: 20px; padding: 16px; }
-  .fx-panel-title { display: flex; align-items: center; justify-content: space-between; font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-  .fx-close { width: 32px; height: 32px; border: 0; border-radius: 50%; background: #262626; color: #fff; font-size: 16px; cursor: pointer; }
-  .fx-voice { display: block; width: 100%; text-align: left; padding: 14px 16px; margin-bottom: 8px; border-radius: 12px; border: 2px solid transparent; background: #262626; color: #fff; font-size: 15px; font-family: inherit; cursor: pointer; }
-  .fx-voice.sel { background: #f7c948; color: #111; font-weight: 700; border-color: #fff; }
-  .fx-q { display: inline-block; padding: 8px 16px; margin: 0 8px 8px 0; border-radius: 999px; border: 2px solid transparent; background: #262626; color: #fff; font-size: 14px; font-family: inherit; cursor: pointer; }
-  .fx-q.sel { background: #f7c948; color: #111; font-weight: 700; }
-  .fx-panel .fx-watch { margin-top: 16px; }
+  .fx-voice { width: 100%; display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; border: 1px solid rgba(255,255,255,.12); border-radius: 16px; padding: 16px; margin-bottom: 12px; cursor: pointer; text-align: left; color: #fff; font-family: inherit; }
+  .fx-voice-title { font-size: 16px; font-weight: 700; }
+  .fx-voice-sub { margin-top: 2px; font-size: 14px; color: rgba(255,255,255,.6); }
+  .fx-chev { font-size: 22px; color: rgba(255,255,255,.5); flex: 0 0 auto; }
+  .fx-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 20; }
+  .fx-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; background: #1a1a1a; border-radius: 20px 20px 0 0; padding: 12px 16px 32px; }
+  .fx-sheet-bar { width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.25); margin: 0 auto 16px; }
+  .fx-sheet-title { position: relative; text-align: center; font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+  .fx-sheet-close { position: absolute; right: 0; top: -4px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: #262626; color: #fff; font-size: 16px; cursor: pointer; }
+  .fx-opt { width: 100%; display: block; text-align: left; background: #262626; border: 0; border-radius: 16px; padding: 16px; margin-bottom: 10px; color: #fff; font-family: inherit; cursor: pointer; }
+  .fx-opt-title { font-size: 16px; font-weight: 700; }
+  .fx-opt-sub { margin-top: 2px; font-size: 14px; color: rgba(255,255,255,.6); }
 </style>
 </head>
 <body>
@@ -161,7 +163,7 @@
   <img class="poster" src="https://image.tmdb.org/t/p/w500/q4FQOiSRhTLWulHl5Vpg37FMArH.jpg" alt="1922">
   <div class="info">
     <h1><img class="film-logo" src="https://image.tmdb.org/t/p/w500/bhb3J2gXUkdNmfhIeogZCdcRzO8.png" alt="1922" onerror="this.replaceWith(document.createTextNode('1922'))"></h1>
-    <div class="badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.95</div>
+    <div class="head-pills"><span class="q-pill">1080p</span><div class="badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.95</div></div>
     <div class="facts">2017 · США, Канада · 1 ч 42 мин</div>
     <div class="genres"><a href="genre-27.html?v=6">Ужасы</a><a href="genre-80.html?v=6">Криминал</a><a href="genre-18.html?v=6">Драма</a></div>
     <div class="genres" style="margin-top:10px"><a href="studio-55570.html?v=6">Campfire Studios</a><a href="studio-6345.html?v=6">Lighthouse Pictures</a></div>
@@ -171,7 +173,7 @@
   <img class="backdrop" src="https://image.tmdb.org/t/p/w1280/3uwyXMZN93PRkShUxvLrufwVAc2.jpg" alt="1922">
   <div class="info">
     <h1><img class="film-logo" src="https://image.tmdb.org/t/p/w500/bhb3J2gXUkdNmfhIeogZCdcRzO8.png" alt="1922" onerror="this.replaceWith(document.createTextNode('1922'))"></h1>
-    <div class="badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.95</div>
+    <div class="head-pills"><span class="q-pill">1080p</span><div class="badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.95</div></div>
     <div class="facts">2017 · США, Канада · 1 ч 42 мин</div>
     <div class="genres"><a href="genre-27.html?v=6">Ужасы</a><a href="genre-80.html?v=6">Криминал</a><a href="genre-18.html?v=6">Драма</a></div>
     <div class="genres" style="margin-top:10px"><a href="studio-55570.html?v=6">Campfire Studios</a><a href="studio-6345.html?v=6">Lighthouse Pictures</a></div>
@@ -179,30 +181,19 @@
 </div>
 </div>
 <div class="content fx">
-  <button class="fx-watch" id="fxWatchMain">▶ Смотреть</button>
-  <div class="fx-line">Filmix · 3 озвучки · до 1080p</div>
+  <button class="wb fx-watch" id="fxWatchMain"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>Смотреть</button>
+  <div class="fx-line">Filmix 4k · 3 озвучки · до 1080p</div>
   <div class="fx-label">Озвучка</div>
-  <button class="fx-card" id="fxCard">
-    <span><span class="fx-card-title" id="fxCardVoice">Дубляж [1080]</span><br><span class="fx-card-sub" id="fxCardQuality">1080p</span></span>
-    <span class="fx-chev">›</span>
-  </button>
-  <div class="fx-panel" id="fxPanel" hidden>
-    <div class="fx-panel-title">Filmix <button class="fx-close" id="fxClose">✕</button></div>
-    <div class="fx-label">Озвучка</div>
-    <div id="fxVoices">
-      <button class="fx-voice sel" data-voice="Дубляж">Дубляж</button>
-      <button class="fx-voice" data-voice="LostFilm">LostFilm</button>
-      <button class="fx-voice" data-voice="Оригинал, субтитры">Оригинал, субтитры</button>
-    </div>
-    <div class="fx-label">Качество</div>
-    <div id="fxQuals">
-      <button class="fx-q" data-q="4K">4K</button>
-      <button class="fx-q sel" data-q="1080p">1080p</button>
-      <button class="fx-q" data-q="720p">720p</button>
-      <button class="fx-q" data-q="480p">480p</button>
-    </div>
-    <button class="fx-watch" id="fxWatchPanel">▶ Смотреть</button>
-  </div>
+  <button class="fx-voice" data-voice="Дубляж [Rus, 1080p]"><span><span class="fx-voice-title">Дубляж [Rus, 1080p]</span><br><span class="fx-voice-sub">1080p</span></span><span class="fx-chev">›</span></button>
+  <button class="fx-voice" data-voice="LostFilm [1080p]"><span><span class="fx-voice-title">LostFilm [1080p]</span><br><span class="fx-voice-sub">1080p</span></span><span class="fx-chev">›</span></button>
+  <button class="fx-voice" data-voice="Оригинал, субтитры"><span><span class="fx-voice-title">Оригинал, субтитры</span><br><span class="fx-voice-sub">720p</span></span><span class="fx-chev">›</span></button>
+</div>
+<div class="fx-backdrop" id="fxBackdrop" hidden></div>
+<div class="fx-sheet" id="fxSheet" hidden>
+  <div class="fx-sheet-bar"></div>
+  <div class="fx-sheet-title">Чем открыть? <button class="fx-sheet-close" id="fxSheetClose">✕</button></div>
+  <button class="fx-opt" data-player="built-in"><div class="fx-opt-title">Встроенный плеер</div><div class="fx-opt-sub">синий плеер blackroom</div></button>
+  <button class="fx-opt" data-player="vlc"><div class="fx-opt-title">VLC</div><div class="fx-opt-sub">внешнее приложение</div></button>
 </div>
 <script>
   document.getElementById('vPhone').addEventListener('click', function () {
@@ -215,34 +206,25 @@
     document.getElementById('vTv').classList.add('on');
     document.getElementById('vPhone').classList.remove('on');
   });
-  var panel = document.getElementById('fxPanel');
-  var card = document.getElementById('fxCard');
-  card.addEventListener('click', function () {
-    panel.hidden = !panel.hidden;
-    card.classList.toggle('open', !panel.hidden);
+  var sheet = document.getElementById('fxSheet');
+  var backdrop = document.getElementById('fxBackdrop');
+  var curVoice = 'Дубляж [Rus, 1080p]';
+  function openSheet(voice) {
+    curVoice = voice;
+    sheet.hidden = false; backdrop.hidden = false;
+  }
+  function closeSheet() { sheet.hidden = true; backdrop.hidden = true; }
+  document.getElementById('fxWatchMain').addEventListener('click', function () { openSheet('Дубляж [Rus, 1080p]'); });
+  document.querySelectorAll('.fx-voice').forEach(function (b) {
+    b.addEventListener('click', function () { openSheet(b.dataset.voice); });
   });
-  document.getElementById('fxClose').addEventListener('click', function () {
-    panel.hidden = true; card.classList.remove('open');
-  });
-  var voice = 'Дубляж', quality = '1080p';
-  document.getElementById('fxVoices').addEventListener('click', function (e) {
-    var b = e.target.closest('.fx-voice'); if (!b) return;
-    document.querySelectorAll('.fx-voice').forEach(function (x) { x.classList.remove('sel'); });
-    b.classList.add('sel'); voice = b.dataset.voice;
-  });
-  document.getElementById('fxQuals').addEventListener('click', function (e) {
-    var b = e.target.closest('.fx-q'); if (!b) return;
-    document.querySelectorAll('.fx-q').forEach(function (x) { x.classList.remove('sel'); });
-    b.classList.add('sel'); quality = b.dataset.q;
-  });
-  document.getElementById('fxWatchPanel').addEventListener('click', function () {
-    document.getElementById('fxCardVoice').textContent = voice + ' [' + quality.replace('p', '') + ']';
-    document.getElementById('fxCardQuality').textContent = quality;
-    panel.hidden = true; card.classList.remove('open');
-    console.log('filmix watch', voice, quality);
-  });
-  document.getElementById('fxWatchMain').addEventListener('click', function () {
-    console.log('filmix watch', voice, quality);
+  document.getElementById('fxSheetClose').addEventListener('click', closeSheet);
+  backdrop.addEventListener('click', closeSheet);
+  document.querySelectorAll('.fx-opt').forEach(function (b) {
+    b.addEventListener('click', function () {
+      console.log('filmix play', curVoice, b.dataset.player);
+      closeSheet();
+    });
   });
 </script>
 </body>
