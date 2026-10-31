@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pawflix — ряд карточек (превью v3)</title>
+<title>pawflix — ряд карточек (превью v4)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Oswald:wght@700&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -29,8 +29,8 @@
   .row-strip::-webkit-scrollbar { display: none; }
   /* Карточка — как в файле: 216×320, радиус 26, градиент, паддинг 14 */
   .row-card {
-    width: 216px; flex: none; height: 320px; border-radius: 26px; position: relative; overflow: hidden;
-    box-sizing: border-box; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;
+    width: 160px; flex: none; height: 240px; border-radius: 19px; position: relative; overflow: hidden;
+    box-sizing: border-box; padding: 10px; display: flex; flex-direction: column; justify-content: space-between;
     scroll-snap-align: start;
   }
   /* Последняя карточка прилипает правым краем — чтобы в конце ряда тоже был виден зазор */
@@ -38,24 +38,24 @@
   /* Правка Denis: качества нет, осталась только метка рейтинга — справа сверху, на том же месте */
   .row-top { display: flex; justify-content: flex-end; align-items: flex-start; }
   .row-rating {
-    height: 26px; padding: 0 10px; border-radius: 13px; background: #ffc857; color: #1a1304;
-    font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700;
+    height: 22px; padding: 0 8px; border-radius: 11px; background: #ffc857; color: #1a1304;
+    font-family: 'Manrope', sans-serif; font-size: 11px; font-weight: 700;
     display: flex; align-items: center; gap: 4px;
   }
   .row-bottom { position: relative; }
   .row-num {
-    font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 120px; line-height: 0.8;
-    color: transparent; -webkit-text-stroke: 2px rgba(255,200,87,0.85); margin-bottom: 10px;
+    font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 88px; line-height: 0.8;
+    color: transparent; -webkit-text-stroke: 2px rgba(255,200,87,0.85); margin-bottom: 7px;
   }
   /* Правка Denis: цифры на одной высоте независимо от названия.
      Название — фиксированная высота в 2 строки (обрезка line-clamp),
      поэтому нижний блок всегда одной высоты и цифра не «плавает». */
   .row-title {
-    font-family: 'Manrope', sans-serif; font-size: 18px; font-weight: 700; line-height: 1.15; color: #fff;
+    font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 700; line-height: 1.15; color: #fff;
     height: 2.3em; overflow: hidden;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   }
-  .row-meta { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 500; color: #c4c4cc; margin-top: 4px; }
+  .row-meta { font-family: 'Manrope', sans-serif; font-size: 11px; font-weight: 500; color: #c4c4cc; margin-top: 3px; }
 
   /* ===== ТВ-вариант: тот же дизайн, масштаб ×1.333 ===== */
   .rows-tv { padding: 48px 0 0 0; }
@@ -63,11 +63,11 @@
   .rows-tv .row-head { gap: 16px; padding-left: 48px; padding-right: 48px; }
   .rows-tv .row-h { font-size: 35px; }
   .rows-tv .row-strip { gap: 19px; margin-top: 27px; padding: 0 19px 8px 19px; scroll-padding: 0 19px 0 19px; }
-  .rows-tv .row-card { width: 288px; height: 427px; border-radius: 35px; padding: 19px; }
-  .rows-tv .row-rating { height: 35px; padding: 0 13px; border-radius: 17px; font-size: 17px; }
-  .rows-tv .row-num { font-size: 160px; margin-bottom: 13px; -webkit-text-stroke-width: 3px; }
-  .rows-tv .row-title { font-size: 24px; }
-  .rows-tv .row-meta { font-size: 17px; margin-top: 5px; }
+  .rows-tv .row-card { width: 213px; height: 320px; border-radius: 25px; padding: 13px; }
+  .rows-tv .row-rating { height: 29px; padding: 0 11px; border-radius: 15px; font-size: 15px; }
+  .rows-tv .row-num { font-size: 117px; margin-bottom: 9px; -webkit-text-stroke-width: 3px; }
+  .rows-tv .row-title { font-size: 19px; }
+  .rows-tv .row-meta { font-size: 15px; margin-top: 4px; }
 
   /* Переключатель вариантов — только для превью (механизм как в hero-preview) */
   .rows-switch {
@@ -124,11 +124,11 @@
     <button class="active" data-variant="phone">Телефон</button>
   </div>
   <div class="caption">
-    <b>Пробный вариант v3: ряд «Пик недели».</b> Зазоры: слева и в конце ряда — ровно как между
-    карточками (14px на телефоне, 19px на ТВ); прилипание сохранено — карточка целиком,
-    последняя прилипает правым краем, чтобы конечный зазор тоже был виден. Остальное как в v2:
-    кнопки «Все» нет, подзаголовка нет, только «Пик недели», полоска белая универсальная,
-    качества нет, рейтинг (★) справа сверху, цифры 1–10 на одной высоте, 10 карточек.
+    <b>Пробный вариант v4: ряд «Пик недели».</b> Карточки уменьшены: телефон 216×320 → 160×240,
+    ТВ 288×427 → 213×320; цифра, название, мета и метка рейтинга уменьшены пропорционально,
+    цифры по-прежнему на одной высоте. Зазоры не менялись: слева и в конце — как между карточками,
+    прилипание без срезов. Остальное как в v3: кнопки «Все» нет, подзаголовка нет,
+    полоска белая универсальная, качества нет, рейтинг (★) справа сверху, 10 карточек.
     Карточки 1–3 — из файла, 4–10 — заглушки. ТВ-вариант — тот же дизайн, масштаб ×1.333.
   </div>
   <script>
