@@ -126,12 +126,17 @@
   .pv-toggle { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; background: rgba(26,26,26,.9); border: 1px solid rgba(255,255,255,.12); border-radius: 999px; padding: 4px; }
   .pv-toggle button { border: 0; background: transparent; color: #9a9ba3; font: 600 14px system-ui, sans-serif; padding: 6px 14px; border-radius: 999px; cursor: pointer; }
   .pv-toggle button.on { background: #f7c948; color: #1a1405; }
+
+  .st-screen { display: none; }
+  .st-screen.on { display: block; }
+  .st-vl { max-width: 46%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .st-hint { font-size: 14px; color: var(--st-muted); padding: 4px 14px; }
 </style>
 </head>
 <body>
 
 <!-- ===== РАЗМЕТКА (строится скриптом из списка SETTINGS) ===== -->
-<div class="st" id="st"><div class="st-top"><div class="st-back" id="st-back" tabindex="0" role="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Назад</div></div><div class="st-title">Настройки</div><div class="st-gt">Ключи</div><div class="st-group"><div class="st-field"><div class="st-flabel">Ключ TMDB</div><div class="st-row st-input-row"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="16.5" r="4.5"/><path d="M11 13l9-9M15 8l2.5 2.5M18 5l2 2"/></svg></span><input class="st-in" id="k-tmdb" type="password" placeholder="Вставьте ключ TMDB" autocomplete="off" spellcheck="false"><button class="st-eye" data-for="k-tmdb" aria-label="Показать ключ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div><div class="st-field"><div class="st-flabel">Токен Filmix</div><div class="st-row st-input-row"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="16.5" r="4.5"/><path d="M11 13l9-9M15 8l2.5 2.5M18 5l2 2"/></svg></span><input class="st-in" id="k-fx-token" type="password" placeholder="Вставьте токен Filmix" autocomplete="off" spellcheck="false"><button class="st-eye" data-for="k-fx-token" aria-label="Показать ключ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div><div class="st-field"><div class="st-flabel">Прокси Filmix</div><div class="st-row st-input-row"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span><input class="st-in" id="k-fx-proxy" type="text" placeholder="Адрес прокси Filmix" autocomplete="off" spellcheck="false"></div></div><div class="st-field"><div class="st-flabel">Адрес парсера</div><div class="st-row st-input-row"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span><input class="st-in" id="k-parser-url" type="text" placeholder="Адрес парсера" autocomplete="off" spellcheck="false"></div></div><div class="st-field"><div class="st-flabel">Ключ парсера</div><div class="st-row st-input-row"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="16.5" r="4.5"/><path d="M11 13l9-9M15 8l2.5 2.5M18 5l2 2"/></svg></span><input class="st-in" id="k-parser-key" type="password" placeholder="Вставьте ключ парсера" autocomplete="off" spellcheck="false"><button class="st-eye" data-for="k-parser-key" aria-label="Показать ключ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div></div><div class="st-gt">TorrServer</div><div class="st-group"><div id="ts-list"></div><div class="st-row" id="ts-add" tabindex="0" role="button"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="st-lb">Добавить адрес</span></div></div><div class="st-ver">pawflix</div></div><div class="st-toast" id="st-toast"></div><div class="pv-toggle" id="pvToggle"><button data-variant="phone" class="on">Телефон</button><button data-variant="tv">ТВ</button></div><script>
+<div class="st" id="st"><div class="st-screen on" id="sc-main"><div class="st-top"><div class="st-back" id="st-back" tabindex="0" role="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Назад</div></div><div class="st-title">Настройки</div><div class="st-gt">Источники и ключи</div><div class="st-group" id="main-rows"><div class="st-row" tabindex="0" role="button" data-open="tmdb"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 4v16M16 4v16M4 12h16M4 8h4M4 16h4M16 8h4M16 16h4"/></svg></span><span class="st-lb">TMDB</span><span class="st-vl" id="v-tmdb"></span><svg class="st-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div><div class="st-row" tabindex="0" role="button" data-open="filmix"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="12" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3z"/></svg></span><span class="st-lb">Filmix</span><span class="st-vl" id="v-filmix"></span><svg class="st-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div><div class="st-row" tabindex="0" role="button" data-open="torrent"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8v5a8 8 0 0 0 16 0V8h-4v5a4 4 0 0 1-8 0V8z"/><path d="M4 8h4M16 8h4"/></svg></span><span class="st-lb">Torrent</span><span class="st-vl" id="v-torrent"></span><svg class="st-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div><div class="st-row" tabindex="0" role="button" data-open="parser"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span><span class="st-lb">Парсер</span><span class="st-vl" id="v-parser"></span><svg class="st-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div></div><div class="st-ver">pawflix</div></div><div class="st-screen" id="sc-tmdb"><div class="st-top"><div class="st-back" data-back tabindex="0" role="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Назад</div></div><div class="st-title">TMDB</div><div class="st-group"><div class="st-field"><div class="st-flabel">Ключ TMDB</div><div class="st-row st-input-row"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="16.5" r="4.5"/><path d="M11 13l9-9M15 8l2.5 2.5M18 5l2 2"/></svg></span><input class="st-in" id="k-tmdb" type="password" placeholder="Вставьте ключ TMDB" autocomplete="off" spellcheck="false"><button class="st-eye" data-for="k-tmdb" aria-label="Показать ключ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div></div></div><div class="st-screen" id="sc-filmix"><div class="st-top"><div class="st-back" data-back tabindex="0" role="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Назад</div></div><div class="st-title">Filmix</div><div class="st-group"><div class="st-field"><div class="st-flabel">Токен Filmix</div><div class="st-row st-input-row"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="16.5" r="4.5"/><path d="M11 13l9-9M15 8l2.5 2.5M18 5l2 2"/></svg></span><input class="st-in" id="k-fx-token" type="password" placeholder="Вставьте токен Filmix" autocomplete="off" spellcheck="false"><button class="st-eye" data-for="k-fx-token" aria-label="Показать ключ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div><div class="st-field"><div class="st-flabel">Прокси Filmix</div><div class="st-row st-input-row"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span><input class="st-in" id="k-fx-proxy" type="text" placeholder="Адрес прокси Filmix" autocomplete="off" spellcheck="false"></div></div></div></div><div class="st-screen" id="sc-torrent"><div class="st-top"><div class="st-back" data-back tabindex="0" role="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Назад</div></div><div class="st-title">Torrent</div><div class="st-group"><div class="st-hint">Кружок слева выбирает адрес, который используется по умолчанию.</div><div id="ts-list"></div><div class="st-row" id="ts-add" tabindex="0" role="button"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="st-lb">Добавить адрес</span></div></div></div><div class="st-screen" id="sc-parser"><div class="st-top"><div class="st-back" data-back tabindex="0" role="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Назад</div></div><div class="st-title">Парсер</div><div class="st-group"><div class="st-field"><div class="st-flabel">Адрес парсера</div><div class="st-row st-input-row"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span><input class="st-in" id="k-parser-url" type="text" placeholder="Адрес парсера" autocomplete="off" spellcheck="false"></div></div><div class="st-field"><div class="st-flabel">Ключ парсера</div><div class="st-row st-input-row"><span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="16.5" r="4.5"/><path d="M11 13l9-9M15 8l2.5 2.5M18 5l2 2"/></svg></span><input class="st-in" id="k-parser-key" type="password" placeholder="Вставьте ключ парсера" autocomplete="off" spellcheck="false"><button class="st-eye" data-for="k-parser-key" aria-label="Показать ключ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div></div></div></div><div class="st-toast" id="st-toast"></div><div class="pv-toggle" id="pvToggle"><button data-variant="phone" class="on">Телефон</button><button data-variant="tv">ТВ</button></div><script>
 (function () {
   var KEY = 'preview_settings';
   var S = { tmdb: '', fxToken: '', fxProxy: '', parserUrl: '', parserKey: '', ts: [], tsDef: -1 };
@@ -143,24 +148,59 @@
     clearTimeout(tTimer); tTimer = setTimeout(function () { tEl.classList.remove('show'); }, 1800);
   }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function $(id) { return document.getElementById(id); }
 
-  /* Ключевые поля: автозаполнение из сохранённого, автосохранение при вводе */
+  /* Значения пунктов главного меню */
+  function renderMain() {
+    $('v-tmdb').textContent = S.tmdb ? 'Задан' : 'Не задан';
+    $('v-filmix').textContent = S.fxToken ? 'Подключён' : 'Не настроен';
+    $('v-torrent').textContent = S.ts.length ? (S.tsDef >= 0 && S.ts[S.tsDef] ? S.ts[S.tsDef] : 'Нет по умолчанию') : 'Нет адресов';
+    $('v-parser').textContent = S.parserUrl || 'Не задан';
+  }
+
+  /* Экраны */
+  function show(id) {
+    document.querySelectorAll('.st-screen').forEach(function (el) { el.classList.remove('on'); });
+    $('sc-' + id).classList.add('on');
+    if (id === 'main') renderMain();
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll('[data-open]').forEach(function (r) {
+    r.addEventListener('click', function () { show(r.getAttribute('data-open')); });
+  });
+  document.querySelectorAll('[data-back]').forEach(function (b) {
+    b.addEventListener('click', function () { show('main'); });
+  });
+  document.addEventListener('keydown', function (e) {
+    if ((e.key === 'Escape' || e.keyCode === 27) && !$('sc-main').classList.contains('on')) { e.preventDefault(); show('main'); }
+  });
+  /* Пульт: ↑/↓ по пунктам главного меню, Enter открывает */
+  var rows = [].slice.call(document.querySelectorAll('#main-rows .st-row'));
+  rows.forEach(function (r, i) {
+    r.addEventListener('keydown', function (e) {
+      var k = e.key, c = e.keyCode;
+      if ((k === 'ArrowDown' || c === 40) && rows[i + 1]) { e.preventDefault(); rows[i + 1].focus(); }
+      else if ((k === 'ArrowUp' || c === 38) && rows[i - 1]) { e.preventDefault(); rows[i - 1].focus(); }
+      else if (k === 'Enter' || k === ' ' || c === 13 || c === 32) { e.preventDefault(); r.click(); }
+    });
+  });
+
+  /* Ключевые поля */
   [['k-tmdb', 'tmdb'], ['k-fx-token', 'fxToken'], ['k-fx-proxy', 'fxProxy'], ['k-parser-url', 'parserUrl'], ['k-parser-key', 'parserKey']].forEach(function (p) {
-    var el = document.getElementById(p[0]);
+    var el = $(p[0]);
     el.value = S[p[1]] || '';
     el.addEventListener('input', function () { S[p[1]] = el.value; save(); });
   });
-  /* Глаз: показать/скрыть ключ */
   document.querySelectorAll('.st-eye').forEach(function (b) {
     b.addEventListener('click', function () {
-      var el = document.getElementById(b.getAttribute('data-for'));
+      var el = $(b.getAttribute('data-for'));
       el.type = (el.type === 'password') ? 'text' : 'password';
       el.focus();
     });
   });
 
   /* Список TorrServer */
-  var list = document.getElementById('ts-list');
+  var list = $('ts-list');
   var X = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
   function renderTS(focusLast) {
     if (!S.ts.length) {
@@ -193,15 +233,15 @@
     });
     if (focusLast) { var ins = list.querySelectorAll('.st-ts-in'); ins[ins.length - 1].focus(); }
   }
-  document.getElementById('ts-add').addEventListener('click', function () {
+  $('ts-add').addEventListener('click', function () {
     S.ts.push('');
     if (S.tsDef === -1) S.tsDef = 0;
     save(); renderTS(true); toast('Поле добавлено');
   });
   renderTS();
 
-  /* Назад */
-  document.getElementById('st-back').addEventListener('click', function () { if (history.length > 1) history.back(); });
+  /* Назад на главном экране */
+  $('st-back').addEventListener('click', function () { if (history.length > 1) history.back(); });
 
   /* Переключатель превью Телефон/ТВ */
   var btns = document.querySelectorAll('#pvToggle button');
@@ -212,6 +252,8 @@
       document.body.classList.toggle('tv', b.getAttribute('data-variant') === 'tv');
     });
   });
+
+  renderMain();
 })();
 </script></body>
 </html>
