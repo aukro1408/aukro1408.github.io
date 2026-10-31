@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pawflix — главный экран (превью v5)</title>
+<title>pawflix — главный экран (превью v6)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Manrope:wght@500;700&family=Oswald:wght@700&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -116,7 +116,7 @@
   .rows-phone, .rows-tv { position: relative; z-index: 1; }
   .rows-phone { padding: 28px 0 0 0; }
   .row-head { display: flex; align-items: center; gap: 12px; padding-left: 14px; padding-right: 16px; }
-  .row-bar { width: 5px; height: 44px; border-radius: 3px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.45); flex: none; }
+  .row-bar { width: 5px; height: 14px; border-radius: 3px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.45); flex: none; }
   .row-head-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
   .row-h { font-family: 'Manrope', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.1; color: #f4f4f6; }
   .row-strip {
@@ -149,7 +149,7 @@
   }
   .row-meta { font-family: 'Manrope', sans-serif; font-size: 10px; font-weight: 500; color: #c4c4cc; margin-top: 2px; }
   .rows-tv { padding: 48px 0 0 0; }
-  .rows-tv .row-bar { width: 7px; height: 59px; border-radius: 4px; }
+  .rows-tv .row-bar { width: 7px; height: 19px; border-radius: 4px; }
   .rows-tv .row-head { gap: 16px; padding-left: 19px; padding-right: 48px; }
   .rows-tv .row-h { font-size: 35px; }
   .rows-tv .row-strip { gap: 19px; margin-top: 27px; padding: 0 19px 8px 19px; scroll-padding: 0 19px 0 19px; }
@@ -167,7 +167,7 @@
     display: flex; align-items: center; gap: 12px; justify-content: space-between;
     padding-left: 14px; padding-right: 14px; margin-bottom: 12px;
   }
-  .cat-bar { width: 5px; height: 44px; border-radius: 3px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.45); flex: none; }
+  .cat-bar { width: 5px; height: 14px; border-radius: 3px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.45); flex: none; }
   .cat-head-text { flex: 1; }
   .cat-h { font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.1; color: #fff; }
   .cat-chev { font-size: 22px; font-weight: 400; color: rgba(255,255,255,.55); line-height: 1; }
@@ -196,7 +196,7 @@
   .cats-tv { padding-top: 28px; }
   .cats-tv .cat-row { margin-bottom: 37px; }
   .cats-tv .cat-head { gap: 16px; padding-left: 19px; padding-right: 19px; margin-bottom: 16px; }
-  .cats-tv .cat-bar { width: 7px; height: 59px; border-radius: 4px; }
+  .cats-tv .cat-bar { width: 7px; height: 19px; border-radius: 4px; }
   .cats-tv .cat-h { font-size: 27px; }
   .cats-tv .cat-chev { font-size: 29px; }
   .cats-tv .cat-strip { gap: 13px; padding: 0 19px 8px 19px; scroll-padding: 0 19px 0 19px; }
@@ -326,14 +326,13 @@
     <button data-variant="phone">Телефон</button>
   </div>
   <div class="caption">
-    <b>Главный экран v5: всё вместе.</b> Навбар ТВ v5 + hero v8 + «Пик недели» v5
+    <b>Главный экран v6: всё вместе.</b> Навбар ТВ v5 + hero v8 + «Пик недели» v5
     + пять рядов категорий v2 (Триллеры, Ужасы, Фантастика, Сериалы, Мультфильмы).
-    Шапки всех рядов выровнены по началу карточек: полоска и текст сидят ровно там,
-    где начинается первая карточка (14px на телефоне, 19px на ТВ), и такая же белая
-    полоска теперь у каждого ряда, не только у «Пик недели». Карточки всех рядов
-    одного размера: 110×165 на телефоне (147×220 на ТВ). На телефоне навбара пока нет —
-    нижний навбар телефона это отдельный элемент, его ещё не делали.
-    Карточки рядов 4–10 и категорий — заглушки.
+    Полоска уменьшена до высоты заглавной буквы названий категорий: 14px на телефоне,
+    19px на ТВ — и такая одинаковая во всех рядах. Шапки всех рядов выровнены
+    по началу карточек. Карточки всех рядов одного размера: 110×165 на телефоне
+    (147×220 на ТВ). На телефоне навбара пока нет — нижний навбар телефона
+    это отдельный элемент, его ещё не делали. Карточки рядов 4–10 и категорий — заглушки.
   </div>
   <div class="toast" id="toast">В приложении откроется карточка фильма</div>
   <script>
