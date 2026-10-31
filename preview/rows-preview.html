@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawflix — ряд карточек (превью v1)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Oswald:wght@700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #07080d; color: #fff; font-family: "Nunito", system-ui, sans-serif; font-size: 16px; min-height: 100vh; overflow-x: hidden; }
+  /* СЛОЙ 0: общий фон (по умолчанию — Оранж, как решили) */
+  .bg-layer {
+    position: fixed; inset: 0; z-index: 0;
+    background: url("bg-orange.jpg") center/cover no-repeat;
+  }
+
+  /* ===== Ряд — порт файла Denis 1:1, с его правками ===== */
+  .rows-phone, .rows-tv { position: relative; z-index: 1; }
+  .rows-phone { padding: 28px 0 0 16px; }
+  .row-head { display: flex; align-items: center; gap: 12px; padding-right: 16px; }
+  .row-bar { width: 5px; height: 44px; border-radius: 3px; background: #ffc857; flex: none; }
+  .row-head-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .row-h { font-family: 'Manrope', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.1; color: #f4f4f6; }
+  .row-sub { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 500; color: #b4b4be; }
+  .row-all {
+    height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid #3a3a44;
+    background: transparent; color: #f4f4f6; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .row-strip {
+    display: flex; gap: 14px; overflow-x: auto; margin-top: 20px; padding-bottom: 8px;
+    scrollbar-width: none;
+  }
+  .row-strip::-webkit-scrollbar { display: none; }
+  /* Карточка — как в файле: 216×320, радиус 26, градиент, паддинг 14 */
+  .row-card {
+    width: 216px; flex: none; height: 320px; border-radius: 26px; position: relative; overflow: hidden;
+    box-sizing: border-box; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;
+  }
+  /* Правка Denis: качества нет, осталась только метка рейтинга — справа сверху, на том же месте */
+  .row-top { display: flex; justify-content: flex-end; align-items: flex-start; }
+  .row-rating {
+    height: 26px; padding: 0 10px; border-radius: 13px; background: #ffc857; color: #1a1304;
+    font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .row-bottom { position: relative; }
+  .row-num {
+    font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 120px; line-height: 0.8;
+    color: transparent; -webkit-text-stroke: 2px rgba(255,200,87,0.85); margin-bottom: 10px;
+  }
+  /* Правка Denis: цифры на одной высоте независимо от названия.
+     Название — фиксированная высота в 2 строки (обрезка line-clamp),
+     поэтому нижний блок всегда одной высоты и цифра не «плавает». */
+  .row-title {
+    font-family: 'Manrope', sans-serif; font-size: 18px; font-weight: 700; line-height: 1.15; color: #fff;
+    height: 2.3em; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .row-meta { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 500; color: #c4c4cc; margin-top: 4px; }
+
+  /* ===== ТВ-вариант: тот же дизайн, масштаб ×1.333 ===== */
+  .rows-tv { padding: 48px 0 0 48px; }
+  .rows-tv .row-bar { width: 7px; height: 59px; border-radius: 4px; }
+  .rows-tv .row-head { gap: 16px; padding-right: 48px; }
+  .rows-tv .row-h { font-size: 35px; }
+  .rows-tv .row-sub { font-size: 17px; }
+  .rows-tv .row-all { height: 59px; padding: 0 21px; border-radius: 30px; font-size: 19px; }
+  .rows-tv .row-strip { gap: 19px; margin-top: 27px; }
+  .rows-tv .row-card { width: 288px; height: 427px; border-radius: 35px; padding: 19px; }
+  .rows-tv .row-rating { height: 35px; padding: 0 13px; border-radius: 17px; font-size: 17px; }
+  .rows-tv .row-num { font-size: 160px; margin-bottom: 13px; -webkit-text-stroke-width: 3px; }
+  .rows-tv .row-title { font-size: 24px; }
+  .rows-tv .row-meta { font-size: 17px; margin-top: 5px; }
+
+  /* Переключатель вариантов — только для превью (механизм как в hero-preview) */
+  .rows-switch {
+    position: relative; z-index: 60; margin: 24px auto 0; width: fit-content;
+    display: flex; gap: 8px; padding: 6px; border-radius: 99px;
+    background: rgba(10,10,14,.7); border: 1px solid rgba(255,255,255,.16);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  }
+  .rows-switch .thumb {
+    position: absolute; z-index: 0; top: 6px; bottom: 6px; left: 0; width: 0;
+    border-radius: 99px; background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.35);
+  }
+  .rows-switch button {
+    position: relative; z-index: 1;
+    background: transparent; border: 0; color: rgba(255,255,255,.75); font-family: inherit;
+    font-size: 15px; font-weight: 700; padding: 8px 20px; border-radius: 99px; cursor: pointer; white-space: nowrap;
+  }
+  .rows-switch button.active { color: #000; }
+  .caption {
+    position: relative; z-index: 60; margin: 16px auto 24px; font-size: 13px; line-height: 1.6;
+    color: rgba(255,255,255,.7); text-shadow: 0 1px 8px rgba(0,0,0,.9); max-width: 94vw;
+  }
+  .caption b { color: #fff; font-weight: 600; }
+  body[data-variant="phone"] .rows-tv { display: none; }
+  body[data-variant="tv"] .rows-phone { display: none; }
+</style>
+</head>
+<body data-variant="phone">
+  <div class="bg-layer"></div>
+
+  <section class="rows-phone" id="rows-phone">
+    <div class="row-head">
+      <div class="row-bar"></div>
+      <div class="row-head-text">
+        <div class="row-h">Пик недели</div>
+        <div class="row-sub">Смотрят чаще всего</div>
+      </div>
+      <button class="row-all">Все</button>
+    </div>
+    <div class="row-strip" id="strip-phone"></div>
+  </section>
+
+  <section class="rows-tv" id="rows-tv">
+    <div class="row-head">
+      <div class="row-bar"></div>
+      <div class="row-head-text">
+        <div class="row-h">Пик недели</div>
+        <div class="row-sub">Смотрят чаще всего</div>
+      </div>
+      <button class="row-all">Все</button>
+    </div>
+    <div class="row-strip" id="strip-tv"></div>
+  </section>
+
+  <div class="rows-switch" id="rows-switch">
+    <span class="thumb"></span>
+    <button data-variant="tv">ТВ</button>
+    <button class="active" data-variant="phone">Телефон</button>
+  </div>
+  <div class="caption">
+    <b>Пробный вариант v1: ряд «Пик недели».</b> Дизайн — из твоего файла 1:1, с правками:
+    метка качества (4K) убрана, метка рейтинга (★) осталась справа сверху на том же месте;
+    цифры 1–10 теперь на одной высоте — название фиксировано на 2 строки, поэтому короткий
+    и длинный заголовки не сдвигают цифру; в ряде ровно 10 карточек, после десятой ничего нет —
+    ни «Ещё», ни лишних плиток, ряд самодостаточный. Карточки 1–3 — из файла, 4–10 — заглушки
+    (названия и оценки — для проверки вида, не контент). ТВ-вариант — тот же дизайн, масштаб ×1.333.
+  </div>
+  <script>
+    var cards = [
+      { n: 1, t: 'Человек-паук: Новый день', m: '2026 · Боевик', r: '8.5', g: 'linear-gradient(165deg, #b5651d 0%, #5a2e10 62%, #07070a 100%)' },
+      { n: 2, t: 'Собачьи зубы', m: '2026 · Драма', r: '6.9', g: 'linear-gradient(165deg, #5f7a74 0%, #26322f 62%, #07070a 100%)' },
+      { n: 3, t: 'Бугимен', m: '2023 · Ужасы', r: '6.4', g: 'linear-gradient(165deg, #a3261c 0%, #3d0c09 62%, #07070a 100%)' },
+      { n: 4, t: 'Очень длинное название фильма, которое точно займёт две строки', m: '2024 · Фантастика', r: '7.8', g: 'linear-gradient(165deg, #2b6cb0 0%, #12283f 62%, #07070a 100%)' },
+      { n: 5, t: 'Дом', m: '2025 · Триллер', r: '7.1', g: 'linear-gradient(165deg, #6b46c1 0%, #2a1847 62%, #07070a 100%)' },
+      { n: 6, t: 'Тихий лес', m: '2023 · Ужасы', r: '6.7', g: 'linear-gradient(165deg, #276749 0%, #122a1d 62%, #07070a 100%)' },
+      { n: 7, t: 'Последний поезд на север', m: '2026 · Драма', r: '8.1', g: 'linear-gradient(165deg, #4a5568 0%, #1a202c 62%, #07070a 100%)' },
+      { n: 8, t: 'Лето', m: '2024 · Комедия', r: '6.2', g: 'linear-gradient(165deg, #db2777 0%, #3b0a26 62%, #07070a 100%)' },
+      { n: 9, t: 'Город без сна', m: '2025 · Детектив', r: '7.4', g: 'linear-gradient(165deg, #1e3a8a 0%, #0b1230 62%, #07070a 100%)' },
+      { n: 10, t: 'Море внутри нас', m: '2026 · Мелодрама', r: '7.9', g: 'linear-gradient(165deg, #0e7490 0%, #083344 62%, #07070a 100%)' }
+    ];
+    function renderStrip(id) {
+      var box = document.getElementById(id);
+      cards.forEach(function (c) {
+        var el = document.createElement('div');
+        el.className = 'row-card';
+        el.style.background = c.g;
+        el.innerHTML =
+          '<div class="row-top"><div class="row-rating">★ ' + c.r + '</div></div>' +
+          '<div class="row-bottom"><div class="row-num" aria-hidden="true">' + c.n + '</div>' +
+          '<div class="row-title">' + c.t + '</div><div class="row-meta">' + c.m + '</div></div>';
+        box.appendChild(el);
+      });
+    }
+    renderStrip('strip-phone');
+    renderStrip('strip-tv');
+    /* Эффект переключения пилюли из файла Denis: пружина + squash & stretch, дизайн наш */
+    (function pillSpring(root, onSelect) {
+      var t = root.querySelector('.thumb'), b = Array.prototype.slice.call(root.querySelectorAll('button'));
+      function box(el) { return { l: el.offsetLeft, w: el.offsetWidth }; }
+      function put(el) { var r = box(el); t.style.left = r.l + 'px'; t.style.width = r.w + 'px'; }
+      put(b.filter(function (x) { return x.classList.contains('active'); })[0] || b[0]);
+      b.forEach(function (el) {
+        el.addEventListener('click', function () {
+          if (el.classList.contains('active')) return;
+          var a = box(t), z = box(el);
+          b.forEach(function (x) { x.classList.toggle('active', x === el); });
+          t.getAnimations().forEach(function (x) { x.cancel(); });
+          t.animate([{ left: a.l + 'px', width: a.w + 'px' }, { left: z.l + 'px', width: z.w + 'px' }],
+            { duration: 550, easing: 'cubic-bezier(.34,1.45,.64,1)' });
+          t.animate([{ scale: '1 1' }, { scale: '1.14 .92', offset: .3 }, { scale: '1 1' }],
+            { duration: 550, easing: 'ease' });
+          t.style.left = z.l + 'px'; t.style.width = z.w + 'px';
+          try { navigator.vibrate && navigator.vibrate(8); } catch (e) {}
+          if (onSelect) onSelect(el);
+        });
+      });
+      addEventListener('resize', function () { put(root.querySelector('.active')); });
+    })(document.getElementById('rows-switch'), function (el) {
+      document.body.setAttribute('data-variant', el.getAttribute('data-variant'));
+    });
+  </script>
+</body>
+</html>
