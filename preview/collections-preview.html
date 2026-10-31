@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Коллекции — cub red</title>
+<title>Коллекции — как в Лампе</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -21,27 +21,37 @@
   .dock button.active { color: #2a1c04; }
   .dock button svg { flex: none; }
 
-  /* Ряды — наш язык: полоска + заголовок там, где начинается первая карточка */
-  .row { margin-bottom: 28px; }
-  .row-h { display: flex; align-items: center; gap: 10px; padding: 0 14px; font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.1; }
-  .row-h::before { content: ''; flex: none; width: 5px; height: 14px; background: #fff; border-radius: 3px; }
+  /* Секции как в Лампе: заголовок + «Ещё» */
+  .section { margin-bottom: 28px; }
+  .sec-h { display: flex; align-items: center; justify-content: space-between; padding: 0 14px; }
+  .sec-h h2 { font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.1; }
+  .more-link { flex: none; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.14); color: #fff; font-family: inherit; font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 99px; cursor: pointer; }
   .strip { display: flex; gap: 10px; overflow-x: auto; margin-top: 14px; padding: 0 14px 8px; scroll-padding: 0 14px; scroll-snap-type: x mandatory; scrollbar-width: none; }
   .strip::-webkit-scrollbar { display: none; }
   .strip > * { scroll-snap-align: start; }
   .strip > *:last-child { scroll-snap-align: end; }
-
-  /* Карточка коллекции — как отдаёт API: бэкдроп + название + счётчик и автор */
-  .col-card { flex: none; width: 280px; cursor: pointer; }
-  .col-card img { display: block; width: 280px; height: 158px; object-fit: cover; border-radius: 12px; background: #1c1c26; }
-  .col-title { margin-top: 8px; font-family: 'Manrope', sans-serif; font-size: 15px; font-weight: 700; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .col-meta { margin-top: 3px; font-size: 12px; color: rgba(255,255,255,.6); }
   .row-status { padding: 14px; font-size: 14px; color: rgba(255,255,255,.6); }
 
-  /* Страница коллекции */
-  #detailView { display: none; }
+  /* Карточка коллекции как в Лампе: бэкдроп, счётчик, дата, просмотры, лайки, автор */
+  .col-card { flex: none; width: calc(50vw - 19px); cursor: pointer; }
+  .col-img { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; background: #1c1c26; }
+  .col-img img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .col-count { position: absolute; top: 8px; left: 8px; min-width: 26px; height: 22px; padding: 0 7px; border-radius: 7px; background: rgba(0,0,0,.65); font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .col-date { position: absolute; top: 8px; right: 8px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.9); text-shadow: 0 1px 4px rgba(0,0,0,.8); }
+  .col-bar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 10px; padding: 14px 10px 8px; background: linear-gradient(180deg, transparent, rgba(0,0,0,.75)); font-size: 12px; font-weight: 600; }
+  .col-bar .views, .col-bar .likes { display: flex; align-items: center; gap: 4px; }
+  .col-bar .author { margin-left: auto; display: flex; align-items: center; gap: 6px; max-width: 55%; }
+  .col-bar .author span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .avatar { flex: none; width: 22px; height: 22px; border-radius: 50%; background: #3a3f5c; color: #fff; font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .col-title { margin-top: 8px; font-family: 'Manrope', sans-serif; font-size: 15px; font-weight: 700; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* Полный список секции + страница коллекции */
+  #catView, #detailView { display: none; }
   .back { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 16px 14px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16); color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; padding: 9px 16px; border-radius: 99px; cursor: pointer; }
-  .detail-name { padding: 0 14px; font-family: 'Manrope', sans-serif; font-size: 24px; font-weight: 700; line-height: 1.2; }
-  .detail-meta { padding: 6px 14px 0; font-size: 13px; color: rgba(255,255,255,.6); }
+  .page-title { padding: 0 14px; font-family: 'Manrope', sans-serif; font-size: 24px; font-weight: 700; line-height: 1.2; }
+  .page-meta { padding: 6px 14px 0; font-size: 13px; color: rgba(255,255,255,.6); }
+  .col-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 10px; padding: 18px 14px 0; }
+  .col-grid .col-card { width: auto; min-width: 0; }
   .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 10px; padding: 18px 14px 0; }
   .item-card { cursor: pointer; min-width: 0; }
   .item-poster { position: relative; width: 100%; aspect-ratio: 2/3; border-radius: 12px; overflow: hidden; background: #1c1c26; }
@@ -68,16 +78,19 @@
 </div>
 
 <div class="content">
-  <div id="tabView">
-    <div class="row"><div class="row-h">Новые</div><div class="strip" id="row-new"><div class="row-status">Загрузка…</div></div></div>
-    <div class="row"><div class="row-h">Популярные</div><div class="strip" id="row-popular"><div class="row-status">Загрузка…</div></div></div>
-    <div class="row"><div class="row-h">Топ</div><div class="strip" id="row-top"><div class="row-status">Загрузка…</div></div></div>
+  <div id="tabView"></div>
+
+  <div id="catView">
+    <button class="back" data-back>← Коллекции</button>
+    <div class="page-title" id="catTitle"></div>
+    <div class="col-grid" id="catGrid"></div>
+    <button class="more" id="catMore" style="display:none">Показать ещё</button>
   </div>
 
   <div id="detailView">
-    <button class="back" id="backBtn">← Коллекции</button>
-    <div class="detail-name" id="detailName"></div>
-    <div class="detail-meta" id="detailMeta"></div>
+    <button class="back" data-back>← Коллекции</button>
+    <div class="page-title" id="detailName"></div>
+    <div class="page-meta" id="detailMeta"></div>
     <div class="grid" id="detailGrid"></div>
     <button class="more" id="moreBtn" style="display:none">Показать ещё</button>
   </div>
@@ -87,8 +100,34 @@
   var LIST = 'https://cub.red/api/collections/list?category=';
   var DETAIL = 'https://tmdb.cub.red/collections/';
   var IMG = 'https://image.tmdb.org/t/p/';
+  var SECTIONS = [
+    { cat: 'new', title: 'Новинки' },
+    { cat: 'top', title: 'В топе' },
+    { cat: 'week', title: 'Популярные за неделю' },
+    { cat: 'month', title: 'Популярные за месяц' },
+    { cat: 'big', title: 'Большие коллекции' },
+    { cat: 'all', title: 'Все коллекции' }
+  ];
   function img(path, size) { return path ? IMG + size + path : ''; }
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function fmtViews(v) {
+    if (v >= 1000) return (v / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return String(v);
+  }
+  var MONTHS = ['Января','Февраля','Марта','Апреля','Мая','Июня','Июля','Августа','Сентября','Октября','Ноября','Декабря'];
+  function fmtDate(ms) {
+    if (!ms) return '';
+    var d = new Date(ms), now = new Date();
+    var s = d.getDate() + ' ' + MONTHS[d.getMonth()];
+    if (d.getFullYear() !== now.getFullYear()) s += ' ' + d.getFullYear();
+    return s;
+  }
+  function show(id) {
+    ['tabView', 'catView', 'detailView'].forEach(function (v) {
+      document.getElementById(v).style.display = (v === id) ? 'block' : 'none';
+    });
+    window.scrollTo(0, 0);
+  }
 
   // Док: золотая кнопка ездит, Главная ведёт на главный экран
   (function () {
@@ -111,35 +150,73 @@
     fitDock();
   })();
 
-  // Вкладка: ряды по категориям API
-  function loadRow(cat, elId) {
-    var el = document.getElementById(elId);
-    fetch(LIST + cat).then(function (r) { return r.json(); }).then(function (d) {
-      el.innerHTML = '';
-      (d.results || []).forEach(function (c) {
-        var card = document.createElement('div');
-        card.className = 'col-card';
-        card.innerHTML = '<img src="' + img(c.backdrop_path, 'w500') + '" alt="" loading="lazy">' +
-          '<div class="col-title">' + esc(c.title) + '</div>' +
-          '<div class="col-meta">' + c.items_count + ' названий · ' + esc(c.username) + '</div>';
-        card.addEventListener('click', function () { openDetail(c); });
-        el.appendChild(card);
-      });
-      if (!el.children.length) el.innerHTML = '<div class="row-status">Пусто</div>';
+  // Карточка коллекции как в Лампе
+  function colCard(c) {
+    var card = document.createElement('div');
+    card.className = 'col-card';
+    var letter = (c.username || '?').charAt(0).toUpperCase();
+    card.innerHTML = '<div class="col-img"><img src="' + img(c.backdrop_path, 'w500') + '" alt="" loading="lazy">' +
+      '<div class="col-count">' + c.items_count + '</div>' +
+      '<div class="col-date">' + fmtDate(c.time) + '</div>' +
+      '<div class="col-bar"><span class="views">' + fmtViews(c.views) + '</span>' +
+      '<span class="likes"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>' + c.liked + '</span>' +
+      '<span class="author"><span>' + esc(c.username) + '</span><span class="avatar">' + esc(letter) + '</span></span></div></div>' +
+      '<div class="col-title">' + esc(c.title) + '</div>';
+    card.addEventListener('click', function () { openDetail(c); });
+    return card;
+  }
+
+  // Вкладка: секции как в Лампе
+  var tab = document.getElementById('tabView');
+  SECTIONS.forEach(function (sec) {
+    var wrap = document.createElement('div');
+    wrap.className = 'section';
+    wrap.innerHTML = '<div class="sec-h"><h2>' + sec.title + '</h2><button class="more-link">Ещё</button></div>' +
+      '<div class="strip"><div class="row-status">Загрузка…</div></div>';
+    var strip = wrap.querySelector('.strip');
+    wrap.querySelector('.more-link').addEventListener('click', function () { openCat(sec); });
+    fetch(LIST + sec.cat).then(function (r) { return r.json(); }).then(function (d) {
+      strip.innerHTML = '';
+      (d.results || []).forEach(function (c) { strip.appendChild(colCard(c)); });
+      if (!strip.children.length) strip.innerHTML = '<div class="row-status">Пусто</div>';
     }).catch(function () {
-      el.innerHTML = '<div class="row-status">Не удалось загрузить. Проверь сеть и обнови страницу.</div>';
+      strip.innerHTML = '<div class="row-status">Не удалось загрузить. Проверь сеть и обнови страницу.</div>';
+    });
+    tab.appendChild(wrap);
+  });
+
+  // «Ещё»: полный список секции, постранично
+  var catSec = null, catPage = 1;
+  function openCat(sec) {
+    catSec = sec; catPage = 1;
+    document.getElementById('catTitle').textContent = sec.title;
+    document.getElementById('catGrid').innerHTML = '<div class="row-status">Загрузка…</div>';
+    document.getElementById('catMore').style.display = 'none';
+    show('catView');
+    fetch(LIST + sec.cat).then(function (r) { return r.json(); }).then(function (d) {
+      var g = document.getElementById('catGrid');
+      g.innerHTML = '';
+      (d.results || []).forEach(function (c) { g.appendChild(colCard(c)); });
+      if ((d.results || []).length >= 20) document.getElementById('catMore').style.display = 'block';
+    }).catch(function () {
+      document.getElementById('catGrid').innerHTML = '<div class="row-status">Не удалось загрузить.</div>';
     });
   }
-  loadRow('new', 'row-new');
-  loadRow('popular', 'row-popular');
-  loadRow('top', 'row-top');
+  document.getElementById('catMore').addEventListener('click', function (e) {
+    var btn = e.currentTarget;
+    btn.disabled = true; btn.textContent = 'Загрузка…';
+    fetch(LIST + catSec.cat + '&page=' + (catPage + 1)).then(function (r) { return r.json(); }).then(function (d) {
+      catPage++;
+      var g = document.getElementById('catGrid');
+      (d.results || []).forEach(function (c) { g.appendChild(colCard(c)); });
+      btn.disabled = false; btn.textContent = 'Показать ещё';
+      if ((d.results || []).length < 20) btn.style.display = 'none';
+    }).catch(function () { btn.disabled = false; btn.textContent = 'Показать ещё'; });
+  });
 
-  // Страница коллекции: название + карточки сеткой (рядами), постранично
+  // Страница коллекции: название + карточки сеткой, постранично
   var cur = null, curPage = 1, curTotal = 1;
-  function yearOf(it) {
-    var d = it.release_date || it.first_air_date || '';
-    return d ? d.slice(0, 4) : '';
-  }
+  function yearOf(it) { var d = it.release_date || it.first_air_date || ''; return d ? d.slice(0, 4) : ''; }
   function ratingOf(it) {
     var v = it.vote_average;
     if (v == null || v === 0) return '';
@@ -160,14 +237,11 @@
   }
   function openDetail(c) {
     cur = c; curPage = 1;
-    document.getElementById('tabView').style.display = 'none';
-    var dv = document.getElementById('detailView');
-    dv.style.display = 'block';
     document.getElementById('detailName').textContent = c.title;
     document.getElementById('detailMeta').textContent = c.items_count + ' названий · ' + c.username;
     document.getElementById('detailGrid').innerHTML = '<div class="row-status">Загрузка…</div>';
     document.getElementById('moreBtn').style.display = 'none';
-    window.scrollTo(0, 0);
+    show('detailView');
     fetch(DETAIL + c.id).then(function (r) { return r.json(); }).then(function (d) {
       curTotal = d.total_pages || 1;
       document.getElementById('detailGrid').innerHTML = '';
@@ -185,14 +259,10 @@
       renderItems(d.results || []);
       btn.disabled = false; btn.textContent = 'Показать ещё';
       if (curPage >= (d.total_pages || curTotal)) btn.style.display = 'none';
-    }).catch(function () {
-      btn.disabled = false; btn.textContent = 'Показать ещё';
-    });
+    }).catch(function () { btn.disabled = false; btn.textContent = 'Показать ещё'; });
   });
-  document.getElementById('backBtn').addEventListener('click', function () {
-    document.getElementById('detailView').style.display = 'none';
-    document.getElementById('tabView').style.display = 'block';
-    window.scrollTo(0, 0);
+  document.querySelectorAll('[data-back]').forEach(function (b) {
+    b.addEventListener('click', function () { show('tabView'); });
   });
 </script>
 </body>
