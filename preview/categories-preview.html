@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawflix — ряды категорий (превью v1)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #07080d; color: #fff; font-family: "Nunito", system-ui, sans-serif; font-size: 16px; min-height: 100vh; overflow-x: hidden; }
+  .bg-layer {
+    position: fixed; inset: 0; z-index: 0;
+    background: url("bg-orange.jpg") center/cover no-repeat;
+  }
+
+  /* ===== Обычная карточка (замер с фото Denis) ===== */
+  .cats-phone, .cats-tv { position: relative; z-index: 1; }
+  .cats-phone { padding: 28px 0 0 0; }
+  .cat-row { margin-bottom: 28px; }
+  .cat-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-left: 14px; padding-right: 14px; margin-bottom: 12px;
+  }
+  .cat-h { font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.1; color: #fff; }
+  .cat-chev { font-size: 22px; font-weight: 400; color: rgba(255,255,255,.55); line-height: 1; }
+  .cat-strip {
+    display: flex; gap: 10px; overflow-x: auto;
+    padding: 0 14px 8px 14px; scroll-padding: 0 14px 0 14px;
+    scrollbar-width: none; scroll-snap-type: x mandatory;
+  }
+  .cat-strip::-webkit-scrollbar { display: none; }
+  .cat-card { flex: none; scroll-snap-align: start; }
+  .cat-card.last { scroll-snap-align: end; }
+  .cat-poster {
+    position: relative; width: 110px; height: 165px; border-radius: 12px; overflow: hidden;
+  }
+  .cat-rating {
+    position: absolute; top: 8px; left: 8px; height: 20px; padding: 0 8px; border-radius: 10px;
+    background: rgba(0,0,0,.55); color: #fff;
+    font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700;
+    display: flex; align-items: center;
+  }
+  .cat-title {
+    margin-top: 8px; font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700; line-height: 1.2; color: #fff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 110px;
+  }
+  .cat-meta { margin-top: 2px; font-family: 'Manrope', sans-serif; font-size: 11px; font-weight: 500; color: #b4b4be; }
+
+  /* ===== ТВ-вариант: тот же дизайн, масштаб ×1.333 ===== */
+  .cats-tv { padding: 48px 0 0 0; }
+  .cats-tv .cat-row { margin-bottom: 37px; }
+  .cats-tv .cat-head { padding-left: 19px; padding-right: 19px; margin-bottom: 16px; }
+  .cats-tv .cat-h { font-size: 27px; }
+  .cats-tv .cat-chev { font-size: 29px; }
+  .cats-tv .cat-strip { gap: 13px; padding: 0 19px 8px 19px; scroll-padding: 0 19px 0 19px; }
+  .cats-tv .cat-poster { width: 147px; height: 220px; border-radius: 16px; }
+  .cats-tv .cat-rating { top: 11px; left: 11px; height: 27px; padding: 0 11px; border-radius: 13px; font-size: 17px; }
+  .cats-tv .cat-title { margin-top: 11px; font-size: 17px; width: 147px; }
+  .cats-tv .cat-meta { margin-top: 3px; font-size: 15px; }
+
+  /* Переключатель вариантов — только для превью */
+  .switch {
+    position: relative; z-index: 60; margin: 24px auto 0; width: fit-content;
+    display: flex; gap: 8px; padding: 6px; border-radius: 99px;
+    background: rgba(10,10,14,.7); border: 1px solid rgba(255,255,255,.16);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  }
+  .switch .thumb {
+    position: absolute; z-index: 0; top: 6px; bottom: 6px; left: 0; width: 0;
+    border-radius: 99px; background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.35);
+  }
+  .switch button {
+    position: relative; z-index: 1;
+    background: transparent; border: 0; color: rgba(255,255,255,.75); font-family: inherit;
+    font-size: 15px; font-weight: 700; padding: 8px 20px; border-radius: 99px; cursor: pointer; white-space: nowrap;
+  }
+  .switch button.active { color: #000; }
+  .caption {
+    position: relative; z-index: 60; margin: 16px auto 24px; font-size: 13px; line-height: 1.6;
+    color: rgba(255,255,255,.7); text-shadow: 0 1px 8px rgba(0,0,0,.9); max-width: 94vw;
+  }
+  .caption b { color: #fff; font-weight: 600; }
+  body[data-variant="phone"] .cats-tv { display: none; }
+  body[data-variant="tv"] .cats-phone { display: none; }
+</style>
+</head>
+<body data-variant="phone">
+  <div class="bg-layer"></div>
+
+  <section class="cats-phone" id="cats-phone"></section>
+  <section class="cats-tv" id="cats-tv"></section>
+
+  <div class="switch" id="switch">
+    <span class="thumb"></span>
+    <button class="active" data-variant="phone">Телефон</button>
+    <button data-variant="tv">ТВ</button>
+  </div>
+  <div class="caption">
+    <b>Пробный вариант v1: ряды категорий с обычными карточками.</b> Пять рядов —
+    Триллеры, Ужасы, Фантастика, Сериалы, Мультфильмы; в каждом по 8 карточек для пробы.
+    Обычная карточка — как на твоём фото: постер, рейтинг тёмной пилюлей слева сверху,
+    название под постером в одну строку, под ним серая мета. Ранговых цифр здесь нет —
+    это не «Пик недели», а обычные ряды. Плашки качества не ставлю — мы его не знаем
+    (то же правило, что и в «Пике недели»). Размеры замерены с фото: телефон — постер
+    110×165, зазор 10, боковой отступ 14; ТВ — тот же дизайн ×1.333 (постер 147×220,
+    зазор 13, отступ 19). Названия и оценки — заглушки, не контент.
+    Честно про источник: сам APK Reelo размеров не отдаёт (Compose-код, из статики
+    не извлекается — это зафиксировано в разборе), поэтому телефон замерен с твоего фото,
+    а ТВ выведен масштабом ×1.333 — на ТВ проверишь сам, когда включишь.
+  </div>
+  <script>
+    var cats = [
+      { h: 'Триллеры', meta: 'Фильм', items: [
+        { t: 'Тихий омут', r: '7.4', g: 'linear-gradient(165deg, #4a5568 0%, #1a202c 62%, #07070a 100%)' },
+        { t: 'Последний звонок', r: '7.1', g: 'linear-gradient(165deg, #7c2d12 0%, #2a1005 62%, #07070a 100%)' },
+        { t: 'Перекрёсток', r: '8.1', g: 'linear-gradient(165deg, #1e3a8a 0%, #0b1230 62%, #07070a 100%)' },
+        { t: 'Ночной рейс', r: '6.8', g: 'linear-gradient(165deg, #0e7490 0%, #083344 62%, #07070a 100%)' },
+        { t: 'Слепое пятно', r: '7.9', g: 'linear-gradient(165deg, #6b46c1 0%, #2a1847 62%, #07070a 100%)' },
+        { t: 'Двойник', r: '7.2', g: 'linear-gradient(165deg, #9f1239 0%, #2f0713 62%, #07070a 100%)' },
+        { t: 'Холодный след', r: '8.3', g: 'linear-gradient(165deg, #276749 0%, #122a1d 62%, #07070a 100%)' },
+        { t: 'Третий этаж', r: '6.5', g: 'linear-gradient(165deg, #b45309 0%, #2f1a04 62%, #07070a 100%)' }
+      ]},
+      { h: 'Ужасы', meta: 'Фильм', items: [
+        { t: 'Тихий лес', r: '6.7', g: 'linear-gradient(165deg, #14532d 0%, #071a0e 62%, #07070a 100%)' },
+        { t: 'Дом у озера', r: '7.0', g: 'linear-gradient(165deg, #7f1d1d 0%, #260808 62%, #07070a 100%)' },
+        { t: 'Шёпот', r: '6.2', g: 'linear-gradient(165deg, #3b0764 0%, #150329 62%, #07070a 100%)' },
+        { t: 'Полночь', r: '7.5', g: 'linear-gradient(165deg, #1c1917 0%, #000000 62%, #07070a 100%)' },
+        { t: 'Кукольный дом', r: '6.9', g: 'linear-gradient(165deg, #831843 0%, #2a0716 62%, #07070a 100%)' },
+        { t: 'Туман', r: '7.3', g: 'linear-gradient(165deg, #475569 0%, #131c26 62%, #07070a 100%)' },
+        { t: 'Подвал', r: '6.4', g: 'linear-gradient(165deg, #44403c 0%, #171412 62%, #07070a 100%)' },
+        { t: 'Кровавая луна', r: '7.8', g: 'linear-gradient(165deg, #991b1b 0%, #2b0707 62%, #07070a 100%)' }
+      ]},
+      { h: 'Фантастика', meta: 'Фильм', items: [
+        { t: 'Орбита', r: '8.0', g: 'linear-gradient(165deg, #1d4ed8 0%, #0a1730 62%, #07070a 100%)' },
+        { t: 'Сигнал', r: '7.6', g: 'linear-gradient(165deg, #0f766e 0%, #042a26 62%, #07070a 100%)' },
+        { t: 'Новая земля', r: '8.4', g: 'linear-gradient(165deg, #15803d 0%, #071f0e 62%, #07070a 100%)' },
+        { t: 'Хронос', r: '7.2', g: 'linear-gradient(165deg, #a16207 0%, #2a1a02 62%, #07070a 100%)' },
+        { t: 'Пепел звёзд', r: '7.9', g: 'linear-gradient(165deg, #6d28d9 0%, #1e0a3d 62%, #07070a 100%)' },
+        { t: 'Горизонт', r: '6.9', g: 'linear-gradient(165deg, #be185d 0%, #2e0717 62%, #07070a 100%)' },
+        { t: 'Машина', r: '7.7', g: 'linear-gradient(165deg, #334155 0%, #101826 62%, #07070a 100%)' },
+        { t: 'Далёкий свет', r: '8.2', g: 'linear-gradient(165deg, #0369a1 0%, #06202f 62%, #07070a 100%)' }
+      ]},
+      { h: 'Сериалы', meta: 'Сериал', items: [
+        { t: 'Город без сна', r: '8.1', g: 'linear-gradient(165deg, #1e3a8a 0%, #0b1230 62%, #07070a 100%)' },
+        { t: 'Наследники', r: '7.8', g: 'linear-gradient(165deg, #7c2d12 0%, #2a1005 62%, #07070a 100%)' },
+        { t: 'Тихая гавань', r: '7.4', g: 'linear-gradient(165deg, #0e7490 0%, #083344 62%, #07070a 100%)' },
+        { t: 'Перевал', r: '8.5', g: 'linear-gradient(165deg, #276749 0%, #122a1d 62%, #07070a 100%)' },
+        { t: 'Код', r: '7.0', g: 'linear-gradient(165deg, #4a5568 0%, #1a202c 62%, #07070a 100%)' },
+        { t: 'Северный ветер', r: '7.9', g: 'linear-gradient(165deg, #6b46c1 0%, #2a1847 62%, #07070a 100%)' },
+        { t: 'Академия', r: '6.8', g: 'linear-gradient(165deg, #9f1239 0%, #2f0713 62%, #07070a 100%)' },
+        { t: 'Поколение', r: '7.3', g: 'linear-gradient(165deg, #b45309 0%, #2f1a04 62%, #07070a 100%)' }
+      ]},
+      { h: 'Мультфильмы', meta: 'Мультфильм', items: [
+        { t: 'Лис и луна', r: '8.2', g: 'linear-gradient(165deg, #d97706 0%, #2f1a04 62%, #07070a 100%)' },
+        { t: 'Большое путешествие', r: '7.9', g: 'linear-gradient(165deg, #059669 0%, #042a1c 62%, #07070a 100%)' },
+        { t: 'Морские друзья', r: '8.0', g: 'linear-gradient(165deg, #0284c7 0%, #082a3d 62%, #07070a 100%)' },
+        { t: 'Волшебный лес', r: '8.6', g: 'linear-gradient(165deg, #7c3aed 0%, #200a3d 62%, #07070a 100%)' },
+        { t: 'Кот-астронавт', r: '7.5', g: 'linear-gradient(165deg, #db2777 0%, #3b0a26 62%, #07070a 100%)' },
+        { t: 'Зимняя сказка', r: '8.3', g: 'linear-gradient(165deg, #38bdf8 0%, #0c2a3d 62%, #07070a 100%)' },
+        { t: 'Остров чудес', r: '7.7', g: 'linear-gradient(165deg, #65a30d 0%, #1a2a05 62%, #07070a 100%)' },
+        { t: 'Пекарня', r: '7.1', g: 'linear-gradient(165deg, #ea580c 0%, #2f1503 62%, #07070a 100%)' }
+      ]}
+    ];
+    function renderCats(id) {
+      var root = document.getElementById(id);
+      cats.forEach(function (cat) {
+        var row = document.createElement('div');
+        row.className = 'cat-row';
+        var head = document.createElement('div');
+        head.className = 'cat-head';
+        head.innerHTML = '<div class="cat-h">' + cat.h + '</div><div class="cat-chev">›</div>';
+        var strip = document.createElement('div');
+        strip.className = 'cat-strip';
+        cat.items.forEach(function (c, i) {
+          var el = document.createElement('div');
+          el.className = 'cat-card' + (i === cat.items.length - 1 ? ' last' : '');
+          el.innerHTML =
+            '<div class="cat-poster" style="background:' + c.g + '"><div class="cat-rating">' + c.r + '</div></div>' +
+            '<div class="cat-title">' + c.t + '</div><div class="cat-meta">2026 · ' + cat.meta + '</div>';
+          strip.appendChild(el);
+        });
+        row.appendChild(head);
+        row.appendChild(strip);
+        root.appendChild(row);
+      });
+    }
+    renderCats('cats-phone');
+    renderCats('cats-tv');
+    /* Эффект переключения пилюли из файла Denis: пружина + squash & stretch, дизайн наш */
+    (function pillSpring(root, onSelect) {
+      var t = root.querySelector('.thumb'), b = Array.prototype.slice.call(root.querySelectorAll('button'));
+      function box(el) { return { l: el.offsetLeft, w: el.offsetWidth }; }
+      function put(el) { var r = box(el); t.style.left = r.l + 'px'; t.style.width = r.w + 'px'; }
+      put(b.filter(function (x) { return x.classList.contains('active'); })[0] || b[0]);
+      b.forEach(function (el) {
+        el.addEventListener('click', function () {
+          if (el.classList.contains('active')) return;
+          var a = box(t), z = box(el);
+          b.forEach(function (x) { x.classList.toggle('active', x === el); });
+          t.getAnimations().forEach(function (x) { x.cancel(); });
+          t.animate([{ left: a.l + 'px', width: a.w + 'px' }, { left: z.l + 'px', width: z.w + 'px' }],
+            { duration: 550, easing: 'cubic-bezier(.34,1.45,.64,1)' });
+          t.animate([{ scale: '1 1' }, { scale: '1.14 .92', offset: .3 }, { scale: '1 1' }],
+            { duration: 550, easing: 'ease' });
+          t.style.left = z.l + 'px'; t.style.width = z.w + 'px';
+          try { navigator.vibrate && navigator.vibrate(8); } catch (e) {}
+          if (onSelect) onSelect(el);
+        });
+      });
+      addEventListener('resize', function () { put(root.querySelector('.active')); });
+    })(document.getElementById('switch'), function (el) {
+      document.body.setAttribute('data-variant', el.getAttribute('data-variant'));
+    });
+  </script>
+</body>
+</html>
