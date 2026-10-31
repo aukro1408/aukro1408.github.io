@@ -9,7 +9,7 @@
   body { background: #0a0a0a; color: #fff; font-family: "Nunito", system-ui, sans-serif; }
   button { font-family: inherit; cursor: pointer; }
   .page { max-width: 520px; margin: 0 auto; padding: 84px 14px 100px; }
-  body.tv .page { max-width: 1240px; padding: 96px 28px 120px; }
+  body.tv .page { max-width: none; padding: 96px 48px 120px; }
 
   /* --- верх: пилюли --- */
   .pills { position: relative; display: flex; gap: 10px; margin-bottom: 16px; }
@@ -29,14 +29,17 @@
 
   /* --- сетка --- */
   .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  body.tv .grid { grid-template-columns: repeat(6, 1fr); gap: 20px; }
+  body.tv .grid { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 20px; padding-bottom: 8px; scrollbar-width: none; scroll-snap-type: x proximity; }
+  body.tv .grid::-webkit-scrollbar { display: none; }
+  body.tv .card { flex: 0 0 240px; scroll-snap-align: start; }
   .card { cursor: pointer; }
   .poster { position: relative; aspect-ratio: 2/3; border-radius: 14px; overflow: hidden; background: #1a1a1a; }
   .poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .card .t { font-size: 15px; font-weight: 700; line-height: 1.25; margin-top: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .card .m { font-size: 13px; color: #9a9a9a; margin-top: 3px; }
-  .card .m .star { color: #f7c948; }
+  .rate { position: absolute; top: 8px; right: 8px; height: 24px; padding: 0 8px; border-radius: 12px; background: #f7c948; color: #1a1304; font-size: 12px; font-weight: 800; display: flex; align-items: center; gap: 3px; }
   body.tv .card .t { font-size: 17px; } body.tv .card .m { font-size: 15px; }
+  body.tv .rate { top: 10px; right: 10px; height: 30px; padding: 0 11px; border-radius: 15px; font-size: 14px; }
   .empty { text-align: center; padding: 60px 20px; color: #9a9a9a; font-size: 15px; line-height: 1.5; }
   .empty button { margin-top: 16px; background: #f7c948; border: 0; color: #1a1304; font-weight: 800; font-size: 15px; padding: 12px 22px; border-radius: 999px; }
 
@@ -225,10 +228,12 @@ function sorted(list){
 }
 function renderGrid(){
   const list = sorted(filtered());
+  if (document.body.classList.contains('tv')) $('grid').scrollLeft = 0;
   const n = countActive(applied);
   $('fltCnt').textContent = n ? '(' + n + ')' : '';
   $('grid').innerHTML = list.map(function(m){
-    return '<article class="card"><div class="poster"><img src="https://image.tmdb.org/t/p/w500' + m.p + '" alt="" loading="lazy"></div><div class="t">' + m.t + '</div><div class="m"><span class="star">★</span> ' + m.r.toFixed(1) + ' · ' + m.y + '</div></article>';
+    var g0 = m.g.length ? GENRE_NAME[m.g[0]] : '';
+    return '<article class="card"><div class="poster"><img src="https://image.tmdb.org/t/p/w500' + m.p + '" alt="" loading="lazy"><span class="rate">★ ' + m.r.toFixed(1) + '</span></div><div class="t">' + m.t + '</div><div class="m">' + m.y + (g0 ? ' · ' + g0 : '') + '</div></article>';
   }).join('');
   $('empty').hidden = list.length > 0;
   $('grid').hidden = list.length === 0;
@@ -310,6 +315,12 @@ document.querySelectorAll('[data-toast]').forEach(function(b){
 });
 $('pvPhone').addEventListener('click', function(){ document.body.classList.remove('tv'); $('pvPhone').classList.add('on'); $('pvTV').classList.remove('on'); });
 $('pvTV').addEventListener('click', function(){ document.body.classList.add('tv'); $('pvTV').classList.add('on'); $('pvPhone').classList.remove('on'); });
+document.addEventListener('keydown', function(e){
+  if (!document.body.classList.contains('tv')) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.key === 'ArrowRight') $('grid').scrollBy({left: 260, behavior: 'smooth'});
+  if (e.key === 'ArrowLeft') $('grid').scrollBy({left: -260, behavior: 'smooth'});
+});
 document.querySelectorAll('[data-goto]').forEach(function(b){
   b.addEventListener('click', function(){ location.href = b.dataset.goto; });
 });
