@@ -21,10 +21,14 @@
   .dock button.active { color: #2a1c04; }
   .dock button svg { flex: none; }
 
-  /* Секции как в Лампе: заголовок + «Ещё» */
+  /* Секции как в Лампе: заголовок + «Ещё»; полоска наша, как на главной */
   .section { margin-bottom: 28px; }
   .sec-h { display: flex; align-items: center; justify-content: space-between; padding: 0 14px; }
+  .sec-left { display: flex; align-items: center; gap: 10px; }
   .sec-h h2 { font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.1; }
+  .stripe { flex: none; width: 5px; height: 14px; background: #fff; border-radius: 3px; transition: height .25s, box-shadow .25s; }
+  .section.focused .stripe { height: 19px; box-shadow: 0 0 14px rgba(255,255,255,.85); }
+  .cat-title { display: flex; align-items: center; gap: 10px; }
   .more-link { flex: none; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.14); color: #fff; font-family: inherit; font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 99px; cursor: pointer; }
   .strip { display: flex; gap: 10px; overflow-x: auto; margin-top: 14px; padding: 0 14px 8px; scroll-padding: 0 14px; scroll-snap-type: x mandatory; scrollbar-width: none; }
   .strip::-webkit-scrollbar { display: none; }
@@ -82,7 +86,7 @@
 
   <div id="catView">
     <button class="back" data-back>← Коллекции</button>
-    <div class="page-title" id="catTitle"></div>
+    <div class="page-title cat-title"><span class="stripe"></span><span id="catTitle"></span></div>
     <div class="col-grid" id="catGrid"></div>
     <button class="more" id="catMore" style="display:none">Показать ещё</button>
   </div>
@@ -171,7 +175,7 @@
   SECTIONS.forEach(function (sec) {
     var wrap = document.createElement('div');
     wrap.className = 'section';
-    wrap.innerHTML = '<div class="sec-h"><h2>' + sec.title + '</h2><button class="more-link">Ещё</button></div>' +
+    wrap.innerHTML = '<div class="sec-h"><div class="sec-left"><span class="stripe"></span><h2>' + sec.title + '</h2></div><button class="more-link">Ещё</button></div>' +
       '<div class="strip"><div class="row-status">Загрузка…</div></div>';
     var strip = wrap.querySelector('.strip');
     wrap.querySelector('.more-link').addEventListener('click', function () { openCat(sec); });
@@ -181,6 +185,10 @@
       if (!strip.children.length) strip.innerHTML = '<div class="row-status">Пусто</div>';
     }).catch(function () {
       strip.innerHTML = '<div class="row-status">Не удалось загрузить. Проверь сеть и обнови страницу.</div>';
+    });
+    wrap.addEventListener('click', function () {
+      document.querySelectorAll('.section').forEach(function (x) { x.classList.remove('focused'); });
+      wrap.classList.add('focused');
     });
     tab.appendChild(wrap);
   });
