@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Поиск</title>
+<style>
+  /* ===== Поиск: поле с анимированной иконкой + история запросов ===== */
+  :root {
+    --sr-accent: #f7c948;      /* жёлтый акцент */
+    --sr-ink: #1a1405;         /* тёмный текст на жёлтом */
+    --sr-bg: #080a10;          /* фон страницы */
+    --sr-field: #12131a;       /* фон поля */
+    --sr-chip: #15161d;        /* фон пилюли истории */
+    --sr-muted: #9a9ba3;
+    --sr-pad: 16px;
+  }
+
+  .sr { color: #fff; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .sr-wrap { padding: 0 var(--sr-pad); }
+
+  /* --- Поле --- */
+  .sr-field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 64px;
+    padding: 0 10px;
+    border-radius: 32px;
+    background: var(--sr-field);
+    box-shadow: 0 0 0 2px var(--sr-accent), 0 8px 24px rgba(247, 201, 72, .16);
+    cursor: text;
+  }
+
+  /* Поле ввода без собственной рамки и фона (иначе внутри появляется второй прямоугольник) */
+  .sr-field input,
+  .sr-field input:focus,
+  .sr-field input:active {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    outline: 0 !important;
+    color: #fff;
+    font: 400 18px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .sr-field input::placeholder { color: #6b6c75; }
+
+  /* --- Иконка --- */
+  .sr-icon {
+    position: relative;
+    flex: none;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: var(--sr-accent);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  /* Две расходящиеся волны */
+  .sr-icon::before,
+  .sr-icon::after {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--sr-accent);
+    opacity: 0;
+    pointer-events: none;
+    animation: sr-wave 2.6s ease-out infinite;
+  }
+  .sr-icon::after { animation-delay: 1.3s; }
+  @keyframes sr-wave {
+    0%   { transform: scale(1);   opacity: .65; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+  /* Лупа «ищет» */
+  .sr-icon svg {
+    width: 28px; height: 28px;
+    overflow: visible;
+    transform-origin: 50% 50%;
+    animation: sr-scan 4s ease-in-out infinite;
+  }
+  @keyframes sr-scan {
+    0%, 100% { transform: translate(0, 0) rotate(0); }
+    20% { transform: translate(2.5px, -2px) rotate(10deg); }
+    45% { transform: translate(0, -3px) rotate(0); }
+    70% { transform: translate(-2.5px, -1px) rotate(-10deg); }
+  }
+  /* Блик на стекле */
+  .sr-glint {
+    stroke-dasharray: 5 20;
+    animation: sr-glint 2.6s ease-in-out infinite;
+  }
+  @keyframes sr-glint {
+    0%   { stroke-dashoffset: 5;   opacity: 0; }
+    15%  { opacity: 1; }
+    55%  { stroke-dashoffset: -14; opacity: 1; }
+    70%, 100% { stroke-dashoffset: -14; opacity: 0; }
+  }
+  /* Реакции: ввод текста и запуск поиска */
+  .sr-icon.pop { animation: sr-pop .45s cubic-bezier(.3, 1.6, .5, 1); }
+  @keyframes sr-pop { 0% { transform: scale(1); } 40% { transform: scale(1.2); } 100% { transform: scale(1); } }
+  .sr-icon.go svg { animation: sr-spin .7s cubic-bezier(.5, 0, .2, 1); }
+  @keyframes sr-spin {
+    0%   { transform: rotate(0) scale(1); }
+    50%  { transform: rotate(200deg) scale(1.25); }
+    100% { transform: rotate(360deg) scale(1); }
+  }
+  /* Поле в фокусе: волны чаще */
+  .sr-field:focus-within .sr-icon::before,
+  .sr-field:focus-within .sr-icon::after { animation-duration: 1.5s; }
+  .sr-field:focus-within .sr-icon::after { animation-delay: .75s; }
+
+  /* Кнопка очистки текста */
+  .sr-clear {
+    flex: none;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: #1b1c22;
+    color: var(--sr-muted);
+    display: none; align-items: center; justify-content: center;
+    cursor: pointer; outline: 0;
+  }
+  .sr-clear.on { display: flex; }
+  .sr-clear svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; }
+  .sr-clear:focus { background: var(--sr-accent); color: var(--sr-ink); box-shadow: 0 0 0 3px #fff; }
+
+  /* --- История (карусель) --- */
+  .sr-history {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 16px var(--sr-pad) 4px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .sr-history::-webkit-scrollbar { display: none; }
+
+  .sr-chip {
+    flex: none;
+    display: flex; align-items: center; gap: 8px;
+    height: 46px;
+    padding: 0 6px 0 14px;
+    border-radius: 23px;
+    background: var(--sr-chip);
+    font: 500 16px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    white-space: nowrap;
+    cursor: pointer;
+    outline: 0;
+    scroll-snap-align: start;
+    scroll-margin-left: var(--sr-pad);
+    transition: transform .18s cubic-bezier(.2, .8, .2, 1), background .18s, color .18s, box-shadow .18s;
+  }
+  .sr-chip > svg { width: 19px; height: 19px; stroke: var(--sr-accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: stroke .18s; }
+  .sr-del {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #22232b;
+    color: var(--sr-muted);
+    display: flex; align-items: center; justify-content: center;
+    transition: background .18s, color .18s;
+  }
+  .sr-del svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; }
+  .sr-chip:focus, .sr-chip:active {
+    background: var(--sr-accent);
+    color: var(--sr-ink);
+    transform: scale(1.04);
+    box-shadow: 0 0 0 3px #fff;
+  }
+  .sr-chip:focus > svg, .sr-chip:active > svg { stroke: var(--sr-ink); }
+  .sr-chip:focus .sr-del, .sr-chip:active .sr-del { background: rgba(26, 20, 5, .15); color: var(--sr-ink); }
+
+  .sr-chip.all { padding: 0 16px 0 14px; background: transparent; box-shadow: inset 0 0 0 1.5px #2a2b33; color: var(--sr-muted); }
+  .sr-chip.all > svg { stroke: currentColor; }
+  .sr-chip.all:focus { color: var(--sr-ink); box-shadow: 0 0 0 3px #fff; }
+  .sr-chip.all:focus > svg { stroke: var(--sr-ink); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sr-icon::before, .sr-icon::after, .sr-icon svg, .sr-glint { animation: none; }
+  }
+
+  /* Только для демо-страницы, в проект не переносить */
+  body { margin: 0; padding: 24px 0; background: var(--sr-bg); }
+
+  /* --- Превью: ширина поля --- */
+  /* Телефон: как в файле — поле почти на всю ширину (боковые отступы 16px) */
+  /* ТВ: поле ровно как верхний навбар — 688px по центру */
+  body.tv .sr-wrap { width: 688px; margin: 0 auto; padding: 0; }
+  body.tv .sr-history { width: 688px; margin: 0 auto; padding-left: 0; padding-right: 0; }
+  .pv-toggle { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; background: rgba(26,26,26,.9); border: 1px solid rgba(255,255,255,.12); border-radius: 999px; padding: 4px; }
+  .pv-toggle button { border: 0; background: transparent; color: #9a9ba3; font: 600 14px system-ui, sans-serif; padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+  .pv-toggle button.on { background: #f7c948; color: #1a1405; }
+</style>
+</head>
+<body>
+
+<!-- ===== РАЗМЕТКА (вставьте на страницу поиска) ===== -->
+<div class="sr" id="sr">
+  <div class="sr-wrap">
+    <div class="sr-field">
+      <span class="sr-icon" id="sr-go" role="button" aria-label="Искать">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#1a1405" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <circle cx="10" cy="10" r="6.2" fill="rgba(255,255,255,.3)"/>
+          <path d="M14.6 14.6L20 20"/>
+          <path class="sr-glint" d="M6.9 10a3.1 3.1 0 0 1 3.1-3.1" stroke="#fff" stroke-width="1.8" pathLength="20"/>
+        </svg>
+      </span>
+      <input id="sr-q" type="text" placeholder="Введите текст…" autocomplete="off" enterkeyhint="search">
+      <span class="sr-clear" id="sr-clear" role="button" tabindex="0" aria-label="Очистить поле">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </span>
+    </div>
+  </div>
+  <div class="sr-history" id="sr-history"></div>
+</div>
+
+<script>
+/* ===== ЛОГИКА ===== */
+(function () {
+  var KEY = 'search_history';   /* ключ в localStorage */
+  var MAX = 12;                 /* сколько запросов хранить */
+
+  /* Сюда подключите свой поиск */
+  function onSearch(query) {
+    console.log('Искать:', query);
+  }
+
+  var q = document.getElementById('sr-q');
+  var go = document.getElementById('sr-go');
+  var clear = document.getElementById('sr-clear');
+  var box = document.getElementById('sr-history');
+
+  var CLOCK = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+  var X = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  var TRASH = '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
+
+  /* --- Хранилище --- */
+  function load() {
+    try { var a = JSON.parse(localStorage.getItem(KEY)); return Array.isArray(a) ? a : []; }
+    catch (e) { return []; }
+  }
+  function save(a) {
+    try { localStorage.setItem(KEY, JSON.stringify(a)); } catch (e) {}
+  }
+  var H = load();
+
+  function esc(s) {
+    return s.replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* --- Отрисовка --- */
+  function draw() {
+    box.innerHTML = H.map(function (h, i) {
+      return '<div class="sr-chip" tabindex="0" data-i="' + i + '">' + CLOCK + esc(h) +
+        '<span class="sr-del" data-d="' + i + '">' + X + '</span></div>';
+    }).join('') + (H.length ? '<div class="sr-chip all" tabindex="0" data-all="1">' + TRASH + 'Очистить</div>' : '');
+    box.style.display = H.length ? 'flex' : 'none';
+  }
+
+  function add(v) {
+    v = v.trim();
+    if (!v) return;
+    H = H.filter(function (x) { return x.toLowerCase() !== v.toLowerCase(); });
+    H.unshift(v);
+    H = H.slice(0, MAX);
+    save(H);
+    draw();
+    box.scrollLeft = 0;
+  }
+
+  /* --- Анимации иконки --- */
+  function anim(c) {
+    go.classList.remove(c);
+    void go.offsetWidth;
+    go.classList.add(c);
+    setTimeout(function () { go.classList.remove(c); }, 750);
+  }
+
+  function submit() {
+    var v = q.value.trim();
+    if (!v) return;
+    anim('go');
+    add(v);
+    onSearch(v);
+  }
+
+  /* --- События --- */
+  q.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.keyCode === 13) { submit(); }
+    else if ((e.key === 'ArrowDown' || e.keyCode === 40) && box.firstChild) {
+      e.preventDefault(); box.firstChild.focus();
+    }
+  });
+  q.addEventListener('input', function () {
+    clear.classList.toggle('on', !!q.value);
+    anim('pop');
+  });
+  go.addEventListener('click', submit);
+
+  function clearField() { q.value = ''; clear.classList.remove('on'); q.focus(); }
+  clear.addEventListener('click', clearField);
+  clear.addEventListener('keydown', function (e) { if (e.key === 'Enter') clearField(); });
+
+  box.addEventListener('click', function (e) {
+    if (e.target.closest('[data-all]')) { H = []; save(H); draw(); q.focus(); return; }
+    var d = e.target.closest('[data-d]');
+    if (d) {
+      H.splice(+d.getAttribute('data-d'), 1); save(H); draw();
+      var n = box.children[Math.min(+d.getAttribute('data-d'), box.children.length - 1)];
+      if (n) n.focus(); else q.focus();
+      return;
+    }
+    var c = e.target.closest('.sr-chip');
+    if (c) {
+      q.value = H[+c.getAttribute('data-i')];
+      clear.classList.add('on');
+      submit();
+    }
+  });
+
+  /* Навигация пультом: ←/→ по ленте, ↑ в поле, Delete/Backspace удаляет запрос */
+  box.addEventListener('keydown', function (e) {
+    var c = e.target.closest('.sr-chip');
+    if (!c) return;
+    var items = [].slice.call(box.children), i = items.indexOf(c), k = e.key, kc = e.keyCode;
+    if ((k === 'ArrowRight' || kc === 39) && items[i + 1]) {
+      e.preventDefault(); items[i + 1].focus();
+    } else if ((k === 'ArrowLeft' || kc === 37) && items[i - 1]) {
+      e.preventDefault(); items[i - 1].focus();
+    } else if (k === 'ArrowUp' || kc === 38) {
+      e.preventDefault(); q.focus();
+    } else if (k === 'Enter' || kc === 13) {
+      e.preventDefault(); c.click();
+    } else if (k === 'Delete' || k === 'Backspace' || kc === 46) {
+      var d = c.querySelector('[data-d]');
+      if (d) { e.preventDefault(); d.click(); }
+    }
+  });
+
+  draw();
+  window.searchHistory = { add: add, get: function () { return H.slice(); } };
+})();
+</script>
+
+<!-- Переключатель превью Телефон/ТВ -->
+<div class="pv-toggle" id="pvToggle"><button data-variant="phone" class="on">Телефон</button><button data-variant="tv">ТВ</button></div>
+<script>
+  (function () {
+    var btns = document.querySelectorAll('#pvToggle button');
+    btns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        btns.forEach(function (x) { x.classList.remove('on'); });
+        b.classList.add('on');
+        document.body.classList.toggle('tv', b.getAttribute('data-variant') === 'tv');
+      });
+    });
+  })();
+</script>
+</body>
+</html>
