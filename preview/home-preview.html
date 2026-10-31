@@ -161,6 +161,7 @@
   .rows-tv .row-strip { gap: 19px; margin-top: 27px; padding: 0 19px 8px 19px; scroll-padding: 0 19px 0 19px; }
   .rows-tv .row-card { width: 147px; height: 220px; border-radius: 16px; padding: 11px; }
   .rows-tv .row-rating { height: 27px; padding: 0 9px; border-radius: 13px; font-size: 15px; }
+  .more-tile { flex: none; width: 147px; height: 220px; border-radius: 16px; background: rgba(26,26,26,.95); border: 1px solid rgba(255,255,255,.16); color: #f7c948; font-size: 20px; font-weight: 800; display: flex; align-items: center; justify-content: center; scroll-snap-align: start; }
   .rows-tv .row-num { font-size: 80px; margin-bottom: 7px; -webkit-text-stroke-width: 3px; }
   .rows-tv .row-title { font-size: 16px; }
   .rows-tv .row-meta { font-size: 13px; margin-top: 3px; }
@@ -353,13 +354,13 @@
     <button data-variant="phone">Телефон</button>
   </div>
   <div class="caption">
-    <b>Главный экран v10: всё вместе (фон — тёмный, проба; меню впритык кверху).</b> Док-меню (прозрачный блюр, золотая кнопка) + hero v8 + «Пик недели» v8 + пять рядов категорий v4 (Триллеры, Ужасы, Фантастика, Сериалы, Мультфильмы).
+    <b>Главный экран v11: всё вместе (фон — тёмный, проба; меню впритык кверху).</b> Док-меню (прозрачный блюр, золотая кнопка) + hero v8 + «Пик недели» v8 + пять рядов категорий v4 (Триллеры, Ужасы, Фантастика, Сериалы, Мультфильмы).
     Заголовок «Пик недели» теперь того же размера, что и у категорий: 20px на телефоне,
     27px на ТВ. Новое — эффект для ТВ: тапни по ряду, и его полоска станет чуть ярче
     и слегка вытянется (19 → 24px) — в нативе этот фокус будет давать пульт, а не тап.
     На телефоне полоска статичная. Полоска высотой с заглавную букву (14/19),
     одинаковая во всех рядах; шапки выровнены по началу карточек.
-    Карточки всех рядов одного размера: 110×165 на телефоне (147×220 на ТВ).
+    Карточки всех рядов одного размера: 110×165 на телефоне (147×220 на ТВ). На ТВ в рядах по 10 карточек, дальше плашка «Ещё» размером с карточку (тёмная + золотая, как пилюля переключения ТВ/телефон).
     На телефоне навбара пока нет — нижний навбар телефона это отдельный элемент,
     его ещё не делали. Карточки рядов 4–10 и категорий — заглушки.
   </div>
@@ -431,8 +432,15 @@
         box.appendChild(el);
       });
     }
+    function appendMoreTile(box, cls) {
+      var t = document.createElement('div');
+      t.className = cls + ' more-tile';
+      t.textContent = 'Ещё';
+      box.appendChild(t);
+    }
     renderStrip('strip-phone');
     renderStrip('strip-tv');
+    appendMoreTile(document.getElementById('strip-tv'), 'row-card');
     var cats = [
       { h: 'Триллеры', meta: 'Фильм', items: [
         { t: 'Тихий омут', r: '7.4', g: 'linear-gradient(165deg, #4a5568 0%, #1a202c 62%, #07070a 100%)' },
@@ -442,7 +450,9 @@
         { t: 'Слепое пятно', r: '7.9', g: 'linear-gradient(165deg, #6b46c1 0%, #2a1847 62%, #07070a 100%)' },
         { t: 'Двойник', r: '7.2', g: 'linear-gradient(165deg, #9f1239 0%, #2f0713 62%, #07070a 100%)' },
         { t: 'Холодный след', r: '8.3', g: 'linear-gradient(165deg, #276749 0%, #122a1d 62%, #07070a 100%)' },
-        { t: 'Третий этаж', r: '6.5', g: 'linear-gradient(165deg, #b45309 0%, #2f1a04 62%, #07070a 100%)' }
+        { t: 'Третий этаж', r: '6.5', g: 'linear-gradient(165deg, #b45309 0%, #2f1a04 62%, #07070a 100%)' },
+        { t: 'Тихий час', r: '7.6', g: 'linear-gradient(165deg, #0f766e 0%, #042a26 62%, #07070a 100%)' },
+        { t: 'Последний свидетель', r: '8.0', g: 'linear-gradient(165deg, #1e3a8a 0%, #0b1230 62%, #07070a 100%)' }
       ]},
       { h: 'Ужасы', meta: 'Фильм', items: [
         { t: 'Тихий лес', r: '6.7', g: 'linear-gradient(165deg, #14532d 0%, #071a0e 62%, #07070a 100%)' },
@@ -452,7 +462,9 @@
         { t: 'Кукольный дом', r: '6.9', g: 'linear-gradient(165deg, #831843 0%, #2a0716 62%, #07070a 100%)' },
         { t: 'Туман', r: '7.3', g: 'linear-gradient(165deg, #475569 0%, #131c26 62%, #07070a 100%)' },
         { t: 'Подвал', r: '6.4', g: 'linear-gradient(165deg, #44403c 0%, #171412 62%, #07070a 100%)' },
-        { t: 'Кровавая луна', r: '7.8', g: 'linear-gradient(165deg, #991b1b 0%, #2b0707 62%, #07070a 100%)' }
+        { t: 'Кровавая луна', r: '7.8', g: 'linear-gradient(165deg, #991b1b 0%, #2b0707 62%, #07070a 100%)' },
+        { t: 'Чёрный лес', r: '7.1', g: 'linear-gradient(165deg, #14532d 0%, #071a0e 62%, #07070a 100%)' },
+        { t: 'Зов', r: '6.8', g: 'linear-gradient(165deg, #3b0764 0%, #150329 62%, #07070a 100%)' }
       ]},
       { h: 'Фантастика', meta: 'Фильм', items: [
         { t: 'Орбита', r: '8.0', g: 'linear-gradient(165deg, #1d4ed8 0%, #0a1730 62%, #07070a 100%)' },
@@ -462,7 +474,9 @@
         { t: 'Пепел звёзд', r: '7.9', g: 'linear-gradient(165deg, #6d28d9 0%, #1e0a3d 62%, #07070a 100%)' },
         { t: 'Горизонт', r: '6.9', g: 'linear-gradient(165deg, #be185d 0%, #2e0717 62%, #07070a 100%)' },
         { t: 'Машина', r: '7.7', g: 'linear-gradient(165deg, #334155 0%, #101826 62%, #07070a 100%)' },
-        { t: 'Далёкий свет', r: '8.2', g: 'linear-gradient(165deg, #0369a1 0%, #06202f 62%, #07070a 100%)' }
+        { t: 'Далёкий свет', r: '8.2', g: 'linear-gradient(165deg, #0369a1 0%, #06202f 62%, #07070a 100%)' },
+        { t: 'Аванпост', r: '7.4', g: 'linear-gradient(165deg, #7c2d12 0%, #2a1005 62%, #07070a 100%)' },
+        { t: 'Сияние звёзд', r: '8.1', g: 'linear-gradient(165deg, #6d28d9 0%, #1e0a3d 62%, #07070a 100%)' }
       ]},
       { h: 'Сериалы', meta: 'Сериал', items: [
         { t: 'Город без сна', r: '8.1', g: 'linear-gradient(165deg, #1e3a8a 0%, #0b1230 62%, #07070a 100%)' },
@@ -472,7 +486,9 @@
         { t: 'Код', r: '7.0', g: 'linear-gradient(165deg, #4a5568 0%, #1a202c 62%, #07070a 100%)' },
         { t: 'Северный ветер', r: '7.9', g: 'linear-gradient(165deg, #6b46c1 0%, #2a1847 62%, #07070a 100%)' },
         { t: 'Академия', r: '6.8', g: 'linear-gradient(165deg, #9f1239 0%, #2f0713 62%, #07070a 100%)' },
-        { t: 'Поколение', r: '7.3', g: 'linear-gradient(165deg, #b45309 0%, #2f1a04 62%, #07070a 100%)' }
+        { t: 'Поколение', r: '7.3', g: 'linear-gradient(165deg, #b45309 0%, #2f1a04 62%, #07070a 100%)' },
+        { t: 'Граница', r: '7.6', g: 'linear-gradient(165deg, #991b1b 0%, #2b0707 62%, #07070a 100%)' },
+        { t: 'Тихий город', r: '8.0', g: 'linear-gradient(165deg, #0e7490 0%, #083344 62%, #07070a 100%)' }
       ]},
       { h: 'Мультфильмы', meta: 'Мультфильм', items: [
         { t: 'Лис и луна', r: '8.2', g: 'linear-gradient(165deg, #d97706 0%, #2f1a04 62%, #07070a 100%)' },
@@ -482,7 +498,9 @@
         { t: 'Кот-астронавт', r: '7.5', g: 'linear-gradient(165deg, #db2777 0%, #3b0a26 62%, #07070a 100%)' },
         { t: 'Зимняя сказка', r: '8.3', g: 'linear-gradient(165deg, #38bdf8 0%, #0c2a3d 62%, #07070a 100%)' },
         { t: 'Остров чудес', r: '7.7', g: 'linear-gradient(165deg, #65a30d 0%, #1a2a05 62%, #07070a 100%)' },
-        { t: 'Пекарня', r: '7.1', g: 'linear-gradient(165deg, #ea580c 0%, #2f1503 62%, #07070a 100%)' }
+        { t: 'Пекарня', r: '7.1', g: 'linear-gradient(165deg, #ea580c 0%, #2f1503 62%, #07070a 100%)' },
+        { t: 'Чудо-остров', r: '7.8', g: 'linear-gradient(165deg, #0284c7 0%, #082a3d 62%, #07070a 100%)' },
+        { t: 'Пушистые друзья', r: '8.4', g: 'linear-gradient(165deg, #65a30d 0%, #1a2a05 62%, #07070a 100%)' }
       ]}
     ];
     function renderCats(id) {
@@ -506,6 +524,7 @@
         row.appendChild(head);
         row.appendChild(strip);
         root.appendChild(row);
+        if (id === 'cats-tv') appendMoreTile(strip, 'cat-card');
       });
     }
     renderCats('cats-phone');

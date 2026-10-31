@@ -29,9 +29,7 @@
 
   /* --- сетка --- */
   .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  body.tv .grid { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 20px; padding-bottom: 8px; scrollbar-width: none; scroll-snap-type: x proximity; }
-  body.tv .grid::-webkit-scrollbar { display: none; }
-  body.tv .card { flex: 0 0 240px; scroll-snap-align: start; }
+  body.tv .grid { grid-template-columns: repeat(7, 1fr); gap: 20px; }
   .card { cursor: pointer; }
   .poster { position: relative; aspect-ratio: 2/3; border-radius: 14px; overflow: hidden; background: #1a1a1a; }
   .poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -228,7 +226,6 @@ function sorted(list){
 }
 function renderGrid(){
   const list = sorted(filtered());
-  if (document.body.classList.contains('tv')) $('grid').scrollLeft = 0;
   const n = countActive(applied);
   $('fltCnt').textContent = n ? '(' + n + ')' : '';
   $('grid').innerHTML = list.map(function(m){
@@ -315,12 +312,6 @@ document.querySelectorAll('[data-toast]').forEach(function(b){
 });
 $('pvPhone').addEventListener('click', function(){ document.body.classList.remove('tv'); $('pvPhone').classList.add('on'); $('pvTV').classList.remove('on'); });
 $('pvTV').addEventListener('click', function(){ document.body.classList.add('tv'); $('pvTV').classList.add('on'); $('pvPhone').classList.remove('on'); });
-document.addEventListener('keydown', function(e){
-  if (!document.body.classList.contains('tv')) return;
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-  if (e.key === 'ArrowRight') $('grid').scrollBy({left: 260, behavior: 'smooth'});
-  if (e.key === 'ArrowLeft') $('grid').scrollBy({left: -260, behavior: 'smooth'});
-});
 document.querySelectorAll('[data-goto]').forEach(function(b){
   b.addEventListener('click', function(){ location.href = b.dataset.goto; });
 });
