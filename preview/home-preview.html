@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawflix — главный экран (превью v1)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Manrope:wght@500;700&family=Oswald:wght@700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #07080d; color: #fff; font-family: "Nunito", system-ui, sans-serif; font-size: 16px; min-height: 100vh; overflow-x: hidden; }
+  /* СЛОЙ 0: общий фон (по умолчанию — Оранж, как решили) */
+  .bg-layer {
+    position: fixed; inset: 0; z-index: 0;
+    background: url("bg-orange.jpg") center/cover no-repeat;
+  }
+
+  /* ===== Верхний навбар ТВ v5: одна строка, пять пунктов, блюр, без часов и погоды ===== */
+  .topmenu {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    display: flex; gap: clamp(18px,4vw,44px); align-items: center;
+    padding: 1.1em 2em;
+    background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,0));
+    -webkit-backdrop-filter: blur(10px) saturate(1.3); backdrop-filter: blur(10px) saturate(1.3);
+    -webkit-mask-image: linear-gradient(180deg,#000 0,#000 calc(100% - .9em),transparent 100%);
+    mask-image: linear-gradient(180deg,#000 0,#000 calc(100% - .9em),transparent 100%);
+    scrollbar-width: none;
+  }
+  .topmenu::-webkit-scrollbar { display: none; }
+  .menu-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: 1 1 auto; min-width: 0; }
+  .menu-scroll { display: flex; gap: clamp(18px,4vw,44px); align-items: center; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+  .menu-scroll::-webkit-scrollbar { display: none; }
+  @media (max-width: 900px) { .menu-scroll { gap: 20px; } }
+  .menu-btn {
+    position: relative; flex: 0 0 auto; background: transparent; border: 0;
+    color: rgba(255,255,255,.74); font-family: inherit;
+    font-size: clamp(17px,3vw,25px); font-weight: 400; padding: 10px 0 13px; white-space: nowrap;
+    text-shadow: 0 0 8px rgba(255,255,255,.06); cursor: pointer;
+  }
+  .menu-btn.active { color: #fff; font-weight: 600; text-shadow: 0 0 8px rgba(255,255,255,.18), 0 0 18px rgba(255,255,255,.08); }
+  .menu-btn:after {
+    content: ""; position: absolute; left: 25%; right: 25%; bottom: 3px; height: 2px; border-radius: 2px;
+    background: rgba(255,255,255,.88); transform: scaleX(0); opacity: 0; box-shadow: 0 0 8px rgba(255,255,255,.22);
+  }
+  .menu-btn.active:after { transform: scaleX(1); opacity: .7; }
+  .pk-logo {
+    position: relative; z-index: 1; display: flex; align-items: center; gap: .1em;
+    font-size: calc(clamp(17px,3vw,25px) * 1.3); line-height: 1; flex: none; cursor: pointer;
+    margin-right: calc(.5em - clamp(18px,4vw,44px));
+  }
+  .pk-logo .paw { width: 1.15em; height: 1.15em; flex: none; overflow: visible; filter: drop-shadow(0 .06em .18em rgba(66,133,244,.5)); }
+  .pk-logo .word { display: flex; font-family: 'Fredoka', system-ui, sans-serif; font-weight: 600; letter-spacing: -.02em; padding-bottom: .04em; }
+  .pk-logo .word .f { color: #b4d0fb; } .pk-logo .word .f2 { color: #8ab4f8; }
+  .pk-logo .word .f3 { color: #6b9ff5; } .pk-logo .word .f4 { color: #4f8bf2; }
+
+  /* ===== Hero ТВ v8 ===== */
+  .hero-tv { position: relative; z-index: 1; overflow: hidden; width: 100%; }
+  .hero-track {
+    display: flex; gap: 12px; width: max-content;
+    margin-left: calc(-64vw - 12px); /* центральная карточка 76vw, по бокам видно по ~11-12vw соседей */
+  }
+  .hero-card {
+    position: relative; flex: none; width: 76vw; aspect-ratio: 16/9; border-radius: 20px; overflow: hidden;
+    background-size: cover; background-position: center 25%; background-repeat: no-repeat;
+    box-shadow: 0 16px 40px rgba(0,0,0,.5);
+  }
+  .hero-card::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.82) 100%);
+  }
+  .hero-info { position: absolute; left: 28px; bottom: 24px; z-index: 2; max-width: 62%; }
+  .film-logo {
+    font-weight: 800; text-transform: uppercase; letter-spacing: .02em; line-height: 1;
+    background: linear-gradient(100deg, #ffb347, #ff5e78 45%, #7aa8ff);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 2px 12px rgba(0,0,0,.6));
+  }
+  .hero-info .film-logo { font-size: clamp(34px,6vw,64px); }
+  .hero-meta { margin-top: 10px; font-size: clamp(14px,2vw,18px); color: rgba(255,255,255,.92); text-shadow: 0 1px 10px rgba(0,0,0,.8); }
+  .hero-meta .star { color: #f6c453; }
+  .hero-desc {
+    margin-top: 8px; font-size: clamp(13px,1.8vw,16px); line-height: 1.45; color: rgba(255,255,255,.85);
+    text-shadow: 0 1px 10px rgba(0,0,0,.8);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .watch-btn {
+    margin-top: 14px; background: #fff; color: #000; border: 0; font-family: inherit;
+    font-size: 16px; font-weight: 800; padding: 10px 26px; border-radius: 99px; cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,.45);
+  }
+  .dots { display: flex; gap: 8px; margin-top: 14px; }
+  .dots button {
+    width: 10px; height: 10px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+    background: rgba(255,255,255,.35);
+  }
+  .dots button.active { background: #fff; transform: scale(1.2); }
+
+  /* ===== Hero телефон v8 ===== */
+  .hero-phone { position: relative; z-index: 1; width: 100%; padding: 16px 0 0; display: flex; flex-direction: column; align-items: center; }
+  .phone-card {
+    position: relative; width: min(92vw, 430px); aspect-ratio: 2/3; border-radius: 24px; overflow: hidden;
+    background-size: cover; background-position: center; background-repeat: no-repeat;
+    box-shadow: 0 16px 40px rgba(0,0,0,.55);
+  }
+  .phone-card::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,.82) 100%);
+  }
+  .phone-info { position: absolute; left: 18px; right: 18px; bottom: 18px; z-index: 2; }
+  .phone-info .film-logo { font-size: 32px; }
+  .phone-info .hero-meta { margin-top: 8px; font-size: 15px; }
+  .phone-info .hero-desc { margin-top: 6px; font-size: 14px; }
+  .phone-info .watch-btn { font-size: 15px; padding: 9px 24px; }
+  .phone-info .dots { margin-top: 12px; }
+
+  /* ===== Ряд v3 ===== */
+  .rows-phone, .rows-tv { position: relative; z-index: 1; }
+  .rows-phone { padding: 28px 0 0 0; }
+  .row-head { display: flex; align-items: center; gap: 12px; padding-left: 16px; padding-right: 16px; }
+  .row-bar { width: 5px; height: 44px; border-radius: 3px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.45); flex: none; }
+  .row-head-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .row-h { font-family: 'Manrope', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.1; color: #f4f4f6; }
+  .row-strip {
+    display: flex; gap: 14px; overflow-x: auto; margin-top: 20px;
+    padding: 0 14px 8px 14px; scroll-padding: 0 14px 0 14px;
+    scrollbar-width: none; scroll-snap-type: x mandatory;
+  }
+  .row-strip::-webkit-scrollbar { display: none; }
+  .row-card {
+    width: 216px; flex: none; height: 320px; border-radius: 26px; position: relative; overflow: hidden;
+    box-sizing: border-box; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;
+    scroll-snap-align: start;
+  }
+  .row-card.last { scroll-snap-align: end; }
+  .row-top { display: flex; justify-content: flex-end; align-items: flex-start; }
+  .row-rating {
+    height: 26px; padding: 0 10px; border-radius: 13px; background: #ffc857; color: #1a1304;
+    font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .row-bottom { position: relative; }
+  .row-num {
+    font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 120px; line-height: 0.8;
+    color: transparent; -webkit-text-stroke: 2px rgba(255,200,87,0.85); margin-bottom: 10px;
+  }
+  .row-title {
+    font-family: 'Manrope', sans-serif; font-size: 18px; font-weight: 700; line-height: 1.15; color: #fff;
+    height: 2.3em; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .row-meta { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 500; color: #c4c4cc; margin-top: 4px; }
+  .rows-tv { padding: 48px 0 0 0; }
+  .rows-tv .row-bar { width: 7px; height: 59px; border-radius: 4px; }
+  .rows-tv .row-head { gap: 16px; padding-left: 48px; padding-right: 48px; }
+  .rows-tv .row-h { font-size: 35px; }
+  .rows-tv .row-strip { gap: 19px; margin-top: 27px; padding: 0 19px 8px 19px; scroll-padding: 0 19px 0 19px; }
+  .rows-tv .row-card { width: 288px; height: 427px; border-radius: 35px; padding: 19px; }
+  .rows-tv .row-rating { height: 35px; padding: 0 13px; border-radius: 17px; font-size: 17px; }
+  .rows-tv .row-num { font-size: 160px; margin-bottom: 13px; -webkit-text-stroke-width: 3px; }
+  .rows-tv .row-title { font-size: 24px; }
+  .rows-tv .row-meta { font-size: 17px; margin-top: 5px; }
+
+  /* Переключатель вариантов — только для превью */
+  .switch {
+    position: relative; z-index: 60; margin: 24px auto 0; width: fit-content;
+    display: flex; gap: 8px; padding: 6px; border-radius: 99px;
+    background: rgba(10,10,14,.7); border: 1px solid rgba(255,255,255,.16);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  }
+  .switch .thumb {
+    position: absolute; z-index: 0; top: 6px; bottom: 6px; left: 0; width: 0;
+    border-radius: 99px; background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.35);
+  }
+  .switch button {
+    position: relative; z-index: 1;
+    background: transparent; border: 0; color: rgba(255,255,255,.75); font-family: inherit;
+    font-size: 15px; font-weight: 700; padding: 8px 20px; border-radius: 99px; cursor: pointer; white-space: nowrap;
+  }
+  .switch button.active { color: #000; }
+  .caption {
+    position: relative; z-index: 60; margin: 16px auto 24px; font-size: 13px; line-height: 1.6;
+    color: rgba(255,255,255,.7); text-shadow: 0 1px 8px rgba(0,0,0,.9); max-width: 94vw;
+  }
+  .caption b { color: #fff; font-weight: 600; }
+  .toast {
+    position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 100;
+    background: rgba(10,10,14,.9); border: 1px solid rgba(255,255,255,.2); color: #fff;
+    font-size: 14px; font-weight: 600; padding: 10px 20px; border-radius: 99px; white-space: nowrap;
+    opacity: 0; transition: opacity .25s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  body[data-variant="phone"] .hero-tv, body[data-variant="phone"] .rows-tv, body[data-variant="phone"] .topmenu { display: none; }
+  body[data-variant="tv"] .hero-phone, body[data-variant="tv"] .rows-phone { display: none; }
+</style>
+</head>
+<body data-variant="tv">
+  <div class="bg-layer"></div>
+
+  <header class="topmenu" id="menu">
+    <div class="pk-logo" role="img" aria-label="Pawflix">
+      <svg class="paw" viewBox="0 0 120 120" aria-hidden="true">
+        <defs>
+          <linearGradient id="pk-g" gradientUnits="userSpaceOnUse" x1="8" y1="14" x2="112" y2="116"><stop offset="0" stop-color="#AECBFA"/><stop offset="1" stop-color="#3F7DF0"/></linearGradient>
+          <mask id="pk-m"><rect width="120" height="120" fill="#fff"/><path d="M54 77L54 97L71.500 87Z" fill="#000" stroke="#000" stroke-width="4.500" stroke-linejoin="round"/></mask>
+        </defs>
+        <g fill="url(#pk-g)">
+          <g><ellipse cx="19" cy="57" rx="10" ry="12.500" transform="rotate(-22 19 57)"/></g>
+          <g><ellipse cx="42" cy="32" rx="11.500" ry="14.500" transform="rotate(-8 42 32)"/></g>
+          <g><ellipse cx="78" cy="32" rx="11.500" ry="14.500" transform="rotate(8 78 32)"/></g>
+          <g><ellipse cx="101" cy="57" rx="10" ry="12.500" transform="rotate(22 101 57)"/></g>
+          <g mask="url(#pk-m)"><circle cx="41" cy="96" r="13"/><circle cx="79" cy="96" r="13"/><circle cx="60" cy="102" r="12"/><ellipse cx="60" cy="82" rx="26" ry="21"/></g>
+        </g>
+      </svg>
+      <div class="word" aria-hidden="true"><span>p</span><span>a</span><span>w</span><span class="f">f</span><span class="f2">l</span><span class="f3">i</span><span class="f4">x</span></div>
+    </div>
+    <div class="menu-right">
+    <nav class="menu-scroll" id="menu-scroll">
+      <button class="menu-btn active" data-screen="home">Главная</button>
+      <button class="menu-btn" data-screen="collections">Коллекции</button>
+      <button class="menu-btn" data-screen="catalog">Каталог</button>
+      <button class="menu-btn" data-screen="search">Поиск</button>
+      <button class="menu-btn" data-screen="settings">Настройки</button>
+    </nav>
+  </div>
+  </header>
+
+  <section class="hero-tv" id="hero-tv">
+    <div class="hero-track">
+      <div class="hero-card side" id="card-prev"></div>
+      <div class="hero-card" id="card-center">
+        <div class="hero-info">
+          <div class="film-logo" id="tv-logo"></div>
+          <div class="hero-meta" id="tv-meta"></div>
+          <div class="hero-desc" id="tv-desc"></div>
+          <button class="watch-btn" id="tv-watch">Смотреть</button>
+          <div class="dots" id="tv-dots"></div>
+        </div>
+      </div>
+      <div class="hero-card side" id="card-next"></div>
+    </div>
+  </section>
+
+  <section class="hero-phone" id="hero-phone">
+    <div class="phone-card" id="phone-card">
+      <div class="phone-info">
+        <div class="film-logo" id="phone-logo"></div>
+        <div class="hero-meta" id="phone-meta"></div>
+        <div class="hero-desc" id="phone-desc"></div>
+        <button class="watch-btn" id="phone-watch">Смотреть</button>
+        <div class="dots" id="phone-dots"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rows-phone" id="rows-phone">
+    <div class="row-head">
+      <div class="row-bar"></div>
+      <div class="row-head-text">
+        <div class="row-h">Пик недели</div>
+      </div>
+    </div>
+    <div class="row-strip" id="strip-phone"></div>
+  </section>
+
+  <section class="rows-tv" id="rows-tv">
+    <div class="row-head">
+      <div class="row-bar"></div>
+      <div class="row-head-text">
+        <div class="row-h">Пик недели</div>
+      </div>
+    </div>
+    <div class="row-strip" id="strip-tv"></div>
+  </section>
+
+  <div class="switch" id="switch">
+    <span class="thumb"></span>
+    <button class="active" data-variant="tv">ТВ</button>
+    <button data-variant="phone">Телефон</button>
+  </div>
+  <div class="caption">
+    <b>Главный экран v1: навбар + hero + ряд вместе.</b> Собрано из уже одобренного:
+    верхний навбар ТВ v5 (одна строка, пять пунктов, без часов и погоды), hero v8
+    (автопрокрутка 15 секунд, точки, «Смотреть» открывает карточку), ряд v3 «Пик недели»
+    (10 карточек, зазоры слева и в конце — как между карточками, прилипание без срезов,
+    цифры на одной высоте). На телефоне навбара пока нет — нижний навбар телефона
+    это отдельный элемент, его ещё не делали. Карточки ряда 4–10 — заглушки.
+  </div>
+  <div class="toast" id="toast">В приложении откроется карточка фильма</div>
+  <script>
+    var slides = [
+      { artTv: 'poster.jpg', artPhone: 'hero-phone-poster.jpg', logo: 'Надежда',
+        meta: '<span class="star">★</span> 6.8 · 2026 · фантастика, детектив, боевик',
+        desc: 'В небольшом городке Хоуп-Харбор начинают происходить жуткие события: местные жители обнаруживают растерзанных животных, а…' },
+      { artTv: 'hero-tv-left.jpg', artPhone: 'hero-tv-left.jpg', logo: 'Название фильма',
+        meta: '<span class="star">★</span> 8.6 · 2026 · жанры',
+        desc: 'Описание фильма из TMDB появится здесь.' },
+      { artTv: 'hero-tv-right.jpg', artPhone: 'hero-tv-right.jpg', logo: 'Название фильма',
+        meta: '<span class="star">★</span> 8.6 · 2026 · жанры',
+        desc: 'Описание фильма из TMDB появится здесь.' }
+    ];
+    var idx = 0, timer = null;
+    function render() {
+      var s = slides[idx], prev = slides[(idx + slides.length - 1) % slides.length], next = slides[(idx + 1) % slides.length];
+      document.getElementById('card-center').style.backgroundImage = 'url("' + s.artTv + '")';
+      document.getElementById('card-prev').style.backgroundImage = 'url("' + prev.artTv + '")';
+      document.getElementById('card-next').style.backgroundImage = 'url("' + next.artTv + '")';
+      document.getElementById('tv-logo').textContent = s.logo;
+      document.getElementById('tv-meta').innerHTML = s.meta;
+      document.getElementById('tv-desc').textContent = s.desc;
+      document.getElementById('phone-card').style.backgroundImage = 'url("' + s.artPhone + '")';
+      document.getElementById('phone-logo').textContent = s.logo;
+      document.getElementById('phone-meta').innerHTML = s.meta;
+      document.getElementById('phone-desc').textContent = s.desc;
+      ['tv-dots', 'phone-dots'].forEach(function (id) {
+        var box = document.getElementById(id); box.innerHTML = '';
+        slides.forEach(function (_, i) {
+          var d = document.createElement('button');
+          if (i === idx) d.className = 'active';
+          d.setAttribute('aria-label', 'Слайд ' + (i + 1));
+          d.addEventListener('click', function () { go(i); });
+          box.appendChild(d);
+        });
+      });
+    }
+    function go(i) { idx = i; render(); restart(); }
+    function restart() {
+      if (timer) clearInterval(timer);
+      timer = setInterval(function () { idx = (idx + 1) % slides.length; render(); }, 15000);
+    }
+    render(); restart();
+    var cards = [
+      { n: 1, t: 'Человек-паук: Новый день', m: '2026 · Боевик', r: '8.5', g: 'linear-gradient(165deg, #b5651d 0%, #5a2e10 62%, #07070a 100%)' },
+      { n: 2, t: 'Собачьи зубы', m: '2026 · Драма', r: '6.9', g: 'linear-gradient(165deg, #5f7a74 0%, #26322f 62%, #07070a 100%)' },
+      { n: 3, t: 'Бугимен', m: '2023 · Ужасы', r: '6.4', g: 'linear-gradient(165deg, #a3261c 0%, #3d0c09 62%, #07070a 100%)' },
+      { n: 4, t: 'Очень длинное название фильма, которое точно займёт две строки', m: '2024 · Фантастика', r: '7.8', g: 'linear-gradient(165deg, #2b6cb0 0%, #12283f 62%, #07070a 100%)' },
+      { n: 5, t: 'Дом', m: '2025 · Триллер', r: '7.1', g: 'linear-gradient(165deg, #6b46c1 0%, #2a1847 62%, #07070a 100%)' },
+      { n: 6, t: 'Тихий лес', m: '2023 · Ужасы', r: '6.7', g: 'linear-gradient(165deg, #276749 0%, #122a1d 62%, #07070a 100%)' },
+      { n: 7, t: 'Последний поезд на север', m: '2026 · Драма', r: '8.1', g: 'linear-gradient(165deg, #4a5568 0%, #1a202c 62%, #07070a 100%)' },
+      { n: 8, t: 'Лето', m: '2024 · Комедия', r: '6.2', g: 'linear-gradient(165deg, #db2777 0%, #3b0a26 62%, #07070a 100%)' },
+      { n: 9, t: 'Город без сна', m: '2025 · Детектив', r: '7.4', g: 'linear-gradient(165deg, #1e3a8a 0%, #0b1230 62%, #07070a 100%)' },
+      { n: 10, t: 'Море внутри нас', m: '2026 · Мелодрама', r: '7.9', g: 'linear-gradient(165deg, #0e7490 0%, #083344 62%, #07070a 100%)' }
+    ];
+    function renderStrip(id) {
+      var box = document.getElementById(id);
+      cards.forEach(function (c, i) {
+        var el = document.createElement('div');
+        el.className = 'row-card' + (i === cards.length - 1 ? ' last' : '');
+        el.style.background = c.g;
+        el.innerHTML =
+          '<div class="row-top"><div class="row-rating">★ ' + c.r + '</div></div>' +
+          '<div class="row-bottom"><div class="row-num" aria-hidden="true">' + c.n + '</div>' +
+          '<div class="row-title">' + c.t + '</div><div class="row-meta">' + c.m + '</div></div>';
+        box.appendChild(el);
+      });
+    }
+    renderStrip('strip-phone');
+    renderStrip('strip-tv');
+    document.querySelectorAll('.menu-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.menu-btn').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+      });
+    });
+    /* Эффект переключения пилюли из файла Denis: пружина + squash & stretch, дизайн наш */
+    (function pillSpring(root, onSelect) {
+      var t = root.querySelector('.thumb'), b = Array.prototype.slice.call(root.querySelectorAll('button'));
+      function box(el) { return { l: el.offsetLeft, w: el.offsetWidth }; }
+      function put(el) { var r = box(el); t.style.left = r.l + 'px'; t.style.width = r.w + 'px'; }
+      put(b.filter(function (x) { return x.classList.contains('active'); })[0] || b[0]);
+      b.forEach(function (el) {
+        el.addEventListener('click', function () {
+          if (el.classList.contains('active')) return;
+          var a = box(t), z = box(el);
+          b.forEach(function (x) { x.classList.toggle('active', x === el); });
+          t.getAnimations().forEach(function (x) { x.cancel(); });
+          t.animate([{ left: a.l + 'px', width: a.w + 'px' }, { left: z.l + 'px', width: z.w + 'px' }],
+            { duration: 550, easing: 'cubic-bezier(.34,1.45,.64,1)' });
+          t.animate([{ scale: '1 1' }, { scale: '1.14 .92', offset: .3 }, { scale: '1 1' }],
+            { duration: 550, easing: 'ease' });
+          t.style.left = z.l + 'px'; t.style.width = z.w + 'px';
+          try { navigator.vibrate && navigator.vibrate(8); } catch (e) {}
+          if (onSelect) onSelect(el);
+        });
+      });
+      addEventListener('resize', function () { put(root.querySelector('.active')); });
+    })(document.getElementById('switch'), function (el) {
+      document.body.setAttribute('data-variant', el.getAttribute('data-variant'));
+    });
+    var toast = document.getElementById('toast'), toastTimer = null;
+    function showToast() {
+      toast.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 2000);
+    }
+    document.getElementById('tv-watch').addEventListener('click', showToast);
+    document.getElementById('phone-watch').addEventListener('click', showToast);
+  </script>
+</body>
+</html>

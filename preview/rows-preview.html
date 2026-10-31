@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pawflix — ряд карточек (превью v2)</title>
+<title>pawflix — ряд карточек (превью v3)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Oswald:wght@700&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -22,7 +22,8 @@
   .row-head-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
   .row-h { font-family: 'Manrope', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.1; color: #f4f4f6; }
   .row-strip {
-    display: flex; gap: 14px; overflow-x: auto; margin-top: 20px; padding-bottom: 8px;
+    display: flex; gap: 14px; overflow-x: auto; margin-top: 20px;
+    padding: 0 14px 8px 14px; scroll-padding: 0 14px 0 14px;
     scrollbar-width: none; scroll-snap-type: x mandatory;
   }
   .row-strip::-webkit-scrollbar { display: none; }
@@ -32,6 +33,8 @@
     box-sizing: border-box; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;
     scroll-snap-align: start;
   }
+  /* Последняя карточка прилипает правым краем — чтобы в конце ряда тоже был виден зазор */
+  .row-card.last { scroll-snap-align: end; }
   /* Правка Denis: качества нет, осталась только метка рейтинга — справа сверху, на том же месте */
   .row-top { display: flex; justify-content: flex-end; align-items: flex-start; }
   .row-rating {
@@ -59,7 +62,7 @@
   .rows-tv .row-bar { width: 7px; height: 59px; border-radius: 4px; }
   .rows-tv .row-head { gap: 16px; padding-left: 48px; padding-right: 48px; }
   .rows-tv .row-h { font-size: 35px; }
-  .rows-tv .row-strip { gap: 19px; margin-top: 27px; }
+  .rows-tv .row-strip { gap: 19px; margin-top: 27px; padding: 0 19px 8px 19px; scroll-padding: 0 19px 0 19px; }
   .rows-tv .row-card { width: 288px; height: 427px; border-radius: 35px; padding: 19px; }
   .rows-tv .row-rating { height: 35px; padding: 0 13px; border-radius: 17px; font-size: 17px; }
   .rows-tv .row-num { font-size: 160px; margin-bottom: 13px; -webkit-text-stroke-width: 3px; }
@@ -121,13 +124,12 @@
     <button class="active" data-variant="phone">Телефон</button>
   </div>
   <div class="caption">
-    <b>Пробный вариант v2: ряд «Пик недели».</b> Правки по замечаниям:
-    кнопка «Все» убрана совсем; подзаголовок «Смотрят чаще всего» убран — только «Пик недели»;
-    полоска слева теперь белая с тенью — универсальная, видна на любом фоне (жёлтая терялась на оранжевом);
-    ряд идёт от самого края экрана, а прокрутка — с прилипанием: карточка всегда встаёт целиком
-    и больше не срезается слева. Остальное как в v1: качества нет, рейтинг (★) справа сверху,
-    цифры 1–10 на одной высоте, 10 карточек, после десятой ничего нет. Карточки 1–3 — из файла,
-    4–10 — заглушки. ТВ-вариант — тот же дизайн, масштаб ×1.333.
+    <b>Пробный вариант v3: ряд «Пик недели».</b> Зазоры: слева и в конце ряда — ровно как между
+    карточками (14px на телефоне, 19px на ТВ); прилипание сохранено — карточка целиком,
+    последняя прилипает правым краем, чтобы конечный зазор тоже был виден. Остальное как в v2:
+    кнопки «Все» нет, подзаголовка нет, только «Пик недели», полоска белая универсальная,
+    качества нет, рейтинг (★) справа сверху, цифры 1–10 на одной высоте, 10 карточек.
+    Карточки 1–3 — из файла, 4–10 — заглушки. ТВ-вариант — тот же дизайн, масштаб ×1.333.
   </div>
   <script>
     var cards = [
@@ -144,9 +146,9 @@
     ];
     function renderStrip(id) {
       var box = document.getElementById(id);
-      cards.forEach(function (c) {
+      cards.forEach(function (c, i) {
         var el = document.createElement('div');
-        el.className = 'row-card';
+        el.className = 'row-card' + (i === cards.length - 1 ? ' last' : '');
         el.style.background = c.g;
         el.innerHTML =
           '<div class="row-top"><div class="row-rating">★ ' + c.r + '</div></div>' +
