@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Эллиот Пейдж</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #07080d; color: #fff; font-family: 'Nunito', system-ui, sans-serif; min-height: 100vh; }
+  .back { position: fixed; top: 14px; left: 14px; z-index: 10; display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.2); color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; padding: 9px 16px; border-radius: 99px; text-decoration: none; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .page { padding: 64px 14px 32px; }
+  .page > h1 { margin-bottom: 16px; }
+  .page > .sub { margin-bottom: 16px; }
+  h1 { font-family: 'Manrope', sans-serif; font-size: 24px; font-weight: 700; line-height: 1.2; }
+  .sub { font-size: 14px; color: rgba(255,255,255,.55); margin-top: 6px; }
+  h2 { font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 700; margin: 24px 0 14px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 10px; }
+  .card { min-width: 0; }
+  .card .thumb { position: relative; aspect-ratio: 2/3; overflow: hidden; border-radius: 12px; background: #1a1a1a; }
+  .card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card .badge { position: absolute; top: 8px; right: 8px; height: 22px; padding: 0 8px; border-radius: 11px; background: #ffc857; color: #1a1304; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 3px; }
+  .card .t { font-size: 13px; font-weight: 700; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .y { font-size: 12px; color: rgba(255,255,255,.55); margin-top: 2px; }
+  body.tv .grid { grid-template-columns: repeat(auto-fill, 186px); gap: 28px; }
+  body.tv .card .t { font-size: 17px; }
+  body.tv .card .y { font-size: 15px; }
+  .view-switch { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 10; display: flex; gap: 4px; background: rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.2); border-radius: 99px; padding: 4px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .view-switch button { background: none; border: 0; color: rgba(255,255,255,.6); font-family: inherit; font-size: 13px; font-weight: 700; padding: 7px 16px; border-radius: 99px; cursor: pointer; }
+  .view-switch button.on { background: #ffc857; color: #1a1304; }
+  .p-head { display: flex; gap: 16px; align-items: center; }
+  .p-head img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; background: #262626; flex-shrink: 0; }
+  .bio-text { font-size: 15px; line-height: 1.5; color: rgba(255,255,255,.85); margin-top: 16px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .bio-text.open { display: block; }
+  .bio-more { margin-top: 8px; background: none; border: 0; color: #e4b857; font-family: inherit; font-size: 14px; font-weight: 700; padding: 0; cursor: pointer; }
+  .more-btn { display: block; margin: 24px auto 0; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16); color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 99px; cursor: pointer; }
+</style>
+</head>
+<body>
+<a class="back" href="inception-preview.html" onclick="if (history.length > 1) { history.back(); return false; }">← Назад</a>
+<div class="page">
+<h1>Эллиот Пейдж</h1>
+
+<div class="p-head"><img src="https://image.tmdb.org/t/p/w185/nXO8DE4biVXY4UDYP0NdIY1zvXS.jpg" alt="Эллиот Пейдж"><div><h1>Эллиот Пейдж</h1><div class="sub">В «Начало» — Ariadne</div></div></div><p class="bio-text" id="bioText">💥Эллиот Пейдж, при рождении Эллен Пейдж. Родилась в 1987-ом году в Галифаксе, Канада. Была единственным ребёнком в семье. Отец работал графическим дизайнером, а мать была учительницей. Училась в Школе Шамбала и в Университете Куинс в Онтарио. Работает актёром и продюсером. Эллиот трансгендер (сменила пол с женщины на мужчину), с 2025-го состоит в отношениях с актрисой Джулией Шиплетт<br><br>🏆Главные награды🏆: BAFTA (2008) [Джуно], Номинация на Оскар (2008) [Джуно]<br><br>🎬Главные проекты🎬: «Джуно» (2007), «Начало» (2010), «Люди Икс: Последняя битва» (2006), «Одиссея» (2026), «Академия Амбрелла» (2019)<br><br>⭐Интересный факт⭐: В 2020-ом году Эллен совершила каминг-аут, как трансгендер и сменила имя на &quot;Эллиот&quot;, а уже в 2021-ом перенесла операцию по уменьшению груди</p><button class="bio-more" id="bioMore">Показать полностью</button><h2>Фильмы</h2><div class="grid"><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/n7NR7SH7CyiiF70yN96r3d1jWr0.jpg" alt="Одиссея" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>8.02</div></div><div class="t">Одиссея</div><div class="y">2026</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/piQXcdOGgv1O9HQ07pI0tnjkGJw.jpg" alt="Начало" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>8.37</div></div><div class="t">Начало</div><div class="y">2010</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/9IdeGyzRZH66RgNq9zSZDwPPllg.jpg" alt="Люди Икс: Дни минувшего будущего" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>7.54</div></div><div class="t">Люди Икс: Дни минувшего будущего</div><div class="y">2014</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/53KC7bwvxJErEH7n2FJB3tc2HGd.jpg" alt="Джуно" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>7.06</div></div><div class="t">Джуно</div><div class="y">2007</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/2l5Kywngsnr9aHWkDeqzFB4Ua7c.jpg" alt="Римские приключения" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.80</div></div><div class="t">Римские приключения</div><div class="y">2012</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/zvPOvcr7MQxZNrJd4MxgZYZHYkB.jpg" alt="Коматозники" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.60</div></div><div class="t">Коматозники</div><div class="y">2017</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/pUFMh7vMHiTACRNqjIWMzdryG9I.jpg" alt="Леденец" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.80</div></div><div class="t">Леденец</div><div class="y">2006</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/1my7N0qxWAEMnLEby9cEtYWFN3d.jpg" alt="В изоляции" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.80</div></div><div class="t">В изоляции</div><div class="y">2016</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/jZrRMGSajZQehg8mz74A5A00L3.jpg" alt="Супер" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.50</div></div><div class="t">Супер</div><div class="y">2010</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/igIl4RKxOEYvhQGKCvM6vCRMiVm.jpg" alt="Умники" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.90</div></div><div class="t">Умники</div><div class="y">2008</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/we2lT0CGybnz2kwgMvQP6rteHfZ.jpg" alt="Третья волна зомби" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.50</div></div><div class="t">Третья волна зомби</div><div class="y">2018</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/6QgN17JTJLwhHEkDgsdFg80UBJH.jpg" alt="Американское преступление" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>7.30</div></div><div class="t">Американское преступление</div><div class="y">2007</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/bl8sO1OuJTw0173YFVr2nLa3WKN.jpg" alt="Катись!" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.69</div></div><div class="t">Катись!</div><div class="y">2009</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/6bpAqILzx6l0D7axx3Dcxo43x5s.jpg" alt="Heightened Scrutiny" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>4.50</div></div><div class="t">Heightened Scrutiny</div><div class="y">2025</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/ajJqvPKMa6jbYmMS7vBlqHua5ag.jpg" alt="Группировка &#x27;Восток&#x27;" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.54</div></div><div class="t">Группировка &#x27;Восток&#x27;</div><div class="y">2013</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/irKFX1CmX1h8YxiJ2HLDsFFFZj2.jpg" alt="Всё, что у меня есть" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>7.20</div></div><div class="t">Всё, что у меня есть</div><div class="y">2015</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/wzT6wo9jQvkJ5zIoJ9mDARobnQ3.jpg" alt="Marion Bridge" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.00</div></div><div class="t">Marion Bridge</div><div class="y">2003</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/mnzcxmfY1BLE3kxq4zWOraIPOcE.jpg" alt="Window Horses: The Poetic Persian Epiphany of Rosie Ming" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.70</div></div><div class="t">Window Horses: The Poetic Persian Epiphany of Rosie Ming</div><div class="y">2017</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/38kWDF6nt85Zq29HrG3jDyfd70C.jpg" alt="Second Nature: Gender and Sexuality in the Animal World" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>1.00</div></div><div class="t">Second Nature: Gender and Sexuality in the Animal World</div><div class="y">2026</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/5kZnLT1T3CLqBW4BGCLH27G4qpk.jpg" alt="Пикок" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.10</div></div><div class="t">Пикок</div><div class="y">2010</div></div></div>
+</div>
+
+<div class="view-switch"><button id="vPhone" class="on">Телефон</button><button id="vTv">ТВ</button></div>
+<script>
+  var b = document.body;
+  document.getElementById('vPhone').addEventListener('click', function () {
+    b.classList.remove('tv');
+    document.getElementById('vPhone').classList.add('on');
+    document.getElementById('vTv').classList.remove('on');
+  });
+  document.getElementById('vTv').addEventListener('click', function () {
+    b.classList.add('tv');
+    document.getElementById('vTv').classList.add('on');
+    document.getElementById('vPhone').classList.remove('on');
+  });
+</script>
+<script>
+(function () {
+  var t = document.getElementById('bioText'), b = document.getElementById('bioMore');
+  if (t.scrollHeight <= t.clientHeight) { b.style.display = 'none'; return; }
+  b.addEventListener('click', function () {
+    var open = t.classList.toggle('open');
+    b.textContent = open ? 'Свернуть' : 'Показать полностью';
+  });
+})();
+</script>
+</body>
+</html>

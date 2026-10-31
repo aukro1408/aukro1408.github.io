@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Марион Котийяр</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #07080d; color: #fff; font-family: 'Nunito', system-ui, sans-serif; min-height: 100vh; }
+  .back { position: fixed; top: 14px; left: 14px; z-index: 10; display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.2); color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; padding: 9px 16px; border-radius: 99px; text-decoration: none; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .page { padding: 64px 14px 32px; }
+  .page > h1 { margin-bottom: 16px; }
+  .page > .sub { margin-bottom: 16px; }
+  h1 { font-family: 'Manrope', sans-serif; font-size: 24px; font-weight: 700; line-height: 1.2; }
+  .sub { font-size: 14px; color: rgba(255,255,255,.55); margin-top: 6px; }
+  h2 { font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 700; margin: 24px 0 14px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 10px; }
+  .card { min-width: 0; }
+  .card .thumb { position: relative; aspect-ratio: 2/3; overflow: hidden; border-radius: 12px; background: #1a1a1a; }
+  .card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card .badge { position: absolute; top: 8px; right: 8px; height: 22px; padding: 0 8px; border-radius: 11px; background: #ffc857; color: #1a1304; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 3px; }
+  .card .t { font-size: 13px; font-weight: 700; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .y { font-size: 12px; color: rgba(255,255,255,.55); margin-top: 2px; }
+  body.tv .grid { grid-template-columns: repeat(auto-fill, 186px); gap: 28px; }
+  body.tv .card .t { font-size: 17px; }
+  body.tv .card .y { font-size: 15px; }
+  .view-switch { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 10; display: flex; gap: 4px; background: rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.2); border-radius: 99px; padding: 4px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .view-switch button { background: none; border: 0; color: rgba(255,255,255,.6); font-family: inherit; font-size: 13px; font-weight: 700; padding: 7px 16px; border-radius: 99px; cursor: pointer; }
+  .view-switch button.on { background: #ffc857; color: #1a1304; }
+  .p-head { display: flex; gap: 16px; align-items: center; }
+  .p-head img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; background: #262626; flex-shrink: 0; }
+  .bio-text { font-size: 15px; line-height: 1.5; color: rgba(255,255,255,.85); margin-top: 16px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .bio-text.open { display: block; }
+  .bio-more { margin-top: 8px; background: none; border: 0; color: #e4b857; font-family: inherit; font-size: 14px; font-weight: 700; padding: 0; cursor: pointer; }
+  .more-btn { display: block; margin: 24px auto 0; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16); color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 99px; cursor: pointer; }
+</style>
+</head>
+<body>
+<a class="back" href="inception-preview.html" onclick="if (history.length > 1) { history.back(); return false; }">← Назад</a>
+<div class="page">
+<h1>Марион Котийяр</h1>
+
+<div class="p-head"><img src="https://image.tmdb.org/t/p/w185/biitzOF0GffIqFYLyOPkoiaOngQ.jpg" alt="Марион Котийяр"><div><h1>Марион Котийяр</h1><div class="sub">В «Начало» — Mal Cobb</div></div></div><p class="bio-text" id="bioText">💥Марион Котийяр. Родилась в 1975-ом году в Париже, Франция. Росла в семье с 2-мя младшими братьями. Отец работал режиссёром, а мать была театральной актрисой. Училась в Консерватории Орлеана. Работает актрисой, певицей и продюсером. С 2007-го замужем за актёром Гийомом Кане, у пары 2-ое детей: сын Марсель и дочь Луиза<br><br>🏆Главные награды🏆: Оскар (2008) [Жизнь в розовом цвете], Золотой глобус (2008) [Жизнь в розовом цвете], BAFTA (2008) [Жизнь в розовом цвете], Сезар (2008) [Жизнь в розовом цвете], Сезар (2005) [Долгая помолвка]<br><br>🎬Главные проекты🎬: «Жизнь в розовом цвете» (2007), «Начало» (2010), «Такси» (1998), «Долгая помолвка» (2004), «Тёмный рыцарь» (2012)<br><br>⭐Интересный факт⭐: Марион является эко-активисткой и послом организации Гринпис, борющейся за защиту окружающей среды</p><button class="bio-more" id="bioMore">Показать полностью</button><h2>Фильмы</h2><div class="grid"><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/piQXcdOGgv1O9HQ07pI0tnjkGJw.jpg" alt="Начало" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>8.37</div></div><div class="t">Начало</div><div class="y">2010</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/cAwasqprFijx73Hz9qMBcLyEA5N.jpg" alt="Тёмный рыцарь: Возрождение легенды" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>7.80</div></div><div class="t">Тёмный рыцарь: Возрождение легенды</div><div class="y">2012</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/3I83PHvy6iPqtzuItLaI2DdLeHQ.jpg" alt="Такси" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.74</div></div><div class="t">Такси</div><div class="y">1998</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/qoy7q0ZYCvQcjZNlw23ur7Piy30.jpg" alt="Джонни Д." loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.69</div></div><div class="t">Джонни Д.</div><div class="y">2009</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/4FVvGyFdLvIpEKRlHoizfixtNdv.jpg" alt="Маленький принц" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>7.63</div></div><div class="t">Маленький принц</div><div class="y">2015</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/AwsewPKXebJvtl4EU5Dx5uBCW6G.jpg" alt="Удивительное путешествие доктора Дулиттла" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.57</div></div><div class="t">Удивительное путешествие доктора Дулиттла</div><div class="y">2020</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/ds9yxxes2aCv2KDjnNz1xnXrcMy.jpg" alt="Союзники" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.81</div></div><div class="t">Союзники</div><div class="y">2016</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/kAYWFyOLoQloDNwk1CH82SN4YxT.jpg" alt="Крупная рыба" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>7.75</div></div><div class="t">Крупная рыба</div><div class="y">2003</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/f8ndlgpCQDg2qk5fA2bfDTsGT10.jpg" alt="Заражение" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.66</div></div><div class="t">Заражение</div><div class="y">2011</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/bcSXA3KcQHKzRvxVISteh5CNypa.jpg" alt="Хороший год" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.70</div></div><div class="t">Хороший год</div><div class="y">2006</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/n6LCymfPJoy1sOKcB6ARsgbqL4g.jpg" alt="Великая" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.96</div></div><div class="t">Великая</div><div class="y">2024</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/jUYcuihgnT7Mzal9IQdjFREmrQv.jpg" alt="Полночь в Париже" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>7.50</div></div><div class="t">Полночь в Париже</div><div class="y">2011</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/56peJaKGehnNZkuOrBZtiBclDhw.jpg" alt="Астерикс и Обеликс: Поднебесная" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>4.83</div></div><div class="t">Астерикс и Обеликс: Поднебесная</div><div class="y">2023</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/h8BwKOM75G8AOd1Z4zL0AWfI0zS.jpg" alt="Мария" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.80</div></div><div class="t">Мария</div><div class="y">2005</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/nHcf33rehjq3XHdqqHPXTgPLBRp.jpg" alt="Это всего лишь конец света" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>7.18</div></div><div class="t">Это всего лишь конец света</div><div class="y">2016</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/hwEZ6fOtXX9mIZHSZPoOJW7AvmP.jpg" alt="Karma" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>7.54</div></div><div class="t">Karma</div><div class="y">2026</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/wT03h6OwpigfgFiK11RruS520j9.jpg" alt="Кредо убийцы" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.45</div></div><div class="t">Кредо убийцы</div><div class="y">2016</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/a4qIdcdy0xhhAsqBAHckaSYNiVG.jpg" alt="Такси 2" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.29</div></div><div class="t">Такси 2</div><div class="y">2000</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/etSV5LrCscLhNefT4jt1WhR8PtS.jpg" alt="Телеведущий: И снова здравствуйте" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.10</div></div><div class="t">Телеведущий: И снова здравствуйте</div><div class="y">2013</div></div><div class="card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/3KZ6X7pAEo0Ds90yrvA9WJG9Pln.jpg" alt="Эди" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.10</div></div><div class="t">Эди</div><div class="y">2005</div></div></div>
+</div>
+
+<div class="view-switch"><button id="vPhone" class="on">Телефон</button><button id="vTv">ТВ</button></div>
+<script>
+  var b = document.body;
+  document.getElementById('vPhone').addEventListener('click', function () {
+    b.classList.remove('tv');
+    document.getElementById('vPhone').classList.add('on');
+    document.getElementById('vTv').classList.remove('on');
+  });
+  document.getElementById('vTv').addEventListener('click', function () {
+    b.classList.add('tv');
+    document.getElementById('vTv').classList.add('on');
+    document.getElementById('vPhone').classList.remove('on');
+  });
+</script>
+<script>
+(function () {
+  var t = document.getElementById('bioText'), b = document.getElementById('bioMore');
+  if (t.scrollHeight <= t.clientHeight) { b.style.display = 'none'; return; }
+  b.addEventListener('click', function () {
+    var open = t.classList.toggle('open');
+    b.textContent = open ? 'Свернуть' : 'Показать полностью';
+  });
+})();
+</script>
+</body>
+</html>

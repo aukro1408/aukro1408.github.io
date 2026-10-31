@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Начало</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #07080d; color: #fff; font-family: 'Nunito', system-ui, sans-serif; min-height: 100vh; }
+  .back { position: fixed; top: 14px; left: 14px; z-index: 10; display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.2); color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; padding: 9px 16px; border-radius: 99px; text-decoration: none; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .poster { width: 100%; display: block; }
+  .poster-wrap { position: relative; }
+  .poster-wrap::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 170px; background: linear-gradient(180deg, transparent, rgba(7,8,13,.88)); }
+  .info { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 14px; }
+  h1 { font-family: 'Manrope', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.15; }
+  .badge { display: inline-flex; margin-top: 10px; height: 26px; padding: 0 10px; border-radius: 13px; background: #ffc857; color: #1a1304; font-size: 13px; font-weight: 700; align-items: center; gap: 4px; }
+  .facts { margin-top: 8px; font-size: 14px; color: rgba(255,255,255,.7); }
+  .genres { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .genres a { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16); color: #fff; text-decoration: none; font-size: 13px; font-weight: 700; padding: 7px 14px; border-radius: 99px; }
+  .sec { padding: 4px 14px 24px; }
+  .sec h2 { font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 14px; }
+  .sec-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .sec-head h2 { margin-bottom: 0; }
+  .more-pill { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16); color: #fff; text-decoration: none; font-size: 13px; font-weight: 700; padding: 7px 14px; border-radius: 99px; }
+  .cast-row { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 4px; }
+  .person { flex: 0 0 84px; text-align: center; color: #fff; text-decoration: none; }
+  .person img { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; background: #262626; display: block; margin: 0 auto; }
+  .person .n { font-size: 13px; font-weight: 700; margin-top: 8px; line-height: 1.25; }
+  .person .c { font-size: 12px; color: rgba(255,255,255,.55); margin-top: 2px; line-height: 1.25; }
+  .director .person { text-align: left; }
+  .director .person img { margin: 0; }
+  .desc-wrap { padding: 20px 14px 32px; }
+  .desc { font-size: 15px; line-height: 1.5; color: rgba(255,255,255,.85); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .desc.open { display: block; }
+  .desc-more { margin-top: 8px; background: none; border: 0; color: #e4b857; font-family: inherit; font-size: 14px; font-weight: 700; padding: 0; cursor: pointer; }
+  .params { padding: 4px 14px 32px; }
+  .params h2 { font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 12px; }
+  .param { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.08); }
+  .param .k { color: rgba(255,255,255,.55); font-size: 14px; flex-shrink: 0; }
+  .param .v { font-size: 14px; font-weight: 700; text-align: right; }
+  .meta-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.08); }
+  .meta-row .k { width: 110px; flex-shrink: 0; font-size: 14px; color: rgba(255,255,255,.55); }
+  .meta-row .bar { flex: 1; height: 8px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; }
+  .meta-row .fill { height: 100%; background: #ffc857; border-radius: 99px; }
+  .meta-row .v { width: 32px; text-align: right; font-size: 14px; font-weight: 700; }
+  .moods { display: flex; flex-wrap: wrap; gap: 8px; }
+  .moods span { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16); font-size: 13px; font-weight: 700; padding: 7px 14px; border-radius: 99px; }
+  :root {
+    --wb-accent: #f7c948;
+    --wb-accent-ink: #1a1405;
+    --wb-bg: #12131a;
+    --wb-text: #ffffff;
+    --wb-w: 164px;
+    --wb-h: 56px;
+  }
+  .wb-row { display: flex; flex-wrap: wrap; gap: 16px; padding: 4px 14px 24px; }
+  .wb { position: relative; overflow: hidden; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 10px; width: var(--wb-w); height: var(--wb-h); padding: 0 16px; border-radius: calc(var(--wb-h) / 2); background: var(--wb-bg); color: var(--wb-text); font: 500 17px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; cursor: pointer; outline: 0; user-select: none; -webkit-tap-highlight-color: transparent; box-shadow: inset 0 0 0 1.5px rgba(247, 201, 72, .45); transition: transform .18s cubic-bezier(.2, .8, .2, 1), background .18s, color .18s, box-shadow .18s; }
+  .wb svg { flex: none; width: 22px; height: 22px; fill: none; stroke: var(--wb-accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: stroke .18s; }
+  .wb.on, .wb:focus { background: var(--wb-accent); color: var(--wb-accent-ink); transform: scale(1.07); box-shadow: 0 0 0 3px #fff, 0 8px 24px rgba(247, 201, 72, .25); }
+  .wb.on svg, .wb:focus svg { stroke: var(--wb-accent-ink); }
+  .wb.press { transform: scale(.95); }
+  .wb-ripple { position: absolute; border-radius: 50%; background: rgba(247, 201, 72, .22); transform: scale(0); animation: wb-ripple .5s ease-out forwards; pointer-events: none; }
+  .wb.on .wb-ripple, .wb:focus .wb-ripple { background: rgba(26, 20, 5, .2); }
+  @keyframes wb-ripple { to { transform: scale(1); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .wb, .wb svg { transition: none; }
+    .wb-ripple { animation: none; display: none; }
+  }
+  .view-switch { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 10; display: flex; gap: 4px; background: rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.2); border-radius: 99px; padding: 4px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .view-switch button { background: none; border: 0; color: rgba(255,255,255,.6); font-family: inherit; font-size: 13px; font-weight: 700; padding: 7px 16px; border-radius: 99px; cursor: pointer; }
+  .view-switch button.on { background: #ffc857; color: #1a1304; }
+  .sim-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
+  .sim-card { flex: 0 0 120px; min-width: 0; }
+  .sim-card .thumb { position: relative; width: 120px; aspect-ratio: 2/3; overflow: hidden; border-radius: 12px; background: #1a1a1a; }
+  .sim-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sim-card .badge { position: absolute; top: 8px; right: 8px; height: 22px; padding: 0 8px; border-radius: 11px; background: #ffc857; color: #1a1304; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 3px; }
+  .sim-card .t { font-size: 13px; font-weight: 700; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sim-card .y { font-size: 12px; color: rgba(255,255,255,.55); margin-top: 2px; }
+</style>
+</head>
+<body>
+<a class="back" href="film-preview.html?v=12" onclick="if (history.length > 1) { history.back(); return false; }">← Назад</a>
+<div class="poster-wrap">
+  <img class="poster" src="https://image.tmdb.org/t/p/w500/piQXcdOGgv1O9HQ07pI0tnjkGJw.jpg" alt="Начало">
+  <div class="info">
+    <h1>Начало</h1>
+    <div class="badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>8.37</div>
+    <div class="facts">2010 · Великобритания, США · 2 ч 28 мин</div>
+    <div class="genres"><a href="genre-28.html">Боевик</a><a href="genre-878.html">Фантастика</a><a href="genre-80.html">Криминал</a></div>
+    <div class="genres" style="margin-top:10px"><a href="studio-174.html">Warner Bros. Pictures</a><a href="studio-923.html">Legendary Pictures</a><a href="studio-9996.html">Syncopy</a></div>
+  </div>
+</div>
+<div class="desc-wrap">
+  <p class="desc" id="desc">Дом Кобб — талантливый вор, лучший из лучших в опасном искусстве извлечения: он крадёт ценные секреты из глубин подсознания во время сна, когда человеческий разум наиболее уязвим. Редкие способности Кобба сделали его ценным игроком в привычном к предательству мире промышленного шпионажа, но они же превратили его в извечного беглеца и лишили всего, что он когда-либо любил.  И вот у Кобба появляется шанс исправить ошибки. Его последнее дело может вернуть всё назад, но для этого ему нужно совершить невозможное — инициацию. Вместо идеальной кражи Кобб и его команда спецов должны будут провернуть обратное. Теперь их задача — не украсть идею, а внедрить её. Если у них получится, это и станет идеальным преступлением.  Но никакое планирование или мастерство не могут подготовить команду к встрече с опасным противником, который, кажется, предугадывает каждый их ход. Врагом, увидеть которого мог бы лишь Кобб.</p>
+  <button class="desc-more" id="descMore">Показать полностью</button>
+</div>
+
+<div class="wb-row" id="wb-row">
+  <div class="wb" role="button" tabindex="0" data-action="filmix">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>
+    Filmix
+  </div>
+  <div class="wb" role="button" tabindex="0" data-action="online">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>
+    Онлайн
+  </div>
+  <div class="wb" role="button" tabindex="0" data-action="torrent">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8v5a8 8 0 0 0 16 0V8h-4v5a4 4 0 0 1-8 0V8z"/><path d="M4 8h4M16 8h4"/></svg>
+    Торренты
+  </div>
+</div>
+
+<div class="params">
+  <h2>Метаданные</h2>
+  <div class="meta-row"><span class="k">Темп</span><span class="bar"><span class="fill" style="width:48%"></span></span><span class="v">4.8</span></div><div class="meta-row"><span class="k">Экшен</span><span class="bar"><span class="fill" style="width:27%"></span></span><span class="v">2.7</span></div><div class="meta-row"><span class="k">Грусть</span><span class="bar"><span class="fill" style="width:25%"></span></span><span class="v">2.5</span></div><div class="meta-row"><span class="k">Страх</span><span class="bar"><span class="fill" style="width:23%"></span></span><span class="v">2.3</span></div><div class="meta-row"><span class="k">Насилие</span><span class="bar"><span class="fill" style="width:14%"></span></span><span class="v">1.4</span></div><div class="meta-row"><span class="k">Ругательства</span><span class="bar"><span class="fill" style="width:12%"></span></span><span class="v">1.2</span></div><div class="meta-row"><span class="k">Романтика</span><span class="bar"><span class="fill" style="width:8%"></span></span><span class="v">0.8</span></div><div class="meta-row"><span class="k">Юмор</span><span class="bar"><span class="fill" style="width:4%"></span></span><span class="v">0.4</span></div><div class="meta-row"><span class="k">Секс</span><span class="bar"><span class="fill" style="width:1%"></span></span><span class="v">0.1</span></div>
+</div>
+<div class="sec">
+  <h2>Настроения</h2>
+  <div class="moods"><span>тревожный · 53%</span><span>напряженный · 49%</span><span>грустный · 14%</span><span>загадочный · 12%</span><span>деловой · 10%</span><span>таинственный · 7%</span></div>
+</div>
+<div class="params">
+  <h2>Параметры</h2>
+  <div class="param"><span class="k">Оценок</span><span class="v">40 603</span></div><div class="param"><span class="k">Бюджет</span><span class="v">$160 млн</span></div><div class="param"><span class="k">Сборы</span><span class="v">839,0 млн</span></div><div class="param"><span class="k">Язык</span><span class="v">английский</span></div>
+</div>
+<div class="sec director">
+  <h2>Режиссёр</h2>
+  <a class="person" href="person-525.html"><img src="https://image.tmdb.org/t/p/w185/xuAIuYSmsUzKlUMBFGVZaWsY3DZ.jpg" alt="Кристофер Нолан"><div class="n">Кристофер Нолан</div></a>
+</div>
+<div class="sec">
+  <h2>В ролях</h2>
+  <div class="cast-row"><a class="person" href="person-6193.html"><img src="https://image.tmdb.org/t/p/w185/wo2hJpn04vbtmh0B9utCFdsQhxM.jpg" alt="Леонардо ДиКаприо"><div class="n">Леонардо ДиКаприо</div><div class="c">Dom Cobb</div></a><a class="person" href="person-24045.html"><img src="https://image.tmdb.org/t/p/w185/z2FA8js799xqtfiFjBTicFYdfk.jpg" alt="Джозеф Гордон-Левитт"><div class="n">Джозеф Гордон-Левитт</div><div class="c">Arthur</div></a><a class="person" href="person-3899.html"><img src="https://image.tmdb.org/t/p/w185/psAXOYp9SBOXvg6AXzARDedNQ9P.jpg" alt="Кэн Ватанабэ"><div class="n">Кэн Ватанабэ</div><div class="c">Saito</div></a><a class="person" href="person-2524.html"><img src="https://image.tmdb.org/t/p/w185/d81K0RH8UX7tZj49tZaQhZ9ewH.jpg" alt="Том Харди"><div class="n">Том Харди</div><div class="c">Eames</div></a><a class="person" href="person-27578.html"><img src="https://image.tmdb.org/t/p/w185/nXO8DE4biVXY4UDYP0NdIY1zvXS.jpg" alt="Эллиот Пейдж"><div class="n">Эллиот Пейдж</div><div class="c">Ariadne</div></a><a class="person" href="person-95697.html"><img src="https://image.tmdb.org/t/p/w185/jRNn8SZqFXuI5wOOlHwYsWh0hXs.jpg" alt="Дилип Рао"><div class="n">Дилип Рао</div><div class="c">Yusuf</div></a><a class="person" href="person-2037.html"><img src="https://image.tmdb.org/t/p/w185/2lKs67r7FI4bPu0AXxMUJZxmUXn.jpg" alt="Киллиан Мёрфи"><div class="n">Киллиан Мёрфи</div><div class="c">Robert Fischer, Jr.</div></a><a class="person" href="person-13022.html"><img src="https://image.tmdb.org/t/p/w185/zLxzAdAfu7y02yEx29JSLDgXJZ4.jpg" alt="Том Беренджер"><div class="n">Том Беренджер</div><div class="c">Peter Browning</div></a><a class="person" href="person-8293.html"><img src="https://image.tmdb.org/t/p/w185/biitzOF0GffIqFYLyOPkoiaOngQ.jpg" alt="Марион Котийяр"><div class="n">Марион Котийяр</div><div class="c">Mal Cobb</div></a><a class="person" href="person-4935.html"><img src="https://image.tmdb.org/t/p/w185/2gpa75Ci4y2OKmOc8WXnaeGgyKF.jpg" alt="Пит Постлетуэйт"><div class="n">Пит Постлетуэйт</div><div class="c">Maurice Fischer</div></a></div>
+</div>
+
+
+<div class="sec">
+  <div class="sec-head"><h2>Похожие</h2><a class="more-pill" href="similar-27205.html">Ещё</a></div>
+  <div class="sim-row"><div class="sim-card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/fVov5wp1vpZ3WsbTaouFpFjqF4e.jpg" alt="Час расплаты" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.24</div></div><div class="t">Час расплаты</div><div class="y">2003</div></div><div class="sim-card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/R0DUaCH6EPVtovZejwRU0k27k1.jpg" alt="Тёмная башня" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.82</div></div><div class="t">Тёмная башня</div><div class="y">2017</div></div><div class="sim-card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/fJJZwiRkaCNO8fOWs9dDlxmZuPF.jpg" alt="Пятое измерение" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.10</div></div><div class="t">Пятое измерение</div><div class="y">2009</div></div><div class="sim-card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/9eBNy1JBHNh5Fevvfya8maZsosU.jpg" alt="Призрак в доспехах" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.12</div></div><div class="t">Призрак в доспехах</div><div class="y">2017</div></div><div class="sim-card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/sSKSQP1uOA17xt5apZD6ZzdhaPh.jpg" alt="Святой" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.11</div></div><div class="t">Святой</div><div class="y">1997</div></div><div class="sim-card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/syDObMIKfE6MI5w9DAlofSr0QQl.jpg" alt="Хан Соло: Звёздные войны. Истории" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.55</div></div><div class="t">Хан Соло: Звёздные войны. Истории</div><div class="y">2018</div></div><div class="sim-card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/675Byk1w1KV0k0G0Vg57iM2T1ya.jpg" alt="Гемини" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.25</div></div><div class="t">Гемини</div><div class="y">2019</div></div><div class="sim-card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/ltFhhcsOXPDZcFt8zcaAFmg4DcI.jpg" alt="Пророк" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.15</div></div><div class="t">Пророк</div><div class="y">2007</div></div><div class="sim-card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/fKvTMoQbtGISb1gH4KaiUmoEsu.jpg" alt="РобоКоп" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.89</div></div><div class="t">РобоКоп</div><div class="y">2014</div></div><div class="sim-card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/dK4m1tBv4tfhbYEAtFhkCQrXpGQ.jpg" alt="Особое мнение" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>7.36</div></div><div class="t">Особое мнение</div><div class="y">2002</div></div><div class="sim-card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/yoxaghGvZ0L0zJi2UdgJfb8zqTr.jpg" alt="Электрический штат" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.48</div></div><div class="t">Электрический штат</div><div class="y">2025</div></div><div class="sim-card"><div class="thumb"><img src="https://image.tmdb.org/t/p/w342/o5m3VV2fhNGR4KnOadRn7JxjaDa.jpg" alt="Грязная Мэри, сумасшедший Ларри" loading="lazy"><div class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>6.40</div></div><div class="t">Грязная Мэри, сумасшедший Ларри</div><div class="y">1974</div></div></div>
+</div>
+<script>
+  document.getElementById('descMore').addEventListener('click', function (e) {
+    var d = document.getElementById('desc');
+    var open = d.classList.toggle('open');
+    e.currentTarget.textContent = open ? 'Свернуть' : 'Показать полностью';
+  });
+</script>
+
+<script>
+(function () {
+  var row = document.getElementById('wb-row');
+  var btns = [].slice.call(row.querySelectorAll('.wb'));
+  var actions = {
+    filmix:  function () { console.log('Открыть Filmix'); },
+    online:  function () { console.log('Открыть Онлайн'); },
+    torrent: function () { console.log('Открыть Торренты'); }
+  };
+  function setOn(b) {
+    btns.forEach(function (x) { x.classList.toggle('on', x === b); });
+  }
+  function ripple(b, x, y) {
+    var r = b.getBoundingClientRect();
+    var s = Math.max(r.width, r.height) * 2;
+    var e = document.createElement('span');
+    e.className = 'wb-ripple';
+    e.style.width = e.style.height = s + 'px';
+    e.style.left = (x - r.left - s / 2) + 'px';
+    e.style.top  = (y - r.top  - s / 2) + 'px';
+    b.appendChild(e);
+    setTimeout(function () { e.remove(); }, 500);
+  }
+  function press(b, x, y) {
+    b.classList.add('press');
+    setTimeout(function () { b.classList.remove('press'); }, 150);
+    ripple(b, x, y);
+  }
+  function activate(b, x, y) {
+    press(b, x, y);
+    var fn = actions[b.getAttribute('data-action')];
+    if (fn) setTimeout(fn, 160);
+  }
+  btns.forEach(function (b, i) {
+    b.addEventListener('focus', function () { setOn(b); });
+    b.addEventListener('blur',  function () { b.classList.remove('on'); });
+    b.addEventListener('pointerdown', function (e) {
+      b.focus();
+      setOn(b);
+      activate(b, e.clientX, e.clientY);
+    });
+    b.addEventListener('keydown', function (e) {
+      var k = e.key, c = e.keyCode;
+      if (k === 'ArrowRight' || k === 'ArrowDown' || c === 39 || c === 40) {
+        e.preventDefault(); btns[Math.min(i + 1, btns.length - 1)].focus();
+      } else if (k === 'ArrowLeft' || k === 'ArrowUp' || c === 37 || c === 38) {
+        e.preventDefault(); btns[Math.max(i - 1, 0)].focus();
+      } else if (k === 'Enter' || k === ' ' || c === 13 || c === 32) {
+        e.preventDefault();
+        var r = b.getBoundingClientRect();
+        activate(b, r.left + r.width / 2, r.top + r.height / 2);
+      }
+    });
+  });
+})();
+</script>
+
+<div class="view-switch"><button id="vPhone" class="on">Телефон</button><button id="vTv">ТВ</button></div>
+<script>
+  var b = document.body;
+  document.getElementById('vPhone').addEventListener('click', function () {
+    b.classList.remove('tv');
+    document.getElementById('vPhone').classList.add('on');
+    document.getElementById('vTv').classList.remove('on');
+  });
+  document.getElementById('vTv').addEventListener('click', function () {
+    b.classList.add('tv');
+    document.getElementById('vTv').classList.add('on');
+    document.getElementById('vPhone').classList.remove('on');
+  });
+</script>
+</body>
+</html>
