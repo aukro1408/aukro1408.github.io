@@ -30,10 +30,10 @@
   /* --- сетка --- */
   .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   body.tv .grid { grid-template-columns: repeat(7, 1fr); gap: 20px; }
-  .card { cursor: pointer; }
+  .card { cursor: pointer; min-width: 0; }
   .poster { position: relative; aspect-ratio: 2/3; border-radius: 14px; overflow: hidden; background: #1a1a1a; }
   .poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .card .t { font-size: 15px; font-weight: 700; line-height: 1.25; margin-top: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .card .t { font-size: 15px; font-weight: 700; line-height: 1.25; margin-top: 8px; min-height: 2.5em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .card .m { font-size: 13px; color: #9a9a9a; margin-top: 3px; }
   .rate { position: absolute; top: 8px; right: 8px; height: 24px; padding: 0 8px; border-radius: 12px; background: #f7c948; color: #1a1304; font-size: 12px; font-weight: 800; display: flex; align-items: center; gap: 3px; }
   body.tv .card .t { font-size: 17px; } body.tv .card .m { font-size: 15px; }
@@ -322,6 +322,14 @@ document.querySelectorAll('[data-goto]').forEach(function(b){
   }
   addEventListener('resize', fitDock);
   fitDock();
+})();
+(function(){
+  try {
+    var g = new URLSearchParams(location.search).get('genre');
+    if (!g) return;
+    if (GENRE_ID[g]) { applied.genre = g; draft.genre = g; }
+    else if (g === 'Сериалы') { applied.cat = 'Сериалы'; draft.cat = 'Сериалы'; applied.genre = 'Все жанры'; draft.genre = 'Все жанры'; }
+  } catch (e) {}
 })();
 renderGrid();
 </script>

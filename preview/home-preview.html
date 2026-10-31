@@ -178,6 +178,7 @@
   .cat-head-text { flex: 1; }
   .cat-h { font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.1; color: #fff; }
   .cat-chev { font-size: 22px; font-weight: 400; color: rgba(255,255,255,.55); line-height: 1; }
+  .cat-more { color: #f7c948; text-decoration: none; font-size: 15px; font-weight: 700; }
   .cat-strip {
     display: flex; gap: 10px; overflow-x: auto;
     padding: 0 14px 8px 14px; scroll-padding: 0 14px 0 14px;
@@ -354,7 +355,7 @@
     <button data-variant="phone">Телефон</button>
   </div>
   <div class="caption">
-    <b>Главный экран v11: всё вместе (фон — тёмный, проба; меню впритык кверху).</b> Док-меню (прозрачный блюр, золотая кнопка) + hero v8 + «Пик недели» v8 + пять рядов категорий v4 (Триллеры, Ужасы, Фантастика, Сериалы, Мультфильмы).
+    <b>Главный экран v12: всё вместе (фон — тёмный, проба; меню впритык кверху).</b> Док-меню (прозрачный блюр, золотая кнопка) + hero v8 + «Пик недели» v8 + пять рядов категорий v4 (Триллеры, Ужасы, Фантастика, Сериалы, Мультфильмы).
     Заголовок «Пик недели» теперь того же размера, что и у категорий: 20px на телефоне,
     27px на ТВ. Новое — эффект для ТВ: тапни по ряду, и его полоска станет чуть ярче
     и слегка вытянется (19 → 24px) — в нативе этот фокус будет давать пульт, а не тап.
@@ -510,7 +511,10 @@
         row.className = 'cat-row';
         var head = document.createElement('div');
         head.className = 'cat-head';
-        head.innerHTML = '<div class="cat-bar"></div><div class="cat-head-text"><div class="cat-h">' + cat.h + '</div></div><div class="cat-chev">›</div>';
+        var more = (id === 'cats-phone')
+          ? '<a class="cat-more" href="catalog-preview.html?v=5&genre=' + encodeURIComponent(cat.h) + '">Ещё ›</a>'
+          : '›';
+        head.innerHTML = '<div class="cat-bar"></div><div class="cat-head-text"><div class="cat-h">' + cat.h + '</div></div><div class="cat-chev">' + more + '</div>';
         var strip = document.createElement('div');
         strip.className = 'cat-strip';
         cat.items.forEach(function (c, i) {
