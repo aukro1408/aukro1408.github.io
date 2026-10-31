@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Filmix — 1922</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #07080d; color: #fff; font-family: 'Nunito', system-ui, sans-serif; min-height: 100vh; }
+  .back { position: fixed; top: 14px; left: 14px; z-index: 10; display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.2); color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; padding: 9px 16px; border-radius: 99px; text-decoration: none; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .film-logo { display: block; max-width: 300px; max-height: 84px; object-fit: contain; }
+  .tv-head .genres a { background: rgba(0,0,0,.55); border-color: rgba(255,255,255,.25); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .tv-head .facts { color: #fff; text-shadow: 0 1px 10px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.9); }
+  .phone-head { position: relative; }
+  .phone-head::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 170px; background: linear-gradient(180deg, transparent, rgba(7,8,13,.88)); }
+  .phone-head .poster { width: 100%; display: block; }
+  .phone-head .info { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 14px; }
+  .tv-head { display: none; position: relative; }
+  .tv-head .backdrop { grid-area: 1/1; width: 100%; height: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+  .tv-head .info { grid-area: 1/1; align-self: end; margin-bottom: 20px; padding: 64px 14px 14px; z-index: 2; }
+  .tv-head::after { content: ''; grid-area: 1/1; align-self: end; height: 40px; background: linear-gradient(180deg, transparent, #07080d); z-index: 1; }
+  body.tv .phone-head { display: none; }
+  body.tv .tv-head { display: grid; }
+  h1 { font-family: 'Manrope', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.15; }
+  .badge { display: inline-flex; margin-top: 10px; height: 26px; padding: 0 10px; border-radius: 13px; background: #ffc857; color: #1a1304; font-size: 13px; font-weight: 700; align-items: center; gap: 4px; }
+  .facts { margin-top: 8px; font-size: 14px; color: #fff; }
+  .genres { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .genres a { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16); color: #fff; text-decoration: none; font-size: 13px; font-weight: 700; padding: 7px 14px; border-radius: 99px; }
+  .sec { padding: 4px 14px 24px; }
+  .sec h2 { font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 14px; }
+  .cast-row { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 4px; }
+  .person { flex: 0 0 84px; text-align: center; color: #fff; text-decoration: none; }
+  .person img { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; background: #262626; display: block; margin: 0 auto; }
+  .person .n { font-size: 13px; font-weight: 700; margin-top: 8px; line-height: 1.25; }
+  .person .c { font-size: 12px; color: rgba(255,255,255,.55); margin-top: 2px; line-height: 1.25; }
+  .director .person { text-align: left; }
+  .director .person img { margin: 0; }
+  .desc-wrap { padding: 20px 14px 32px; }
+  .desc { font-size: 15px; line-height: 1.5; color: rgba(255,255,255,.85); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .desc.open { display: block; }
+  .desc-more { margin-top: 8px; background: none; border: 0; color: #e4b857; font-family: inherit; font-size: 14px; font-weight: 700; padding: 0; cursor: pointer; }
+  .params { padding: 4px 14px 32px; }
+  .params h2 { font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 12px; }
+  .param { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.08); }
+  .param .k { color: rgba(255,255,255,.55); font-size: 14px; flex-shrink: 0; }
+  .param .v { font-size: 14px; font-weight: 700; text-align: right; }
+
+  :root {
+    --wb-accent: #f7c948;
+    --wb-accent-ink: #1a1405;
+    --wb-bg: #12131a;
+    --wb-text: #ffffff;
+    --wb-w: 164px;
+    --wb-h: 56px;
+  }
+  .wb-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 12px;
+  }
+  .wb {
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: var(--wb-w);
+    height: var(--wb-h);
+    padding: 0 16px;
+    border-radius: calc(var(--wb-h) / 2);
+    background: var(--wb-bg);
+    color: var(--wb-text);
+    font: 500 17px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    cursor: pointer;
+    outline: 0;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: inset 0 0 0 1.5px rgba(247, 201, 72, .45);
+    transition: transform .18s cubic-bezier(.2, .8, .2, 1),
+                background .18s, color .18s, box-shadow .18s;
+  }
+  .wb svg {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: var(--wb-accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: stroke .18s;
+  }
+  .wb.on,
+  .wb:focus {
+    background: var(--wb-accent);
+    color: var(--wb-accent-ink);
+    transform: scale(1.07);
+    box-shadow: 0 0 0 3px #fff, 0 8px 24px rgba(247, 201, 72, .25);
+  }
+  .wb.on svg,
+  .wb:focus svg { stroke: var(--wb-accent-ink); }
+  .wb.press { transform: scale(.95); }
+  .wb-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(247, 201, 72, .22);
+    transform: scale(0);
+    animation: wb-ripple .5s ease-out forwards;
+    pointer-events: none;
+  }
+  .wb.on .wb-ripple,
+  .wb:focus .wb-ripple { background: rgba(26, 20, 5, .2); }
+  @keyframes wb-ripple { to { transform: scale(1); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .wb, .wb svg { transition: none; }
+    .wb-ripple { animation: none; display: none; }
+  }
+  .wb-row { padding: 4px 14px 24px; }
+  .view-switch { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 10; display: flex; gap: 4px; background: rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.2); border-radius: 99px; padding: 4px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .view-switch button { background: none; border: 0; color: rgba(255,255,255,.6); font-family: inherit; font-size: 13px; font-weight: 700; padding: 7px 16px; border-radius: 99px; cursor: pointer; }
+  .view-switch button.on { background: #ffc857; color: #1a1304; }
+
+  .sim-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
+  .sim-card { flex: 0 0 120px; min-width: 0; }
+  .sim-card .thumb { position: relative; width: 120px; aspect-ratio: 2/3; overflow: hidden; border-radius: 12px; background: #1a1a1a; }
+  .sim-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sim-card .badge { position: absolute; top: 8px; right: 8px; height: 22px; padding: 0 8px; border-radius: 11px; background: #ffc857; color: #1a1304; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 3px; }
+  .sim-card .t { font-size: 13px; font-weight: 700; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sim-card .y { font-size: 12px; color: rgba(255,255,255,.55); margin-top: 2px; }
+
+  .sec-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .sec-head h2 { margin-bottom: 0; }
+  .more-pill { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16); color: #fff; text-decoration: none; font-size: 13px; font-weight: 700; padding: 7px 14px; border-radius: 99px; }
+
+  .content.fx { padding: 20px 14px 40px; }
+  .fx-watch { width: 100%; height: 56px; border: 0; border-radius: 16px; background: #f7c948; color: #111; font-size: 17px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .fx-line { margin-top: 12px; font-size: 14px; color: rgba(255,255,255,.6); }
+  .fx-label { margin: 28px 0 10px; font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.5); }
+  .fx-card { width: 100%; display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; border: 1px solid rgba(255,255,255,.12); border-radius: 16px; padding: 16px; cursor: pointer; text-align: left; color: #fff; font-family: inherit; }
+  .fx-card-title { font-size: 16px; font-weight: 700; }
+  .fx-card-sub { margin-top: 2px; font-size: 14px; color: rgba(255,255,255,.6); }
+  .fx-chev { font-size: 22px; color: rgba(255,255,255,.5); transition: transform .2s; }
+  .fx-card.open .fx-chev { transform: rotate(90deg); }
+  .fx-panel { margin-top: 14px; background: #1a1a1a; border: 1px solid rgba(255,255,255,.12); border-radius: 20px; padding: 16px; }
+  .fx-panel-title { display: flex; align-items: center; justify-content: space-between; font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .fx-close { width: 32px; height: 32px; border: 0; border-radius: 50%; background: #262626; color: #fff; font-size: 16px; cursor: pointer; }
+  .fx-voice { display: block; width: 100%; text-align: left; padding: 14px 16px; margin-bottom: 8px; border-radius: 12px; border: 2px solid transparent; background: #262626; color: #fff; font-size: 15px; font-family: inherit; cursor: pointer; }
+  .fx-voice.sel { background: #f7c948; color: #111; font-weight: 700; border-color: #fff; }
+  .fx-q { display: inline-block; padding: 8px 16px; margin: 0 8px 8px 0; border-radius: 999px; border: 2px solid transparent; background: #262626; color: #fff; font-size: 14px; font-family: inherit; cursor: pointer; }
+  .fx-q.sel { background: #f7c948; color: #111; font-weight: 700; }
+  .fx-panel .fx-watch { margin-top: 16px; }
+</style>
+</head>
+<body>
+<div class="view-switch"><button id="vPhone" class="on">Телефон</button><button id="vTv">ТВ</button></div>
+<a class="back" href="film-preview.html?v=17" onclick="if (history.length > 1) { history.back(); return false; }">← Назад</a>
+<div class="phone-head">
+  <img class="poster" src="https://image.tmdb.org/t/p/w500/q4FQOiSRhTLWulHl5Vpg37FMArH.jpg" alt="1922">
+  <div class="info">
+    <h1><img class="film-logo" src="https://image.tmdb.org/t/p/w500/bhb3J2gXUkdNmfhIeogZCdcRzO8.png" alt="1922" onerror="this.replaceWith(document.createTextNode('1922'))"></h1>
+    <div class="badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.95</div>
+    <div class="facts">2017 · США, Канада · 1 ч 42 мин</div>
+    <div class="genres"><a href="genre-27.html?v=6">Ужасы</a><a href="genre-80.html?v=6">Криминал</a><a href="genre-18.html?v=6">Драма</a></div>
+    <div class="genres" style="margin-top:10px"><a href="studio-55570.html?v=6">Campfire Studios</a><a href="studio-6345.html?v=6">Lighthouse Pictures</a></div>
+  </div>
+</div>
+<div class="tv-head">
+  <img class="backdrop" src="https://image.tmdb.org/t/p/w1280/3uwyXMZN93PRkShUxvLrufwVAc2.jpg" alt="1922">
+  <div class="info">
+    <h1><img class="film-logo" src="https://image.tmdb.org/t/p/w500/bhb3J2gXUkdNmfhIeogZCdcRzO8.png" alt="1922" onerror="this.replaceWith(document.createTextNode('1922'))"></h1>
+    <div class="badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="#1a1304" aria-hidden="true"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17l-5.6 3.2 1.3-6.3L3 9.6l6.3-.7z"></path></svg>5.95</div>
+    <div class="facts">2017 · США, Канада · 1 ч 42 мин</div>
+    <div class="genres"><a href="genre-27.html?v=6">Ужасы</a><a href="genre-80.html?v=6">Криминал</a><a href="genre-18.html?v=6">Драма</a></div>
+    <div class="genres" style="margin-top:10px"><a href="studio-55570.html?v=6">Campfire Studios</a><a href="studio-6345.html?v=6">Lighthouse Pictures</a></div>
+  </div>
+</div>
+</div>
+<div class="content fx">
+  <button class="fx-watch" id="fxWatchMain">▶ Смотреть</button>
+  <div class="fx-line">Filmix · 3 озвучки · до 1080p</div>
+  <div class="fx-label">Озвучка</div>
+  <button class="fx-card" id="fxCard">
+    <span><span class="fx-card-title" id="fxCardVoice">Дубляж [1080]</span><br><span class="fx-card-sub" id="fxCardQuality">1080p</span></span>
+    <span class="fx-chev">›</span>
+  </button>
+  <div class="fx-panel" id="fxPanel" hidden>
+    <div class="fx-panel-title">Filmix <button class="fx-close" id="fxClose">✕</button></div>
+    <div class="fx-label">Озвучка</div>
+    <div id="fxVoices">
+      <button class="fx-voice sel" data-voice="Дубляж">Дубляж</button>
+      <button class="fx-voice" data-voice="LostFilm">LostFilm</button>
+      <button class="fx-voice" data-voice="Оригинал, субтитры">Оригинал, субтитры</button>
+    </div>
+    <div class="fx-label">Качество</div>
+    <div id="fxQuals">
+      <button class="fx-q" data-q="4K">4K</button>
+      <button class="fx-q sel" data-q="1080p">1080p</button>
+      <button class="fx-q" data-q="720p">720p</button>
+      <button class="fx-q" data-q="480p">480p</button>
+    </div>
+    <button class="fx-watch" id="fxWatchPanel">▶ Смотреть</button>
+  </div>
+</div>
+<script>
+  document.getElementById('vPhone').addEventListener('click', function () {
+    document.body.classList.remove('tv');
+    document.getElementById('vPhone').classList.add('on');
+    document.getElementById('vTv').classList.remove('on');
+  });
+  document.getElementById('vTv').addEventListener('click', function () {
+    document.body.classList.add('tv');
+    document.getElementById('vTv').classList.add('on');
+    document.getElementById('vPhone').classList.remove('on');
+  });
+  var panel = document.getElementById('fxPanel');
+  var card = document.getElementById('fxCard');
+  card.addEventListener('click', function () {
+    panel.hidden = !panel.hidden;
+    card.classList.toggle('open', !panel.hidden);
+  });
+  document.getElementById('fxClose').addEventListener('click', function () {
+    panel.hidden = true; card.classList.remove('open');
+  });
+  var voice = 'Дубляж', quality = '1080p';
+  document.getElementById('fxVoices').addEventListener('click', function (e) {
+    var b = e.target.closest('.fx-voice'); if (!b) return;
+    document.querySelectorAll('.fx-voice').forEach(function (x) { x.classList.remove('sel'); });
+    b.classList.add('sel'); voice = b.dataset.voice;
+  });
+  document.getElementById('fxQuals').addEventListener('click', function (e) {
+    var b = e.target.closest('.fx-q'); if (!b) return;
+    document.querySelectorAll('.fx-q').forEach(function (x) { x.classList.remove('sel'); });
+    b.classList.add('sel'); quality = b.dataset.q;
+  });
+  document.getElementById('fxWatchPanel').addEventListener('click', function () {
+    document.getElementById('fxCardVoice').textContent = voice + ' [' + quality.replace('p', '') + ']';
+    document.getElementById('fxCardQuality').textContent = quality;
+    panel.hidden = true; card.classList.remove('open');
+    console.log('filmix watch', voice, quality);
+  });
+  document.getElementById('fxWatchMain').addEventListener('click', function () {
+    console.log('filmix watch', voice, quality);
+  });
+</script>
+</body>
+</html>
