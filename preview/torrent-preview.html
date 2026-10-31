@@ -26,7 +26,7 @@
   .sort-row { margin-bottom: 16px; }
   .sort-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 999px; border: 0; background: #262626; color: #fff; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
   .sort-btn .chev { color: rgba(255,255,255,.6); }
-  .tor-card { position: relative; background: #1a1a1a; border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 16px 52px 16px 16px; margin-bottom: 12px; cursor: pointer; text-align: left; color: #fff; font-family: inherit; width: 100%; display: block; }
+  .tor-card { position: relative; background: #1a1a1a; border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 16px; margin-bottom: 12px; cursor: pointer; text-align: left; color: #fff; font-family: inherit; width: 100%; display: block; }
   .tor-q { display: inline-block; padding: 6px 12px; border-radius: 8px; background: #262626; color: #fff; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
   .tor-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
   .tor-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -39,9 +39,8 @@
   .tor-seeds { display: inline-flex; align-items: center; gap: 6px; color: rgba(255,255,255,.75); }
   .tor-seeds svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; }
   .tor-trk { color: rgba(255,255,255,.5); }
-  .tor-info { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: rgba(255,255,255,.6); font-size: 20px; cursor: pointer; }
   .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 20; }
-  .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; background: #1a1a1a; border-radius: 20px 20px 0 0; padding: 12px 16px 32px; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; background: #1a1a1a; border-radius: 20px 20px 0 0; padding: 12px 16px 88px; }
   .sheet-bar { width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.25); margin: 0 auto 16px; }
   .sheet-title { position: relative; text-align: center; font-size: 17px; font-weight: 700; margin-bottom: 16px; }
   .sheet-close { position: absolute; right: 0; top: -4px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: #262626; color: #fff; font-size: 16px; cursor: pointer; }
@@ -51,6 +50,13 @@
   .fx-opt { width: 100%; display: block; text-align: left; background: #262626; border: 0; border-radius: 16px; padding: 16px; margin-bottom: 10px; color: #fff; font-family: inherit; cursor: pointer; }
   .fx-opt-title { font-size: 16px; font-weight: 700; }
   .fx-opt-sub { margin-top: 2px; font-size: 14px; color: rgba(255,255,255,.6); }
+
+  .flt-label { margin: 20px 0 10px; font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.5); }
+  .flt-label:first-child { margin-top: 4px; }
+  .flt-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .flt-foot { display: flex; gap: 10px; margin-top: 24px; }
+  .flt-reset { padding: 14px 20px; border-radius: 16px; border: 0; background: #262626; color: #fff; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .flt-show { flex: 1; padding: 14px 20px; border-radius: 16px; border: 0; background: #f7c948; color: #111; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -62,7 +68,7 @@
   </div>
   <div class="movie-row"><span class="t">1922</span><span class="c" id="torCount"></span></div>
   <div class="filters">
-    <button class="f-btn" id="torFilters"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Фильтры</button>
+    <button class="f-btn" id="torFilters"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span id="fltBtnText">Фильтры</span></button>
     <button class="chip sel" data-q="all">Все</button>
     <button class="chip" data-q="4K">4K</button>
     <button class="chip" data-q="1080">1080p</button>
@@ -77,6 +83,37 @@
   <div class="sheet-title">Порядок вариантов <button class="sheet-close" id="sortClose">✕</button></div>
   <div id="sortOpts"></div>
 </div>
+<div class="backdrop" id="fltBackdrop" hidden></div>
+<div class="sheet" id="fltSheet" hidden>
+  <div class="sheet-bar"></div>
+  <div class="sheet-title">Фильтры <button class="sheet-close" id="fltClose">✕</button></div>
+  <div class="flt-label">Озвучка</div>
+  <div class="flt-chips" id="fltVoice">
+    <button class="chip sel" data-v="all">Все</button>
+    <button class="chip" data-v="dub">Дубляж</button>
+    <button class="chip" data-v="lost">LostFilm</button>
+    <button class="chip" data-v="orig">Оригинал</button>
+  </div>
+  <div class="flt-label">Тип</div>
+  <div class="flt-chips" id="fltType">
+    <button class="chip sel" data-v="all">Все</button>
+    <button class="chip" data-v="Remux">Remux</button>
+    <button class="chip" data-v="BDRip">BDRip</button>
+    <button class="chip" data-v="WEB-DL">WEB-DL</button>
+    <button class="chip" data-v="HDRip">HDRip</button>
+  </div>
+  <div class="flt-label">Трекер</div>
+  <div class="flt-chips" id="fltTracker">
+    <button class="chip sel" data-v="all">Все</button>
+    <button class="chip" data-v="rutracker">rutracker</button>
+    <button class="chip" data-v="kinozal">kinozal</button>
+    <button class="chip" data-v="rutor">rutor</button>
+  </div>
+  <div class="flt-foot">
+    <button class="flt-reset" id="fltReset">Сбросить</button>
+    <button class="flt-show" id="fltShow">Показать</button>
+  </div>
+</div>
 <div class="backdrop" id="plBackdrop" hidden></div>
 <div class="sheet" id="plSheet" hidden>
   <div class="sheet-bar"></div>
@@ -86,12 +123,12 @@
 </div>
 <script>
   var TORS = [
-    {q:1080, voice:'Дубляж +2', tags:['Remux'], audio:'Русский / Английский · Субтитры: Русский / Английский / Украинский', peers:11, name:'1922 / 1922 (2017) [США, BDRemux 1080p] Dub + MVO + Sub (Rus, Ukr, Eng) + Original Eng', size:27.4, seeds:90, tracker:'rutracker', more:2},
-    {q:1080, voice:'Дубляж +2', tags:['BDRip'], audio:'Субтитры', peers:22, name:'1922 / 1922 / 2017 / 2 x ДБ, ПМ, АП / BDRip (1080p) | Дубляж | HDRezka', size:16.4, seeds:270, tracker:'rutracker', more:3},
-    {q:1080, voice:'LostFilm', tags:['WEB-DL'], audio:'Русский', peers:58, name:'1922 WEB-DL 1080p', size:3.1, seeds:58, tracker:'kinozal', more:0},
-    {q:720, voice:'Дубляж', tags:['HDRip'], audio:'Русский', peers:31, name:'1922 HDRip 720p', size:1.4, seeds:31, tracker:'rutor', more:0},
-    {q:2160, voice:'Дубляж +1', tags:['Remux'], audio:'Русский / Английский · Субтитры: Русский', peers:7, name:'1922 (2017) [США, UHD Remux 2160p] Dub + Original Eng', size:45.2, seeds:42, tracker:'rutracker', more:1},
-    {q:1080, voice:'Оригинал, субтитры', tags:['WEB-DL'], audio:'Английский · Субтитры: Русский', peers:18, name:'1922 WEB-DL 1080p Original', size:5.6, seeds:64, tracker:'kinozal', more:0}
+    {q:1080, voice:'Дубляж +2', vkey:'dub', tags:['Remux'], audio:'Русский / Английский · Субтитры: Русский / Английский / Украинский', peers:11, name:'1922 / 1922 (2017) [США, BDRemux 1080p] Dub + MVO + Sub (Rus, Ukr, Eng) + Original Eng', size:27.4, seeds:90, tracker:'rutracker', more:2},
+    {q:1080, voice:'Дубляж +2', vkey:'dub', tags:['BDRip'], audio:'Субтитры', peers:22, name:'1922 / 1922 / 2017 / 2 x ДБ, ПМ, АП / BDRip (1080p) | Дубляж | HDRezka', size:16.4, seeds:270, tracker:'rutracker', more:3},
+    {q:1080, voice:'LostFilm', vkey:'lost', tags:['WEB-DL'], audio:'Русский', peers:58, name:'1922 WEB-DL 1080p', size:3.1, seeds:58, tracker:'kinozal', more:0},
+    {q:720, voice:'Дубляж', vkey:'dub', tags:['HDRip'], audio:'Русский', peers:31, name:'1922 HDRip 720p', size:1.4, seeds:31, tracker:'rutor', more:0},
+    {q:2160, voice:'Дубляж +1', vkey:'dub', tags:['Remux'], audio:'Русский / Английский · Субтитры: Русский', peers:7, name:'1922 (2017) [США, UHD Remux 2160p] Dub + Original Eng', size:45.2, seeds:42, tracker:'rutracker', more:1},
+    {q:1080, voice:'Оригинал, субтитры', vkey:'orig', tags:['WEB-DL'], audio:'Английский · Субтитры: Русский', peers:18, name:'1922 WEB-DL 1080p Original', size:5.6, seeds:64, tracker:'kinozal', more:0}
   ];
   var SORTS = [
     {id:'rec', t:'Рекомендуемые'},
@@ -101,19 +138,31 @@
     {id:'quality', t:'Выше качество'}
   ];
   var curQ = 'all', curSort = 'rec', curTor = null;
+  var applied = {voice:'all', type:'all', tracker:'all'};
+  var draft = {voice:'all', type:'all', tracker:'all'};
   function fmtSize(v){ return String(v).replace('.', ',') + ' ГБ'; }
   function plural(n, a, b, c){ var m10 = n % 10, m100 = n % 100; if (m10 === 1 && m100 !== 11) return a; if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return b; return c; }
+  function matchQ(t){
+    if (curQ === 'all') return true;
+    if (curQ === '4K') return t.q >= 2160;
+    return t.q === parseInt(curQ, 10);
+  }
+  function matchF(t, f){
+    if (f.voice !== 'all' && t.vkey !== f.voice) return false;
+    if (f.type !== 'all' && t.tags.indexOf(f.type) === -1) return false;
+    if (f.tracker !== 'all' && t.tracker !== f.tracker) return false;
+    return true;
+  }
   function visible(){
-    var arr = TORS.filter(function(t){
-      if (curQ === 'all') return true;
-      if (curQ === '4K') return t.q >= 2160;
-      return t.q === parseInt(curQ, 10);
-    });
+    var arr = TORS.filter(function(t){ return matchQ(t) && matchF(t, applied); });
     if (curSort === 'seeds') arr = arr.slice().sort(function(a,b){ return b.seeds - a.seeds; });
     if (curSort === 'sizeAsc') arr = arr.slice().sort(function(a,b){ return a.size - b.size; });
     if (curSort === 'sizeDesc') arr = arr.slice().sort(function(a,b){ return b.size - a.size; });
     if (curSort === 'quality') arr = arr.slice().sort(function(a,b){ return b.q - a.q; });
     return arr;
+  }
+  function draftCount(){
+    return TORS.filter(function(t){ return matchQ(t) && matchF(t, draft); }).length;
   }
   function render(){
     var arr = visible();
@@ -127,7 +176,6 @@
         + '<span class="tor-peers">Пиры: ' + t.peers + '</span>'
         + '<div class="tor-name">' + t.name + '</div>'
         + '<div class="tor-meta"><b>' + fmtSize(t.size) + '</b><span class="tor-seeds"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 19c0-3 2.9-5 6.5-5s6.5 2 6.5 5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.6c2.9.3 5.5 2 5.5 4.4"/></svg>' + t.seeds + '</span><span class="tor-trk">' + t.tracker + (t.more ? ' +' + t.more : '') + '</span></div>'
-        + '<button class="tor-info" aria-label="Подробнее">ⓘ</button>'
         + '</article>';
     }).join('');
     document.querySelectorAll('.tor-card').forEach(function(card){
@@ -135,12 +183,6 @@
         curTor = arr[+card.dataset.i];
         document.getElementById('plSheet').hidden = false;
         document.getElementById('plBackdrop').hidden = false;
-      });
-    });
-    document.querySelectorAll('.tor-info').forEach(function(b){
-      b.addEventListener('click', function(e){
-        e.stopPropagation();
-        console.log('torrent info', curTor);
       });
     });
   }
@@ -158,15 +200,67 @@
       });
     });
   }
-  document.querySelectorAll('.chip').forEach(function(c){
+  function paintFltChips(){
+    [['fltVoice','voice'],['fltType','type'],['fltTracker','tracker']].forEach(function(pair){
+      document.querySelectorAll('#' + pair[0] + ' .chip').forEach(function(c){
+        c.classList.toggle('sel', c.dataset.v === draft[pair[1]]);
+      });
+    });
+  }
+  function activeCount(f){
+    var n = 0;
+    if (f.voice !== 'all') n++;
+    if (f.type !== 'all') n++;
+    if (f.tracker !== 'all') n++;
+    return n;
+  }
+  function paintFltBtn(){
+    var n = activeCount(applied);
+    document.getElementById('fltBtnText').textContent = n ? 'Фильтры · ' + n : 'Фильтры';
+  }
+  function paintShowBtn(){
+    var n = draftCount();
+    document.getElementById('fltShow').textContent = 'Показать ' + n + ' ' + plural(n, 'вариант', 'варианта', 'вариантов');
+  }
+  function openFlt(){
+    draft = {voice:applied.voice, type:applied.type, tracker:applied.tracker};
+    paintFltChips(); paintShowBtn();
+    document.getElementById('fltSheet').hidden = false;
+    document.getElementById('fltBackdrop').hidden = false;
+  }
+  function closeFlt(){
+    document.getElementById('fltSheet').hidden = true;
+    document.getElementById('fltBackdrop').hidden = true;
+  }
+  [['fltVoice','voice'],['fltType','type'],['fltTracker','tracker']].forEach(function(pair){
+    document.querySelectorAll('#' + pair[0] + ' .chip').forEach(function(c){
+      c.addEventListener('click', function(){
+        draft[pair[1]] = c.dataset.v;
+        paintFltChips(); paintShowBtn();
+      });
+    });
+  });
+  document.getElementById('torFilters').addEventListener('click', openFlt);
+  document.getElementById('fltClose').addEventListener('click', closeFlt);
+  document.getElementById('fltBackdrop').addEventListener('click', closeFlt);
+  document.getElementById('fltReset').addEventListener('click', function(){
+    draft = {voice:'all', type:'all', tracker:'all'};
+    paintFltChips(); paintShowBtn();
+  });
+  document.getElementById('fltShow').addEventListener('click', function(){
+    applied = {voice:draft.voice, type:draft.type, tracker:draft.tracker};
+    paintFltBtn();
+    closeFlt();
+    render();
+  });
+  document.querySelectorAll('.filters .chip').forEach(function(c){
     c.addEventListener('click', function(){
-      document.querySelectorAll('.chip').forEach(function(x){ x.classList.remove('sel'); });
+      document.querySelectorAll('.filters .chip').forEach(function(x){ x.classList.remove('sel'); });
       c.classList.add('sel');
       curQ = c.dataset.q;
       render();
     });
   });
-  document.getElementById('torFilters').addEventListener('click', function(){ console.log('torrent filters'); });
   document.getElementById('torSortBtn').addEventListener('click', function(){
     renderSortOpts();
     document.getElementById('sortSheet').hidden = false;
