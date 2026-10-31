@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Плеер</title>
+<style>
+  /* ===== Видеоплеер в стиле приложения ===== */
+  /* Все размеры в em: плеер сам подбирает font-size под ширину экрана (телефон, ТВ) */
+  :root {
+    --pl-accent: #f7c948;      /* жёлтый акцент */
+    --pl-ink: #1a1405;         /* тёмный текст на жёлтом */
+    --pl-btn: #15161d;         /* фон кнопок */
+    --pl-panel: #0f1118;       /* фон панелей */
+    --pl-chip: #1b1c22;
+    --pl-muted: #9a9ba3;
+  }
+
+  .pl {
+    position: relative; width: 100%; height: 100%;
+    background: #000; color: #fff; overflow: hidden;
+    font: 400 16px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    user-select: none; -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent; outline: 0;
+  }
+  .pl video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+  .pl svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; display: block; }
+  .pl [data-f] { outline: 0; cursor: pointer; }
+
+  /* --- Субтитры --- */
+  .pl-sub {
+    position: absolute; left: 8%; right: 8%; bottom: 7%;
+    text-align: center; line-height: 1.35; pointer-events: none;
+    transition: bottom .25s; display: none;
+  }
+  .pl-sub span { font-weight: 500; border-radius: .35em; padding: .05em .45em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  .pl.ui-on .pl-sub { margin-bottom: 7em; }
+
+  /* --- Загрузка и ошибка --- */
+  .pl-spin {
+    position: absolute; left: 50%; top: 50%; width: 3.4em; height: 3.4em; margin: -1.7em 0 0 -1.7em;
+    border-radius: 50%; border: .3em solid rgba(255, 255, 255, .15); border-top-color: var(--pl-accent);
+    animation: pl-rot .9s linear infinite; display: none; pointer-events: none;
+  }
+  .pl.busy .pl-spin { display: block; }
+  @keyframes pl-rot { to { transform: rotate(360deg); } }
+  .pl-err {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    padding: .8em 1.4em; border-radius: 2em; background: var(--pl-btn); font-size: 1.1em; display: none; text-align: center;
+  }
+  .pl.fail .pl-err { display: block; }
+  .pl.fail .pl-spin { display: none; }
+
+  /* --- Подсказки (перемотка, скорость) --- */
+  .pl-toast {
+    position: absolute; left: 50%; top: 14%; transform: translate(-50%, -.6em);
+    padding: .55em 1.2em; border-radius: 2em; background: var(--pl-accent); color: var(--pl-ink);
+    font-weight: 500; font-size: 1.05em; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; white-space: nowrap;
+  }
+  .pl-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* --- Панель управления --- */
+  .pl-ui { position: absolute; inset: 0; transition: opacity .25s; }
+  .pl-ui.hide { opacity: 0; pointer-events: none; }
+  .pl-shade { position: absolute; left: 0; right: 0; pointer-events: none; }
+  .pl-shade.t { top: 0; height: 8em; background: linear-gradient(rgba(8, 10, 16, .85), rgba(8, 10, 16, 0)); }
+  .pl-shade.b { bottom: 0; height: 12em; background: linear-gradient(rgba(8, 10, 16, 0), rgba(8, 10, 16, .9)); }
+
+  .pl-top { position: absolute; left: 1.2em; right: 1.2em; top: 1em; display: flex; align-items: center; gap: .9em; }
+  .pl-round {
+    flex: none; width: 2.9em; height: 2.9em; border-radius: 50%; background: var(--pl-btn); color: var(--pl-accent);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .18s cubic-bezier(.2, .8, .2, 1), background .18s, color .18s, box-shadow .18s;
+  }
+  .pl-round svg { width: 1.5em; height: 1.5em; }
+  .pl-ttl b { display: block; font-size: 1.3em; font-weight: 500; line-height: 1.15; }
+  .pl-ttl small { font-size: .85em; color: var(--pl-muted); }
+
+  .pl-mid { position: absolute; left: 0; right: 0; top: 46%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; gap: 2.2em; }
+  .pl-skip { width: 3.8em; height: 3.8em; color: #fff; }
+  .pl-skip svg { width: 2.2em; height: 2.2em; stroke-width: 1.8; }
+  .pl-skip text { fill: #fff; stroke: none; font-size: 7.5px; font-weight: 500; font-family: system-ui, sans-serif; }
+  .pl-play {
+    position: relative; width: 5em; height: 5em; border-radius: 50%; background: var(--pl-accent); color: var(--pl-ink);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .18s cubic-bezier(.2, .8, .2, 1), box-shadow .18s;
+  }
+  .pl-play svg { width: 2.3em; height: 2.3em; fill: var(--pl-ink); stroke: none; }
+  .pl-play::before, .pl-play::after {
+    content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--pl-accent);
+    opacity: 0; pointer-events: none; animation: pl-wave 2.4s ease-out infinite;
+  }
+  .pl-play::after { animation-delay: 1.2s; }
+  .pl:not(.paused) .pl-play::before, .pl:not(.paused) .pl-play::after { animation: none; }
+  @keyframes pl-wave { 0% { transform: scale(1); opacity: .6; } 100% { transform: scale(1.6); opacity: 0; } }
+
+  .pl-bar { position: absolute; left: 1.4em; right: 1.4em; bottom: 4.8em; display: flex; align-items: center; gap: .9em; font-size: .95em; color: #d4d5db; }
+  .pl-bar span { min-width: 3.6em; text-align: center; font-variant-numeric: tabular-nums; }
+  .pl-track { position: relative; flex: 1; height: .55em; border-radius: .3em; background: rgba(255, 255, 255, .2); touch-action: none; }
+  .pl-track::before { content: ""; position: absolute; left: -.5em; right: -.5em; top: -1em; bottom: -1em; }  /* увеличенная зона касания */
+  .pl-buf, .pl-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: .3em; width: 0; }
+  .pl-buf { background: rgba(255, 255, 255, .22); }
+  .pl-fill { background: var(--pl-accent); }
+  .pl-knob {
+    position: absolute; top: 50%; left: 0; width: 1.2em; height: 1.2em; margin: -.6em 0 0 -.6em; border-radius: 50%;
+    background: var(--pl-accent); transition: transform .15s, box-shadow .15s;
+  }
+  .pl-track:focus .pl-knob, .pl.drag .pl-knob { transform: scale(1.3); box-shadow: 0 0 0 .22em #fff; }
+
+  .pl-row { position: absolute; left: 1.4em; right: 1.4em; bottom: 1.1em; display: flex; gap: .6em; }
+  .pl-chip {
+    height: 2.8em; padding: 0 1.2em; border-radius: 1.4em; background: var(--pl-btn);
+    display: flex; align-items: center; gap: .5em; font-size: 1em; font-weight: 500; white-space: nowrap;
+    transition: transform .18s cubic-bezier(.2, .8, .2, 1), background .18s, color .18s, box-shadow .18s;
+  }
+  .pl-chip svg { width: 1.25em; height: 1.25em; color: var(--pl-accent); transition: color .18s; }
+  .pl-chip.r { margin-left: auto; padding: 0 .9em; }
+
+  /* Фокус (пульт / клавиатура) и нажатие */
+  .pl-round:focus, .pl-chip:focus { background: var(--pl-accent); color: var(--pl-ink); transform: scale(1.07); box-shadow: 0 0 0 .22em #fff; }
+  .pl-chip:focus svg { color: var(--pl-ink); }
+  .pl-play:focus { transform: scale(1.1); box-shadow: 0 0 0 .22em #fff; }
+  .pl-round:active, .pl-chip:active, .pl-play:active { transform: scale(.93); }
+
+  /* --- Боковые панели --- */
+  .pl-panel {
+    position: absolute; top: 0; right: 0; bottom: 0; width: min(26em, 92%);
+    background: var(--pl-panel); border-left: 1px solid #1f2027; border-radius: 1.6em 0 0 1.6em;
+    padding: 1.2em 1.3em 1.6em; overflow-y: auto; scrollbar-width: none;
+    transform: translateX(105%); transition: transform .28s cubic-bezier(.2, .8, .2, 1); visibility: hidden;
+  }
+  .pl-panel::-webkit-scrollbar { display: none; }
+  .pl-panel.open { transform: none; visibility: visible; }
+  .pl-ph { display: flex; align-items: center; justify-content: space-between; }
+  .pl-ph b { font-size: 1.4em; font-weight: 500; }
+  .pl-lb { font-size: .9em; color: var(--pl-muted); margin: 1.3em 0 .6em; }
+  .pl-chips { display: flex; flex-wrap: wrap; gap: .55em; }
+  .pl-k {
+    height: 2.6em; padding: 0 1.2em; border-radius: 1.3em; background: var(--pl-chip);
+    display: flex; align-items: center; font-size: 1em; font-weight: 500;
+    transition: transform .18s cubic-bezier(.2, .8, .2, 1), background .18s, color .18s, box-shadow .18s;
+  }
+  .pl-k.a { background: var(--pl-accent); color: var(--pl-ink); }
+  .pl-k:focus, .pl-link:focus, .pl-step b:focus { transform: scale(1.06); box-shadow: 0 0 0 .2em #fff; }
+  .pl-k:not(.a):focus { background: #fff; color: #0b0c12; }
+  .pl-link {
+    display: flex; align-items: center; gap: .8em; height: 3.4em; margin-top: 1.3em; padding: 0 1em 0 .5em;
+    border-radius: 1.7em; background: #15161d; font-weight: 500;
+    transition: transform .18s, background .18s, color .18s, box-shadow .18s;
+  }
+  .pl-link .ic { width: 2.4em; height: 2.4em; border-radius: 50%; background: var(--pl-accent); color: var(--pl-ink); display: flex; align-items: center; justify-content: center; }
+  .pl-link .ic svg { width: 1.3em; height: 1.3em; }
+  .pl-link .v { margin-left: auto; font-size: .9em; font-weight: 400; color: var(--pl-muted); }
+  .pl-link > svg { width: 1.1em; height: 1.1em; color: #6b6c75; }
+  .pl-link:focus { background: var(--pl-accent); color: var(--pl-ink); }
+  .pl-link:focus .ic { background: var(--pl-ink); color: var(--pl-accent); }
+  .pl-link:focus .v, .pl-link:focus > svg { color: #5a4510; }
+
+  .pl-sw { display: flex; gap: .8em; padding: .3em .3em .2em; }
+  .pl-c { width: 2.3em; height: 2.3em; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); transition: box-shadow .18s, transform .18s; }
+  .pl-c.a { box-shadow: 0 0 0 .18em var(--pl-panel), 0 0 0 .34em var(--pl-accent); }
+  .pl-c:focus { transform: scale(1.12); box-shadow: 0 0 0 .18em var(--pl-panel), 0 0 0 .38em #fff; }
+  .pl-step { display: flex; align-items: center; justify-content: space-between; height: 3.3em; padding: 0 .4em; border-radius: 1.65em; background: #15161d; }
+  .pl-step b { width: 2.5em; height: 2.5em; border-radius: 50%; background: var(--pl-accent); color: var(--pl-ink); display: flex; align-items: center; justify-content: center; transition: transform .18s, box-shadow .18s; }
+  .pl-step b svg { width: 1.3em; height: 1.3em; }
+  .pl-step span { font-size: 1.1em; font-weight: 500; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pl-play::before, .pl-play::after { animation: none; }
+    .pl * { transition: none !important; }
+  }
+
+  /* Только для демо-страницы, в проект не переносить */
+  html, body { margin: 0; height: 100%; background: #000; }
+
+  /* --- Превью: переключатель Телефон/ТВ сверху справа, чтобы не закрывать нижние кнопки --- */
+  .pv-toggle { position: fixed; top: 12px; right: 12px; z-index: 100; display: flex; background: rgba(26,26,26,.9); border: 1px solid rgba(255,255,255,.12); border-radius: 999px; padding: 4px; }
+  .pv-toggle button { border: 0; background: transparent; color: #9a9ba3; font: 600 14px system-ui, sans-serif; padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+  .pv-toggle button.on { background: #f7c948; color: #1a1405; }
+</style>
+</head>
+<body>
+
+<!-- ===== РАЗМЕТКА (контейнер плеера: задайте ему размер) ===== -->
+<div class="pl" id="pl" tabindex="-1">
+  <video id="pl-v" playsinline preload="metadata"></video>
+  <div class="pl-sub" id="pl-sub"><span></span></div>
+  <div class="pl-spin"></div>
+  <div class="pl-err" id="pl-err">Не удалось загрузить видео</div>
+  <div class="pl-toast" id="pl-toast"></div>
+
+  <div class="pl-ui" id="pl-ui">
+    <div class="pl-shade t"></div><div class="pl-shade b"></div>
+    <div class="pl-top">
+      <div class="pl-round" data-f tabindex="0" role="button" data-act="back" aria-label="Назад"></div>
+      <div class="pl-ttl"><b id="pl-title"></b><small id="pl-meta"></small></div>
+    </div>
+    <div class="pl-mid">
+      <div class="pl-round pl-skip" data-f tabindex="0" role="button" data-act="skip" data-v="-10" aria-label="Назад на 10 секунд"></div>
+      <div class="pl-play" id="pl-play" data-f tabindex="0" role="button" data-act="play" aria-label="Воспроизведение"></div>
+      <div class="pl-round pl-skip" data-f tabindex="0" role="button" data-act="skip" data-v="10" aria-label="Вперёд на 10 секунд"></div>
+    </div>
+    <div class="pl-bar">
+      <span id="pl-cur">0:00</span>
+      <div class="pl-track" id="pl-track" data-f tabindex="0" role="slider" aria-label="Перемотка">
+        <div class="pl-buf" id="pl-buf"></div><div class="pl-fill" id="pl-fill"></div><div class="pl-knob" id="pl-knob"></div>
+      </div>
+      <span id="pl-dur">0:00</span>
+    </div>
+    <div class="pl-row">
+      <div class="pl-chip" data-f tabindex="0" role="button" data-act="cc"></div>
+      <div class="pl-chip" data-f tabindex="0" role="button" data-act="quality" id="pl-qchip"></div>
+      <div class="pl-chip" data-f tabindex="0" role="button" data-act="speed" id="pl-schip"></div>
+      <div class="pl-chip r" data-f tabindex="0" role="button" data-act="fs" id="pl-fs" aria-label="Во весь экран"></div>
+    </div>
+  </div>
+
+  <div class="pl-panel" id="pl-p-set"></div>
+  <div class="pl-panel" id="pl-p-sub"></div>
+</div>
+
+<script>
+/* ===== ВАШИ ДАННЫЕ И ДЕЙСТВИЯ ===== */
+
+/* Вызывается, когда пользователь нажимает «назад» (или Esc / Back на пульте) */
+function onPlayerBack() { console.log('Закрыть плеер'); /* history.back(); */ }
+
+/* Как запустить плеер из своего кода:
+   Player.open({
+     id: 'tt0000001',                 // для запоминания места просмотра
+     title: '1922',
+     meta: '2017 · США',
+     sources: [                       // озвучка + качество, ссылки mp4 или m3u8 (HLS)
+       { voice: 'Дубляж',   quality: '1080p', url: 'https://.../1922-dub-1080.mp4' },
+       { voice: 'Дубляж',   quality: '720p',  url: 'https://.../1922-dub-720.mp4' },
+       { voice: 'LostFilm', quality: '1080p', url: 'https://.../1922-lf-1080.m3u8' }
+     ],
+     subtitles: [                     // .srt или .vtt
+       { label: 'Русские', url: 'https://.../ru.srt' },
+       { label: 'English', url: 'https://.../en.vtt' }
+     ]
+   });
+*/
+
+/* ===== ИКОНКИ ===== */
+var PL_IC = {
+  back: '<svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+  play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24"><rect x="6" y="5" width="4.2" height="14" rx="1.2"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.2"/></svg>',
+  back10: '<svg viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.2-5.1"/><path d="M5 4v4h4"/><text x="12" y="15" text-anchor="middle">10</text></svg>',
+  fwd10: '<svg viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.2-5.1"/><path d="M19 4v4h-4"/><text x="12" y="15" text-anchor="middle">10</text></svg>',
+  cc: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 10a2 2 0 1 0 0 4M16 10a2 2 0 1 0 0 4"/></svg>',
+  up: '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
+  chev: '<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',
+  full: '<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  exit: '<svg viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>',
+  x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  minus: '<svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>',
+  plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>'
+};
+
+/* ===== ЛОГИКА ПЛЕЕРА ===== */
+(function () {
+  var HLS_URL = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js'; /* подгружается только для .m3u8, если браузер не умеет HLS сам */
+  var QO = ['240p', '360p', '480p', '720p', '1080p', '1440p', '2K', '4K'];
+  var SPEEDS = [0.5, 1, 1.25, 1.5, 2];
+  var SUBSIZE = { 'Мелкий': 1.15, 'Средний': 1.55, 'Крупный': 2.1 };
+  var COLORS = ['#ffffff', '#f7c948', '#7de3ff', '#8ef0a8'];
+
+  var root = document.getElementById('pl'), v = document.getElementById('pl-v'), ui = document.getElementById('pl-ui');
+  var subEl = document.getElementById('pl-sub'), toastEl = document.getElementById('pl-toast');
+  var pSet = document.getElementById('pl-p-set'), pSub = document.getElementById('pl-p-sub');
+  var track = document.getElementById('pl-track');
+
+  var opts = null, cur = { voice: '', quality: '' }, speed = 1, hls = null;
+  var cues = [], cueI = 0, subOffset = 0;
+  var panel = null, panelOpener = null, hideT = null, toastT = null, saveT = null;
+  var seeking = false, opened = false, lastTap = 0, tapT = null, ptype = 'mouse';
+
+  /* --- Сохранённые настройки --- */
+  function rd(k, d) { try { var x = JSON.parse(localStorage.getItem(k)); return x === null ? d : x; } catch (e) { return d; } }
+  function wr(k, x) { try { localStorage.setItem(k, JSON.stringify(x)); } catch (e) {} }
+  var app = rd('app_settings', {});
+  var S = rd('player_sub', { size: 'Средний', color: '#ffffff', bg: 'Тень', pos: 'Снизу', lang: null });
+
+  /* --- Утилиты --- */
+  function fmt(t) {
+    if (!isFinite(t) || t < 0) t = 0; t = Math.floor(t);
+    var h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
+    return (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function $all(sel, r) { return [].slice.call((r || root).querySelectorAll(sel)); }
+  function toast(msg) {
+    toastEl.textContent = msg; toastEl.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove('show'); }, 1400);
+  }
+  function fit() { root.style.fontSize = Math.max(11, Math.min(26, root.clientWidth / 58)) + 'px'; }
+
+  /* --- Иконки в статичной разметке --- */
+  function paintStatic() {
+    $all('[data-act="back"]')[0].innerHTML = PL_IC.back;
+    var sk = $all('[data-act="skip"]'); sk[0].innerHTML = PL_IC.back10; sk[1].innerHTML = PL_IC.fwd10;
+    $all('[data-act="cc"]')[0].innerHTML = PL_IC.cc + 'Субтитры';
+    paintPlay(); paintFs(); paintChips();
+  }
+  function paintPlay() { document.getElementById('pl-play').innerHTML = v.paused ? PL_IC.play : PL_IC.pause; root.classList.toggle('paused', v.paused); }
+  function paintFs() { document.getElementById('pl-fs').innerHTML = isFs() ? PL_IC.exit : PL_IC.full; }
+  function paintChips() {
+    document.getElementById('pl-qchip').innerHTML = esc(cur.quality || 'Качество') + PL_IC.up;
+    document.getElementById('pl-schip').textContent = speed + '×';
+  }
+
+  /* --- Показ и скрытие панели управления --- */
+  function inside(el, box) { return el && box.contains(el); }
+  function showUI() {
+    ui.classList.remove('hide'); root.classList.add('ui-on');
+    clearTimeout(hideT);
+    if (!v.paused && !panel && !seeking) hideT = setTimeout(hideUI, 3800);
+  }
+  function hideUI() {
+    if (panel || seeking) return;
+    ui.classList.add('hide'); root.classList.remove('ui-on');
+    if (inside(document.activeElement, ui)) root.focus();
+  }
+  function uiVisible() { return !ui.classList.contains('hide'); }
+
+  /* --- Воспроизведение --- */
+  function togglePlay() { if (v.paused) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } else v.pause(); }
+  function seekTo(t) { if (isFinite(v.duration)) v.currentTime = Math.max(0, Math.min(v.duration, t)); updateProgress(); }
+  function seekBy(d) { seekTo(v.currentTime + d); toast((d > 0 ? '+' : '−') + Math.abs(d) + ' с'); showUI(); }
+
+  function updateProgress(shown) {
+    var d = v.duration, t = shown != null ? shown : v.currentTime, p = isFinite(d) && d > 0 ? t / d * 100 : 0;
+    document.getElementById('pl-fill').style.width = p + '%';
+    document.getElementById('pl-knob').style.left = p + '%';
+    document.getElementById('pl-cur').textContent = fmt(t);
+    document.getElementById('pl-dur').textContent = fmt(d);
+    track.setAttribute('aria-valuenow', Math.round(t));
+    if (v.buffered && v.buffered.length && d > 0) {
+      document.getElementById('pl-buf').style.width = (v.buffered.end(v.buffered.length - 1) / d * 100) + '%';
+    }
+  }
+
+  /* --- Источники: озвучка × качество --- */
+  function voices() { var a = []; opts.sources.forEach(function (s) { if (a.indexOf(s.voice) < 0) a.push(s.voice); }); return a; }
+  function qualities(voice) {
+    var a = []; opts.sources.forEach(function (s) { if (s.voice === voice && a.indexOf(s.quality) < 0) a.push(s.quality); });
+    return a.sort(function (x, y) { var i = QO.indexOf(x), j = QO.indexOf(y); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
+  }
+  function pick(voice, quality) {
+    var s = opts.sources, i;
+    for (i = 0; i < s.length; i++) if (s[i].voice === voice && s[i].quality === quality) return s[i];
+    for (i = 0; i < s.length; i++) if (s[i].voice === voice) return s[i];
+    for (i = 0; i < s.length; i++) if (s[i].quality === quality) return s[i];
+    return s[0];
+  }
+  function destroyHls() { if (hls) { try { hls.destroy(); } catch (e) {} hls = null; } }
+  function attach(url, ready) {
+    destroyHls();
+    var isHls = /\.m3u8(\?|$)/i.test(url);
+    if (isHls && !v.canPlayType('application/vnd.apple.mpegurl')) {
+      var go = function () {
+        if (window.Hls && Hls.isSupported()) { hls = new Hls(); hls.attachMedia(v); hls.loadSource(url); ready(); }
+        else fail();
+      };
+      if (window.Hls) go();
+      else { var sc = document.createElement('script'); sc.src = HLS_URL; sc.onload = go; sc.onerror = fail; document.head.appendChild(sc); }
+    } else { v.src = url; v.load(); ready(); }
+  }
+  function fail() { root.classList.remove('busy'); root.classList.add('fail'); }
+  function setSource(src, t, autoplay) {
+    cur.voice = src.voice; cur.quality = src.quality;
+    root.classList.remove('fail'); root.classList.add('busy');
+    attach(src.url, function () {
+      var once = function () {
+        v.removeEventListener('loadedmetadata', once);
+        if (t > 0) { try { v.currentTime = t; } catch (e) {} }
+        v.playbackRate = speed;
+        if (autoplay) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+        updateProgress();
+      };
+      v.addEventListener('loadedmetadata', once);
+    });
+    paintChips();
+  }
+  function switchTo(voice, quality) {
+    var src = pick(voice, quality), t = v.currentTime, was = !v.paused;
+    if (src.voice === cur.voice && src.quality === cur.quality) return;
+    setSource(src, t, was);
+    toast(src.voice + ' · ' + src.quality);
+  }
+
+  /* --- Субтитры (.srt / .vtt) --- */
+  function parseSubs(text) {
+    text = text.replace(/^\uFEFF/, '').replace(/\r/g, '');
+    var out = [], blocks = text.split(/\n\n+/);
+    var rx = /(?:(\d+):)?(\d+):(\d+)[.,](\d+)/;
+    blocks.forEach(function (b) {
+      var lines = b.split('\n'), k = -1, i;
+      for (i = 0; i < lines.length; i++) if (lines[i].indexOf('-->') > -1) { k = i; break; }
+      if (k < 0) return;
+      var parts = lines[k].split('-->'), a = rx.exec(parts[0]), c = rx.exec(parts[1]);
+      if (!a || !c) return;
+      var f = function (m) { return (+m[1] || 0) * 3600 + (+m[2]) * 60 + (+m[3]) + (+('0.' + m[4])); };
+      var txt = lines.slice(k + 1).join('\n').replace(/\{\\[^}]*\}/g, '').replace(/<[^>]+>/g, '').trim();
+      if (txt) out.push({ s: f(a), e: f(c), t: txt });
+    });
+    return out.sort(function (x, y) { return x.s - y.s; });
+  }
+  function decode(buf) {
+    var t = new TextDecoder('utf-8').decode(buf);
+    if (t.indexOf('\uFFFD') > -1) { try { t = new TextDecoder('windows-1251').decode(buf); } catch (e) {} }  /* старые русские .srt */
+    return t;
+  }
+  function loadSubs(label) {
+    cues = []; cueI = 0; subEl.style.display = 'none';
+    S.lang = label; wr('player_sub', S);
+    if (!label || label === 'Выкл') return;
+    var tr = (opts.subtitles || []).filter(function (x) { return x.label === label; })[0];
+    if (!tr) return;
+    fetch(tr.url).then(function (r) { return r.arrayBuffer(); }).then(function (b) {
+      if (S.lang !== label) return;
+      cues = parseSubs(decode(b)); renderSub();
+    }).catch(function () { toast('Не удалось загрузить субтитры'); });
+  }
+  function renderSub() {
+    if (!cues.length || !S.lang || S.lang === 'Выкл') { subEl.style.display = 'none'; return; }
+    var t = v.currentTime - subOffset, lo = 0, hi = cues.length - 1, f = -1;
+    while (lo <= hi) { var m = (lo + hi) >> 1; if (cues[m].s <= t) { f = m; lo = m + 1; } else hi = m - 1; }
+    var c = f >= 0 && cues[f].e > t ? cues[f] : null;
+    if (!c) { subEl.style.display = 'none'; return; }
+    var span = subEl.firstChild;
+    var h = esc(c.t).replace(/\n/g, '<br>');
+    if (span.getAttribute('data-h') !== h) { span.innerHTML = h; span.setAttribute('data-h', h); }
+    subEl.style.display = 'block';
+  }
+  function styleSub() {
+    var sp = subEl.firstChild;
+    sp.style.fontSize = (SUBSIZE[S.size] || 1.55) + 'em';
+    sp.style.color = S.color;
+    sp.style.background = S.bg === 'Плашка' ? 'rgba(0,0,0,.72)' : 'transparent';
+    sp.style.textShadow = S.bg === 'Тень' ? '0 1px 3px #000, 0 0 8px rgba(0,0,0,.9)' : 'none';
+    subEl.style.bottom = S.pos === 'Выше' ? '17%' : '7%';
+  }
+
+  /* --- Панели --- */
+  function chips(act, list, active) {
+    return '<div class="pl-chips">' + list.map(function (x) {
+      var val = typeof x === 'object' ? x.v : x, lab = typeof x === 'object' ? x.l : x;
+      return '<div class="pl-k' + (String(val) === String(active) ? ' a' : '') + '" data-f tabindex="0" role="button" data-act="' + act + '" data-v="' + esc(val) + '">' + esc(lab) + '</div>';
+    }).join('') + '</div>';
+  }
+  function head(title, closeAct) {
+    return '<div class="pl-ph"><b>' + title + '</b><div class="pl-round" data-f tabindex="0" role="button" data-act="' + closeAct + '" style="width:2.4em;height:2.4em;background:var(--pl-chip);color:var(--pl-muted)">' + PL_IC.x + '</div></div>';
+  }
+  function buildSet() {
+    var h = head('Настройки', 'close');
+    h += '<div class="pl-lb">Качество</div>' + chips('q', qualities(cur.voice), cur.quality);
+    h += '<div class="pl-lb">Озвучка</div>' + chips('voice', voices(), cur.voice);
+    h += '<div class="pl-lb">Скорость</div>' + chips('spd', SPEEDS.map(function (x) { return { v: x, l: x + '×' }; }), speed);
+    h += '<div class="pl-link" data-f tabindex="0" role="button" data-act="open-sub"><span class="ic">' + PL_IC.cc + '</span>Субтитры<span class="v">' + esc(S.lang || 'Выкл') + '</span>' + PL_IC.chev + '</div>';
+    pSet.innerHTML = h;
+  }
+  function buildSub() {
+    var langs = ['Выкл'].concat((opts.subtitles || []).map(function (x) { return x.label; }));
+    var h = head('Субтитры', 'close');
+    h += '<div class="pl-lb">Язык</div>' + chips('sl', langs, S.lang || 'Выкл');
+    h += '<div class="pl-lb">Размер текста</div>' + chips('ss', ['Мелкий', 'Средний', 'Крупный'], S.size);
+    h += '<div class="pl-lb">Цвет текста</div><div class="pl-sw">' + COLORS.map(function (c) {
+      return '<div class="pl-c' + (c === S.color ? ' a' : '') + '" data-f tabindex="0" role="button" data-act="sc" data-v="' + c + '" style="background:' + c + '"></div>';
+    }).join('') + '</div>';
+    h += '<div class="pl-lb">Фон</div>' + chips('sb', ['Без фона', 'Тень', 'Плашка'], S.bg);
+    h += '<div class="pl-lb">Положение</div>' + chips('sp', ['Снизу', 'Выше'], S.pos);
+    h += '<div class="pl-lb">Синхронизация</div><div class="pl-step"><b data-f tabindex="0" role="button" data-act="sy" data-v="-0.5">' + PL_IC.minus + '</b><span>' + (subOffset > 0 ? '+' : '') + subOffset.toFixed(1) + ' с</span><b data-f tabindex="0" role="button" data-act="sy" data-v="0.5">' + PL_IC.plus + '</b></div>';
+    pSub.innerHTML = h;
+  }
+  function rebuild() {
+    var a = document.activeElement, key = a && a.getAttribute ? (a.getAttribute('data-act') || '') + '|' + (a.getAttribute('data-v') || '') : '';
+    if (panel === 'set') buildSet(); else if (panel === 'sub') buildSub();
+    if (key) {
+      var box = panel === 'set' ? pSet : pSub, n = box.querySelector('[data-act="' + key.split('|')[0] + '"][data-v="' + key.split('|')[1] + '"]') || box.querySelector('[data-act="' + key.split('|')[0] + '"]');
+      if (n) n.focus();
+    }
+  }
+  function openPanel(name, opener) {
+    if (!panel) panelOpener = opener || document.activeElement;
+    panel = name; clearTimeout(hideT); showUI();
+    if (name === 'set') { buildSet(); pSub.classList.remove('open'); pSet.classList.add('open'); }
+    else { buildSub(); pSet.classList.remove('open'); pSub.classList.add('open'); }
+    var box = name === 'set' ? pSet : pSub, f = box.querySelector('.pl-k.a') || box.querySelector('[data-f]');
+    setTimeout(function () { if (f) f.focus(); }, 30);
+  }
+  function closePanel() {
+    pSet.classList.remove('open'); pSub.classList.remove('open'); panel = null;
+    var o = panelOpener; panelOpener = null;
+    if (o && o.focus && ui.contains(o)) o.focus(); else root.focus();
+    showUI();
+  }
+
+  /* --- Полный экран --- */
+  function isFs() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+  function toggleFs() {
+    if (isFs()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); }
+    else { var r = root.requestFullscreen || root.webkitRequestFullscreen; if (r) r.call(root); }
+  }
+
+  /* --- Нажатия --- */
+  function act(a, val, el) {
+    switch (a) {
+      case 'back': saveNow(); onPlayerBack(); break;
+      case 'play': togglePlay(); break;
+      case 'skip': seekBy(+val); break;
+      case 'cc': openPanel('sub', el); break;
+      case 'quality': openPanel('set', el); break;
+      case 'speed': speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; v.playbackRate = speed; paintChips(); toast('Скорость ' + speed + '×'); break;
+      case 'fs': toggleFs(); break;
+      case 'close': closePanel(); break;
+      case 'open-sub': openPanel('sub'); break;
+      case 'q': switchTo(cur.voice, val); rebuild(); break;
+      case 'voice': switchTo(val, cur.quality); rebuild(); break;
+      case 'spd': speed = +val; v.playbackRate = speed; paintChips(); rebuild(); break;
+      case 'sl': loadSubs(val); rebuild(); break;
+      case 'ss': S.size = val; wr('player_sub', S); styleSub(); rebuild(); break;
+      case 'sc': S.color = val; wr('player_sub', S); styleSub(); rebuild(); break;
+      case 'sb': S.bg = val; wr('player_sub', S); styleSub(); rebuild(); break;
+      case 'sp': S.pos = val; wr('player_sub', S); styleSub(); rebuild(); break;
+      case 'sy': subOffset = Math.round((subOffset + +val) * 10) / 10; renderSub(); rebuild(); break;
+    }
+  }
+  root.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act]');
+    if (t && root.contains(t)) { act(t.getAttribute('data-act'), t.getAttribute('data-v'), t); showUI(); return; }
+    if (e.target.closest('.pl-panel') || e.target.closest('.pl-track')) return;
+    /* клик по видео: мышь = пауза, касание = показать/скрыть панель */
+    if (panel) { closePanel(); return; }
+    if (ptype === 'mouse') { togglePlay(); showUI(); }
+  });
+
+  /* Касания: двойной тап по краям = перемотка */
+  root.addEventListener('pointerdown', function (e) { ptype = e.pointerType || 'mouse'; });
+  root.addEventListener('pointerup', function (e) {
+    if (e.pointerType === 'mouse' || e.target.closest('[data-f]') || e.target.closest('.pl-panel')) return;
+    var now = Date.now(), r = root.getBoundingClientRect(), x = (e.clientX - r.left) / r.width;
+    if (now - lastTap < 300 && (x < .35 || x > .65)) {
+      clearTimeout(tapT); lastTap = 0; seekBy(x < .5 ? -10 : 10);
+    } else {
+      lastTap = now; clearTimeout(tapT);
+      tapT = setTimeout(function () { if (panel) closePanel(); else if (uiVisible()) hideUI(); else showUI(); }, 260);
+    }
+  });
+  root.addEventListener('pointermove', function (e) { if (e.pointerType === 'mouse') showUI(); });
+
+  /* Перемотка по полосе (мышь и касание) */
+  function posFromEvent(e) { var r = track.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * (v.duration || 0); }
+  track.addEventListener('pointerdown', function (e) {
+    seeking = true; root.classList.add('drag'); track.setPointerCapture(e.pointerId); updateProgress(posFromEvent(e)); e.preventDefault();
+  });
+  track.addEventListener('pointermove', function (e) { if (seeking) updateProgress(posFromEvent(e)); });
+  track.addEventListener('pointerup', function (e) {
+    if (!seeking) return; seeking = false; root.classList.remove('drag'); seekTo(posFromEvent(e)); showUI();
+  });
+
+  /* --- Управление пультом и клавиатурой --- */
+  function focusables(scope) {
+    return $all('[data-f]', scope).filter(function (n) { var r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+  }
+  function move(dir) {
+    var scope = panel ? (panel === 'set' ? pSet : pSub) : ui, a = document.activeElement, list = focusables(scope);
+    if (!list.length) return;
+    if (!a || !scope.contains(a)) { (scope === ui ? $all('[data-act="play"]')[0] : list[0]).focus(); return; }
+    var r = a.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, best = null, bs = 1e9;
+    list.forEach(function (n) {
+      if (n === a) return;
+      var q = n.getBoundingClientRect(), dx = q.left + q.width / 2 - cx, dy = q.top + q.height / 2 - cy, p, s;
+      if (dir === 'right' && dx > 2) { p = dx; s = Math.abs(dy); }
+      else if (dir === 'left' && dx < -2) { p = -dx; s = Math.abs(dy); }
+      else if (dir === 'down' && dy > 2) { p = dy; s = Math.abs(dx); }
+      else if (dir === 'up' && dy < -2) { p = -dy; s = Math.abs(dx); }
+      else return;
+      var sc = p + s * 2.2; if (sc < bs) { bs = sc; best = n; }
+    });
+    if (best) { best.focus(); if (best.scrollIntoView) best.scrollIntoView({ block: 'nearest' }); }
+    showUI();
+  }
+  var DIR = { 37: 'left', 38: 'up', 39: 'right', 40: 'down', ArrowLeft: 'left', ArrowUp: 'up', ArrowRight: 'right', ArrowDown: 'down' };
+  var BACK = { 27: 1, 8: 1, 10009: 1, 461: 1, 4: 1, Escape: 1, Backspace: 1, GoBack: 1 };
+  document.addEventListener('keydown', function (e) {
+    if (!opened) return;
+    var k = e.key, c = e.keyCode, d = DIR[k] || DIR[c], a = document.activeElement;
+    var onUi = a && a !== root && a !== document.body && root.contains(a);
+
+    if (BACK[k] || BACK[c]) {
+      e.preventDefault();
+      if (panel) closePanel(); else if (uiVisible() && !v.paused) hideUI(); else { saveNow(); onPlayerBack(); }
+      return;
+    }
+    if (k === 'MediaPlayPause' || c === 179 || c === 415 || c === 19) { e.preventDefault(); togglePlay(); showUI(); return; }
+    if (c === 417 || k === 'MediaFastForward') { e.preventDefault(); seekBy(10); return; }
+    if (c === 412 || k === 'MediaRewind') { e.preventDefault(); seekBy(-10); return; }
+    if (k === 'f' || k === 'F') { toggleFs(); return; }
+
+    if (d) {
+      e.preventDefault();
+      if (!onUi) {                                  /* панель скрыта */
+        if (d === 'left') seekBy(-10);
+        else if (d === 'right') seekBy(10);
+        else if (d === 'up') { showUI(); $all('[data-act="play"]')[0].focus(); }
+        else if (d === 'down') openPanel('set', null);
+        return;
+      }
+      if (a === track && (d === 'left' || d === 'right')) { seekBy(d === 'left' ? -10 : 10); return; }
+      move(d); return;
+    }
+    if (k === 'Enter' || k === ' ' || c === 13 || c === 32) {
+      e.preventDefault();
+      if (onUi && a.hasAttribute('data-act')) a.click();
+      else { togglePlay(); showUI(); }
+    }
+  });
+
+  /* --- События видео --- */
+  v.addEventListener('play', function () { paintPlay(); showUI(); startSave(); });
+  v.addEventListener('pause', function () { paintPlay(); showUI(); saveNow(); });
+  v.addEventListener('waiting', function () { root.classList.add('busy'); });
+  v.addEventListener('playing', function () { root.classList.remove('busy'); root.classList.remove('fail'); });
+  v.addEventListener('canplay', function () { root.classList.remove('busy'); });
+  v.addEventListener('error', fail);
+  v.addEventListener('durationchange', function () { updateProgress(); });
+  v.addEventListener('progress', function () { updateProgress(); });
+  v.addEventListener('timeupdate', function () { if (!seeking) updateProgress(); renderSub(); });
+  v.addEventListener('ended', function () { paintPlay(); showUI(); try { localStorage.removeItem('player_pos_' + opts.id); } catch (e) {} });
+  document.addEventListener('fullscreenchange', function () { paintFs(); fit(); });
+  document.addEventListener('webkitfullscreenchange', function () { paintFs(); fit(); });
+  window.addEventListener('resize', fit);
+
+  /* --- Запоминание места просмотра --- */
+  function saveNow() { if (opts && opts.id && v.duration > 60) wr('player_pos_' + opts.id, { t: v.currentTime, d: v.duration }); }
+  function startSave() { clearInterval(saveT); saveT = setInterval(function () { if (!v.paused) saveNow(); }, 5000); }
+
+  /* --- Публичный API --- */
+  window.Player = {
+    open: function (o) {
+      opts = o; opened = true; root.style.display = '';
+      fit(); paintStatic(); styleSub(); subOffset = 0;
+      document.getElementById('pl-title').textContent = o.title || '';
+      document.getElementById('pl-meta').textContent = o.meta || '';
+
+      /* значения по умолчанию из настроек приложения (страница настроек) */
+      var q = app.quality || '1080p', vc = app.voice || voices()[0];
+      var src = pick(vc, q);
+      var saved = o.id ? rd('player_pos_' + o.id, null) : null;
+      var start = o.start != null ? o.start : (saved && saved.t > 10 && saved.t < saved.d - 30 ? saved.t : 0);
+      setSource(src, start, o.autoplay !== false);
+      if (start > 10) toast('Продолжаем с ' + fmt(start));
+
+      var lang = S.lang;
+      if (lang == null) lang = app.subs && (o.subtitles || []).length ? o.subtitles[0].label : 'Выкл';
+      if (lang !== 'Выкл' && !(o.subtitles || []).some(function (x) { return x.label === lang; })) lang = 'Выкл';
+      loadSubs(lang);
+      showUI(); root.focus();
+    },
+    close: function () { saveNow(); opened = false; destroyHls(); v.pause(); v.removeAttribute('src'); v.load(); root.style.display = 'none'; },
+    video: v
+  };
+
+  paintStatic(); fit();
+})();
+
+/* ===== ДЕМО: удалите этот блок и вызывайте Player.open(...) из своего кода ===== */
+(function () {
+  var vtt = 'WEBVTT\n\n00:00:02.000 --> 00:00:06.000\nЭто пример субтитров.\n\n00:00:07.000 --> 00:00:12.000\nРазмер, цвет и фон меняются\nв настройках плеера.\n\n00:00:13.000 --> 00:00:18.000\nСинхронизацию можно сдвинуть\nкнопками − и +.';
+  var url = URL.createObjectURL(new Blob([vtt], { type: 'text/vtt' }));
+  Player.open({
+    id: 'demo',
+    title: 'Big Buck Bunny',
+    meta: '2008 · Демо',
+    sources: [
+      { voice: 'Оригинал', quality: '720p', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' }
+    ],
+    subtitles: [{ label: 'Русские', url: url }],
+    autoplay: false
+  });
+})();
+</script>
+<div class="pv-toggle" id="pvToggle"><button data-variant="phone" class="on">Телефон</button><button data-variant="tv">ТВ</button></div><script>
+  /* Превью: ТВ = максимальный размер контролов (26px), телефон = авто (ширина/58) */
+  (function () {
+    var root = document.getElementById('pl');
+    function apply() {
+      if (document.body.classList.contains('tv')) root.style.fontSize = '26px';
+      else root.style.fontSize = Math.max(11, Math.min(26, root.clientWidth / 58)) + 'px';
+    }
+    window.addEventListener('resize', apply);
+    var btns = document.querySelectorAll('#pvToggle button');
+    btns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        btns.forEach(function (x) { x.classList.remove('on'); });
+        b.classList.add('on');
+        document.body.classList.toggle('tv', b.getAttribute('data-variant') === 'tv');
+        apply();
+      });
+    });
+  })();
+</script></body>
+</html>
