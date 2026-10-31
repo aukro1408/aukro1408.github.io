@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pawflix — ряд карточек (превью v1)</title>
+<title>pawflix — ряд карточек (превью v2)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Oswald:wght@700&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -16,25 +16,21 @@
 
   /* ===== Ряд — порт файла Denis 1:1, с его правками ===== */
   .rows-phone, .rows-tv { position: relative; z-index: 1; }
-  .rows-phone { padding: 28px 0 0 16px; }
-  .row-head { display: flex; align-items: center; gap: 12px; padding-right: 16px; }
-  .row-bar { width: 5px; height: 44px; border-radius: 3px; background: #ffc857; flex: none; }
+  .rows-phone { padding: 28px 0 0 0; }
+  .row-head { display: flex; align-items: center; gap: 12px; padding-left: 16px; padding-right: 16px; }
+  .row-bar { width: 5px; height: 44px; border-radius: 3px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.45); flex: none; }
   .row-head-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
   .row-h { font-family: 'Manrope', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.1; color: #f4f4f6; }
-  .row-sub { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 500; color: #b4b4be; }
-  .row-all {
-    height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid #3a3a44;
-    background: transparent; color: #f4f4f6; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
-  }
   .row-strip {
     display: flex; gap: 14px; overflow-x: auto; margin-top: 20px; padding-bottom: 8px;
-    scrollbar-width: none;
+    scrollbar-width: none; scroll-snap-type: x mandatory;
   }
   .row-strip::-webkit-scrollbar { display: none; }
   /* Карточка — как в файле: 216×320, радиус 26, градиент, паддинг 14 */
   .row-card {
     width: 216px; flex: none; height: 320px; border-radius: 26px; position: relative; overflow: hidden;
     box-sizing: border-box; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;
+    scroll-snap-align: start;
   }
   /* Правка Denis: качества нет, осталась только метка рейтинга — справа сверху, на том же месте */
   .row-top { display: flex; justify-content: flex-end; align-items: flex-start; }
@@ -59,12 +55,10 @@
   .row-meta { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 500; color: #c4c4cc; margin-top: 4px; }
 
   /* ===== ТВ-вариант: тот же дизайн, масштаб ×1.333 ===== */
-  .rows-tv { padding: 48px 0 0 48px; }
+  .rows-tv { padding: 48px 0 0 0; }
   .rows-tv .row-bar { width: 7px; height: 59px; border-radius: 4px; }
-  .rows-tv .row-head { gap: 16px; padding-right: 48px; }
+  .rows-tv .row-head { gap: 16px; padding-left: 48px; padding-right: 48px; }
   .rows-tv .row-h { font-size: 35px; }
-  .rows-tv .row-sub { font-size: 17px; }
-  .rows-tv .row-all { height: 59px; padding: 0 21px; border-radius: 30px; font-size: 19px; }
   .rows-tv .row-strip { gap: 19px; margin-top: 27px; }
   .rows-tv .row-card { width: 288px; height: 427px; border-radius: 35px; padding: 19px; }
   .rows-tv .row-rating { height: 35px; padding: 0 13px; border-radius: 17px; font-size: 17px; }
@@ -106,9 +100,7 @@
       <div class="row-bar"></div>
       <div class="row-head-text">
         <div class="row-h">Пик недели</div>
-        <div class="row-sub">Смотрят чаще всего</div>
       </div>
-      <button class="row-all">Все</button>
     </div>
     <div class="row-strip" id="strip-phone"></div>
   </section>
@@ -118,9 +110,7 @@
       <div class="row-bar"></div>
       <div class="row-head-text">
         <div class="row-h">Пик недели</div>
-        <div class="row-sub">Смотрят чаще всего</div>
       </div>
-      <button class="row-all">Все</button>
     </div>
     <div class="row-strip" id="strip-tv"></div>
   </section>
@@ -131,12 +121,13 @@
     <button class="active" data-variant="phone">Телефон</button>
   </div>
   <div class="caption">
-    <b>Пробный вариант v1: ряд «Пик недели».</b> Дизайн — из твоего файла 1:1, с правками:
-    метка качества (4K) убрана, метка рейтинга (★) осталась справа сверху на том же месте;
-    цифры 1–10 теперь на одной высоте — название фиксировано на 2 строки, поэтому короткий
-    и длинный заголовки не сдвигают цифру; в ряде ровно 10 карточек, после десятой ничего нет —
-    ни «Ещё», ни лишних плиток, ряд самодостаточный. Карточки 1–3 — из файла, 4–10 — заглушки
-    (названия и оценки — для проверки вида, не контент). ТВ-вариант — тот же дизайн, масштаб ×1.333.
+    <b>Пробный вариант v2: ряд «Пик недели».</b> Правки по замечаниям:
+    кнопка «Все» убрана совсем; подзаголовок «Смотрят чаще всего» убран — только «Пик недели»;
+    полоска слева теперь белая с тенью — универсальная, видна на любом фоне (жёлтая терялась на оранжевом);
+    ряд идёт от самого края экрана, а прокрутка — с прилипанием: карточка всегда встаёт целиком
+    и больше не срезается слева. Остальное как в v1: качества нет, рейтинг (★) справа сверху,
+    цифры 1–10 на одной высоте, 10 карточек, после десятой ничего нет. Карточки 1–3 — из файла,
+    4–10 — заглушки. ТВ-вариант — тот же дизайн, масштаб ×1.333.
   </div>
   <script>
     var cards = [
