@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Коллекции — cub red</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #07080d; color: #fff; font-family: 'Nunito', system-ui, sans-serif; min-height: 100vh; overflow-x: hidden; }
+  .bg-layer { position: fixed; inset: 0; z-index: 0; background: url("bg-black.jpg") center/cover no-repeat; }
+  .content { position: relative; z-index: 1; padding: 84px 0 32px; }
+
+  /* Док-меню (как в home v10): сверху впритык, блюр, золотая кнопка */
+  .dock-wrap { position: fixed; left: 50%; top: 0; z-index: 50; width: 688px; height: 64px; margin-left: -344px; transform-origin: 50% 0; }
+  .dock { padding: 6px; border-radius: 34px; background: transparent; -webkit-backdrop-filter: blur(10px) saturate(1.3); backdrop-filter: blur(10px) saturate(1.3); border: 1px solid rgba(255,255,255,0.16); }
+  .dock-inner { position: relative; display: flex; gap: 4px; }
+  .dock-thumb { position: absolute; left: 0; top: 0; width: 132px; height: 52px; border-radius: 26px; background: linear-gradient(135deg, #f8e8b6 0%, #e4b857 48%, #b8802a 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); transition: transform 0.45s cubic-bezier(0.5, 0, 0.1, 1); }
+  .dock button { border: 0; font-family: 'Manrope', sans-serif; padding: 0; cursor: pointer; position: relative; z-index: 1; width: 132px; height: 52px; border-radius: 26px; background: transparent; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; transition: color 0.3s; color: #ece6d8; }
+  .dock button.active { color: #2a1c04; }
+  .dock button svg { flex: none; }
+
+  /* Ряды — наш язык: полоска + заголовок там, где начинается первая карточка */
+  .row { margin-bottom: 28px; }
+  .row-h { display: flex; align-items: center; gap: 10px; padding: 0 14px; font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.1; }
+  .row-h::before { content: ''; flex: none; width: 5px; height: 14px; background: #fff; border-radius: 3px; }
+  .strip { display: flex; gap: 10px; overflow-x: auto; margin-top: 14px; padding: 0 14px 8px; scroll-padding: 0 14px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .strip::-webkit-scrollbar { display: none; }
+  .strip > * { scroll-snap-align: start; }
+  .strip > *:last-child { scroll-snap-align: end; }
+
+  /* Карточка коллекции — как отдаёт API: бэкдроп + название + счётчик и автор */
+  .col-card { flex: none; width: 280px; cursor: pointer; }
+  .col-card img { display: block; width: 280px; height: 158px; object-fit: cover; border-radius: 12px; background: #1c1c26; }
+  .col-title { margin-top: 8px; font-family: 'Manrope', sans-serif; font-size: 15px; font-weight: 700; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .col-meta { margin-top: 3px; font-size: 12px; color: rgba(255,255,255,.6); }
+  .row-status { padding: 14px; font-size: 14px; color: rgba(255,255,255,.6); }
+
+  /* Страница коллекции */
+  #detailView { display: none; }
+  .back { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 16px 14px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16); color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; padding: 9px 16px; border-radius: 99px; cursor: pointer; }
+  .detail-name { padding: 0 14px; font-family: 'Manrope', sans-serif; font-size: 24px; font-weight: 700; line-height: 1.2; }
+  .detail-meta { padding: 6px 14px 0; font-size: 13px; color: rgba(255,255,255,.6); }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 10px; padding: 18px 14px 0; }
+  .item-card { cursor: pointer; }
+  .item-poster { position: relative; width: 100%; aspect-ratio: 2/3; border-radius: 12px; overflow: hidden; background: #1c1c26; }
+  .item-poster img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .item-rating { position: absolute; top: 8px; left: 8px; height: 20px; padding: 0 8px; border-radius: 10px; background: rgba(0,0,0,.65); font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 3px; }
+  .item-title { margin-top: 6px; font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-meta { margin-top: 2px; font-size: 11px; color: rgba(255,255,255,.55); }
+  .more { display: block; margin: 24px auto 0; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); color: #fff; font-family: inherit; font-size: 15px; font-weight: 700; padding: 12px 28px; border-radius: 99px; cursor: pointer; }
+  .more:disabled { opacity: .5; }
+</style>
+</head>
+<body>
+<div class="bg-layer"></div>
+
+<div class="dock-wrap" id="dockWrap">
+  <div class="dock"><div class="dock-inner">
+    <div class="dock-thumb" id="dockThumb"></div>
+    <button data-home="1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"></path></svg>Главная</button>
+    <button class="active"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 5-9 5-9-5z"></path><path d="M3 14l9 5 9-5"></path></svg>Коллекции</button>
+    <button><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1.5"></rect><rect x="14" y="4" width="6" height="6" rx="1.5"></rect><rect x="4" y="14" width="6" height="6" rx="1.5"></rect><rect x="14" y="14" width="6" height="6" rx="1.5"></rect></svg>Каталог</button>
+    <button><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"></circle><path d="M16 16l4 4"></path></svg>Поиск</button>
+    <button><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"></path><circle cx="15" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></svg>Настройки</button>
+  </div></div>
+</div>
+
+<div class="content">
+  <div id="tabView">
+    <div class="row"><div class="row-h">Новые</div><div class="strip" id="row-new"><div class="row-status">Загрузка…</div></div></div>
+    <div class="row"><div class="row-h">Популярные</div><div class="strip" id="row-popular"><div class="row-status">Загрузка…</div></div></div>
+    <div class="row"><div class="row-h">Топ</div><div class="strip" id="row-top"><div class="row-status">Загрузка…</div></div></div>
+  </div>
+
+  <div id="detailView">
+    <button class="back" id="backBtn">← Коллекции</button>
+    <div class="detail-name" id="detailName"></div>
+    <div class="detail-meta" id="detailMeta"></div>
+    <div class="grid" id="detailGrid"></div>
+    <button class="more" id="moreBtn" style="display:none">Показать ещё</button>
+  </div>
+</div>
+
+<script>
+  var LIST = 'https://cub.red/api/collections/list?category=';
+  var DETAIL = 'https://tmdb.cub.red/collections/';
+  var IMG = 'https://image.tmdb.org/t/p/';
+  function img(path, size) { return path ? IMG + size + path : ''; }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+  // Док: золотая кнопка ездит, Главная ведёт на главный экран
+  (function () {
+    var btns = document.querySelectorAll('.dock button');
+    var thumb = document.getElementById('dockThumb');
+    thumb.style.transform = 'translateX(136px)';
+    btns.forEach(function (b, i) {
+      b.addEventListener('click', function () {
+        if (b.getAttribute('data-home')) { location.href = 'home-preview.html?v=10'; return; }
+        btns.forEach(function (x) { x.classList.remove('active'); });
+        b.classList.add('active');
+        thumb.style.transform = 'translateX(' + (i * 136) + 'px)';
+      });
+    });
+    function fitDock() {
+      var s = Math.min(1, (document.documentElement.clientWidth - 32) / 688);
+      document.getElementById('dockWrap').style.transform = 'scale(' + s + ')';
+    }
+    addEventListener('resize', fitDock);
+    fitDock();
+  })();
+
+  // Вкладка: ряды по категориям API
+  function loadRow(cat, elId) {
+    var el = document.getElementById(elId);
+    fetch(LIST + cat).then(function (r) { return r.json(); }).then(function (d) {
+      el.innerHTML = '';
+      (d.results || []).forEach(function (c) {
+        var card = document.createElement('div');
+        card.className = 'col-card';
+        card.innerHTML = '<img src="' + img(c.backdrop_path, 'w500') + '" alt="" loading="lazy">' +
+          '<div class="col-title">' + esc(c.title) + '</div>' +
+          '<div class="col-meta">' + c.items_count + ' названий · ' + esc(c.username) + '</div>';
+        card.addEventListener('click', function () { openDetail(c); });
+        el.appendChild(card);
+      });
+      if (!el.children.length) el.innerHTML = '<div class="row-status">Пусто</div>';
+    }).catch(function () {
+      el.innerHTML = '<div class="row-status">Не удалось загрузить. Проверь сеть и обнови страницу.</div>';
+    });
+  }
+  loadRow('new', 'row-new');
+  loadRow('popular', 'row-popular');
+  loadRow('top', 'row-top');
+
+  // Страница коллекции: название + карточки сеткой (рядами), постранично
+  var cur = null, curPage = 1, curTotal = 1;
+  function yearOf(it) {
+    var d = it.release_date || it.first_air_date || '';
+    return d ? d.slice(0, 4) : '';
+  }
+  function ratingOf(it) {
+    var v = it.vote_average;
+    if (v == null || v === 0) return '';
+    return '★ ' + (Number.isInteger(v) ? v : v.toFixed(1));
+  }
+  function renderItems(items) {
+    var g = document.getElementById('detailGrid');
+    items.forEach(function (it) {
+      var card = document.createElement('div');
+      card.className = 'item-card';
+      var r = ratingOf(it);
+      card.innerHTML = '<div class="item-poster"><img src="' + img(it.poster_path, 'w342') + '" alt="" loading="lazy">' +
+        (r ? '<div class="item-rating">' + r + '</div>' : '') + '</div>' +
+        '<div class="item-title">' + esc(it.title || it.name) + '</div>' +
+        '<div class="item-meta">' + yearOf(it) + '</div>';
+      g.appendChild(card);
+    });
+  }
+  function openDetail(c) {
+    cur = c; curPage = 1;
+    document.getElementById('tabView').style.display = 'none';
+    var dv = document.getElementById('detailView');
+    dv.style.display = 'block';
+    document.getElementById('detailName').textContent = c.title;
+    document.getElementById('detailMeta').textContent = c.items_count + ' названий · ' + c.username;
+    document.getElementById('detailGrid').innerHTML = '<div class="row-status">Загрузка…</div>';
+    document.getElementById('moreBtn').style.display = 'none';
+    window.scrollTo(0, 0);
+    fetch(DETAIL + c.id).then(function (r) { return r.json(); }).then(function (d) {
+      curTotal = d.total_pages || 1;
+      document.getElementById('detailGrid').innerHTML = '';
+      renderItems(d.results || []);
+      if (curPage < curTotal) document.getElementById('moreBtn').style.display = 'block';
+    }).catch(function () {
+      document.getElementById('detailGrid').innerHTML = '<div class="row-status">Не удалось загрузить. Нажми «Коллекции» и попробуй снова.</div>';
+    });
+  }
+  document.getElementById('moreBtn').addEventListener('click', function (e) {
+    var btn = e.currentTarget;
+    btn.disabled = true; btn.textContent = 'Загрузка…';
+    fetch(DETAIL + cur.id + '?page=' + (curPage + 1)).then(function (r) { return r.json(); }).then(function (d) {
+      curPage = d.page || curPage + 1;
+      renderItems(d.results || []);
+      btn.disabled = false; btn.textContent = 'Показать ещё';
+      if (curPage >= (d.total_pages || curTotal)) btn.style.display = 'none';
+    }).catch(function () {
+      btn.disabled = false; btn.textContent = 'Показать ещё';
+    });
+  });
+  document.getElementById('backBtn').addEventListener('click', function () {
+    document.getElementById('detailView').style.display = 'none';
+    document.getElementById('tabView').style.display = 'block';
+    window.scrollTo(0, 0);
+  });
+</script>
+</body>
+</html>
