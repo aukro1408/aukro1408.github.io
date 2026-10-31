@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pawflix — ряд карточек (превью v5)</title>
+<title>pawflix — ряд карточек (превью v6)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Oswald:wght@700&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -17,7 +17,7 @@
   /* ===== Ряд — порт файла Denis 1:1, с его правками ===== */
   .rows-phone, .rows-tv { position: relative; z-index: 1; }
   .rows-phone { padding: 28px 0 0 0; }
-  .row-head { display: flex; align-items: center; gap: 12px; padding-left: 16px; padding-right: 16px; }
+  .row-head { display: flex; align-items: center; gap: 12px; padding-left: 14px; padding-right: 16px; }
   .row-bar { width: 5px; height: 44px; border-radius: 3px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.45); flex: none; }
   .row-head-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
   .row-h { font-family: 'Manrope', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.1; color: #f4f4f6; }
@@ -60,7 +60,7 @@
   /* ===== ТВ-вариант: тот же дизайн, масштаб ×1.333 ===== */
   .rows-tv { padding: 48px 0 0 0; }
   .rows-tv .row-bar { width: 7px; height: 59px; border-radius: 4px; }
-  .rows-tv .row-head { gap: 16px; padding-left: 48px; padding-right: 48px; }
+  .rows-tv .row-head { gap: 16px; padding-left: 19px; padding-right: 48px; }
   .rows-tv .row-h { font-size: 35px; }
   .rows-tv .row-strip { gap: 19px; margin-top: 27px; padding: 0 19px 8px 19px; scroll-padding: 0 19px 0 19px; }
   .rows-tv .row-card { width: 147px; height: 220px; border-radius: 16px; padding: 11px; }
@@ -124,12 +124,12 @@
     <button class="active" data-variant="phone">Телефон</button>
   </div>
   <div class="caption">
-    <b>Пробный вариант v5: ряд «Пик недели».</b> Карточки теперь ТАКОГО ЖЕ размера,
-    как обычные карточки категорий: телефон 110×165, ТВ 147×220; цифра, название,
-    мета и рейтинг ужаты под новый размер, цифры по-прежнему на одной высоте.
-    Зазоры не менялись: слева и в конце — как между карточками, прилипание без срезов.
-    Остальное как раньше: кнопки «Все» нет, подзаголовка нет, полоска белая
-    универсальная, качества нет, рейтинг (★) справа сверху, 10 карточек.
+    <b>Пробный вариант v6: ряд «Пик недели».</b> Шапка выровнена по началу карточек:
+    полоска и текст теперь сидят ровно там, где начинается первая карточка
+    (14px на телефоне, 19px на ТВ), а не глубже. Размер карточек как в v5 —
+    такой же, как у категорий: телефон 110×165, ТВ 147×220. Остальное без изменений:
+    кнопки «Все» нет, подзаголовка нет, полоска белая универсальная, качества нет,
+    рейтинг (★) справа сверху, цифры на одной высоте, 10 карточек.
     Карточки 1–3 — из файла, 4–10 — заглушки. ТВ-вариант — тот же дизайн, масштаб ×1.333.
   </div>
   <script>

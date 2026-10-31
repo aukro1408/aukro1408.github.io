@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pawflix — ряды категорий (превью v1)</title>
+<title>pawflix — ряды категорий (превью v2)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -18,9 +18,11 @@
   .cats-phone { padding: 28px 0 0 0; }
   .cat-row { margin-bottom: 28px; }
   .cat-head {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; gap: 12px; justify-content: space-between;
     padding-left: 14px; padding-right: 14px; margin-bottom: 12px;
   }
+  .cat-bar { width: 5px; height: 44px; border-radius: 3px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.45); flex: none; }
+  .cat-head-text { flex: 1; }
   .cat-h { font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.1; color: #fff; }
   .cat-chev { font-size: 22px; font-weight: 400; color: rgba(255,255,255,.55); line-height: 1; }
   .cat-strip {
@@ -49,7 +51,8 @@
   /* ===== ТВ-вариант: тот же дизайн, масштаб ×1.333 ===== */
   .cats-tv { padding: 48px 0 0 0; }
   .cats-tv .cat-row { margin-bottom: 37px; }
-  .cats-tv .cat-head { padding-left: 19px; padding-right: 19px; margin-bottom: 16px; }
+  .cats-tv .cat-head { gap: 16px; padding-left: 19px; padding-right: 19px; margin-bottom: 16px; }
+  .cats-tv .cat-bar { width: 7px; height: 59px; border-radius: 4px; }
   .cats-tv .cat-h { font-size: 27px; }
   .cats-tv .cat-chev { font-size: 29px; }
   .cats-tv .cat-strip { gap: 13px; padding: 0 19px 8px 19px; scroll-padding: 0 19px 0 19px; }
@@ -96,17 +99,15 @@
     <button data-variant="tv">ТВ</button>
   </div>
   <div class="caption">
-    <b>Пробный вариант v1: ряды категорий с обычными карточками.</b> Пять рядов —
-    Триллеры, Ужасы, Фантастика, Сериалы, Мультфильмы; в каждом по 8 карточек для пробы.
-    Обычная карточка — как на твоём фото: постер, рейтинг тёмной пилюлей слева сверху,
-    название под постером в одну строку, под ним серая мета. Ранговых цифр здесь нет —
-    это не «Пик недели», а обычные ряды. Плашки качества не ставлю — мы его не знаем
-    (то же правило, что и в «Пике недели»). Размеры замерены с фото: телефон — постер
+    <b>Пробный вариант v2: ряды категорий с обычными карточками.</b> У всех рядов
+    теперь такая же полоска, как у «Пик недели»: белая универсальная, слева от названия,
+    и сидит ровно там, где начинается первая карточка (14px на телефоне, 19px на ТВ).
+    Пять рядов — Триллеры, Ужасы, Фантастика, Сериалы, Мультфильмы; в каждом по 8 карточек
+    для пробы. Обычная карточка: постер, рейтинг тёмной пилюлей слева сверху,
+    название под постером в одну строку, под ним серая мета. Ранговых цифр здесь нет.
+    Плашки качества не ставлю — мы его не знаем. Размеры как в v1: телефон — постер
     110×165, зазор 10, боковой отступ 14; ТВ — тот же дизайн ×1.333 (постер 147×220,
     зазор 13, отступ 19). Названия и оценки — заглушки, не контент.
-    Честно про источник: сам APK Reelo размеров не отдаёт (Compose-код, из статики
-    не извлекается — это зафиксировано в разборе), поэтому телефон замерен с твоего фото,
-    а ТВ выведен масштабом ×1.333 — на ТВ проверишь сам, когда включишь.
   </div>
   <script>
     var cats = [
@@ -168,7 +169,7 @@
         row.className = 'cat-row';
         var head = document.createElement('div');
         head.className = 'cat-head';
-        head.innerHTML = '<div class="cat-h">' + cat.h + '</div><div class="cat-chev">›</div>';
+        head.innerHTML = '<div class="cat-bar"></div><div class="cat-head-text"><div class="cat-h">' + cat.h + '</div></div><div class="cat-chev">›</div>';
         var strip = document.createElement('div');
         strip.className = 'cat-strip';
         cat.items.forEach(function (c, i) {
