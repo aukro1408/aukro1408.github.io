@@ -1,1 +1,1 @@
-{"versionCode":71,"versionName":"0.71-dev","notes":["pawflix передаёт id фильма в Zaprudna44 для кнопки пропуска","Filmix: tmdb_id + сезон/серия из resumeKey","Торренты: tmdb_id фильма"]}
+{"versionCode":72,"versionName":"0.72-dev","notes":["PaciukMovie в списке плееров (настройки + шторка «Чем открыть?»)","При «Спрашивать» — шторка со всеми плеерами устройства","Пропуск сегментов работает и в PaciukMovie"]}
