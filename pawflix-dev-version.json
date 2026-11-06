@@ -1,8 +1,7 @@
 {
-  "versionCode": 139,
-  "versionName": "1.39-dev",
+  "versionCode": 140,
+  "versionName": "1.40-dev",
   "notes": [
-    "Убран createLatch: первый запрос WebView всегда таймаутился за 8с и падал в HttpURLConnection.",
-    "Принудительный QR при пустых источниках без токена: сервер отдаёт {life} с пустым online вместо accsdb — анонимный запрос accsdb отдаёт всегда, после входа токен даст источники."
+    "КОРЕНЬ: опрос результатов шёл по /lite/lifeevents, а «Кино» опрашивает /lifeevents БЕЗ /lite/. Сервер на /lite/lifeevents отвечает пустым online — не тот адрес. Путь исправлен на /lifeevents."
   ]
 }
