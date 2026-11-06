@@ -1,9 +1,9 @@
 {
-  "versionCode": 126,
-  "versionName": "1.26-dev",
+  "versionCode": 128,
+  "versionName": "1.28-dev",
   "notes": [
-    "Онлайн: Lumio убран, вместо него Lampac (beta2.l-vid.online:888)",
-    "Вход по QR-коду из ТГ-бота, список загружается сам после входа",
-    "Настройки: пункт Lampac (токен), Lumio VIP убран"
+    "Lampac как в «Кино»: опрос /tg/auth/check?code= (approved/claimed/rejected/expired)",
+    "Токен из accsdb (token/access_token/auth_token/data.token) + повтор запроса",
+    "Восстановление токена через auth/status, парсер data-json на обе кавычки"
   ]
 }
