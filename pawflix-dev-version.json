@@ -1,8 +1,5 @@
 {
-  "versionCode": 143,
-  "versionName": "1.43-dev",
-  "notes": [
-    "Парсер страницы источника — DOM как в «Кино» (DOMParser + querySelectorAll), а не регэксп.",
-    "Фильтр источников s.show!==false, как в «Кино» (строка 4237): скрытые источники больше не показываются — список как в «Кино» и Лампе (8, а не целая куча)."
-  ]
+  "versionCode": 144,
+  "versionName": "1.44-dev",
+  "notes": "Онлайн — на z01.online вместо Альпака (закрыт). Без токена/QR/lifeevents: /lite/events отдаёт 14 источников сразу, включая VeoVeo 1080p, Filmix, Vibix. AlpacApi/AlpacWeb удалены, новый Z01Api (прямой HttpURLConnection), OnlineScreen без QR-карты. «Alpac v1» убран из парсеров."
 }
