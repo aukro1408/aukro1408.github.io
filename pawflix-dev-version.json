@@ -1,8 +1,8 @@
 {
-  "versionCode": 136,
-  "versionName": "1.36-dev",
+  "versionCode": 137,
+  "versionName": "1.37-dev",
   "notes": [
-    "Alpac WebView: грузит настоящую страницу «Кино» (origin ровно github.io — data-URL давал origin null и CORS-блок); WebView 1x1 VISIBLE.",
-    "Короткие таймауты fallback; lifeevents не крутит при мёртвом сервере."
+    "Исправлена гонка в AlpacWeb: первый запрос возвращал null сразу, не дождавшись создания WebView, и всё падало в висящий HttpURLConnection.",
+    "Живой лог диагностики на экране Онлайн — видно, где именно застревает загрузка."
   ]
 }
