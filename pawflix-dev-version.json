@@ -1,8 +1,8 @@
 {
-  "versionCode": 135,
-  "versionName": "1.35-dev",
+  "versionCode": 136,
+  "versionName": "1.36-dev",
   "notes": [
-    "Alpac: запросы через WebView/Chromium — как fetch из «Кино» (GitHub отдаёт только файлы страницы, fetch идёт из браузера на телефоне; HttpURLConnection виснет, WebView — тот же движок).",
-    "Fallback на HttpURLConnection, если WebView не отвечает."
+    "Alpac WebView: грузит настоящую страницу «Кино» (origin ровно github.io — data-URL давал origin null и CORS-блок); WebView 1x1 VISIBLE.",
+    "Короткие таймауты fallback; lifeevents не крутит при мёртвом сервере."
   ]
 }
