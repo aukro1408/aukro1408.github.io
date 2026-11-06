@@ -1,8 +1,8 @@
 {
-  "versionCode": 130,
-  "versionName": "1.30-dev",
+  "versionCode": 131,
+  "versionName": "1.31-dev",
   "notes": [
-    "Lampac как в «Кино»: хост beta.l-vid.online (https), params без tmdb_id, заголовки X-Alpac-Token и X-Lampac-Token.",
-    "beta2 больше не используется."
+    "Lampac: старый токен beta2 удалён (миграция раз), устройство авторизуется на beta заново.",
+    "Диагностика: если Lampac пуст, в статусе пишется причина (нет ответа / HTML без озвучек / озвучки не резолвятся)."
   ]
 }
