@@ -1,8 +1,8 @@
 {
-  "versionCode": 129,
-  "versionName": "1.29-dev",
+  "versionCode": 130,
+  "versionName": "1.30-dev",
   "notes": [
-    "Lampac: относительные URL источников и озвучек теперь резолвятся против хоста (как alpacAbs в «Кино») — иначе все источники пустые.",
-    "Токен в Настройках сохраняется (как в 1.28)."
+    "Lampac как в «Кино»: хост beta.l-vid.online (https), params без tmdb_id, заголовки X-Alpac-Token и X-Lampac-Token.",
+    "beta2 больше не используется."
   ]
 }
