@@ -1,9 +1,9 @@
 {
-  "versionCode": 121,
-  "versionName": "1.21-dev",
+  "versionCode": 122,
+  "versionName": "1.22-dev",
   "notes": [
-    "История: онлайн (Lift/Lumio) и Filmix теперь записываются, раньше — только торренты",
-    "Filmix: запуск внешних плееров (из 1.20)",
-    "Настройки → Lumio VIP: привязка кодом из бота (из 1.20)"
+    "Онлайн → Lumio: VIP-источники ⭐ VideoHub, HDRezka 4K, Gidonline, Cinemar, HDVB, Collaps (фильмы)",
+    "Источники работают с токеном устройства; без активного VIP сервер отвечает 401/403 — подпись на экране",
+    "История онлайна/Filmix (из 1.21), Filmix-запуск и Lumio VIP (из 1.20)"
   ]
 }
