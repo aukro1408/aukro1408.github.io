@@ -1,9 +1,8 @@
 {
-  "versionCode": 128,
-  "versionName": "1.28-dev",
+  "versionCode": 129,
+  "versionName": "1.29-dev",
   "notes": [
-    "Lampac как в «Кино»: опрос /tg/auth/check?code= (approved/claimed/rejected/expired)",
-    "Токен из accsdb (token/access_token/auth_token/data.token) + повтор запроса",
-    "Восстановление токена через auth/status, парсер data-json на обе кавычки"
+    "Lampac: относительные URL источников и озвучек теперь резолвятся против хоста (как alpacAbs в «Кино») — иначе все источники пустые.",
+    "Токен в Настройках сохраняется (как в 1.28)."
   ]
 }
