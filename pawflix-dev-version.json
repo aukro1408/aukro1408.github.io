@@ -1,5 +1,5 @@
 {
-  "versionCode": 144,
-  "versionName": "1.44-dev",
-  "notes": "Онлайн — на z01.online вместо Альпака (закрыт). Без токена/QR/lifeevents: /lite/events отдаёт 14 источников сразу, включая VeoVeo 1080p, Filmix, Vibix. AlpacApi/AlpacWeb удалены, новый Z01Api (прямой HttpURLConnection), OnlineScreen без QR-карты. «Alpac v1» убран из парсеров."
+  "versionCode": 145,
+  "versionName": "1.45-dev",
+  "notes": "Онлайн — на wtch.ch / Showy вместо z01.online (z01 на телефоне почти ничего не работает, убран полностью). Тот же Lampac-протокол без авторизации: /lite/events отдаёт 7 источников (VeoVeo 1080p бесплатно, Filmix, Rezka, HDVB, Rutube, VK Видео, Vibix). Z01Api заменён на WtchApi. Если и это не заработает — Онлайн закрываем, фокус на встроенный плеер."
 }
