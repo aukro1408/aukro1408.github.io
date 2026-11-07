@@ -1,5 +1,5 @@
 {
-  "versionCode": 158,
-  "versionName": "1.58-dev",
-  "notes": "Skaz во внешнем плеере: Referer для HLS = origin iframe (theme.stravers.live), а не lampa.mx. WebView при запросе манифеста шлёт Referer документа-источника (iframe); lampa.mx нужен только для загрузки самого iframe. Свежая ссылка + кука из 1.57 сохранены."
+  "versionCode": 160,
+  "versionName": "1.60-dev",
+  "notes": "Skaz: кнопка Внешний плеер только на телефоне (на ТВ скрыта — забирала фокус у WebView, пульт не мог добраться до Пропустить внутри плеера). Плюс Origin и Sec-Fetch-* (cross-site/cors/empty) для внешнего плеера из 1.59."
 }
