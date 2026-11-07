@@ -1,5 +1,5 @@
 {
-  "versionCode": 178,
-  "versionName": "1.78-dev",
-  "notes": "Точный фикс вылета полноэкранного по реальному стеку (crash-2026-11-07_18-36-13.txt): ClassCastException — quick_row в портрете LinearLayout, а в ландшафте (1.74) RelativeLayout; onCreate:410 кастил его к LinearLayout. playRow/quickRow теперь ViewGroup. CrashCapture сохранён (если ещё упадёт — сразу будет стек). Остальное без изменений."
+  "versionCode": 179,
+  "versionName": "1.79-dev",
+  "notes": "Ландшафт: низ плеера поднят вверх — кнопки и пилюли quick_row больше не обрезаются снизу (paddingBottom 16→40dp). Сикбар, тройка, субтитры и остальное — без изменений."
 }
