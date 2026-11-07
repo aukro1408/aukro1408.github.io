@@ -1,5 +1,5 @@
 {
-  "versionCode": 157,
-  "versionName": "1.57-dev",
-  "notes": "Skaz во внешнем плеере: свежая ссылка HLS + кука. Скрытый WebView перехватывает первый .m3u8 и не скачивает его (токен не тратится), CookieManager отдаёт куки домена ссылки; фолбэк при таймауте 25с — уже перехваченная ссылка."
+  "versionCode": 158,
+  "versionName": "1.58-dev",
+  "notes": "Skaz во внешнем плеере: Referer для HLS = origin iframe (theme.stravers.live), а не lampa.mx. WebView при запросе манифеста шлёт Referer документа-источника (iframe); lampa.mx нужен только для загрузки самого iframe. Свежая ссылка + кука из 1.57 сохранены."
 }
