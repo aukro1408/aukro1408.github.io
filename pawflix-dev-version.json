@@ -1,5 +1,5 @@
 {
-  "versionCode": 165,
-  "versionName": "1.65-dev",
-  "notes": "BWA в pawflix отдельной кнопкой на карточке фильма. API исследован живьём (деобфускация плагина): источники через воркер, потоки — прямые ссылки HLS/MP4 (VeoVeo, RutubeMovie, VkMovie 4K проверены). Платные источники без привязки не показываются."
+  "versionCode": 166,
+  "versionName": "1.66-dev",
+  "notes": "Пилюли карточки: Filmix 4k / Торренты больше не садятся ниже Skaz/BWA (baselineAligned=false). Fovea — расследование промо-заставки."
 }
