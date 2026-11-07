@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Трейлер — pawflix</title>
+<style>html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}</style>
+</head>
+<body>
+<script>
+(function(){
+  // id видео — из ?v= (ключ YouTube из TMDB, только [A-Za-z0-9_-]).
+  var id = (new URLSearchParams(location.search).get('v') || '').replace(/[^A-Za-z0-9_-]/g, '');
+  if (!id) {
+    document.body.innerHTML = '<div style="color:#fff;font:16px sans-serif;padding:24px">Нет видео</div>';
+    return;
+  }
+  // ВАЖНО: эта страница лежит на НАСТОЯЩЕМ origin (aukro1408.github.io).
+  // Встраивать YouTube с loadDataWithBaseURL("https://www.youtube.com/")
+  // нельзя: страница «притворяется» youtube.com, и YouTube отказывает
+  // в воспроизведении — ошибка 152. Как у Лампы: youtube.html живёт
+  // на своём домене (lampa.mx), у нас — на GitHub Pages.
+  var f = document.createElement('iframe');
+  f.src = 'https://www.youtube.com/embed/' + id +
+    '?autoplay=1&rel=0&modestbranding=1&playsinline=1' +
+    '&origin=' + encodeURIComponent('https://aukro1408.github.io');
+  f.allowFullscreen = true;
+  f.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture');
+  document.body.appendChild(f);
+})();
+</script>
+</body>
+</html>
