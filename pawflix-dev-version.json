@@ -1,5 +1,5 @@
 {
-  "versionCode": 149,
-  "versionName": "1.49-dev",
-  "notes": "UAKino ведёт себя как браузер там, где это нужно: новый BrowserFetch — скрытый WebView (настоящий Chrome: TLS-отпечаток, куки, Referer/Origin uakino.ax). Манифест для качества грузится через него, фолбэк — HttpURLConnection."
+  "versionCode": 150,
+  "versionName": "1.50-dev",
+  "notes": "uakino удалён полностью. amedia (skaz.tv) — ПРОБА: поиск через apbugall, guard-обмен, список озвучек; тап открывает страницу плеера в WebView на телефоне (в песочнице она 404 — проверяем, откроется ли с телефона)."
 }
