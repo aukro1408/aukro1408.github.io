@@ -1,5 +1,5 @@
 {
-  "versionCode": 179,
-  "versionName": "1.79-dev",
-  "notes": "Ландшафт: низ плеера поднят вверх — кнопки и пилюли quick_row больше не обрезаются снизу (paddingBottom 16→40dp). Сикбар, тройка, субтитры и остальное — без изменений."
+  "versionCode": 180,
+  "versionName": "1.80-dev",
+  "notes": "1.80-dev: низ плеера в ландшафте — настоящий фикс. 1.79 сделала хуже: paddingBottom 16→40dp опустил линию обрезки на полный padding, а контент поднял только наполовину (RelativeLayout центрирует centerVertical по полной высоте ряда, clipToPadding режет детей по границе padding-box). Теперь quick_row: paddingBottom 32dp + clipToPadding=\"false\" — ряд полностью виден, зазор 16dp от нижнего края, сикбар прямо над ним. Портрет не тронут."
 }
