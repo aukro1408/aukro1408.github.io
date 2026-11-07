@@ -1,5 +1,5 @@
 {
-  "versionCode": 183,
-  "versionName": "1.83-dev",
-  "notes": "Трейлер, ошибка 152 — исправлено: мост YouTube теперь с настоящего origin (aukro1408.github.io/trailer-bridge.html), а не inline-страница с base youtube.com — YouTube отказывал в воспроизведении (код 152). Кнопка «Трейлер», список TMDB и WebView-плеер — как в 1.82."
+  "versionCode": 184,
+  "versionName": "1.84-dev",
+  "notes": "Трейлеры — через NewPipeExtractor (та же библиотека, что в PipePipe) + встроенный плеер, без рекламы. WebView-плеер удалён. Кнопка «Трейлер» — новый дизайн (вращающаяся киноплёнка + «ТРЕЙЛЕР» + Play + блик)."
 }
