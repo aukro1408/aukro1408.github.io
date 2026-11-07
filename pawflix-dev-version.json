@@ -1,5 +1,5 @@
 {
-  "versionCode": 166,
-  "versionName": "1.66-dev",
-  "notes": "Пилюли карточки: Filmix 4k / Торренты больше не садятся ниже Skaz/BWA (baselineAligned=false). Fovea — расследование промо-заставки."
+  "versionCode": 167,
+  "versionName": "1.67-dev",
+  "notes": "Fovea: шлём t=pgt в POST /pg/play (без него сервер отдавал 20-сек промо вместо фильма); промо не играем, показываем диагноз; статусы 401/402/403/404 — как у плагина."
 }
