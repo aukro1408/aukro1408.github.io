@@ -1,5 +1,5 @@
 {
-  "versionCode": 156,
-  "versionName": "1.56-dev",
-  "notes": "Skaz во внешнем плеере: исправлен 403 — Referer lampa.mx теперь передаётся во внешние плееры (extra headers), Zaprudna44 и PaciukMovie его применяют к запросу."
+  "versionCode": 157,
+  "versionName": "1.57-dev",
+  "notes": "Skaz во внешнем плеере: свежая ссылка HLS + кука. Скрытый WebView перехватывает первый .m3u8 и не скачивает его (токен не тратится), CookieManager отдаёт куки домена ссылки; фолбэк при таймауте 25с — уже перехваченная ссылка."
 }
