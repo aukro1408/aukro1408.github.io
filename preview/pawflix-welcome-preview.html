@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>pawflix — приветствие (превью v4)</title>
+<title>pawflix — приветствие (превью v5)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -127,7 +127,7 @@
     <button data-variant="tv">ТВ</button>
     <button class="active" data-variant="phone">Телефон</button>
   </div>
-  <div class="caption"><b>Превью v4: welcome-экран pawflix.</b> Котик заменён на новый вариант Denis — реалистичный 3D-кот в очках, с красно-белым ведёрком попкорна, киноплёнкой и хлопушкой. Фразы, длительность загрузки и кнопка входа — из файла Denis 1:1: 15 смешных фраз, прогресс рывками, в конце — «Всё готово! Котик ждёт вас 🐾» и кнопка «▶ Войти в Pawflix». Котик на телефоне поднят выше, буква P — из PNG Denis. Стена постеров — как в «Кино»; на ТВ постеров в ряду 24 вместо 17.</div>
+  <div class="caption"><b>Превью v5: welcome-экран pawflix.</b> Котик заменён на новый вариант Denis — реалистичный 3D-кот в очках, с красно-белым ведёрком попкорна, киноплёнкой и хлопушкой. Фразы теперь в случайном порядке каждый раз (перемешиваются при загрузке, без повторов до конца списка). Длительность загрузки и кнопка входа — из файла Denis 1:1: прогресс рывками, в конце — «Всё готово! Котик ждёт вас 🐾» и кнопка «▶ Войти в Pawflix». Котик на телефоне поднят выше, буква P — из PNG Denis. Стена постеров — как в «Кино»; на ТВ постеров в ряду 24 вместо 17.</div>
 </div>
 <div class="toast" id="toast">В приложении откроется главная</div>
 
@@ -174,8 +174,14 @@ const W_POSTERS = [{"t": "Диггер", "p": "https://image.tmdb.org/t/p/w342/b
     "Раскладываем фильмы по кошачьим полочкам...",
     "Почти готово. Котик уже занял диван!"
   ];
+  // Фразы — в случайном порядке каждый раз: перемешиваем при загрузке, повторов до конца списка нет
+  for (var i = phrases.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = phrases[i]; phrases[i] = phrases[j]; phrases[j] = tmp;
+  }
   var phraseIndex = 0;
   var phraseEl = document.getElementById('wphrase');
+  phraseEl.textContent = phrases[0];
   function changePhrase() {
     phraseEl.style.opacity = 0;
     setTimeout(function () {
