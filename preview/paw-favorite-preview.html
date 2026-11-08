@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Лапа вместо сердечка — превью v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:#07080D;color:#fff;font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Arial,sans-serif;overflow-x:hidden}
+  .page{max-width:720px;margin:0 auto;padding:28px 20px 140px}
+  h1{font-size:24px;font-weight:800;letter-spacing:-.5px}
+  .sub{color:rgba(255,255,255,.6);font-size:14px;line-height:1.6;margin-top:8px}
+  h2{font-size:15px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(247,201,72,.85);margin:34px 0 16px}
+  h2 span{color:rgba(255,255,255,.4);font-weight:600;letter-spacing:0;text-transform:none;font-size:13px}
+
+  /* ===== Лапа: два состояния ===== */
+  .paw{cursor:pointer;-webkit-tap-highlight-color:transparent;flex:none}
+  .paw svg{display:block;width:100%;height:100%}
+  .paw .fill{display:none}
+  .paw.on .fill{display:block}
+  .paw.on .line{display:none}
+  .paw.pop{animation:pawpop .35s cubic-bezier(.3,1.6,.5,1)}
+  @keyframes pawpop{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
+
+  .states{display:flex;gap:16px}
+  .state{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:20px;
+    padding:26px 16px 20px;display:flex;flex-direction:column;align-items:center;gap:14px}
+  .state .paw{width:72px;height:72px}
+  .state .lbl{font-size:14px;font-weight:700;text-align:center}
+  .state .hint{font-size:12px;color:rgba(255,255,255,.5);text-align:center;line-height:1.5}
+
+  /* ===== Постеры: как в приложении ===== */
+  .row{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 12px;scrollbar-width:none}
+  .row::-webkit-scrollbar{display:none}
+  .card{flex:none;width:110px}
+  .poster{position:relative;width:110px;height:165px;border-radius:10px;overflow:hidden;background:#1a1c26;
+    box-shadow:0 4px 18px rgba(0,0,0,.45)}
+  .poster img{width:100%;height:100%;object-fit:cover;display:block}
+  .rating{position:absolute;top:8px;right:8px;height:20px;padding:0 8px;border-radius:10px;background:#f7c948;
+    color:#000;font-size:13px;font-weight:800;display:flex;align-items:center}
+  .poster .paw{position:absolute;right:8px;bottom:8px;width:20px;height:20px;
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,.8))}
+  .card .t{font-size:13px;font-weight:700;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card .m{font-size:11px;color:#B4B4BE;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* ===== Шапка фильма: как на странице фильма ===== */
+  .film{position:relative;border-radius:20px;overflow:hidden;background:#1a1c26}
+  .film .bg{position:absolute;inset:0}
+  .film .bg img{width:100%;height:100%;object-fit:cover;display:block}
+  .film .bg::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(7,8,13,.25),rgba(7,8,13,.55) 55%,rgba(7,8,13,.92))}
+  .film .inner{position:relative;padding:120px 20px 20px}
+  .film .title{font-size:26px;font-weight:800;letter-spacing:-.5px}
+  .film .meta{font-size:13px;color:rgba(255,255,255,.65);margin-top:6px}
+  .film .pawbtn{position:absolute;top:16px;right:16px;width:48px;height:48px;border-radius:50%;
+    background:rgba(10,10,14,.55);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;
+    cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .film .pawbtn .paw{width:24px;height:24px}
+
+  /* ===== ТВ-вариант ===== */
+  body[data-variant="tv"] .card{width:150px}
+  body[data-variant="tv"] .poster{width:150px;height:225px}
+  body[data-variant="tv"] .poster .paw{width:26px;height:26px;right:11px;bottom:11px}
+  body[data-variant="tv"] .rating{height:24px;font-size:15px;top:11px;right:11px}
+  body[data-variant="tv"] .film .pawbtn{width:64px;height:64px}
+  body[data-variant="tv"] .film .pawbtn .paw{width:32px;height:32px}
+
+  /* ===== Переключатель + подпись (превью-хром) ===== */
+  .preview-chrome{position:fixed;left:0;right:0;bottom:0;z-index:60;
+    display:flex;flex-direction:column;align-items:center;padding:0 12px 14px;pointer-events:none}
+  .hero-switch{pointer-events:auto;position:relative;display:flex;gap:8px;padding:6px;border-radius:99px;
+    background:rgba(10,10,14,.7);border:1px solid rgba(255,255,255,.16);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);width:fit-content}
+  .hero-switch .thumb{position:absolute;z-index:0;top:6px;bottom:6px;left:0;width:0;
+    border-radius:99px;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:left .3s ease,width .3s ease}
+  .hero-switch button{position:relative;z-index:1;background:transparent;border:0;color:rgba(255,255,255,.75);
+    font-family:inherit;font-size:15px;font-weight:700;padding:8px 20px;border-radius:99px;cursor:pointer;white-space:nowrap}
+  .hero-switch button.active{color:#000}
+  .caption{pointer-events:auto;margin-top:12px;font-size:13px;line-height:1.6;color:rgba(255,255,255,.7);
+    text-shadow:0 1px 8px rgba(0,0,0,.9);max-width:94vw;text-align:center}
+  .caption b{color:#fff;font-weight:600}
+</style>
+</head>
+<body data-variant="phone">
+<div class="page">
+  <h1>Лапа вместо сердечка</h1>
+  <p class="sub">Нажимай на лапу — она переключается. Пустая — фильм не в избранном, красная — в избранном. На постерах лапа теперь видна всегда, в обоих состояниях.</p>
+
+  <h2>Состояния</h2>
+  <div class="states">
+    <div class="state">
+      <div class="paw" data-state="off" title="Не в избранном"><svg viewBox="0 0 24 24"><use class="line" href="#pp-o"/><use class="fill" href="#pp"/></svg></div>
+      <div class="lbl">Не в избранном</div>
+      <div class="hint">Пустая лапа, белый контур — как пустое сердечко</div>
+    </div>
+    <div class="state">
+      <div class="paw on" data-state="on" title="В избранном"><svg viewBox="0 0 24 24"><use class="line" href="#pp-o"/><use class="fill" href="#pp"/></svg></div>
+      <div class="lbl">В избранном</div>
+      <div class="hint">Красная лапа внутри — как красное сердечко</div>
+    </div>
+  </div>
+
+  <h2>На постерах <span>— лапа справа внизу, в обоих состояниях</span></h2>
+  <div class="row">
+    <div class="card">
+      <div class="poster"><img src="https://image.tmdb.org/t/p/w342/vLl5tcuabARqGBefccSsYAYXdgA.jpg" alt="Обитель зла"><span class="rating">7.2</span><div class="paw" data-state="off"><svg viewBox="0 0 24 24"><use class="line" href="#pp-o"/><use class="fill" href="#pp"/></svg></div></div>
+      <div class="t">Обитель зла</div><div class="m">2026 · Ужасы</div>
+    </div>
+    <div class="card">
+      <div class="poster"><img src="https://image.tmdb.org/t/p/w342/x50ig6nAMNCP3ihDXKfUjnKM4Ud.jpg" alt="Дюна: Часть третья"><span class="rating">8.4</span><div class="paw on" data-state="on"><svg viewBox="0 0 24 24"><use class="line" href="#pp-o"/><use class="fill" href="#pp"/></svg></div></div>
+      <div class="t">Дюна: Часть третья</div><div class="m">2026 · Фантастика</div>
+    </div>
+    <div class="card">
+      <div class="poster"><img src="https://image.tmdb.org/t/p/w342/kpxYvaCnbRi7btNnpLCJrehy77e.jpg" alt="Аватар: Пламя и пепел"><span class="rating">7.9</span><div class="paw" data-state="off"><svg viewBox="0 0 24 24"><use class="line" href="#pp-o"/><use class="fill" href="#pp"/></svg></div></div>
+      <div class="t">Аватар: Пламя и пепел</div><div class="m">2025 · Фантастика</div>
+    </div>
+    <div class="card">
+      <div class="poster"><img src="https://image.tmdb.org/t/p/w342/ZpqkD0DOd6bpLpcV9oBY8YGcRj.jpg" alt="Грешники"><span class="rating">7.6</span><div class="paw on" data-state="on"><svg viewBox="0 0 24 24"><use class="line" href="#pp-o"/><use class="fill" href="#pp"/></svg></div></div>
+      <div class="t">Грешники</div><div class="m">2025 · Триллер</div>
+    </div>
+    <div class="card">
+      <div class="poster"><img src="https://image.tmdb.org/t/p/w342/ikbG08TQtkIWUVRVotHhndf72pL.jpg" alt="Супермен"><span class="rating">7.5</span><div class="paw" data-state="off"><svg viewBox="0 0 24 24"><use class="line" href="#pp-o"/><use class="fill" href="#pp"/></svg></div></div>
+      <div class="t">Супермен</div><div class="m">2025 · Боевик</div>
+    </div>
+  </div>
+
+  <h2>На странице фильма <span>— круглая кнопка справа сверху</span></h2>
+  <div class="film">
+    <div class="bg"><img src="https://image.tmdb.org/t/p/w342/vLl5tcuabARqGBefccSsYAYXdgA.jpg" alt=""></div>
+    <div class="pawbtn"><div class="paw" data-state="off"><svg viewBox="0 0 24 24"><use class="line" href="#pp-o"/><use class="fill" href="#pp"/></svg></div></div>
+    <div class="inner">
+      <div class="title">Обитель зла</div>
+      <div class="meta">2026 · Ужасы · 1 ч 47 мин</div>
+    </div>
+  </div>
+</div>
+
+<!-- Лапа: заливка и контур (форма из сплэша Denis) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="pp" viewBox="0 0 24 24">
+    <g fill="#FF3B30" stroke="#FF3B30" stroke-width="1.2" stroke-linejoin="round">
+      <ellipse cx="4.6" cy="10.2" rx="2.1" ry="2.9" transform="rotate(-22 4.6 10.2)"/>
+      <ellipse cx="9.4" cy="5.6" rx="2.2" ry="3.1" transform="rotate(-8 9.4 5.6)"/>
+      <ellipse cx="14.6" cy="5.6" rx="2.2" ry="3.1" transform="rotate(8 14.6 5.6)"/>
+      <ellipse cx="19.4" cy="10.2" rx="2.1" ry="2.9" transform="rotate(22 19.4 10.2)"/>
+      <path d="M12 12c3.6 0 6.1 3 6.6 6 .4 2.6-1.7 3.7-3.500 3.200-1-.3-2-.6-3.100-.6s-2.100.3-3.100.6c-1.800.5-3.900-.6-3.500-3.200C5.900 15 8.400 12 12 12z"/>
+    </g>
+  </symbol>
+  <symbol id="pp-o" viewBox="0 0 24 24">
+    <g fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="4.6" cy="10.2" rx="2.1" ry="2.9" transform="rotate(-22 4.6 10.2)"/>
+      <ellipse cx="9.4" cy="5.6" rx="2.2" ry="3.1" transform="rotate(-8 9.4 5.6)"/>
+      <ellipse cx="14.6" cy="5.6" rx="2.2" ry="3.1" transform="rotate(8 14.6 5.6)"/>
+      <ellipse cx="19.4" cy="10.2" rx="2.1" ry="2.9" transform="rotate(22 19.4 10.2)"/>
+      <path d="M12 12c3.6 0 6.1 3 6.6 6 .4 2.6-1.7 3.7-3.500 3.200-1-.3-2-.6-3.100-.6s-2.100.3-3.100.6c-1.800.5-3.900-.6-3.500-3.200C5.900 15 8.400 12 12 12z"/>
+    </g>
+  </symbol>
+</svg>
+
+<div class="preview-chrome">
+  <div class="hero-switch" id="hero-switch">
+    <span class="thumb"></span>
+    <button data-variant="tv">ТВ</button>
+    <button class="active" data-variant="phone">Телефон</button>
+  </div>
+  <div class="caption"><b>Превью v1: лапа вместо сердечка.</b> Форма лапы — из сплэша Denis. Пустая — белый контур (#FFFFFF, как пустое сердечко), в избранном — красная заливка #FF3B30 (тот же красный, что у сердечка). На постерах лапа видна всегда, справа внизу; на странице фильма — круглая кнопка 48dp справа сверху. Нажимай на любую лапу — переключается.</div>
+</div>
+
+<script>
+  // Переключение лапы по тапу
+  document.querySelectorAll('.paw').forEach(function (el) {
+    el.addEventListener('click', function () {
+      el.classList.toggle('on');
+      el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+    });
+  });
+  // Переключатель ТВ/Телефон (как в hero-preview)
+  (function (root) {
+    var t = root.querySelector('.thumb');
+    function put(el) {
+      t.style.left = el.offsetLeft + 'px'; t.style.width = el.offsetWidth + 'px';
+    }
+    root.querySelectorAll('button').forEach(function (el) {
+      el.addEventListener('click', function () {
+        root.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
+        el.classList.add('active');
+        put(el);
+        document.body.setAttribute('data-variant', el.getAttribute('data-variant'));
+      });
+    });
+    addEventListener('resize', function () { put(root.querySelector('.active')); });
+    put(root.querySelector('.active'));
+  })(document.getElementById('hero-switch'));
+</script>
+</body>
+</html>
