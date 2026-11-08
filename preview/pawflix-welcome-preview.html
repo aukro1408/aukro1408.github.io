@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>pawflix — приветствие (превью v2)</title>
+<title>pawflix — приветствие (превью v3)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -57,13 +57,19 @@
     background-size:220% 100%; animation:wshine 1.3s linear infinite; }
   @keyframes wshine { from { background-position:200% 0; } to { background-position:-120% 0; } }
   #welcome #wpct { color:rgba(255,235,180,.55); font-size:12px; font-weight:700; text-align:right; margin-top:8px; }
-  @keyframes wpop { from { transform:scale(.6); opacity:0; } to { transform:scale(1); opacity:1; } }
-  #welcome #wenter { display:none; align-items:center; gap:10px; margin-top:26px; padding:15px 56px;
-    font-size:17px; font-weight:800; letter-spacing:.5px; color:#111;
-    background:linear-gradient(180deg,#ffd94d,#f7c948); border:none; border-radius:30px; cursor:pointer;
-    box-shadow:0 6px 30px rgba(247,201,72,.45); font-family:inherit; }
-  #welcome #wenter:active { transform:scale(.97); }
-  #welcome #wenter svg { width:16px; height:16px; flex:0 0 auto; }
+  #welcome #wenter { display:none; margin-top:28px; padding:15px 48px; min-width:230px;
+    border:1px solid #FFE69B; border-radius:40px; position:relative; overflow:hidden;
+    background:linear-gradient(110deg,#D5A12E,#FFE17A 50%,#D5A12E);
+    color:#241906; font-size:17px; font-weight:900; cursor:pointer; font-family:inherit;
+    box-shadow:inset 0 2px 3px rgba(255,255,255,.6), 0 5px 20px rgba(213,161,46,.2);
+    animation:buttonPop .5s cubic-bezier(.2,1.4,.4,1); }
+  @keyframes buttonPop { from { transform:scale(.65); opacity:0; } to { transform:scale(1); opacity:1; } }
+  #welcome #wenter:active { transform:scale(.94); filter:brightness(.88); }
+  #welcome #wenter:focus-visible { outline:3px solid white; outline-offset:5px; }
+  #welcome #wenter::after { content:""; position:absolute; top:-50%; left:-70%;
+    width:35%; height:200%; transform:rotate(25deg);
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);
+    animation:wshine 2.5s linear infinite; }
 
   /* ===== ТВ-вариант: котик и плашка крупнее, постеров в ряду больше ===== */
   body[data-variant="tv"] #welcome #wcat { width:min(26vw,360px); margin-bottom:-12px; }
@@ -106,11 +112,11 @@
       <div id="wrule"></div>
       <div id="wtagline">ОНЛАЙН-КИНОТЕАТР</div>
       <div id="wloader">
-        <div id="wphrase">Готовим попкорн…</div>
+        <div id="wphrase">Котик проверяет, не забыли ли попкорн... 🍿</div>
         <div id="wbarwrap"><div id="wbar"></div></div>
         <div id="wpct">0%</div>
       </div>
-      <button id="wenter"><svg viewBox="0 0 24 24" fill="#111"><path d="M7 4.5v15l13-7.5z"/></svg>Смотреть</button>
+      <button id="wenter">▶ Войти в Pawflix</button>
     </div>
   </div>
 </div>
@@ -121,7 +127,7 @@
     <button data-variant="tv">ТВ</button>
     <button class="active" data-variant="phone">Телефон</button>
   </div>
-  <div class="caption"><b>Превью v2: welcome-экран pawflix.</b> Котик на телефоне поднят выше — больше не залазит на логотип. При загрузке — смешные фразы («Готовим попкорн…», «Гладим котика…», «Ищем пульт под диваном…») и золотая полоса с процентами, в нашем стиле; кнопка «Смотреть» появляется после загрузки. Буква P — та самая, из PNG. Стена постеров — как в «Кино»; на ТВ постеров в ряду 24 вместо 17.</div>
+  <div class="caption"><b>Превью v3: welcome-экран pawflix.</b> Фразы, длительность загрузки и кнопка входа — из файла Denis 1:1: 15 смешных фраз про котика и попкорн, прогресс идёт рывками (быстро в начале, медленно к концу), в конце — «Всё готово! Котик ждёт вас 🐾» и кнопка «▶ Войти в Pawflix». Котик на телефоне поднят выше, буква P — из PNG Denis. Стена постеров — как в «Кино»; на ТВ постеров в ряду 24 вместо 17.</div>
 </div>
 <div class="toast" id="toast">В приложении откроется главная</div>
 
@@ -150,29 +156,73 @@ const W_POSTERS = [{"t": "Диггер", "p": "https://image.tmdb.org/t/p/w342/b
   }
   buildWall();
 
-  // Загрузка: смешные фразы + золотая полоса, потом появляется «Смотреть» (как в «Кино», в нашем стиле)
-  var phrases = ['Готовим попкорн…', 'Подбираем фильм…', 'Гладим котика…', 'Ищем пульт под диваном…', 'Разогреваем экран…', 'Открываем кинозал…'];
+  // Загрузка: смешные фразы + прогресс из файла Denis (1:1)
+  var phrases = [
+    "Котик проверяет, не забыли ли попкорн... 🍿",
+    "Уговариваем торренты не тормозить...",
+    "Кот занял лучшее место на диване. 🐈",
+    "Перематываем скучные моменты жизни...",
+    "Ищем фильм, который вы смотрели уже трижды...",
+    "Проверяем попкорн на наличие попкорна...",
+    "Котик одобрил ваш вкус. Почти...",
+    "Прогоняем мышей из кинозала...",
+    "Настраиваем усы на кинематографическую волну...",
+    "Проверяем, не уснул ли режиссёр...",
+    "Загружаем ещё немного магии кино...",
+    "Котик требует отдельный VIP-зал...",
+    "Ищем пульт. Он опять под котом...",
+    "Раскладываем фильмы по кошачьим полочкам...",
+    "Почти готово. Котик уже занял диван!"
+  ];
+  var phraseIndex = 0;
   var phraseEl = document.getElementById('wphrase');
+  function changePhrase() {
+    phraseEl.style.opacity = 0;
+    setTimeout(function () {
+      phraseIndex = (phraseIndex + 1) % phrases.length;
+      phraseEl.textContent = phrases[phraseIndex];
+      phraseEl.style.opacity = 1;
+    }, 300);
+  }
+  var phraseTimer = setInterval(changePhrase, 2500);
+
   var bar = document.getElementById('wbar');
   var pct = document.getElementById('wpct');
   var loader = document.getElementById('wloader');
   var enter = document.getElementById('wenter');
-  var DURATION = 3200, start = performance.now();
-  var pi = 0;
-  var piTimer = setInterval(function () {
-    pi = (pi + 1) % phrases.length;
-    phraseEl.style.opacity = 0;
-    setTimeout(function () { phraseEl.textContent = phrases[pi]; phraseEl.style.opacity = 1; }, 250);
-  }, 1100);
-  function tick(now) {
-    var t = Math.min((now - start) / DURATION, 1);
-    var eased = 1 - Math.pow(1 - t, 3);
-    var v = Math.round(eased * 100);
-    bar.style.width = v + '%'; pct.textContent = v + '%';
-    if (t < 1) requestAnimationFrame(tick);
-    else { clearInterval(piTimer); loader.style.display = 'none'; enter.style.display = 'flex'; enter.style.animation = 'wpop .45s cubic-bezier(.2,1.4,.4,1)'; }
+  var progress = 0;
+  var loadingFinished = false;
+  function updateProgress(value) {
+    progress = Math.max(0, Math.min(100, value));
+    bar.style.width = progress + '%';
+    pct.textContent = Math.round(progress) + '%';
+    if (progress >= 100) finishLoading();
   }
-  requestAnimationFrame(tick);
+  function finishLoading() {
+    if (loadingFinished) return;
+    loadingFinished = true;
+    clearInterval(progressTimer);
+    clearInterval(phraseTimer);
+    phraseEl.style.opacity = 0;
+    setTimeout(function () {
+      phraseEl.textContent = "Всё готово! Котик ждёт вас 🐾";
+      phraseEl.style.opacity = 1;
+      setTimeout(function () {
+        loader.style.display = 'none';
+        enter.style.display = 'block';
+        enter.focus();
+      }, 1000);
+    }, 300);
+  }
+  // Имитация загрузки для предпросмотра (как в файле)
+  var progressTimer = setInterval(function () {
+    if (progress >= 100) return;
+    var step;
+    if (progress < 35) step = Math.random() * 3 + 1;
+    else if (progress < 75) step = Math.random() * 1.8 + .5;
+    else step = Math.random() * .8 + .2;
+    updateProgress(Math.min(100, progress + step));
+  }, 180);
 
   // Переключатель ТВ/Телефон (как в hero-preview)
   (function (root, onSelect) {
