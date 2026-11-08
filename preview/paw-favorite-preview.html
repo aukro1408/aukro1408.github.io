@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Лапа вместо сердечка — превью v1</title>
+<title>Лапа вместо сердечка — превью v2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -88,7 +88,7 @@
 <body data-variant="phone">
 <div class="page">
   <h1>Лапа вместо сердечка</h1>
-  <p class="sub">Нажимай на лапу — она переключается. Пустая — фильм не в избранном, красная — в избранном. На постерах лапа теперь видна всегда, в обоих состояниях.</p>
+  <p class="sub">Нажимай на лапу — она переключается. Пустая — фильм не в избранном, красная — в избранном. На постерах лапа только у избранного — как сердечко сейчас.</p>
 
   <h2>Состояния</h2>
   <div class="states">
@@ -104,10 +104,10 @@
     </div>
   </div>
 
-  <h2>На постерах <span>— лапа справа внизу, в обоих состояниях</span></h2>
+  <h2>На постерах <span>— красная лапа справа внизу, только у избранного</span></h2>
   <div class="row">
     <div class="card">
-      <div class="poster"><img src="https://image.tmdb.org/t/p/w342/vLl5tcuabARqGBefccSsYAYXdgA.jpg" alt="Обитель зла"><span class="rating">7.2</span><div class="paw" data-state="off"><svg viewBox="0 0 24 24"><use class="line" href="#pp-o"/><use class="fill" href="#pp"/></svg></div></div>
+      <div class="poster"><img src="https://image.tmdb.org/t/p/w342/vLl5tcuabARqGBefccSsYAYXdgA.jpg" alt="Обитель зла"><span class="rating">7.2</span></div>
       <div class="t">Обитель зла</div><div class="m">2026 · Ужасы</div>
     </div>
     <div class="card">
@@ -115,7 +115,7 @@
       <div class="t">Дюна: Часть третья</div><div class="m">2026 · Фантастика</div>
     </div>
     <div class="card">
-      <div class="poster"><img src="https://image.tmdb.org/t/p/w342/kpxYvaCnbRi7btNnpLCJrehy77e.jpg" alt="Аватар: Пламя и пепел"><span class="rating">7.9</span><div class="paw" data-state="off"><svg viewBox="0 0 24 24"><use class="line" href="#pp-o"/><use class="fill" href="#pp"/></svg></div></div>
+      <div class="poster"><img src="https://image.tmdb.org/t/p/w342/kpxYvaCnbRi7btNnpLCJrehy77e.jpg" alt="Аватар: Пламя и пепел"><span class="rating">7.9</span></div>
       <div class="t">Аватар: Пламя и пепел</div><div class="m">2025 · Фантастика</div>
     </div>
     <div class="card">
@@ -123,7 +123,7 @@
       <div class="t">Грешники</div><div class="m">2025 · Триллер</div>
     </div>
     <div class="card">
-      <div class="poster"><img src="https://image.tmdb.org/t/p/w342/ikbG08TQtkIWUVRVotHhndf72pL.jpg" alt="Супермен"><span class="rating">7.5</span><div class="paw" data-state="off"><svg viewBox="0 0 24 24"><use class="line" href="#pp-o"/><use class="fill" href="#pp"/></svg></div></div>
+      <div class="poster"><img src="https://image.tmdb.org/t/p/w342/ikbG08TQtkIWUVRVotHhndf72pL.jpg" alt="Супермен"><span class="rating">7.5</span></div>
       <div class="t">Супермен</div><div class="m">2025 · Боевик</div>
     </div>
   </div>
@@ -144,8 +144,8 @@
   <symbol id="pp" viewBox="0 0 24 24">
     <g fill="#FF3B30" stroke="#FF3B30" stroke-width="1.2" stroke-linejoin="round">
       <ellipse cx="4.6" cy="10.2" rx="2.1" ry="2.9" transform="rotate(-22 4.6 10.2)"/>
-      <ellipse cx="9.4" cy="5.6" rx="2.2" ry="3.1" transform="rotate(-8 9.4 5.6)"/>
-      <ellipse cx="14.6" cy="5.6" rx="2.2" ry="3.1" transform="rotate(8 14.6 5.6)"/>
+      <ellipse cx="9.0" cy="5.6" rx="2.2" ry="3.1" transform="rotate(-8 9.0 5.6)"/>
+      <ellipse cx="15.0" cy="5.6" rx="2.2" ry="3.1" transform="rotate(8 15.0 5.6)"/>
       <ellipse cx="19.4" cy="10.2" rx="2.1" ry="2.9" transform="rotate(22 19.4 10.2)"/>
       <path d="M12 12c3.6 0 6.1 3 6.6 6 .4 2.6-1.7 3.7-3.500 3.200-1-.3-2-.6-3.100-.6s-2.100.3-3.100.6c-1.800.5-3.900-.6-3.500-3.200C5.900 15 8.400 12 12 12z"/>
     </g>
@@ -153,8 +153,8 @@
   <symbol id="pp-o" viewBox="0 0 24 24">
     <g fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
       <ellipse cx="4.6" cy="10.2" rx="2.1" ry="2.9" transform="rotate(-22 4.6 10.2)"/>
-      <ellipse cx="9.4" cy="5.6" rx="2.2" ry="3.1" transform="rotate(-8 9.4 5.6)"/>
-      <ellipse cx="14.6" cy="5.6" rx="2.2" ry="3.1" transform="rotate(8 14.6 5.6)"/>
+      <ellipse cx="9.0" cy="5.6" rx="2.2" ry="3.1" transform="rotate(-8 9.0 5.6)"/>
+      <ellipse cx="15.0" cy="5.6" rx="2.2" ry="3.1" transform="rotate(8 15.0 5.6)"/>
       <ellipse cx="19.4" cy="10.2" rx="2.1" ry="2.9" transform="rotate(22 19.4 10.2)"/>
       <path d="M12 12c3.6 0 6.1 3 6.6 6 .4 2.6-1.7 3.7-3.500 3.200-1-.3-2-.6-3.100-.6s-2.100.3-3.100.6c-1.800.5-3.900-.6-3.500-3.200C5.900 15 8.400 12 12 12z"/>
     </g>
@@ -167,7 +167,7 @@
     <button data-variant="tv">ТВ</button>
     <button class="active" data-variant="phone">Телефон</button>
   </div>
-  <div class="caption"><b>Превью v1: лапа вместо сердечка.</b> Форма лапы — из сплэша Denis. Пустая — белый контур (#FFFFFF, как пустое сердечко), в избранном — красная заливка #FF3B30 (тот же красный, что у сердечка). На постерах лапа видна всегда, справа внизу; на странице фильма — круглая кнопка 48dp справа сверху. Нажимай на любую лапу — переключается.</div>
+  <div class="caption"><b>Превью v2: лапа вместо сердечка.</b> Передние два пальца разведены — между ними теперь зазор. На постерах лапа только у избранного (красная, справа внизу); у остальных карточек значка нет — как сердечко сейчас. На странице фильма — круглая кнопка 48dp справа сверху, в обоих состояниях. Форма лапы — из сплэша Denis. Пустая — белый контур (#FFFFFF, как пустое сердечко), в избранном — красная заливка #FF3B30 (тот же красный, что у сердечка). Нажимай на любую лапу — переключается.</div>
 </div>
 
 <script>
