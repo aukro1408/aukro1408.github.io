@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>pawflix — приветствие, фон-паттерн (превью v1)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:#07080D;color:#fff;font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Arial,sans-serif;overflow:hidden}
+
+  /* ===== Welcome-экран: стена постеров как в «Кино» (порт 1:1) ===== */
+  #welcome { position:fixed; inset:0; z-index:1; background:#04060f; overflow:hidden; }
+  #welcome #wwall { position:absolute; inset:0;
+    background:url('pawflix-pattern-bg.jpg') center/cover no-repeat; }
+  #welcome .wrow { overflow:hidden; width:100%; }
+  #welcome .wtrack { display:flex; gap:10px; width:max-content; animation:wslide 45s linear infinite; }
+  #welcome .wrow:nth-child(even) .wtrack { animation-direction:reverse; }
+  @keyframes wslide { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+  #welcome .wtrack img { width:170px; height:255px; object-fit:cover; border-radius:10px; flex-shrink:0;
+    filter:saturate(1.2) contrast(1.07); box-shadow:0 4px 18px rgba(0,0,0,.45); }
+  #welcome #wshade { position:absolute; inset:0;
+    background:radial-gradient(ellipse at center, rgba(8,12,24,.22) 0%, rgba(4,7,16,.72) 100%); }
+  #welcome #wcenter { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; padding:0 20px; z-index:2; }
+  #welcome #wcat { position:relative; z-index:3; width:min(62vw,270px); flex:0 0 auto;
+    margin-top:3vh; margin-bottom:-8px; filter:drop-shadow(0 16px 34px rgba(0,0,0,.65)); }
+  #welcome #wcat img { width:100%; height:auto; display:block; }
+
+  /* ===== Плашка: стекло + логотип + слоган + золотая кнопка (как на фото 2) ===== */
+  #welcome #wpanel { background:rgba(5,9,20,.68); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(247,201,72,.22); border-radius:26px; padding:34px 30px 30px;
+    display:flex; flex-direction:column; align-items:center; max-width:94vw;
+    box-shadow:0 24px 70px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.07); }
+  #welcome .plogo { display:flex; align-items:center; gap:2px; line-height:1; }
+  #welcome .plogo img { height:64px; width:auto; display:block; }
+  #welcome .plogo .word { font-weight:800; font-size:44px; letter-spacing:.5px; white-space:nowrap; }
+  #welcome .plogo .word .aw { color:#fff; }
+  #welcome .plogo .word .flix { color:#f7c948; }
+  #welcome #wrule { width:72px; height:3px; margin-top:16px; border-radius:2px;
+    background:linear-gradient(90deg,transparent,#f7c948,transparent); box-shadow:0 0 14px rgba(247,201,72,.9); }
+  #welcome #wtagline { color:rgba(247,201,72,.75); font-size:12px; font-weight:600; margin-top:12px; letter-spacing:5px; text-transform:uppercase; }
+  #welcome #wloader { width:min(320px,72vw); margin-top:26px; text-align:center; }
+  #welcome #wphrase { min-height:44px; display:flex; align-items:center; justify-content:center; padding:0 6px;
+    font-size:15px; font-weight:500; line-height:1.4; color:#e9ddba; transition:opacity .3s; }
+  #welcome #wtrail { display:flex; justify-content:space-between; align-items:center; height:54px; margin-top:8px; padding:0 2px; }
+  #welcome #wtrail svg { width:22px; height:22px; color:#25262e; transform:rotate(90deg); transition:color .25s; flex:none; }
+  #welcome #wtrail svg:nth-child(odd) { margin-top:20px; }
+  #welcome #wtrail svg:nth-child(even) { margin-top:-20px; }
+  #welcome #wtrail svg.on { color:#f7c948; animation:pf-stomp .45s cubic-bezier(.3,1.8,.5,1); }
+  @keyframes pf-stomp { 0% { transform:rotate(90deg) scale(.3); } 60% { transform:rotate(90deg) scale(1.5); } 100% { transform:rotate(90deg) scale(1); } }
+  #welcome #wpct { margin-top:12px; font-size:14px; font-weight:600; color:#f7c948; font-variant-numeric:tabular-nums; }
+  #welcome #wenter { display:none; position:relative; margin-top:38px; height:60px; min-width:250px; padding:0 30px;
+    border:0; border-radius:30px; background:#f7c948; color:#1a1405;
+    font:700 18px 'Manrope',-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+    align-items:center; justify-content:center; gap:10px; cursor:pointer; outline:0; font-family:inherit;
+    animation:pf-pop .55s cubic-bezier(.2,1.4,.4,1);
+    transition:transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s; }
+  #welcome #wenter svg { width:22px; height:22px; fill:#1a1405; }
+  #welcome #wenter::before, #welcome #wenter::after { content:""; position:absolute; inset:0; border-radius:30px;
+    border:2px solid #f7c948; opacity:0; pointer-events:none; animation:pf-wave 2.4s ease-out infinite; }
+  #welcome #wenter::after { animation-delay:1.2s; }
+  @keyframes pf-wave { 0% { transform:scale(1); opacity:.6; } 100% { transform:scale(1.22,1.5); opacity:0; } }
+  @keyframes pf-pop { from { transform:scale(.6); opacity:0; } to { transform:scale(1); opacity:1; } }
+  #welcome #wenter:active { transform:scale(.94); }
+  #welcome #wenter:focus { transform:scale(1.06); box-shadow:0 0 0 4px #fff; }
+
+  /* ===== ТВ-вариант: котик и плашка крупнее, постеров в ряду больше ===== */
+  body[data-variant="tv"] #welcome #wcat { width:min(26vw,360px); margin-bottom:-12px; }
+  body[data-variant="tv"] #welcome .plogo img { height:96px; }
+  body[data-variant="tv"] #welcome .plogo .word { font-size:64px; }
+  body[data-variant="tv"] #welcome #wtagline { font-size:15px; }
+  body[data-variant="tv"] #welcome #wenter { font-size:22px; height:64px; min-width:300px; }
+  body[data-variant="tv"] #welcome #wenter svg { width:24px; height:24px; }
+  body[data-variant="tv"] #welcome #wpanel { padding:40px 44px 36px; }
+
+  /* ===== Переключатель ТВ/Телефон + подпись (превью-хром) ===== */
+  .preview-chrome { position:fixed; left:0; right:0; bottom:0; z-index:60;
+    display:flex; flex-direction:column; align-items:center; padding:0 12px 14px; pointer-events:none; }
+  .hero-switch { pointer-events:auto; position:relative; display:flex; gap:8px; padding:6px; border-radius:99px;
+    background:rgba(10,10,14,.7); border:1px solid rgba(255,255,255,.16);
+    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); width:fit-content; }
+  .hero-switch .thumb { position:absolute; z-index:0; top:6px; bottom:6px; left:0; width:0;
+    border-radius:99px; background:#fff; box-shadow:0 4px 14px rgba(0,0,0,.35); transition:left .3s ease, width .3s ease; }
+  .hero-switch button { position:relative; z-index:1; background:transparent; border:0; color:rgba(255,255,255,.75);
+    font-family:inherit; font-size:15px; font-weight:700; padding:8px 20px; border-radius:99px; cursor:pointer; white-space:nowrap; }
+  .hero-switch button.active { color:#000; }
+  .caption { pointer-events:auto; margin-top:12px; font-size:13px; line-height:1.6; color:rgba(255,255,255,.7);
+    text-shadow:0 1px 8px rgba(0,0,0,.9); max-width:94vw; text-align:center; }
+  .caption b { color:#fff; font-weight:600; }
+  .toast { position:fixed; left:50%; bottom:110px; transform:translateX(-50%); z-index:100;
+    background:rgba(10,10,14,.9); border:1px solid rgba(255,255,255,.2); color:#fff;
+    font-size:14px; font-weight:600; padding:10px 20px; border-radius:99px; white-space:nowrap;
+    opacity:0; transition:opacity .25s; pointer-events:none; }
+  .toast.show { opacity:1; }
+</style>
+</head>
+<body data-variant="phone">
+<div id="welcome">
+  <div id="wwall"></div>
+  <div id="wshade"></div>
+  <div id="wcenter">
+    <div id="wcat"><img src="pawflix-cat.png" alt="pawflix"></div>
+    <div id="wpanel">
+      <div class="plogo"><img src="pawflix-p.png" alt="P"><span class="word"><span class="aw">aw</span><span class="flix">flix</span></span></div>
+      <div id="wrule"></div>
+      <div id="wtagline">Кино с усами</div>
+      <div id="wloader">
+        <div id="wphrase">Будим сервер. Он спал на клавиатуре.</div>
+        <div id="wtrail" aria-hidden="true"></div>
+        <div id="wpct">0%</div>
+      </div>
+      <button id="wenter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" stroke="#1a1405" stroke-width="2" stroke-linejoin="round"/></svg>Мяу, поехали!</button>
+    </div>
+  </div>
+</div>
+
+<div class="preview-chrome">
+  <div class="hero-switch" id="hero-switch">
+    <span class="thumb"></span>
+    <button data-variant="tv">ТВ</button>
+    <button class="active" data-variant="phone">Телефон</button>
+  </div>
+  <div class="caption"><b>Превью v1: welcome с фоном-паттерном.</b> Вместо стены постеров — паттерн Denis: золотые кино-иконки (хлопушка, попкорн, плёнка, камера, звёзды) на чёрном, в наших цветах. Котик, плашка, слоган, следы лап и кнопка — как в v6. Паттерн лежит на весь экран, поверх — та же дымка.</div>
+</div>
+<div class="toast" id="toast">В приложении откроется главная</div>
+
+<!-- Шаблон следа лапы (из файла Denis) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="pp" viewBox="0 0 24 24">
+    <g fill="currentColor">
+      <ellipse cx="4.6" cy="10.2" rx="2.1" ry="2.9" transform="rotate(-22 4.6 10.2)"/>
+      <ellipse cx="9.4" cy="5.6" rx="2.2" ry="3.1" transform="rotate(-8 9.4 5.6)"/>
+      <ellipse cx="14.6" cy="5.6" rx="2.2" ry="3.1" transform="rotate(8 14.6 5.6)"/>
+      <ellipse cx="19.4" cy="10.2" rx="2.1" ry="2.9" transform="rotate(22 19.4 10.2)"/>
+      <path d="M12 12c3.6 0 6.1 3 6.6 6 .4 2.6-1.7 3.7-3.500 3.200-1-.3-2-.6-3.100-.6s-2.100.3-3.100.6c-1.800.5-3.900-.6-3.500-3.200C5.900 15 8.400 12 12 12z"/>
+    </g>
+  </symbol>
+</svg>
+
+<script>
+// Стена постеров заменена фоном-паттерном (pawflix-pattern-bg.jpg)
+  
+
+  // Загрузка из сплэша Denis (pawflix-splash): следы лап + новые фразы + «Кино с усами»
+  var STEPS = 12, trail = document.getElementById('wtrail'), prints = [];
+  for (var s = 0; s < STEPS; s++) {
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.innerHTML = '<use href="#pp"/>';
+    trail.appendChild(svg); prints.push(svg);
+  }
+  var phrases = [
+    'Будим сервер. Он спал на клавиатуре.',
+    'Ищем пульт. Он, как обычно, под котом.',
+    'Греем попкорн. Кот уже попробовал. Весь.',
+    'Объясняем серверу, что мы не робот. Он не верит.',
+    'Достаём фильмы из-за дивана...',
+    'Расставляем постеры. Кот помогает. Всё упало.',
+    'Договариваемся с торрентами по-хорошему...',
+    'Кот требует VIP-ложу и сметану.',
+    'Сдуваем пыль с плёнки. Кот чихнул.',
+    'Пересчитываем сериалы. Их опять больше, чем вечеров.',
+    'Прогреваем лапки перед марафоном.',
+    'Кто-то шуршит в попкорне. Подозреваем кота.',
+    'Идём по следу. Лапки не врут.'
+  ];
+  // Фразы — в случайном порядке каждый раз: перемешиваем при загрузке, повторов до конца списка нет
+  for (var i = phrases.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = phrases[i]; phrases[i] = phrases[j]; phrases[j] = tmp;
+  }
+  var phraseIndex = 0;
+  var phraseEl = document.getElementById('wphrase');
+  var pct = document.getElementById('wpct');
+  var loader = document.getElementById('wloader');
+  var enter = document.getElementById('wenter');
+  phraseEl.textContent = phrases[0];
+  var done = false, almost = false, lit = 0, progress = 0;
+  function say(text) {
+    phraseEl.style.opacity = 0;
+    setTimeout(function () { phraseEl.textContent = text; phraseEl.style.opacity = 1; }, 280);
+  }
+  function nextPhrase() {
+    if (done) return;
+    phraseIndex = (phraseIndex + 1) % phrases.length;
+    say(phrases[phraseIndex]);
+  }
+  var phraseTimer = setInterval(nextPhrase, 2800);
+  function setProgress(v) {
+    progress = Math.max(progress, Math.min(100, +v || 0));
+    pct.textContent = Math.round(progress) + '%';
+    pct.setAttribute('aria-valuenow', Math.round(progress));
+    var n = Math.floor(progress / 100 * STEPS);
+    while (lit < n) { prints[lit].classList.add('on'); lit++; }
+    if (progress >= 97 && progress < 100 && !almost) { almost = true; clearInterval(phraseTimer); say('Кот сел на клавиатуру. Ждём, когда встанет...'); }
+    if (progress >= 100) finishLoading();
+  }
+  function finishLoading() {
+    if (done) return;
+    done = true;
+    clearInterval(phraseTimer); clearInterval(progressTimer);
+    while (lit < STEPS) { prints[lit].classList.add('on'); lit++; }
+    say('Готово! Кот одобряет. Кажется.');
+    setTimeout(function () {
+      loader.style.display = 'none';
+      enter.style.display = 'inline-flex';
+      enter.focus();
+    }, 1300);
+  }
+  // Имитация загрузки для предпросмотра (как в файле)
+  var progressTimer = setInterval(function () {
+    if (progress >= 100) return;
+    var step;
+    if (progress < 35) step = Math.random() * 3 + 1;
+    else if (progress < 75) step = Math.random() * 1.8 + .5;
+    else step = Math.random() * .8 + .25;
+    setProgress(progress + step);
+  }, 190);
+
+  // Переключатель ТВ/Телефон (как в hero-preview)
+  (function (root, onSelect) {
+    var t = root.querySelector('.thumb');
+    function put(el) {
+      var z = { l: el.offsetLeft, w: el.offsetWidth };
+      t.style.left = z.l + 'px'; t.style.width = z.w + 'px';
+    }
+    root.querySelectorAll('button').forEach(function (el) {
+      el.addEventListener('click', function () {
+        root.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
+        el.classList.add('active');
+        put(el);
+        if (onSelect) onSelect(el);
+      });
+    });
+    addEventListener('resize', function () { put(root.querySelector('.active')); });
+    put(root.querySelector('.active'));
+  })(document.getElementById('hero-switch'), function (el) {
+    document.body.setAttribute('data-variant', el.getAttribute('data-variant'));
+  });
+
+  var toast = document.getElementById('toast'), toastTimer = null;
+  document.getElementById('wenter').addEventListener('click', function () {
+    toast.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 2000);
+  });
+</script>
+</body>
+</html>
