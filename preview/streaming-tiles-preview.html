@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Стриминги — превью v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:#07080D;color:#fff;font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Arial,sans-serif;overflow:hidden}
+  .page{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;padding:0 20px}
+  .head{display:flex;align-items:center;justify-content:space-between;max-width:1200px;width:100%;margin:0 auto 18px}
+  .head h1{font-size:28px;font-weight:800;letter-spacing:.3px}
+  .more{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;
+    font:700 15px 'Manrope',sans-serif;padding:9px 18px;border-radius:99px;cursor:pointer}
+  .row{display:flex;gap:16px;overflow-x:auto;scrollbar-width:none;padding:18px 4px 26px;
+    max-width:1200px;width:100%;margin:0 auto;scroll-snap-type:x proximity}
+  .row::-webkit-scrollbar{display:none}
+  .tile{position:relative;flex:0 0 auto;width:240px;height:140px;border-radius:18px;
+    background:linear-gradient(180deg,#14161f,#0b0d13);
+    border:1px solid rgba(247,201,72,.35);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+    cursor:pointer;scroll-snap-align:start;outline:0;
+    transition:transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s, border-color .25s}
+  .tile .bulbs{position:absolute;inset:0;pointer-events:none}
+  .bulb{position:absolute;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;
+    background:#7a5c14;opacity:.3;
+    animation:bulbRun 6s linear infinite}
+  @keyframes bulbRun{
+    0%,100%{opacity:.28;background:#7a5c14;box-shadow:none}
+    4%{opacity:1;background:#f7c948;box-shadow:0 0 10px rgba(247,201,72,.95),0 0 4px rgba(247,201,72,.9)}
+    12%{opacity:.28;background:#7a5c14;box-shadow:none}
+  }
+  .tile .name{position:relative;z-index:1;font-size:24px;font-weight:800;letter-spacing:.4px;color:#fff;white-space:nowrap}
+  .tile .name.small{font-size:21px}
+  .tile .strip{position:relative;z-index:1;width:44px;height:4px;border-radius:2px;background:var(--c,#f7c948);
+    transition:width .25s}
+  .tile .glow{position:absolute;left:50%;bottom:-14px;transform:translateX(-50%);width:70%;height:26px;
+    border-radius:50%;background:var(--c,#f7c948);opacity:0;filter:blur(16px);transition:opacity .25s;pointer-events:none}
+  .tile.focused{transform:scale(1.06);border-color:#fff;
+    box-shadow:0 0 0 3px #fff,0 18px 44px rgba(0,0,0,.6)}
+  .tile.focused .strip{width:72px}
+  .tile.focused .glow{opacity:.45}
+  .tile.focused .bulb{opacity:.55}
+  .hint{max-width:1200px;width:100%;margin:0 auto;color:rgba(255,255,255,.55);font-size:13px;line-height:1.6}
+  .hint b{color:#fff}
+  /* ТВ: плитки крупнее */
+  body[data-variant="tv"] .head h1{font-size:40px}
+  body[data-variant="tv"] .more{font-size:19px;padding:12px 24px}
+  body[data-variant="tv"] .tile{width:320px;height:180px;border-radius:22px}
+  body[data-variant="tv"] .tile .name{font-size:32px}
+  body[data-variant="tv"] .tile .name.small{font-size:27px}
+  body[data-variant="tv"] .bulb{width:8px;height:8px;margin:-4px 0 0 -4px}
+  body[data-variant="tv"] .hint{font-size:16px}
+  /* Переключатель ТВ/Телефон + подпись (превью-хром) */
+  .preview-chrome{position:fixed;left:0;right:0;bottom:0;z-index:60;
+    display:flex;flex-direction:column;align-items:center;padding:0 12px 14px;pointer-events:none}
+  .hero-switch{pointer-events:auto;position:relative;display:flex;gap:8px;padding:6px;border-radius:99px;
+    background:rgba(10,10,14,.7);border:1px solid rgba(255,255,255,.16);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);width:fit-content}
+  .hero-switch .thumb{position:absolute;z-index:0;top:6px;bottom:6px;left:0;width:0;
+    border-radius:99px;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:left .3s ease,width .3s ease}
+  .hero-switch button{position:relative;z-index:1;background:transparent;border:0;color:rgba(255,255,255,.75);
+    font-family:inherit;font-size:15px;font-weight:700;padding:8px 20px;border-radius:99px;cursor:pointer;white-space:nowrap}
+  .hero-switch button.active{color:#000}
+  .caption{pointer-events:auto;margin-top:12px;font-size:13px;line-height:1.6;color:rgba(255,255,255,.7);
+    text-shadow:0 1px 8px rgba(0,0,0,.9);max-width:94vw;text-align:center}
+  .caption b{color:#fff;font-weight:600}
+  .toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);z-index:100;
+    background:rgba(10,10,14,.9);border:1px solid rgba(255,255,255,.2);color:#fff;
+    font-size:14px;font-weight:600;padding:10px 20px;border-radius:99px;white-space:nowrap;
+    opacity:0;transition:opacity .25s;pointer-events:none}
+  .toast.show{opacity:1}
+  @media (prefers-reduced-motion:reduce){ .bulb{animation:none;opacity:.5} }
+</style>
+</head>
+<body data-variant="phone">
+<div class="page">
+  <div class="head"><h1>Стриминги</h1><button class="more" id="moreBtn">Ещё</button></div>
+  <div class="row" id="row"></div>
+  <div class="hint">Плашки в стиле кинотеатральной вывески: тёмная плитка, золотой контур, лампочки бегут по кругу <b>за 6 секунд</b>. В фокусе — белое кольцо, свечение цвета сервиса и растянутая полоска. На ТВ листайте стрелками ←/→, на телефоне — свайпом и тапом.</div>
+</div>
+
+<div class="preview-chrome">
+  <div class="hero-switch" id="hero-switch">
+    <span class="thumb"></span>
+    <button data-variant="tv">ТВ</button>
+    <button class="active" data-variant="phone">Телефон</button>
+  </div>
+  <div class="caption"><b>Превью v1: плашки стримингов для ТВ.</b> Сервисы — из «Кино» (ряд «Студии» на главной): Netflix, Apple TV+, Prime Video, Disney+, HBO, Paramount+, SkyShowtime, Hulu, Syfy. Лампочки бегут по кругу за 6 секунд вместо 1,8 — помедленнее, как просил Denis.</div>
+</div>
+<div class="toast" id="toast">В приложении откроется полный список</div>
+
+<script>
+// Сервисы — из «Кино» (STUDIOS, ряд на главной). Цвет — полоска под названием.
+var SERVICES = [
+  {id:'netflix',   name:'NETFLIX',     color:'#E50914'},
+  {id:'apple',     name:'Apple TV+',   color:'#F5F5F7'},
+  {id:'amazon',    name:'Prime Video', color:'#00A8E1'},
+  {id:'disney',    name:'Disney+',     color:'#0063E5'},
+  {id:'hbo',       name:'HBO',         color:'#B100FF'},
+  {id:'paramount', name:'Paramount+',  color:'#0064FF'},
+  {id:'skyshow',   name:'SkyShowtime', color:'#FF0080'},
+  {id:'hulu',      name:'Hulu',        color:'#1CE783'},
+  {id:'syfy',      name:'Syfy',        color:'#7B2FF7'}
+];
+var CYCLE = 6; // секунд на полный круг лампочек
+
+var row = document.getElementById('row');
+var tiles = [];
+SERVICES.forEach(function (s, idx) {
+  var t = document.createElement('div');
+  t.className = 'tile';
+  t.tabIndex = 0;
+  t.style.setProperty('--c', s.color);
+  t.setAttribute('data-idx', idx);
+  var small = s.name.length > 9 ? ' small' : '';
+  t.innerHTML = '<div class="bulbs"></div><div class="glow"></div>' +
+    '<div class="name' + small + '">' + s.name + '</div><div class="strip"></div>';
+  t.addEventListener('click', function () { focusTile(idx, true); });
+  t.addEventListener('focus', function () { focusTile(idx, false); });
+  row.appendChild(t);
+  tiles.push(t);
+});
+
+function placeBulbs(tile) {
+  var box = tile.querySelector('.bulbs');
+  box.innerHTML = '';
+  var W = tile.offsetWidth, H = tile.offsetHeight;
+  if (!W || !H) return;
+  var inset = 11, step = 26;
+  var pts = [];
+  var x, y;
+  for (x = inset; x <= W - inset; x += step) pts.push([x, inset]);            // верх
+  for (y = inset + step; y <= H - inset; y += step) pts.push([W - inset, y]); // право
+  for (x = W - inset - step; x >= inset; x -= step) pts.push([x, H - inset]); // низ
+  for (y = H - inset - step; y >= inset + step; y -= step) pts.push([inset, y]); // лево
+  var n = pts.length;
+  pts.forEach(function (p, i) {
+    var b = document.createElement('span');
+    b.className = 'bulb';
+    b.style.left = p[0] + 'px';
+    b.style.top = p[1] + 'px';
+    b.style.animationDelay = (-(i / n) * CYCLE).toFixed(3) + 's';
+    box.appendChild(b);
+  });
+}
+function placeAllBulbs() { tiles.forEach(placeBulbs); }
+
+var focused = -1;
+function focusTile(idx, scroll) {
+  if (idx < 0 || idx >= tiles.length) return;
+  tiles.forEach(function (t, i) { t.classList.toggle('focused', i === idx); });
+  focused = idx;
+  if (scroll) tiles[idx].scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+}
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'ArrowRight') { focusTile(Math.min(focused + 1, tiles.length - 1), true); e.preventDefault(); }
+  else if (e.key === 'ArrowLeft') { focusTile(Math.max(focused - 1, 0), true); e.preventDefault(); }
+});
+
+// Переключатель ТВ/Телефон
+(function (root) {
+  var t = root.querySelector('.thumb');
+  function put(el) { t.style.left = el.offsetLeft + 'px'; t.style.width = el.offsetWidth + 'px'; }
+  root.querySelectorAll('button').forEach(function (el) {
+    el.addEventListener('click', function () {
+      root.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
+      el.classList.add('active');
+      put(el);
+      document.body.setAttribute('data-variant', el.getAttribute('data-variant'));
+      requestAnimationFrame(placeAllBulbs);
+    });
+  });
+  addEventListener('resize', function () { put(root.querySelector('.active')); placeAllBulbs(); });
+  put(root.querySelector('.active'));
+})(document.getElementById('hero-switch'));
+
+var toast = document.getElementById('toast'), toastTimer = null;
+document.getElementById('moreBtn').addEventListener('click', function () {
+  toast.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 2000);
+});
+
+// Первый запуск: расставить лампочки и дать фокус первой плитке на ТВ
+requestAnimationFrame(function () {
+  placeAllBulbs();
+  if (document.body.getAttribute('data-variant') === 'tv') focusTile(0, false);
+});
+</script>
+</body>
+</html>
