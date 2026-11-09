@@ -1,5 +1,5 @@
 {
-  "versionCode": 15,
-  "versionName": "1.12-dev",
-  "notes": "Фаза 2: FFmpeg-аудио — DTS, AC3, EAC3, TrueHD"
+  "versionCode": 16,
+  "versionName": "1.13-dev",
+  "notes": "Пилюли погоды и времени выровнены на одну высоту"
 }
