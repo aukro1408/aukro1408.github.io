@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Стриминги — превью v1</title>
+<title>Стриминги — превью v2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -27,8 +27,9 @@
     transition:transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s, border-color .25s}
   .tile .bulbs{position:absolute;inset:0;pointer-events:none}
   .bulb{position:absolute;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;
-    background:#7a5c14;opacity:.3;
-    animation:bulbRun 6s linear infinite}
+    background:#7a5c14;opacity:.3}
+  /* Бегущие лампочки — ТОЛЬКО на плитке в фокусе; у остальных точки статичные и тусклые */
+  .tile.focused .bulb{animation:bulbRun 6s linear infinite}
   @keyframes bulbRun{
     0%,100%{opacity:.28;background:#7a5c14;box-shadow:none}
     4%{opacity:1;background:#f7c948;box-shadow:0 0 10px rgba(247,201,72,.95),0 0 4px rgba(247,201,72,.9)}
@@ -44,7 +45,6 @@
     box-shadow:0 0 0 3px #fff,0 18px 44px rgba(0,0,0,.6)}
   .tile.focused .strip{width:72px}
   .tile.focused .glow{opacity:.45}
-  .tile.focused .bulb{opacity:.55}
   .hint{max-width:1200px;width:100%;margin:0 auto;color:rgba(255,255,255,.55);font-size:13px;line-height:1.6}
   .hint b{color:#fff}
   /* ТВ: плитки крупнее */
@@ -81,7 +81,7 @@
 <div class="page">
   <div class="head"><h1>Стриминги</h1><button class="more" id="moreBtn">Ещё</button></div>
   <div class="row" id="row"></div>
-  <div class="hint">Плашки в стиле кинотеатральной вывески: тёмная плитка, золотой контур, лампочки бегут по кругу <b>за 6 секунд</b>. В фокусе — белое кольцо, свечение цвета сервиса и растянутая полоска. На ТВ листайте стрелками ←/→, на телефоне — свайпом и тапом.</div>
+  <div class="hint">Плашки в стиле кинотеатральной вывески: тёмная плитка, золотой контур. Лампочки бегут по кругу <b>за 6 секунд — только на плитке в фокусе</b>, у остальных точки статичные и тусклые. В фокусе — белое кольцо, свечение цвета сервиса и растянутая полоска. На ТВ листайте стрелками ←/→, на телефоне — свайпом и тапом.</div>
 </div>
 
 <div class="preview-chrome">
@@ -90,7 +90,7 @@
     <button data-variant="tv">ТВ</button>
     <button class="active" data-variant="phone">Телефон</button>
   </div>
-  <div class="caption"><b>Превью v1: плашки стримингов для ТВ.</b> Сервисы — из «Кино» (ряд «Студии» на главной): Netflix, Apple TV+, Prime Video, Disney+, HBO, Paramount+, SkyShowtime, Hulu, Syfy. Лампочки бегут по кругу за 6 секунд вместо 1,8 — помедленнее, как просил Denis.</div>
+  <div class="caption"><b>Превью v2: плашки стримингов для ТВ.</b> Исправлено по слову Denis: бегущие лампочки — только на плитке в фокусе пульта; у соседних карточек точки статичные и тусклые, анимация не работает. Сервисы — из «Кино»: Netflix, Apple TV+, Prime Video, Disney+, HBO, Paramount+, SkyShowtime, Hulu, Syfy. Круг лампочек — 6 секунд.</div>
 </div>
 <div class="toast" id="toast">В приложении откроется полный список</div>
 
