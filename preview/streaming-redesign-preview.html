@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Стриминги — новый дизайн, превью v1</title>
+<style>
+  body{margin:0;background:#111;font-family:Arial,sans-serif;color:#fff}
+  .pv-bar{display:flex;gap:10px;align-items:center;justify-content:center;padding:14px 10px;background:#000;position:sticky;top:0;z-index:10}
+  .pv-bar button{border:1px solid #444;background:#1a1a1a;color:#fff;border-radius:20px;padding:9px 18px;font-size:15px;cursor:pointer}
+  .pv-bar button.on{background:#F7C948;color:#000;border-color:#F7C948;font-weight:700}
+  .pv-wrap{margin:0 auto;transition:max-width .3s}
+  .pv-wrap.phone{max-width:430px;box-shadow:0 0 0 1px #333}
+  .pv-wrap.tv{max-width:1280px}
+  .pv-cap{max-width:700px;margin:18px auto;padding:0 16px 30px;color:#aaa;font-size:14px;line-height:1.6}
+  .pv-cap b{color:#F7C948}
+</style>
+</head>
+<body>
+<div class="pv-bar">
+  <button id="pvPhone" class="on" onclick="setMode('phone')">📱 Телефон</button>
+  <button id="pvTv" onclick="setMode('tv')">📺 ТВ</button>
+</div>
+<div class="pv-wrap phone" id="pvWrap">
+
+<div class="pf-stream-section">
+
+  <div class="pf-stream-header">
+    <div>
+      <div class="pf-stream-title">Стриминги</div>
+      <div class="pf-stream-subtitle">МИР КИНО И СЕРИАЛОВ</div>
+    </div>
+
+    <button class="pf-more" id="pfMore">Ещё <span>⌄</span></button>
+  </div>
+
+  <div class="pf-stream-viewport" id="pfViewport">
+    <div class="pf-stream-track" id="pfTrack">
+
+      <button class="pf-stream-card active" data-name="Netflix">
+        <span class="pf-dots"></span>
+        <span class="pf-stream-logo netflix">NETFLIX</span>
+        <span class="pf-card-line"></span>
+        <span class="pf-card-caption">WATCH ORIGINALS</span>
+      </button>
+
+      <button class="pf-stream-card" data-name="Apple TV+">
+        <span class="pf-dots"></span>
+        <span class="pf-stream-logo apple">Apple TV<span>+</span></span>
+        <span class="pf-card-line"></span>
+        <span class="pf-card-caption">ORIGINAL SERIES</span>
+      </button>
+
+      <button class="pf-stream-card" data-name="Prime Video">
+        <span class="pf-dots"></span>
+        <span class="pf-stream-logo prime">prime video</span>
+        <span class="pf-card-line"></span>
+        <span class="pf-card-caption">ENTERTAINMENT</span>
+      </button>
+
+      <button class="pf-stream-card" data-name="Disney+">
+        <span class="pf-dots"></span>
+        <span class="pf-stream-logo disney">Disney<span>+</span></span>
+        <span class="pf-card-line"></span>
+        <span class="pf-card-caption">MAGIC STORIES</span>
+      </button>
+
+      <button class="pf-stream-card" data-name="HBO">
+        <span class="pf-dots"></span>
+        <span class="pf-stream-logo hbo">HBO</span>
+        <span class="pf-card-line"></span>
+        <span class="pf-card-caption">GREAT STORIES</span>
+      </button>
+
+      <button class="pf-stream-card" data-name="Paramount+">
+        <span class="pf-dots"></span>
+        <span class="pf-stream-logo paramount">Paramount<span>+</span></span>
+        <span class="pf-card-line"></span>
+        <span class="pf-card-caption">A MOUNTAIN OF ENTERTAINMENT</span>
+      </button>
+
+      <button class="pf-stream-card" data-name="SkyShowtime">
+        <span class="pf-dots"></span>
+        <span class="pf-stream-logo sky">SkyShowtime</span>
+        <span class="pf-card-line"></span>
+        <span class="pf-card-caption">SHOWTIME</span>
+      </button>
+
+      <button class="pf-stream-card" data-name="Hulu">
+        <span class="pf-dots"></span>
+        <span class="pf-stream-logo hulu">hulu</span>
+        <span class="pf-card-line"></span>
+        <span class="pf-card-caption">STREAM MORE</span>
+      </button>
+
+      <button class="pf-stream-card" data-name="Syfy">
+        <span class="pf-dots"></span>
+        <span class="pf-stream-logo syfy">Syfy</span>
+        <span class="pf-card-line"></span>
+        <span class="pf-card-caption">SCI-FI WORLDS</span>
+      </button>
+
+    </div>
+  </div>
+
+  <div class="pf-stream-footer">
+    <div class="pf-selected">
+      <span class="pf-status-dot"></span>
+      <span id="pfSelected">Netflix</span>
+    </div>
+
+    <div class="pf-pagination" id="pfPagination">
+      <span class="current"></span>
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+
+</div>
+
+<style>
+.pf-stream-section {
+  --gold: #edc451;
+  --gold-light: #ffe69a;
+  --bg: #08090c;
+
+  width: 100%;
+  padding: 26px 0 22px;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: white;
+  background: #050505;
+  font-family: Arial, sans-serif;
+}
+
+.pf-stream-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 25px 25px;
+}
+
+.pf-stream-title {
+  font-size: 27px;
+  font-weight: 750;
+  letter-spacing: -.7px;
+}
+
+.pf-stream-subtitle {
+  margin-top: 5px;
+  color: #88837a;
+  font-size: 9px;
+  letter-spacing: 3px;
+}
+
+.pf-more {
+  border: 1px solid rgba(237,196,81,.22);
+  border-radius: 30px;
+  padding: 12px 20px;
+  background: #17181d;
+  color: #f6f2e8;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .25s;
+}
+
+.pf-more:active {
+  transform: scale(.93);
+  background: #302719;
+}
+
+.pf-more span {
+  color: var(--gold);
+  margin-left: 5px;
+}
+
+/* HORIZONTAL TRACK */
+
+.pf-stream-viewport {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  padding: 3px 0 13px;
+}
+
+.pf-stream-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.pf-stream-track {
+  display: flex;
+  width: max-content;
+  gap: 15px;
+  padding: 0 25px;
+}
+
+/* CARDS */
+
+.pf-stream-card {
+  position: relative;
+  width: 310px;
+  height: 178px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
+  border-radius: 29px;
+  border: 1px solid rgba(224,185,82,.25);
+
+  background:
+    radial-gradient(
+      ellipse at 50% 110%,
+      rgba(205,155,48,.09),
+      transparent 65%
+    ),
+    linear-gradient(145deg,#111216,#07080b);
+
+  color: white;
+  overflow: hidden;
+  cursor: pointer;
+
+  transition:
+    transform .35s cubic-bezier(.2,.8,.2,1),
+    border-color .35s,
+    background .35s,
+    box-shadow .35s;
+}
+
+/* GOLDEN PERIMETER */
+
+.pf-dots {
+  position: absolute;
+  inset: 9px;
+  border-radius: 22px;
+  pointer-events: none;
+
+  background-image:
+    radial-gradient(circle,
+      rgba(220,178,76,.55) 0 3px,
+      transparent 3.8px
+    );
+
+  background-size: 22px 22px;
+  background-position: 0 0;
+
+  opacity: .42;
+
+  mask-image:
+    linear-gradient(to bottom,
+      black 0 7px, transparent 13px
+    ),
+    linear-gradient(to top,
+      black 0 7px, transparent 13px
+    ),
+    linear-gradient(to right,
+      black 0 7px, transparent 13px
+    ),
+    linear-gradient(to left,
+      black 0 7px, transparent 13px
+    );
+
+  mask-composite: add;
+}
+
+/* Slow movement of lights */
+
+.pf-stream-card.active .pf-dots {
+  animation: pfDots 7s linear infinite;
+  opacity: .9;
+}
+
+@keyframes pfDots {
+  from { background-position: 0 0; }
+  to { background-position: 22px 22px; }
+}
+
+/* ACTIVE CARD */
+
+.pf-stream-card.active {
+  border: 2px solid var(--gold-light);
+
+  background:
+    radial-gradient(
+      ellipse at 50% 115%,
+      rgba(255,190,45,.17),
+      transparent 65%
+    ),
+    linear-gradient(145deg,#191817,#09090b);
+
+  box-shadow:
+    0 0 0 1px rgba(255,224,145,.12),
+    inset 0 0 30px rgba(221,174,63,.08),
+    0 8px 30px rgba(205,151,40,.13);
+
+  transform: scale(1.025);
+}
+
+/* LOGOS */
+
+.pf-stream-logo {
+  position: relative;
+  z-index: 2;
+  font-size: 31px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  white-space: nowrap;
+}
+
+.netflix {
+  letter-spacing: 2px;
+  font-weight: 900;
+}
+
+.apple {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -2px;
+}
+
+.apple span,
+.disney span,
+.paramount span {
+  color: var(--gold);
+}
+
+.disney {
+  font-size: 37px;
+  font-weight: 800;
+  letter-spacing: -2px;
+}
+
+.hbo {
+  font-size: 35px;
+  font-weight: 900;
+}
+
+.hbo span {
+  font-size: 21px;
+  color: var(--gold);
+  margin-left: 3px;
+}
+
+.prime {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -2px;
+}
+
+.hulu {
+  font-size: 45px;
+  font-weight: 900;
+  color: #8fdc83;
+  letter-spacing: -3px;
+}
+
+.sky {
+  font-size: 25px;
+  font-weight: 800;
+}
+
+.paramount {
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.syfy {
+  font-size: 38px;
+  font-weight: 900;
+  color: #b794f6;
+  letter-spacing: -2px;
+}
+
+/* UNDERLINE */
+
+.pf-card-line {
+  position: relative;
+  z-index: 2;
+  width: 55px;
+  height: 4px;
+  border-radius: 10px;
+  margin-top: 15px;
+  background: #777;
+  transition: width .35s, background .35s;
+}
+
+.pf-stream-card.active .pf-card-line {
+  width: 95px;
+  background: var(--gold);
+  box-shadow: 0 0 12px rgba(237,196,81,.4);
+}
+
+.pf-card-caption {
+  position: relative;
+  z-index: 2;
+  margin-top: 10px;
+  font-size: 8px;
+  letter-spacing: 3px;
+  color: #817c72;
+  opacity: 0;
+  transform: translateY(5px);
+  transition: .3s;
+}
+
+.pf-stream-card.active .pf-card-caption {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* HOVER / FOCUS */
+
+.pf-stream-card:focus-visible {
+  outline: 3px solid var(--gold-light);
+  outline-offset: 4px;
+}
+
+.pf-stream-card:active {
+  transform: scale(.96);
+}
+
+.pf-stream-card.active:active {
+  transform: scale(.98);
+}
+
+/* FOOTER */
+
+.pf-stream-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 28px 0;
+}
+
+.pf-selected {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  color: #b9b4a9;
+}
+
+.pf-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 9px rgba(237,196,81,.5);
+}
+
+.pf-pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pf-pagination span {
+  width: 5px;
+  height: 5px;
+  background: #484848;
+  border-radius: 10px;
+  transition: .3s;
+}
+
+.pf-pagination span.current {
+  width: 20px;
+  background: var(--gold);
+}
+
+/* EXPANDED */
+
+.pf-stream-section.expanded .pf-stream-viewport {
+  overflow: visible;
+}
+
+.pf-stream-section.expanded .pf-stream-track {
+  width: auto;
+  flex-wrap: wrap;
+}
+
+.pf-stream-section.expanded .pf-stream-card {
+  width: calc(50% - 8px);
+  box-sizing: border-box;
+}
+
+@media(max-width:480px) {
+  .pf-stream-card {
+    width: 310px;
+    height: 178px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  .pf-stream-card,
+  .pf-dots,
+  .pf-card-line {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+</style>
+
+<script>
+(() => {
+  const section = document.querySelector('.pf-stream-section');
+  const viewport = document.getElementById('pfViewport');
+  const track = document.getElementById('pfTrack');
+  const selected = document.getElementById('pfSelected');
+  const more = document.getElementById('pfMore');
+  const pagination = document.getElementById('pfPagination');
+  const cards = [...track.querySelectorAll('.pf-stream-card')];
+
+  function selectCard(card) {
+    cards.forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+
+    selected.textContent = card.dataset.name;
+
+    const index = cards.indexOf(card);
+    [...pagination.children].forEach((dot, i) => {
+      dot.classList.toggle('current', i === index % 4);
+    });
+  }
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      selectCard(card);
+    });
+
+    card.addEventListener('focus', () => {
+      selectCard(card);
+      if (!section.classList.contains('expanded')) {
+        card.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
+      }
+    });
+  });
+
+  more.addEventListener('click', () => {
+    const expanded = section.classList.toggle('expanded');
+
+    more.innerHTML = expanded
+      ? 'Свернуть <span>⌃</span>'
+      : 'Ещё <span>⌄</span>';
+
+    if (!expanded) {
+      viewport.scrollTo({left: 0, behavior: 'smooth'});
+    }
+  });
+})();
+</script>
+
+</div>
+<div class="pv-cap"><b>Превью v1: новый дизайн ряда «Стриминги».</b> Дизайн — 1:1 из файла Denis (золотые точки по периметру, активная карточка с золотой рамкой и свечением, подпись, футер с выбранным сервисом и точками, кнопка «Ещё» раскрывает сетку). Сервисы и порядок — как в «Кино»: Netflix, Apple TV+, Prime Video, Disney+, HBO, Paramount+, SkyShowtime, Hulu, Syfy (9 штук; в файле было 8 и другой порядок, HBO Max → HBO, добавлен Syfy). Тап по карточке — открывает страницу студии (в нативе), кнопка «Ещё» — разворачивает сетку. Переключатель сверху — Телефон/ТВ.</div>
+<script>
+function setMode(m){
+  document.getElementById('pvWrap').className = 'pv-wrap ' + m;
+  document.getElementById('pvPhone').className = m === 'phone' ? 'on' : '';
+  document.getElementById('pvTv').className = m === 'tv' ? 'on' : '';
+}
+</script>
+</body>
+</html>
