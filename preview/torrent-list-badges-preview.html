@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Список раздач — расширенная золотая строка (вариант Б)</title>
+<style>
+  :root { --k: 1; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #07080D; color: #fff; font-family: Roboto, Arial, sans-serif; padding: calc(16px * var(--k)); }
+  .wrap { max-width: 420px; margin: 0 auto; }
+  body.tv .wrap { max-width: 960px; }
+  body.tv { --k: 1.33; }
+  h1 { font-size: calc(20px * var(--k)); line-height: 1.25; margin-bottom: calc(6px * var(--k)); }
+  .sub { font-size: calc(13px * var(--k)); color: #B4B4BE; line-height: 1.45; margin-bottom: calc(14px * var(--k)); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: calc(8px * var(--k)); margin-bottom: calc(16px * var(--k)); }
+  .seg { display: flex; border: 1px solid #2A2C38; border-radius: 99px; overflow: hidden; }
+  .seg button {
+    appearance: none; border: 0; background: transparent; color: #B4B4BE;
+    font-size: calc(13px * var(--k)); font-weight: 700; padding: calc(8px * var(--k)) calc(14px * var(--k));
+    cursor: pointer; font-family: inherit;
+  }
+  .seg button.on { background: #F7C948; color: #07080D; }
+  .hint { font-size: calc(12px * var(--k)); color: #B4B4BE; margin: calc(-8px * var(--k)) 0 calc(14px * var(--k)); }
+
+  /* карточка раздачи — 1:1 torrentRowCard (st_row) */
+  .card {
+    background: #1E1E1E; border-radius: calc(30px * var(--k));
+    padding: calc(12px * var(--k)) calc(16px * var(--k));
+    margin-bottom: calc(10px * var(--k));
+  }
+  .top { display: flex; align-items: center; flex-wrap: wrap; }
+  .pill {
+    font-size: calc(12px * var(--k)); font-weight: 700; color: #F7C948;
+    background: rgba(0,0,0,0.55); border: 1px solid #F7C948; border-radius: 99px;
+    padding: calc(4px * var(--k)) calc(10px * var(--k)); line-height: 1.3; white-space: nowrap;
+  }
+  .voice { font-size: calc(14px * var(--k)); font-weight: 700; color: #fff; margin-left: calc(10px * var(--k)); }
+  .type { font-size: calc(12px * var(--k)); color: #B4B4BE; margin-left: calc(8px * var(--k)); }
+  .title {
+    font-size: calc(14px * var(--k)); color: #fff; margin-top: calc(6px * var(--k));
+    line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .gold { font-size: calc(12px * var(--k)); color: #F7C948; margin-top: calc(4px * var(--k)); line-height: 1.45; }
+  .gold.hidden { display: none; }
+  .stats { font-size: calc(12px * var(--k)); color: #B4B4BE; margin-top: calc(4px * var(--k)); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Список раздач — расширенная золотая строка (вариант Б)</h1>
+  <p class="sub">Что изменилось: в золотую строку добавлены кодек видео, кодек звука и каналы — из того же парсера, что в плагине предзагрузки. Больше ничего не меняется.</p>
+  <div class="toolbar">
+    <div class="seg" id="segDevice">
+      <button data-dev="phone" class="on">Телефон</button>
+      <button data-dev="tv">ТВ</button>
+    </div>
+    <div class="seg" id="segMode">
+      <button data-mode="before" class="on">Сейчас</button>
+      <button data-mode="after">После</button>
+    </div>
+  </div>
+  <p class="hint">Переключатель «Сейчас / После» меняет только золотую строку — те же 6 раздач, чтобы сравнить честно.</p>
+
+  <div id="list">
+
+    <div class="card">
+      <div class="top"><span class="pill">2160p</span><span class="voice">Оригинал</span><span class="type">Remux</span></div>
+      <div class="title">Дюна. Часть вторая (2024) 2160p BluRay REMUX HEVC Dolby Vision DTS-HD MA TrueHD 7.1 Atmos</div>
+      <div class="gold" data-before="4K · Dolby Vision · Atmos" data-after="4K · Dolby Vision · Atmos · DTS-HD MA · TRUEHD · 7.1 · HEVC · REMUX"></div>
+      <div class="stats">Пиры: 342 · 58,4 ГБ · RuTracker</div>
+    </div>
+
+    <div class="card">
+      <div class="top"><span class="pill">1080p</span><span class="voice">Оригинал</span><span class="type">WEB-DL</span></div>
+      <div class="title">Солнцестояние (2019) 1080p WEB-DL DD+ 5.1</div>
+      <div class="gold" data-before="" data-after="FULL HD · DD+ · 5.1 · WEB-DL"></div>
+      <div class="stats">Пиры: 128 · 8,2 ГБ · Rutor</div>
+    </div>
+
+    <div class="card">
+      <div class="top"><span class="pill">720p</span><span class="voice">Оригинал</span><span class="type">HDTV</span></div>
+      <div class="title">Интерстеллар (2014) 720p HDTV AC3 2.0</div>
+      <div class="gold" data-before="" data-after="HD · AC3 · 2.0"></div>
+      <div class="stats">Пиры: 87 · 4,7 ГБ · RuTracker</div>
+    </div>
+
+    <div class="card">
+      <div class="top"><span class="pill">2160p</span><span class="voice">Оригинал</span><span class="type">Remux</span></div>
+      <div class="title">Джон Уик 4 (2023) 2160p BluRay REMUX HEVC HDR10+ TrueHD 7.1</div>
+      <div class="gold" data-before="4K · HDR10+" data-after="4K · HDR10+ · TRUEHD · 7.1 · HEVC · REMUX"></div>
+      <div class="stats">Пиры: 256 · 62,1 ГБ · RuTracker</div>
+    </div>
+
+    <div class="card">
+      <div class="top"><span class="pill">1080p</span><span class="voice">Дубляж</span><span class="type">BDRip</span></div>
+      <div class="title">Тайна Коко (2017) 1080p BDRip DTS 5.1 Дубляж Субтитры</div>
+      <div class="gold" data-before="Дубляж · Субтитры" data-after="Дубляж · Субтитры · FULL HD · DTS · 5.1 · BDRIP"></div>
+      <div class="stats">Пиры: 194 · 7,9 ГБ · Rutor</div>
+    </div>
+
+    <div class="card">
+      <div class="top"><span class="pill">1080p</span><span class="voice">Оригинал</span><span class="type">WEB-DL</span></div>
+      <div class="title">Брат 2 (2000) 1080p WEB-DL</div>
+      <div class="gold" data-before="" data-after="FULL HD · WEB-DL"></div>
+      <div class="stats">Пиры: 63 · 5,3 ГБ · RuTracker</div>
+    </div>
+
+  </div>
+</div>
+<script>
+  var mode = 'before';
+  function applyMode() {
+    document.querySelectorAll('.gold').forEach(function (el) {
+      var txt = el.getAttribute('data-' + mode) || '';
+      el.textContent = txt;
+      el.classList.toggle('hidden', !txt);
+    });
+  }
+  document.getElementById('segMode').addEventListener('click', function (e) {
+    if (e.target.tagName !== 'BUTTON') return;
+    mode = e.target.getAttribute('data-mode');
+    this.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === e.target); });
+    applyMode();
+  });
+  document.getElementById('segDevice').addEventListener('click', function (e) {
+    if (e.target.tagName !== 'BUTTON') return;
+    var dev = e.target.getAttribute('data-dev');
+    document.body.classList.toggle('tv', dev === 'tv');
+    this.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === e.target); });
+  });
+  applyMode();
+</script>
+</body>
+</html>
