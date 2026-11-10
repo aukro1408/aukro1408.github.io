@@ -1,5 +1,5 @@
 {
-  "versionCode": 19,
-  "versionName": "1.16-dev",
-  "notes": "HUD статистики торрента: детектор принимает magnet-ссылки (хэш из xt=urn:btih:), диагностика «TorrServer: нет ответа» при недоступности сервера"
+  "versionCode": 20,
+  "versionName": "1.17-dev",
+  "notes": "HUD: только буфер — цифры торрента, опрос TorrServer и диагностика убраны по слову Denis"
 }
