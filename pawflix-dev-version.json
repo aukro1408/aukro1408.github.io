@@ -1,5 +1,5 @@
 {
-  "versionCode": 239,
-  "versionName": "2.39-dev",
-  "notes": "Collaps по безтокенному пути: Kinobox + прямые зеркала kinogram.best/ortified.ws, парсинг makePlayer, HLS напрямую во внешний плеер. Пилюля Collaps на карточке фильма рядом с FlixCDN. Токенов нет вообще. FlixCDN не тронут."
+  "versionCode": 240,
+  "versionName": "2.40-dev",
+  "notes": "Хаб Custom: пилюли VideoHub, Collaps и FlixCDN с карточки фильма убраны в одну кнопку Custom; тап — список из 3 источников, тап по источнику — его экран с озвучками, как в Lumio. Новые источники потом добавляются в хаб одной строкой. Экраны источников и Lumio не тронуты."
 }
