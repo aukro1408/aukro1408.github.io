@@ -1,5 +1,5 @@
 {
-  "versionCode": 240,
-  "versionName": "2.40-dev",
-  "notes": "Хаб Custom: пилюли VideoHub, Collaps и FlixCDN с карточки фильма убраны в одну кнопку Custom; тап — список из 3 источников, тап по источнику — его экран с озвучками, как в Lumio. Новые источники потом добавляются в хаб одной строкой. Экраны источников и Lumio не тронуты."
+  "version_code": 241,
+  "version_name": "2.41-dev",
+  "notes": "Custom: 7 украинских источников UAFresh (UASerials, UAFlix, Eneyida, UAFilm, Kinotron, AniTube, AnimeUA) — порт плагина UAFresh 1:1, без чужого воркера, без входов. Kinotron — фолбэк за UAFilm. AniTube/AnimeUA — только для аниме. Зеркала — в Настройках (UAFresh)."
 }
