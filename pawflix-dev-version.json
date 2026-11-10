@@ -1,5 +1,5 @@
 {
-  "versionCode": 248,
-  "versionName": "2.48-dev",
-  "notes": "2.48-dev: спайк ShizaHD в хабе Custom (слово Denis 10.11 23:19). Прямые ссылки okcdn без браузера: kinogotv -> list.txt -> /api/play/ (карта качеств плейнтекстом, макс. 1080p, ссылки живут ~24 ч). Фильмы и сериалы (сезоны/серии/озвучки/качества). #2 из list.txt не декодируется (вариант ShizaHD не тот, что у UAFresh) — поток берётся из /api/play/. JVM-тест зелёный 60/60."
+  "versionCode": 249,
+  "versionName": "2.49-dev",
+  "notes": "Фикс бага ShizaHD из 2.48: убран заголовок Origin из заголовков плеера (okcdn отдаёт HTTP 400 на любой запрос с Origin). Остались Referer + MiBox UA. Flix/Collaps/4kino не тронуты."
 }
