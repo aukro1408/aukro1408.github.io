@@ -1,5 +1,5 @@
 {
-  "versionCode": 20,
-  "versionName": "1.17-dev",
-  "notes": "HUD: только буфер — цифры торрента, опрос TorrServer и диагностика убраны по слову Denis"
+  "versionCode": 21,
+  "versionName": "1.18-dev",
+  "notes": "Фолбэк на железный декодер при ошибке декодирования FFmpeg-аудио: один ретрай с той же позиции + тост; DTS остаётся на FFmpeg."
 }
