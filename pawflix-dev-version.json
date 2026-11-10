@@ -1,5 +1,5 @@
 {
-  "versionCode": 246,
-  "versionName": "2.46-dev",
-  "notes": "2.46-dev: источник 4kino.net в хабе Custom через iframe в WebView (паттерн Skaz, слово Denis 10.11 22:30). 4kino — DLE-сайт, встраивает закрытый плеер Alloha (iframe *.live); прямого HLS нет. Поиск по названию, выбор перевода и серии параметрами iframe URL (&translation=, &season=&episode= — проверено живьём), качество — меню самого плеера. JVM-тест зелёный 53/53."
+  "versionCode": 247,
+  "versionName": "2.47-dev",
+  "notes": "2.47-dev: кнопка «Внешний плеер» на экране плеера 4kino (слово Denis 10.11 22:46). Перехват .m3u8 в WebView (мастер предпочтительнее), свежая ссылка скрытым WebView (таймаут 25с, фолбэк на перехваченную), отдача в chooser плееров с Referer origin iframe Alloha. Если .m3u8 не пойман — честный тост с диагностикой. JVM-тест зелёный 53/53 + 37/37."
 }
