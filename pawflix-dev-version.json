@@ -1,5 +1,5 @@
 {
-  "versionCode": 250,
-  "versionName": "2.50-dev",
-  "notes": "ShizaHD через воркер-прокси okcdn (без WARP): прямые ссылки okcdn переписываются на https://shizahd.flyugertdiana.workers.dev/__ok/... — okcdn.ru из Украины заблокирован. API (kinogotv/bd.shizahd.pro) — напрямую, как раньше. Заголовки без изменений: Referer + MiBox UA, без Origin."
+  "versionCode": 251,
+  "versionName": "2.51-dev",
+  "notes": "Технические надписи убраны с экранов источников хаба Custom (ShizaHD, 4kino, Collaps, FlixCDN, VideoHub): при ошибке — только короткая причина, без дампа лога. Видео убрано из экрана приветствия (9,3 МБ) — APK заметно легче; экран стал статичным, замена на HTML — позже."
 }
