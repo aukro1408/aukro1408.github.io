@@ -1,5 +1,5 @@
 {
-  "versionCode": 249,
-  "versionName": "2.49-dev",
-  "notes": "Фикс бага ShizaHD из 2.48: убран заголовок Origin из заголовков плеера (okcdn отдаёт HTTP 400 на любой запрос с Origin). Остались Referer + MiBox UA. Flix/Collaps/4kino не тронуты."
+  "versionCode": 250,
+  "versionName": "2.50-dev",
+  "notes": "ShizaHD через воркер-прокси okcdn (без WARP): прямые ссылки okcdn переписываются на https://shizahd.flyugertdiana.workers.dev/__ok/... — okcdn.ru из Украины заблокирован. API (kinogotv/bd.shizahd.pro) — напрямую, как раньше. Заголовки без изменений: Referer + MiBox UA, без Origin."
 }
