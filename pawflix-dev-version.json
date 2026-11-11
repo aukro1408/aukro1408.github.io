@@ -1,5 +1,1 @@
-{
-  "version_code": 267,
-  "version_name": "2.67-dev",
-  "notes": "Radio: square cards as in mockup v2 (logo centered, station-color glow, play top-right, equalizer top-left); reels and center gold button removed; all-stations grid 2 cols phone / 5 TV; mini-player slide-up animation from the video kept"
-}
+{"version_code": 268, "version_name": "2.68-dev", "notes": "Радио: Стриминги выше Радио; квадрат радио 124dp/168dp — как высота плитки стриминга."}
