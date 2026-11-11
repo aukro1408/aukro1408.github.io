@@ -1,5 +1,5 @@
 {
-  "version_code": 258,
-  "version_name": "2.58-dev",
-  "notes": "VideoHub-сериалы отдельной строкой в Custom (открытый plapi-плейлист VideoHub: озвучка → сезон → серия, прямые ссылки через mitsu-прокси). Сайт lordserials не брался — только API."
+  "versionCode": 259,
+  "versionName": "2.59-dev",
+  "notes": "VideoHubSeries: плейлист через отдельный воркер — plapi недоступен из Украины без WARP"
 }
