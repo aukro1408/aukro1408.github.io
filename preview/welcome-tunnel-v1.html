@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawflix — welcome: видео-туннель (превью v1)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0b0e14; color: #fff; font-family: "Manrope", system-ui, sans-serif; min-height: 100vh; padding: 18px 16px 32px; }
+  h1 { font-size: 19px; font-weight: 800; }
+  .sub { color: rgba(255,255,255,.6); font-size: 14px; margin-top: 6px; max-width: 720px; line-height: 1.5; }
+  .sub b { color: #F7C948; font-weight: 600; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 16px 0; }
+  .bar button { font: inherit; font-size: 14px; font-weight: 600; color: rgba(255,255,255,.8);
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); border-radius: 999px;
+    padding: 8px 16px; cursor: pointer; }
+  .bar button.on { background: #F7C948; border-color: #F7C948; color: #1A1405; }
+  /* ===== Рамка-эмулятор ===== */
+  .frame { position: relative; margin: 0 auto; overflow: hidden; border-radius: 18px;
+    border: 1px solid rgba(255,255,255,.14); background: #04060F; box-shadow: 0 18px 60px rgba(0,0,0,.55); }
+  .frame.phone { width: min(390px, 100%); aspect-ratio: 390 / 844; }
+  .frame.tv { width: min(1060px, 100%); aspect-ratio: 16 / 9; }
+  video#bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .shade { position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 75% 60% at 50% 46%, rgba(8,12,24,0) 0%, rgba(4,7,16,.55) 100%); }
+  /* ===== Welcome-колонка (упрощённо: фон — предмет превью, панель как в 2.51) ===== */
+  .col { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+  .frame.tv .col { transform: scale(.82); }
+  .cat { width: 62%; max-width: 270px; margin-bottom: -8px; position: relative; z-index: 3; filter: drop-shadow(0 10px 24px rgba(0,0,0,.5)); }
+  .frame.tv .cat { width: 26%; max-width: 360px; }
+  .panel { background: rgba(5,9,20,.88); border: 1px solid rgba(247,201,72,.22); border-radius: 24px;
+    padding: 30px 30px 26px; display: flex; flex-direction: column; align-items: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,.5); backdrop-filter: blur(6px); }
+  .logo { display: flex; align-items: baseline; font-weight: 800; font-size: 44px; letter-spacing: .01em; line-height: 1; }
+  .frame.tv .logo { font-size: 40px; }
+  .logo .p { color: #F7C948; font-size: 64px; line-height: .8; }
+  .frame.tv .logo .p { font-size: 60px; }
+  .logo .aw { color: #fff; } .logo .flix { color: #F7C948; }
+  .rule { width: 72px; height: 3px; background: linear-gradient(90deg, transparent, #F7C948, transparent); margin-top: 16px; border-radius: 2px; }
+  .tag { color: rgba(247,201,72,.75); font-size: 12px; letter-spacing: .42em; margin-top: 12px; font-weight: 600; }
+  .phrase { color: #E9DDBA; font-size: 15px; margin-top: 26px; min-height: 22px; text-align: center; }
+  .trail { display: flex; gap: 10px; margin-top: 10px; }
+  .trail i { width: 14px; height: 14px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: #F7C948; opacity: .9; }
+  .trail i:nth-child(odd) { transform: translateY(5px); }
+  .trail i:nth-child(even) { transform: translateY(-5px); }
+  .pct { color: #F7C948; font-size: 14px; margin-top: 12px; font-weight: 600; }
+  .btn { margin-top: 26px; background: #F7C948; color: #1A1405; font-weight: 800; font-size: 18px;
+    border-radius: 999px; padding: 14px 30px; display: flex; gap: 10px; align-items: center; }
+  .note { color: rgba(255,255,255,.45); font-size: 13px; margin: 14px auto 0; max-width: 720px; line-height: 1.5; text-align: center; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+  <h1>Welcome: золотой туннель вместо статичного фона — v1</h1>
+  <p class="sub">То самое видео с Pixabay (1920×1080, 40 с, по кругу) — <b>стримится с GitHub, в APK не кладётся</b>. Панель и котик — упрощённо, как в 2.51; предмет превью — только фон: как туннель смотрится под панелью на телефоне и на ТВ.</p>
+  <div class="bar">
+    <button id="bPhone" class="on">📱 Телефон</button>
+    <button id="bTv">📺 ТВ</button>
+    <button id="bPause">⏸ Пауза</button>
+    <button id="bPanel">🙈 Без панели</button>
+  </div>
+  <div class="frame phone" id="frame">
+    <video id="bg" src="welcome-tunnel.mp4" autoplay muted loop playsinline></video>
+    <div class="shade"></div>
+    <div class="col" id="col">
+      <img class="cat" src="welcome-cat-v1.png" alt="котик pawflix">
+      <div class="panel">
+        <div class="logo"><span class="p">P</span><span class="aw">aw</span><span class="flix">flix</span></div>
+        <div class="rule"></div>
+        <div class="tag">КИНО С УСАМИ</div>
+        <div class="phrase">Греем попкорн. Кот уже попробовал. Весь.</div>
+        <div class="trail"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="pct">0%</div>
+        <div class="btn">▶&nbsp; Мяу, поехали!</div>
+      </div>
+    </div>
+  </div>
+  <p class="note">Если так — видео уже вшивается в приложение как стрим с кэшем (сборка 2.56 идёт). Если туннель слишком яркий или быстрый — скажи, приглушу дымкой или замедлю.</p>
+<script>
+(function () {
+  var vid = document.getElementById('bg');
+  var frame = document.getElementById('frame');
+  document.getElementById('bPhone').onclick = function () {
+    frame.className = 'frame phone';
+    this.classList.add('on'); document.getElementById('bTv').classList.remove('on');
+  };
+  document.getElementById('bTv').onclick = function () {
+    frame.className = 'frame tv';
+    this.classList.add('on'); document.getElementById('bPhone').classList.remove('on');
+  };
+  document.getElementById('bPause').onclick = function () {
+    if (vid.paused) { vid.play(); this.textContent = '⏸ Пауза'; }
+    else { vid.pause(); this.textContent = '▶ Пуск'; }
+  };
+  document.getElementById('bPanel').onclick = function () {
+    var col = document.getElementById('col'), off = col.classList.toggle('hidden');
+    this.textContent = off ? '🐾 С панелью' : '🙈 Без панели';
+  };
+})();
+</script>
+</body>
+</html>
