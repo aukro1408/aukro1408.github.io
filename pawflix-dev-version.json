@@ -1,5 +1,5 @@
 {
   "version_code": 269,
   "version_name": "2.69-dev",
-  "notes": "Kinovod spike: hidden WebView + .m3u8 intercept, ladder diagnostics (Settings -> Kinovod (proba))"
+  "notes": "Kinovod spike: hidden WebView + .m3u8 intercept, master-playlist ladder proof, external player. Settings > Kinovod (test)."
 }
