@@ -1,1 +1,5 @@
-{"version_code": 268, "version_name": "2.68-dev", "notes": "Радио: Стриминги выше Радио; квадрат радио 124dp/168dp — как высота плитки стриминга."}
+{
+  "version_code": 269,
+  "version_name": "2.69-dev",
+  "notes": "Kinovod spike: hidden WebView + .m3u8 intercept, ladder diagnostics (Settings -> Kinovod (proba))"
+}
