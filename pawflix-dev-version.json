@@ -1,5 +1,5 @@
 {
-  "versionCode": 253,
-  "versionName": "2.53-dev",
-  "notes": "Фикс Vibix (HTTP 404 везде): плеер брал домен родителя из document.referrer для подписи плейлиста, а базовый URL обёртки был сам embed — подпись считалась под неверным доменом. Теперь базовый URL — https://kinokrads.com/, referrer плеера — домен издателя. Iframe src и остальное без изменений."
+  "versionCode": 254,
+  "versionName": "2.54-dev",
+  "notes": "Фикс Vibix вариантом А (выбор Denis): обёртка плеера грузит настоящий Rendex SDK — SDK сам строит iframe и пушит в него rendex_domain с meta-токеном, без которого плейлист отдавал 404. Сезон — через data-season на <ins> (проверено харнессом). Базовый URL — kinokrads.com, Origin не шлётся."
 }
