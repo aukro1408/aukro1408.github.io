@@ -1,5 +1,5 @@
 {
-  "version_code": 270,
-  "version_name": "2.70-dev",
-  "notes": "Kinovod spike part 2: auto-select 2160p in PlayerJS via api('quality', idx), collect all intercepted .m3u8, verdict on best ladder"
+  "version_code": 271,
+  "version_name": "2.71-dev",
+  "notes": "Kinovod — 9-я строка Custom-хаба: их плеер PlayerJS + авто-выбор 2160p + «Внешний плеер» с MIME-типом; резолвер по поиску"
 }
