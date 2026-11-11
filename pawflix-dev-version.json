@@ -1,5 +1,5 @@
 {
-  "version_code": 263,
-  "version_name": "2.63-dev",
-  "notes": "Ladoni: диагностическая сборка — лог резолвера и плеера прямо на экране"
+  "version_code": 264,
+  "version_name": "2.64-dev",
+  "notes": "Ladoni: плеер в настоящем iframe — frame-check больше не стирает документ (корень 404 найден); фолбэк srcdoc; тост только для main-frame"
 }
