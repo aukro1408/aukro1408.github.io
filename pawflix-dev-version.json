@@ -1,5 +1,5 @@
 {
-  "version_code": 260,
-  "version_name": "2.60-dev",
-  "notes": "Ladoni: сериалы 1080p, Paramount Comedy почти на всех сериях, без WARP"
+  "version_code": 261,
+  "version_name": "2.61-dev",
+  "notes": "Ladoni: фикс 404 главного документа embed в WebView — HTML через HttpURLConnection + loadDataWithBaseURL, фолбэк loadUrl"
 }
