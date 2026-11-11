@@ -1,5 +1,5 @@
 {
-  "version_code": 264,
-  "version_name": "2.64-dev",
-  "notes": "Ladoni: плеер в настоящем iframe — frame-check больше не стирает документ (корень 404 найден); фолбэк srcdoc; тост только для main-frame"
+  "version_code": 265,
+  "version_name": "2.65-dev",
+  "notes": "Ladoni: диагностический лог 2.63 убран с экрана (плеер работает, подтверждено Denis); логика загрузки 2.64 без изменений"
 }
