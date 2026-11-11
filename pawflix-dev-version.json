@@ -1,5 +1,5 @@
 {
-  "version_code": 261,
-  "version_name": "2.61-dev",
-  "notes": "Ladoni: фикс 404 главного документа embed в WebView — HTML через HttpURLConnection + loadDataWithBaseURL, фолбэк loadUrl"
+  "version_code": 262,
+  "version_name": "2.62-dev",
+  "notes": "Ladoni: плеер переиспользует HTML, уже забранный резолвером (без второго запроса к embed)"
 }
