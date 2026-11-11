@@ -1,1 +1,5 @@
-{"version_code": 266, "version_name": "2.66-dev", "notes": "Радио (Radio Record): ряд на главной, страница всех станций, мини-плеер с выездом снизу, полный плеер, фоновая игра"}
+{
+  "version_code": 267,
+  "version_name": "2.67-dev",
+  "notes": "Radio: square cards as in mockup v2 (logo centered, station-color glow, play top-right, equalizer top-left); reels and center gold button removed; all-stations grid 2 cols phone / 5 TV; mini-player slide-up animation from the video kept"
+}
