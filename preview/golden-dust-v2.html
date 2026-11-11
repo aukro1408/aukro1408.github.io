@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pawflix Golden Dust V2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{
+ width:100%;height:100%;
+ overflow:hidden;
+ background:#04050a;
+}
+#pfBg{
+ position:fixed;
+ inset:0;
+ width:100%;
+ height:100%;
+ display:block;
+}
+</style>
+</head>
+<body>
+
+<canvas id="pfBg"></canvas>
+
+<script>
+(()=>{
+"use strict";
+
+const canvas=document.getElementById("pfBg");
+const ctx=canvas.getContext("2d",{alpha:true});
+
+const CFG={
+ maxParticles:230,
+ maxDpr:1,
+ fps:30,
+ speed:25,
+ drift:19,
+ brightness:0.95,
+ trail:0.13,
+ gold:[
+  [242,201,76],
+  [255,226,150],
+  [255,190,65],
+  [214,150,44],
+  [255,239,185]
+ ]
+};
+
+let W,H,DPR;
+let particles=[];
+let last=0;
+let time=0;
+let paused=false;
+
+const TAU=Math.PI*2;
+const rnd=(a,b)=>a+Math.random()*(b-a);
+
+// Создаём готовые текстуры частиц
+function createSprite(rgb,type){
+ const size=64;
+ const c=document.createElement("canvas");
+ c.width=c.height=size;
+
+ const g=c.getContext("2d");
+ const [r,gg,b]=rgb;
+
+ const grad=g.createRadialGradient(
+  32,32,0,32,32,32
+ );
+
+ if(type===0){
+  grad.addColorStop(0,"rgba(255,250,225,1)");
+  grad.addColorStop(.13,`rgba(${r},${gg},${b},1)`);
+  grad.addColorStop(.4,`rgba(${r},${gg},${b},.75)`);
+  grad.addColorStop(1,`rgba(${r},${gg},${b},0)`);
+ }
+ else{
+  grad.addColorStop(0,`rgba(${r},${gg},${b},.03)`);
+  grad.addColorStop(.5,`rgba(${r},${gg},${b},.15)`);
+  grad.addColorStop(.8,`rgba(${r},${gg},${b},.6)`);
+  grad.addColorStop(1,`rgba(${r},${gg},${b},0)`);
+ }
+
+ g.fillStyle=grad;
+ g.fillRect(0,0,size,size);
+
+ return c;
+}
+
+const dust=CFG.gold.map(c=>createSprite(c,0));
+const bokeh=CFG.gold.map(c=>createSprite(c,1));
+
+function spawn(initial=false){
+ const p={};
+
+ const roll=Math.random();
+
+ if(roll<.55){
+  // Хорошо заметные золотые искры
+  p.type=0;
+  p.r=rnd(2.2,4.2);
+  p.alpha=rnd(.65,1);
+ }
+ else if(roll<.86){
+  // Средние светящиеся частицы
+  p.type=1;
+  p.r=rnd(5,10);
+  p.alpha=rnd(.4,.8);
+ }
+ else{
+  // Крупные атмосферные золотые огоньки
+  p.type=2;
+  p.r=rnd(13,25);
+  p.alpha=rnd(.25,.5);
+ }
+
+ p.color=Math.floor(Math.random()*CFG.gold.length);
+ p.x=rnd(0,W);
+ p.y=initial?rnd(0,H):H+rnd(10,60);
+
+ p.depth=rnd(.5,1.3);
+ p.phase=rnd(0,TAU);
+ p.twinkle=rnd(.6,2);
+ p.vx=rnd(-8,8);
+ p.vy=rnd(.7,1.5);
+
+ return p;
+}
+
+function resize(){
+ W=innerWidth;
+ H=innerHeight;
+
+ DPR=Math.min(devicePixelRatio||1,CFG.maxDpr);
+
+ canvas.width=Math.round(W*DPR);
+ canvas.height=Math.round(H*DPR);
+
+ ctx.setTransform(DPR,0,0,DPR,0,0);
+
+ particles=[];
+
+ const count=Math.min(
+  CFG.maxParticles,
+  Math.max(90,Math.floor(W*H/3000))
+ );
+
+ for(let i=0;i<count;i++){
+  particles.push(spawn(true));
+ }
+}
+
+// Мягкий вихревой поток
+function flow(x,y,t){
+ return Math.sin(x*.003+t*.07)*1.1+
+        Math.cos(y*.004-t*.05)*1.2+
+        Math.sin((x+y)*.002+t*.04)*.8;
+}
+
+function drawParticle(p){
+ const flicker=.7+
+  .3*Math.sin(time*p.twinkle+p.phase);
+
+ ctx.globalAlpha=
+  p.alpha*flicker*CFG.brightness;
+
+ const size=p.r*2.5;
+
+ const sprite=p.type===0
+  ?dust[p.color]
+  :bokeh[p.color];
+
+ ctx.drawImage(
+  sprite,
+  p.x-size/2,
+  p.y-size/2,
+  size,
+  size
+ );
+}
+
+function updateParticle(p,dt){
+ const angle=flow(p.x,p.y,time);
+
+ const speed=CFG.speed*p.depth;
+
+ p.x+=(
+  Math.cos(angle)*speed*.35+
+  p.vx*.25+
+  Math.sin(time*.5+p.phase)*8
+ )*dt;
+
+ p.y-=(
+  CFG.drift*p.depth+
+  Math.abs(Math.sin(angle))*speed*.2
+ )*dt;
+
+ if(p.y<-65 || p.x<-65 || p.x>W+65){
+  Object.assign(p,spawn(false));
+ }
+}
+
+function render(now){
+ requestAnimationFrame(render);
+
+ if(paused)return;
+
+ if(now-last<1000/CFG.fps)return;
+
+ const dt=Math.min((now-last)/1000,.05);
+ last=now;
+ time+=dt;
+
+ ctx.globalCompositeOperation="source-over";
+
+ // Шлейф движения
+ ctx.fillStyle=`rgba(4,5,10,${CFG.trail})`;
+ ctx.fillRect(0,0,W,H);
+
+ ctx.globalCompositeOperation="lighter";
+
+ for(const p of particles){
+  updateParticle(p,dt);
+  drawParticle(p);
+ }
+
+ ctx.globalAlpha=1;
+ ctx.globalCompositeOperation="source-over";
+}
+
+document.addEventListener("visibilitychange",()=>{
+ paused=document.hidden;
+ last=performance.now();
+});
+
+window.addEventListener("resize",resize);
+
+resize();
+requestAnimationFrame(render);
+
+})();
+</script>
+</body>
+</html>
