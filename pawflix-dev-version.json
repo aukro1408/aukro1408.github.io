@@ -1,5 +1,5 @@
 {
-  "versionCode": 254,
-  "versionName": "2.54-dev",
-  "notes": "Фикс Vibix вариантом А (выбор Denis): обёртка плеера грузит настоящий Rendex SDK — SDK сам строит iframe и пушит в него rendex_domain с meta-токеном, без которого плейлист отдавал 404. Сезон — через data-season на <ins> (проверено харнессом). Базовый URL — kinokrads.com, Origin не шлётся."
+  "versionCode": 255,
+  "versionName": "2.55-dev",
+  "notes": "Кнопка «Внешний плеер» для Vibix (слово Denis 11.11 13:59): перехват .m3u8, свежая ссылка скрытым WebView с iOS UA, chooser плееров, ТВ-пульт. Skaz: кнопка уже есть с 1.55/1.57 — не трогали."
 }
