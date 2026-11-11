@@ -1,5 +1,5 @@
 {
-  "versionCode": 259,
-  "versionName": "2.59-dev",
+  "version_code": 259,
+  "version_name": "2.59-dev",
   "notes": "VideoHubSeries: плейлист через отдельный воркер — plapi недоступен из Украины без WARP"
 }
