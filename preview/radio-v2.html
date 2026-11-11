@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pawflix — Радио · макет v2</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{background:#05060a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;min-height:100vh}
+  .topbar{max-width:1320px;margin:0 auto;padding:18px 20px 6px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .topbar h1{font-size:20px;font-weight:800;letter-spacing:.2px}
+  .topbar h1 span{color:#F6C453}
+  .topbar .sub{color:#8b8fa3;font-size:13px;width:100%}
+  .seg{display:flex;background:#14161f;border:1px solid #262a38;border-radius:12px;overflow:hidden;margin-left:auto}
+  .seg button{background:none;border:0;color:#9aa0b4;padding:9px 18px;font-size:14px;font-weight:700;cursor:pointer}
+  .seg button.on{background:#7C5CFF;color:#fff}
+  .hint{max-width:1320px;margin:0 auto;padding:4px 20px 14px;color:#8b8fa3;font-size:13px;line-height:1.5}
+  .hint b{color:#d7dae4}
+  .stage-wrap{max-width:1320px;margin:0 auto;padding:0 20px 40px;display:flex;justify-content:center}
+  .stage{position:relative;transform-origin:top center;background:#07080D;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px #232635}
+  .stage.phone{width:390px;height:844px;border-radius:44px;border:10px solid #171923}
+  .stage.tv{width:1280px;height:720px;border-radius:18px;border:6px solid #171923}
+  /* ---------- app chrome ---------- */
+  .app{position:absolute;inset:0;display:flex;flex-direction:column;background:#07080D}
+  .apphead{display:flex;align-items:center;gap:10px;padding:16px 16px 8px}
+  .logo{font-size:24px;font-weight:900;letter-spacing:.3px}
+  .logo i{font-style:normal;color:#F6C453}
+  .logo em{font-style:normal;color:#FF5CA8}
+  .apphead .sp{flex:1}
+  .hbtn{width:38px;height:38px;border-radius:50%;background:#14161f;border:1px solid #262a38;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .scroll{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+  .scroll::-webkit-scrollbar{display:none}
+  .hero{margin:6px 16px 0;height:190px;border-radius:20px;background:linear-gradient(135deg,#2a1a4d,#7C5CFF 45%,#FF5CA8);position:relative;overflow:hidden;flex:none}
+  .hero:after{content:"🐾";position:absolute;right:10px;bottom:-14px;font-size:110px;opacity:.25}
+  .hero .ht{position:absolute;left:16px;bottom:16px}
+  .hero .ht b{font-size:22px;display:block}
+  .hero .ht span{font-size:13px;color:#e8ddff}
+  .hero .ht .play{display:inline-block;margin-top:10px;background:#F6C453;color:#1a1200;font-weight:800;font-size:13px;padding:8px 16px;border-radius:999px}
+  .rowhead{display:flex;align-items:baseline;gap:8px;padding:20px 16px 10px}
+  .rowhead h2{font-size:18px;font-weight:800}
+  .rowhead .cnt{color:#8b8fa3;font-size:13px}
+  .rowhead .more{margin-left:auto;color:#F6C453;font-size:14px;font-weight:700;cursor:pointer;background:none;border:0}
+  .row{display:flex;gap:12px;overflow-x:auto;padding:2px 16px 12px;scrollbar-width:none;scroll-snap-type:x mandatory}
+  .row::-webkit-scrollbar{display:none}
+  .card{flex:none;width:148px;aspect-ratio:1/1;scroll-snap-align:start;border-radius:18px;overflow:hidden;position:relative;cursor:pointer;background:#12141d;border:1px solid #232635}
+  .card img.lg{position:absolute;left:19%;top:10%;width:62%;height:50%;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(0,0,0,.45))}
+  .card .tx{position:absolute;left:10px;right:10px;bottom:10px}
+  .card .tx b{font-size:14.5px;line-height:1.2;display:block}
+  .card .tx span{font-size:11.5px;color:#c9cddb;line-height:1.3;display:block;margin-top:2px}
+  .card .pl{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;background:rgba(10,10,16,.65);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+  .card.playing{border-color:#F6C453;box-shadow:0 0 0 2px rgba(246,196,83,.35)}
+  .card.playing .pl{background:#F6C453;color:#1a1200;border-color:#F6C453}
+  .eq{display:none;gap:2px;align-items:flex-end;height:14px;position:absolute;top:16px;left:12px}
+  .card.playing .eq{display:flex}
+  .eq i{width:3px;background:#F6C453;border-radius:2px;animation:eq 0.9s ease-in-out infinite}
+  .eq i:nth-child(1){height:8px;animation-delay:0s}
+  .eq i:nth-child(2){height:14px;animation-delay:.25s}
+  .eq i:nth-child(3){height:6px;animation-delay:.5s}
+  @keyframes eq{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+  .morecard{flex:none;width:148px;aspect-ratio:1/1;border-radius:18px;border:1.5px dashed #3a3f55;background:#0d0f17;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;scroll-snap-align:start;color:#F6C453}
+  .morecard b{font-size:15px}
+  .morecard span{color:#8b8fa3;font-size:12px}
+  .morecard .arr{font-size:26px}
+  .sec{padding:0 16px 16px;color:#8b8fa3;font-size:13px;line-height:1.5}
+  /* ---------- all stations ---------- */
+  .allhead{display:flex;align-items:center;gap:10px;padding:16px 16px 8px}
+  .allhead h2{font-size:20px;font-weight:800}
+  .back{width:38px;height:38px;border-radius:50%;background:#14161f;border:1px solid #262a38;color:#fff;font-size:18px;cursor:pointer}
+  .search{margin:4px 16px 10px;display:flex;align-items:center;gap:8px;background:#14161f;border:1px solid #262a38;border-radius:14px;padding:11px 14px}
+  .search input{flex:1;background:none;border:0;outline:0;color:#fff;font-size:15px}
+  .search input::placeholder{color:#6d7286}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;padding:8px 15px;border-radius:999px;background:#14161f;border:1px solid #262a38;color:#c9cddb;font-size:13.5px;font-weight:600;cursor:pointer}
+  .chip.on{background:#7C5CFF;border-color:#7C5CFF;color:#fff}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 16px 16px}
+  .grid .card{width:100%}
+  .empty{padding:30px 16px;text-align:center;color:#8b8fa3;font-size:14px}
+  /* ---------- dock ---------- */
+  .dock{flex:none;height:64px;display:flex;background:#0b0c12;border-top:1px solid #1c1f2c}
+  .dock div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#7d8296;font-size:11px;cursor:pointer}
+  .dock div.on{color:#F6C453}
+  .dock div i{font-style:normal;font-size:19px}
+  /* ---------- mini player ---------- */
+  .mini{position:absolute;left:10px;right:10px;bottom:74px;z-index:30;display:none;align-items:center;gap:12px;padding:10px 12px;border-radius:18px;background:rgba(20,28,44,.88);border:1px solid rgba(255,255,255,.13);box-shadow:0 12px 32px rgba(0,0,0,.5);cursor:pointer;backdrop-filter:blur(18px)}
+  .mini.show{display:flex}
+  .mini img{width:44px;height:44px;border-radius:12px;flex:none;object-fit:cover;background:#14161f}
+  .mini .mt{flex:1;min-width:0}
+  .mini .mt b{font-size:14.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mini .mt span{font-size:12px;color:#a9adbf;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mini .mp{width:40px;height:40px;flex:none;border-radius:50%;background:#F6C453;border:0;color:#1a1200;font-size:15px;cursor:pointer}
+  .mini .mx{flex:none;background:none;border:0;color:#8b8fa3;font-size:18px;cursor:pointer;padding:4px}
+  .mini .wave{display:none;gap:2px;align-items:flex-end;height:14px;flex:none}
+  .mini.playing .wave{display:flex}
+  .mini .wave i{width:3px;background:#F6C453;border-radius:2px;animation:eq .9s ease-in-out infinite}
+  .mini .wave i:nth-child(1){height:7px}.mini .wave i:nth-child(2){height:13px;animation-delay:.2s}.mini .wave i:nth-child(3){height:9px;animation-delay:.4s}
+  /* ---------- full player ---------- */
+  .full{position:absolute;inset:0;z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:24px;text-align:center}
+  .full.show{display:flex}
+  .full .fbg{position:absolute;inset:-30px;background-size:cover;background-position:center;filter:blur(28px) brightness(.45);transform:scale(1.1)}
+  .full>*{position:relative}
+  .full .fx{position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:17px;cursor:pointer}
+  .full img.logo{width:170px;height:170px;border-radius:28px;object-fit:cover;box-shadow:0 20px 50px rgba(0,0,0,.55)}
+  .full .ft{margin-top:20px;font-size:24px;font-weight:800}
+  .full .fs{margin-top:6px;font-size:14px;color:#cfd3e0}
+  .full .fw{display:flex;gap:4px;align-items:flex-end;height:34px;margin-top:22px}
+  .full .fw i{width:5px;background:#F6C453;border-radius:3px;animation:eq 1s ease-in-out infinite}
+  .full .fw i:nth-child(1){height:14px}.full .fw i:nth-child(2){height:30px;animation-delay:.15s}.full .fw i:nth-child(3){height:20px;animation-delay:.3s}.full .fw i:nth-child(4){height:32px;animation-delay:.45s}.full .fw i:nth-child(5){height:16px;animation-delay:.6s}
+  .full.paused .fw i{animation-play-state:paused;height:8px!important}
+  .full .fc{display:flex;gap:18px;align-items:center;margin-top:26px}
+  .full .fc button{border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.35);color:#fff;cursor:pointer}
+  .full .fc .side{width:54px;height:54px;font-size:18px}
+  .full .fc .big{width:78px;height:78px;font-size:26px;background:#F6C453;border-color:#F6C453;color:#1a1200}
+  .full .fnote{margin-top:26px;font-size:12.5px;color:#9aa0b4}
+  /* ---------- TV mode ---------- */
+  .stage.tv .apphead{padding:22px 40px 6px}
+  .stage.tv .logo{font-size:30px}
+  .stage.tv .hero{margin:10px 40px 0;height:210px}
+  .stage.tv .hero .ht b{font-size:30px}
+  .stage.tv .rowhead{padding:24px 40px 12px}
+  .stage.tv .rowhead h2{font-size:24px}
+  .stage.tv .row{padding:2px 40px 14px;gap:16px}
+  .stage.tv .card{width:196px}
+  .stage.tv .card .tx b{font-size:17px}
+  .stage.tv .card .tx span{font-size:13px}
+  .stage.tv .morecard{width:196px}
+  .stage.tv .dock{height:0;border:0;overflow:hidden}
+  .stage.tv .mini{bottom:20px;left:40px;right:40px;padding:14px 18px}
+  .stage.tv .mini img{width:56px;height:56px}
+  .stage.tv .mini .mt b{font-size:17px}
+  .stage.tv .mini .mt span{font-size:14px}
+  .stage.tv .mini .mp{width:48px;height:48px;font-size:18px}
+  .stage.tv .grid{grid-template-columns:repeat(5,1fr);padding:0 40px 20px;gap:16px}
+  .stage.tv .grid .card{width:100%}
+  .stage.tv .search{margin:4px 40px 12px}
+  .stage.tv .chips{padding:0 40px 14px}
+  .stage.tv .allhead{padding:20px 40px 8px}
+  .stage.tv .full img.logo{width:210px;height:210px}
+  .stage.tv .full .ft{font-size:30px}
+  .stage.tv .tvhint{position:absolute;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:center;gap:22px;padding:10px;background:rgba(5,6,10,.85);font-size:13px;color:#9aa0b4}
+  .stage.tv .tvhint b{color:#F6C453}
+  .tvhint{display:none}
+  .focusable{outline:none}
+  .stage.tv .focusable.focused{outline:3px solid #F6C453;outline-offset:3px;box-shadow:0 0 0 6px rgba(246,196,83,.18);border-radius:18px}
+  .stage.tv .card.focused,.stage.tv .morecard.focused{transform:scale(1.04)}
+  .stage.tv .mini.focused{outline:3px solid #F6C453;outline-offset:3px}
+  .remote{display:none;max-width:340px;margin:0 auto 40px;background:#101218;border:1px solid #262a38;border-radius:24px;padding:18px 18px 14px;text-align:center}
+  .remote .rt{font-size:13px;color:#8b8fa3;margin-bottom:12px}
+  .remote .rt b{color:#F6C453}
+  .rpad{display:grid;grid-template-columns:repeat(3,64px);gap:8px;justify-content:center}
+  .rpad button{height:56px;border-radius:14px;background:#1a1d29;border:1px solid #2c3040;color:#fff;font-size:20px;cursor:pointer}
+  .rpad button.ok{background:#7C5CFF;border-color:#7C5CFF;font-size:14px;font-weight:800}
+  .rpad button:active{background:#7C5CFF}
+  .rmedia{display:flex;gap:8px;justify-content:center;margin-top:10px}
+  .rmedia button{flex:1;height:46px;border-radius:12px;background:#1a1d29;border:1px solid #2c3040;color:#fff;font-size:16px;cursor:pointer}
+  .rmedia button:active{background:#7C5CFF}
+  .view{display:none;flex:1;flex-direction:column;overflow:hidden}
+  .view.show{display:flex}
+  .view .scroll{flex:1}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>pawflix <span>· Радио</span> — макет v2</h1>
+  <div class="seg">
+    <button id="segPhone" class="on" onclick="setMode('phone')">📱 Телефон</button>
+    <button id="segTv" onclick="setMode('tv')">📺 ТВ</button>
+  </div>
+  <div class="sub">Радио Record — 117 станций, живые данные и логотипы. Карточки квадратные, с логотипом станции. Тап по станции включает настоящий поток. На ТВ — стрелки на клавиатуре или экранный пульт внизу, Enter — выбрать, Backspace — назад.</div>
+</div>
+<div class="hint" id="hintPhone">📱 <b>Главная:</b> ряд «Радио» — 10 квадратных карточек с логотипами + «Ещё» в конце. <b>Все станции:</b> поиск + жанры + сетка. <b>Плеер:</b> мини-плеер снизу над доком, тап — полный экран.</div>
+<div class="hint" id="hintTv" style="display:none">📺 <b>ТВ:</b> пульт адаптирован — фокус всегда виден, стрелки ходят по сетке и мини-плееру, <b>OK</b> на мини-плеере — полный плеер с фокусом на паузе, <b>Назад</b> — обратно, фокус возвращается на станцию. Кнопки Play/Pause/Next/Prev на пульте тоже работают. Внизу страницы — экранный пульт, можно потыкать мышкой.</div>
+<div class="stage-wrap"><div class="stage phone" id="stage">
+  <div class="app">
+    <!-- HOME -->
+    <div class="view show" id="viewHome">
+      <div class="apphead">
+        <div class="logo">P<i>aw</i><em>flix</em></div>
+        <div class="sp"></div>
+        <button class="hbtn focusable" title="Поиск">🔍</button>
+        <button class="hbtn focusable" title="Профиль">🐾</button>
+      </div>
+      <div class="scroll">
+        <div class="hero"><div class="ht"><b>Друзья</b><span>Сериал · Комедия · 1994–2004</span><br><span class="play">▶ Смотреть</span></div></div>
+        <div class="rowhead"><h2>Радио</h2><span class="cnt" id="rowCnt"></span><button class="more focusable" onclick="goAll()">Ещё ›</button></div>
+        <div class="row" id="rowRadio"></div>
+        <div class="sec">Станции Radio Record — музыка на фоне, пока выбираешь, что посмотреть. Играет в фоне, даже если свернуть приложение.</div>
+      </div>
+    </div>
+    <!-- ALL -->
+    <div class="view" id="viewAll">
+      <div class="allhead"><button class="back focusable" onclick="goHome()">‹</button><h2>Радио</h2><span class="cnt" id="allCnt" style="color:#8b8fa3;font-size:13px"></span></div>
+      <div class="search"><span>🔍</span><input id="q" placeholder="Найти станцию…" oninput="renderAll()"></div>
+      <div class="chips" id="chips"></div>
+      <div class="scroll"><div class="grid" id="grid"></div><div class="empty" id="empty" style="display:none">Ничего не найдено 🐾</div></div>
+    </div>
+    <!-- MINI -->
+    <div class="mini focusable" id="mini" tabindex="0">
+      <img id="mImg" alt="">
+      <div class="mt"><b id="mTitle"></b><span id="mSub"></span></div>
+      <div class="wave"><i></i><i></i><i></i></div>
+      <button class="mp" id="mPlay" onclick="event.stopPropagation();togglePlay()">⏸</button>
+      <button class="mx" onclick="event.stopPropagation();stopRadio()">✕</button>
+    </div>
+    <!-- FULL -->
+    <div class="full" id="full">
+      <div class="fbg" id="fBg"></div>
+      <button class="fx focusable" onclick="closeFull()">✕</button>
+      <img class="logo" id="fImg" alt="">
+      <div class="ft" id="fTitle"></div>
+      <div class="fs" id="fSub"></div>
+      <div class="fw"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="fc">
+        <button class="side focusable" onclick="stepStation(-1)" title="Назад">⏮</button>
+        <button class="big focusable" id="fPlay" onclick="togglePlay()">⏸</button>
+        <button class="side focusable" onclick="stepStation(1)" title="Вперёд">⏭</button>
+      </div>
+      <div class="fnote" id="fNote">Radio Record · 320 kbps</div>
+    </div>
+    <!-- DOCK -->
+    <div class="dock">
+      <div class="on"><i>🏠</i>Главная</div><div><i>▦</i>Каталог</div><div><i>🔍</i>Поиск</div><div><i>⚙️</i>Настройки</div>
+    </div>
+    <div class="tvhint"><span><b>← → ↑ ↓</b> навигация</span><span><b>Enter</b> выбрать</span><span><b>Backspace</b> назад</span></div>
+  </div>
+</div></div>
+<div class="remote" id="remote">
+  <div class="rt">📺 <b>Экранный пульт</b> — те же кнопки, что на пульте ТВ. Потыкай мышкой:</div>
+  <div class="rpad">
+    <span></span><button onclick="remoteKey('up')">▲</button><span></span>
+    <button onclick="remoteKey('left')">◀</button><button class="ok" onclick="remoteKey('ok')">OK</button><button onclick="remoteKey('right')">▶</button>
+    <span></span><button onclick="remoteKey('down')">▼</button><button onclick="remoteKey('back')">↩</button>
+  </div>
+  <div class="rmedia">
+    <button onclick="remoteKey('prev')">⏮</button>
+    <button onclick="remoteKey('play')">⏯ Пауза/Играть</button>
+    <button onclick="remoteKey('next')">⏭</button>
+  </div>
+</div>
+<audio id="audio" preload="none"></audio>
+<script>
+const STATIONS = [{"t": "Record", "d": "Танцевальный мейнстрим", "i": "https://www.radiorecord.ru/upload/stations_images/record_image600_colored_fill.png?a=5472547440f0ce6fa85daa049a160964", "b": "https://www.radiorecord.ru/upload/iblock/74d/record_new.jpeg", "s": "https://radiorecord.hostingradio.ru/rr_main96.aacp", "g": ["HOUSE", "POP"], "c": "#ff6000"}, {"t": "Russian Mix", "d": "Русские хиты в танцевальной обработке: Zivert, Niletto, Rasa", "i": "https://www.radiorecord.ru/upload/stations_images/rus_image600_colored_fill.png?a=26a6cdb9e3a3248cbf3a7e7446bfe744", "b": "https://www.radiorecord.ru/upload/iblock/96a/russianmix.jpeg", "s": "https://radiorecord.hostingradio.ru/rus96.aacp", "g": ["POP", "RUSSIAN"], "c": "#ff6000"}, {"t": "Хиты всех времен", "d": "Танцевальные боевики 3 десятилетий", "i": "https://www.radiorecord.ru/upload/stations_images/khity-vsekh-vremen_image600_colored_fill.png?a=9b9d647f47f3a6a78dc7cc332339ed89", "b": "https://www.radiorecord.ru/upload/iblock/47b/alltimers.png", "s": "https://radiorecord.hostingradio.ru/alltimers96.aacp", "g": ["HOUSE", "OLDSCHOOL", "POP", "Эпохи"], "c": "#ffffff"}, {"t": "Супердискотека 90-х", "d": "Танцевальные боевики нашей юности Руки Вверх, 2 Unlimited, Masterboy", "i": "https://www.radiorecord.ru/upload/stations_images/sd90_image600_colored_fill.png?a=212d01c6522af9ca384eb30b145e3bbc", "b": "https://www.radiorecord.ru/upload/iblock/93b/sdmbl.jpeg", "s": "https://radiorecord.hostingradio.ru/sd9096.aacp", "g": ["OLDSCHOOL", "POP", "RUSSIAN", "Эпохи"], "c": "#ff6000"}, {"t": "Russian Hits", "d": "Русский танцевальный поп: Клава Кока, Niletto, Тима Белорусских", "i": "https://www.radiorecord.ru/upload/stations_images/russianhits_image600_colored_fill.png?a=922a83210a1fd1bfbaa51dc3ee66a20a", "b": "https://www.radiorecord.ru/upload/iblock/742/russianhits.jpeg", "s": "https://radiorecord.hostingradio.ru/russianhits96.aacp", "g": ["POP", "RUSSIAN"], "c": "#ffffff"}, {"t": "Колбасный Цех", "d": "Саунд золотой эпохи рейвов: DJ Aligator, Klubbheads, Club Caviar", "i": "https://www.radiorecord.ru/upload/stations_images/pump_image600_colored_fill.png?a=d9ac53522b4dda202eefed1c4b8e5d7d", "b": "https://www.radiorecord.ru/upload/iblock/2f8/4554.jpg", "s": "https://radiorecord.hostingradio.ru/pump96.aacp", "g": ["OLDSCHOOL"], "c": "#ffffff"}, {"t": "Festivals", "d": "Лучшие живые сеты от звезд электронной сцены", "i": "https://www.radiorecord.ru/upload/stations_images/live-dj-sets_image600_colored_fill.png?a=c8906e95096eb2a785c89c42021c0e94", "b": "https://www.radiorecord.ru/upload/iblock/cb0/livedjsets.jpeg", "s": "https://radiorecord.hostingradio.ru/livedjsets96.aacp", "g": ["HOUSE", "TECHNO", "TRANCE"], "c": "#ff6000"}, {"t": "Deep", "d": "Глубокое house-звучание", "i": "https://www.radiorecord.ru/upload/stations_images/deep_image600_colored_fill.png?a=59436285ec662ed06fa76e2b154d7a32", "b": "https://www.radiorecord.ru/upload/iblock/ee7/deep.jpeg", "s": "https://radiorecord.hostingradio.ru/deep96.aacp", "g": ["HOUSE"], "c": "#ff6000"}, {"t": "Chill-Out", "d": "Расслабляющий вайб", "i": "https://www.radiorecord.ru/upload/stations_images/chil_image600_colored_fill.png?a=fc3cc778994a647e15f95c76c2092511", "b": "https://www.radiorecord.ru/upload/iblock/d01/chillout.jpeg", "s": "https://radiorecord.hostingradio.ru/chil96.aacp", "g": ["CHILL", "Сон"], "c": "#ffffff"}, {"t": "Сказки MC V", "d": "Волшебные истории от старого сказочника", "i": "https://www.radiorecord.ru/upload/stations_images/skazki_image600_colored_fill.png?a=60eb474daacbbb938bcd3e1b61c86ea4", "b": "https://www.radiorecord.ru/upload/iblock/344/magic-fairytale-book-concept.jpg", "s": "https://radiorecord.hostingradio.ru/skazki96.aacp", "g": ["CHILL", "Сон", "Радиошоу"], "c": "#ffffff"}, {"t": "На шашлыки!", "d": "Русское. Летнее. Танцевальное.", "i": "https://www.radiorecord.ru/upload/stations_images/nashashlyki_image600_colored_fill.png?a=22d61dca4789d571da10ac4f8cb32412", "b": "https://www.radiorecord.ru/upload/iblock/507/close-up-image-fresh-spring-green-grass1.jpg", "s": "https://radiorecord.hostingradio.ru/nashashlyki96.aacp", "g": ["POP", "RUSSIAN", "Лето"], "c": "#ffffff"}, {"t": "Megamix", "d": "Mash-up из главных хитов Рекорда со скоростью 5 треков в минуту! ", "i": "https://www.radiorecord.ru/upload/stations_images/mix_image600_colored_fill.png?a=ac95c8b3b6e202a8371298391c79538b", "b": "https://www.radiorecord.ru/upload/iblock/856/megamix.jpeg", "s": "https://radiorecord.hostingradio.ru/mix96.aacp", "g": ["HOUSE", "POP", "Спорт"], "c": "#ff6000"}, {"t": "Rock", "d": "Первоапрельский спецпроект: от Цоя до Metallica", "i": "https://www.radiorecord.ru/upload/stations_images/rock_image600_colored_fill.png?a=a991bb988d32d61473a533696f775699", "b": "https://www.radiorecord.ru/upload/iblock/56a/rock.jpeg", "s": "https://radiorecord.hostingradio.ru/rock96.aacp", "g": ["Прикол"], "c": "#ff6000"}, {"t": "Remix", "d": "Иностранные хиты в танцевальной обработке: Black Eyed Peas, Ariana Grande, Ed Sheeran", "i": "https://www.radiorecord.ru/upload/stations_images/rmx_image600_colored_fill.png?a=657178bc333099502cdcf1e892d0c56e", "b": "https://www.radiorecord.ru/upload/iblock/fa9/remix.jpeg", "s": "https://radiorecord.hostingradio.ru/rmx96.aacp", "g": ["HOUSE"], "c": "#ff5f00"}, {"t": "Гоп FM", "d": "Первоапрельский спецпроект. Памп и лоходенс", "i": "https://www.radiorecord.ru/upload/stations_images/gop_image600_colored_fill.png?a=49f701f15e42cf13f79801eff2983a1f", "b": "https://www.radiorecord.ru/upload/iblock/1c4/gopfm.jpeg", "s": "https://radiorecord.hostingradio.ru/gop96.aacp", "g": ["POP", "RUSSIAN", "Прикол"], "c": "#ff6000"}, {"t": "Big Hits", "d": "Зарубежные танцевальные хиты: Dua Lipa, Ave Max, Sia", "i": "https://www.radiorecord.ru/upload/stations_images/bighits_image600_colored_fill.png?a=8f6d7d2ee88f5ab5c73836508fda0699", "b": "https://www.radiorecord.ru/upload/iblock/f51/bh2.png", "s": "https://radiorecord.hostingradio.ru/bighits96.aacp", "g": ["POP"], "c": "#ffffff"}, {"t": "Chill House", "d": "Легкий, мелодичный вайб", "i": "https://www.radiorecord.ru/upload/stations_images/chillhouse_image600_colored_fill.png?a=6e5665fa09cddf8172eb080be21299f0", "b": "https://www.radiorecord.ru/upload/iblock/5ba/chillhouse.jpeg", "s": "https://radiorecord.hostingradio.ru/chillhouse96.aacp", "g": ["CHILL", "HOUSE", "Лето"], "c": "#ffffff"}, {"t": "Рекорд 00-х", "d": " Хиты танцполов нулевых: ATB, Benassi, Klubbheads и другие", "i": "https://www.radiorecord.ru/upload/stations_images/record00_image600_colored_fill.png?a=5c38048c31d6abc88efc613d086d899e", "b": "https://www.radiorecord.ru/upload/iblock/da9/record00.jpeg", "s": "https://radiorecord.hostingradio.ru/200096.aacp", "g": ["OLDSCHOOL", "Эпохи"], "c": "#ffffff"}, {"t": "Melodic Techno", "d": "Мелодичное техно в стиле Anyma, Argy и CamelPhat", "i": "https://www.radiorecord.ru/upload/stations_images/melodic_image600_colored_fill.png?a=d052562aae13ed3a8c66f809f90dd3c4", "b": "https://www.radiorecord.ru/upload/iblock/914/3433799.jpg", "s": "https://radiorecord.hostingradio.ru/melodic96.aacp", "g": ["TECHNO"], "c": "#ffffff"}, {"t": "Record 80-х", "d": "Ритмы советской и зарубежной эстрады. C. C. Catch, Modern Talking, В. Леонтьев и Ласковый Май", "i": "https://www.radiorecord.ru/upload/stations_images/1980_image600_colored_fill.png?a=6fe6d2ea156b9fd049986229729b7945", "b": "https://www.radiorecord.ru/upload/iblock/399/2635204.jpg", "s": "https://radiorecord.hostingradio.ru/198096.aacp", "g": ["OLDSCHOOL", "POP", "Эпохи"], "c": "#ffffff"}, {"t": "Нафталин FM", "d": "Первоапрельский спецпроект: Советская эстрада", "i": "https://www.radiorecord.ru/upload/stations_images/naft_image600_colored_fill.png?a=b73eb8fde206f313c6efa22003d22d0c", "b": "https://www.radiorecord.ru/upload/iblock/866/nfmbl.jpeg", "s": "https://radiorecord.hostingradio.ru/naft96.aacp", "g": ["POP", "RUSSIAN", "Прикол"], "c": "#ff6000"}, {"t": "Маятник Фуко", "d": "Новая школа русского рэпа без цензуры: Morgenshtern, Markul, Obladaet & co. [18+]", "i": "https://www.radiorecord.ru/upload/stations_images/mf_image600_colored_fill.png?a=1868db228e2b8a51ace15c84a06de66a", "b": "https://www.radiorecord.ru/upload/iblock/4c0/mfmbl.jpeg", "s": "https://radiorecord.hostingradio.ru/mf96.aacp", "g": ["RAP/URBAN", "RUSSIAN"], "c": "#ff6000"}, {"t": "Summer Dance", "d": "Летние танцевальные хиты 24/7", "i": "https://www.radiorecord.ru/upload/stations_images/summer-dance_image600_colored_fill.png?a=285572a6557a69cf39660ba9c6d9dc01", "b": "https://www.radiorecord.ru/upload/iblock/433/people-having-party-by-beach.jpg", "s": "https://radiorecord.hostingradio.ru/summerparty96.aacp", "g": ["HOUSE", "POP", "Лето"], "c": "#ffffff"}, {"t": "Trancemission", "d": "Лучшее из транс-музыки: Armin, Above & Beyond, Christina Novelli", "i": "https://www.radiorecord.ru/upload/stations_images/tm_image600_colored_fill.png?a=79ec551cb8f6e23cb7dfcb461f5c099e", "b": "https://www.radiorecord.ru/upload/iblock/24c/trancehouse.jpeg", "s": "https://radiorecord.hostingradio.ru/tm96.aacp", "g": ["TRANCE"], "c": "#ff6000"}, {"t": "Russian Gold", "d": "Российские хиты в ремиксах", "i": "https://www.radiorecord.ru/upload/stations_images/russiangold_image600_colored_fill.png?a=b2d76cbf2fe2c3b5327e56b70f518795", "b": "https://www.radiorecord.ru/upload/iblock/44d/43462.jpg", "s": "https://radiorecord.hostingradio.ru/russiangold96.aacp", "g": ["POP", "RUSSIAN"], "c": "#ff6000"}, {"t": "Beach Party", "d": "Жаркий саунд пляжной вечеринки", "i": "https://www.radiorecord.ru/upload/stations_images/beach_image600_colored_fill.png?a=f79681081cbf330fbf3a7c31f60ebd78", "b": "https://www.radiorecord.ru/upload/iblock/409/futuristic-dj-using-virtual-reality-glasses-headline-party-play-music.jpg", "s": "https://radiorecord.hostingradio.ru/beach96.aacp", "g": ["HOUSE", "Лето"], "c": "#ffffff"}, {"t": "Pirate Station", "d": "Лучшее из drum & bass: Pendulum, Chase & Status, Camo & Krooked", "i": "https://www.radiorecord.ru/upload/stations_images/ps_image600_colored_fill.png?a=2522907c95c3454702c5ac6fdc17aebe", "b": "https://www.radiorecord.ru/upload/iblock/ace/360360clean.jpg", "s": "https://radiorecord.hostingradio.ru/ps96.aacp", "g": ["DRUM"], "c": "#ff6000"}, {"t": "Mashup", "d": "Dance-кроссоверы русских и зарубежных хитов", "i": "https://www.radiorecord.ru/upload/stations_images/mashup_image600_colored_fill.png?a=d18b5e2d1bb26ba494b3290508d49447", "b": "https://www.radiorecord.ru/upload/iblock/a8d/4434221.jpg", "s": "https://radiorecord.hostingradio.ru/mashup96.aacp", "g": ["Лето"], "c": "#ffffff"}, {"t": "Innocence", "d": "Techno, Minimal, Deep. Саунд как у Solomun, Boris Brejcha и Nina Kravitz", "i": "https://www.radiorecord.ru/upload/stations_images/ibiza_image600_colored_fill.png?a=22a056ec62766c579585922d2c8f1431", "b": "https://www.radiorecord.ru/upload/iblock/747/innocence.jpeg", "s": "https://radiorecord.hostingradio.ru/ibiza96.aacp", "g": ["HOUSE", "TECHNO"], "c": "#ff6000"}, {"t": "Медляк FM", "d": "Первоапрельский спецпроект", "i": "https://www.radiorecord.ru/upload/stations_images/mdl_image600_colored_fill.png?a=1648b1416889f124c39be4c179df0180", "b": "https://www.radiorecord.ru/upload/iblock/3d5/medlyakfm.jpeg", "s": "https://radiorecord.hostingradio.ru/mdl96.aacp", "g": ["CHILL", "POP", "Прикол"], "c": "#ff6000"}, {"t": "Party 24/7", "d": "Вечеринка с танцевальными хитами", "i": "https://www.radiorecord.ru/upload/stations_images/party-24-7_image600_colored_fill.png?a=98b1652b88b9b9df9e164b299c2dc914", "b": "https://www.radiorecord.ru/upload/iblock/5d7/christmas-background-falling-snowflakes-confetti_1048-9552.jpg", "s": "https://radiorecord.hostingradio.ru/party96.aacp", "g": ["HOUSE"], "c": "#ffffff"}, {"t": "Phonk", "d": "Атмосфера дрифта и уличных гонок ", "i": "https://www.radiorecord.ru/upload/stations_images/phonk_image600_colored_fill.png?a=861926d87f6a341c249007ace175b936", "b": "https://www.radiorecord.ru/upload/iblock/dd1/phonk.jpeg", "s": "https://radiorecord.hostingradio.ru/phonk96.aacp", "g": ["RAP/URBAN", "Спорт"], "c": "#ffffff"}, {"t": "Record Gold", "d": "Хиты Рекорда эпохи Avicii и Swedish House Mafia", "i": "https://www.radiorecord.ru/upload/stations_images/gold_image600_colored_fill.png?a=1dea094d11026e31e78c5e0059bab5b4", "b": "https://www.radiorecord.ru/upload/iblock/507/recordgold.jpeg", "s": "https://radiorecord.hostingradio.ru/gold96.aacp", "g": ["OLDSCHOOL"], "c": "#ff6000"}, {"t": "Руки Вверх!", "d": "24 часа в сутки - только песни Руки Вверх!", "i": "https://www.radiorecord.ru/upload/stations_images/rv19_image600_colored_fill.png?a=3070ffc2bd22741de97d4fed55323880", "b": "https://www.radiorecord.ru/upload/iblock/e4b/rvmbl.jpeg", "s": "https://radiorecord.hostingradio.ru/rv96.aacp", "g": ["OLDSCHOOL", "POP", "RUSSIAN", "Прикол"], "c": "#ff6000"}, {"t": "На Хайпе", "d": "Топ российского стриминга", "i": "https://www.radiorecord.ru/upload/stations_images/hype_image600_colored_fill.png?a=a7b310af0981ee06ff67cba3c40058da", "b": "https://www.radiorecord.ru/upload/iblock/634/hype.jpeg", "s": "https://radiorecord.hostingradio.ru/hype96.aacp", "g": ["POP", "RAP/URBAN"], "c": "#ffffff"}, {"t": "Rap Hits", "d": "Рэп новой волны из России и из-за рубежа", "i": "https://www.radiorecord.ru/upload/stations_images/rap_image600_colored_fill.png?a=d6e8a4c2759719567f676e509c15169b", "b": "https://www.radiorecord.ru/upload/iblock/fb2/raphits.jpeg", "s": "https://radiorecord.hostingradio.ru/rap96.aacp", "g": ["RAP/URBAN"], "c": "#ff6000"}, {"t": "Rap Classics", "d": "Хип-хоп золотого периода: 2Pac, Cypress Hill, Notorius BIG, ONYX", "i": "https://www.radiorecord.ru/upload/stations_images/rapclassics_image600_colored_fill.png?a=f7a57fcf6f7c69ef954e2c7f67e689e6", "b": "https://www.radiorecord.ru/upload/iblock/698/rapclassics.jpeg", "s": "https://radiorecord.hostingradio.ru/rapclassics96.aacp", "g": ["RAP/URBAN"], "c": "#ff6000"}, {"t": "Trance Classics", "d": "Главные хиты trance-музыки: Above&Beyond, Armin van Buuren, Ferry Corsten", "i": "https://www.radiorecord.ru/upload/stations_images/trancehits_image600_colored_fill.png?a=6bd99ad96a78c216468155bbe48e6864", "b": "https://www.radiorecord.ru/upload/iblock/5cd/trancemission.jpeg", "s": "https://radiorecord.hostingradio.ru/trancehits96.aacp", "g": ["TRANCE"], "c": "#ff6000"}, {"t": "D'n'B Classics", "d": "Золотые хиты drum'n'bass Aphrodite, Pendulum, Sub Focus", "i": "https://www.radiorecord.ru/upload/stations_images/drumhits_image600_colored_fill.png?a=b8a7ba90ccc656a84f0b52443e424d61", "b": "https://www.radiorecord.ru/upload/iblock/579/dnbclassics.jpeg", "s": "https://radiorecord.hostingradio.ru/drumhits96.aacp", "g": ["DRUM"], "c": "#ff6000"}, {"t": "Armin van Buuren", "d": "Лучшие треки, ремиксы и коллабы", "i": "https://www.radiorecord.ru/upload/stations_images/armin_image600_colored_fill.png?a=670ce8f7207ae82efd596bf172abda51", "b": "https://www.radiorecord.ru/upload/iblock/6c6/armin-van-buuren-violet-logo-4k-superstars-dutch-djs-violet-brickwall.jpg", "s": "https://radiorecord.hostingradio.ru/armin96.aacp", "g": ["TRANCE"], "c": "#ffffff"}, {"t": "Summer Lounge", "d": "Летний чил в стиле Cafe del Mar", "i": "https://www.radiorecord.ru/upload/stations_images/summerlounge_image600_colored_fill.png?a=8c2ca1639783c72ebff8c40d3f04f5d7", "b": "https://www.radiorecord.ru/upload/iblock/6cb/summerchil.jpg", "s": "https://radiorecord.hostingradio.ru/summerlounge96.aacp", "g": ["CHILL", "Лето", "Сон"], "c": "#ff6000"}, {"t": "Organic", "d": "Легкий грув. В стиле Tim Green и Sebastien Leger", "i": "https://www.radiorecord.ru/upload/stations_images/organic_image600_colored_fill.png?a=4ce0dee84546e4cf00cf726cebe5bb44", "b": "https://www.radiorecord.ru/upload/iblock/5fa/organic.jpeg", "s": "https://radiorecord.hostingradio.ru/organic96.aacp", "g": ["CHILL", "HOUSE"], "c": "#ff6000"}, {"t": "Ultra Music Festival", "d": "Live-сеты с одного из лучших электронных фестивалей мира", "i": "https://www.radiorecord.ru/upload/stations_images/ultra_image600_colored_fill.png?a=7b73be077a338adb6c4eb2260ebe67b8", "b": "https://www.radiorecord.ru/upload/iblock/c44/wallpaperflare.com_wallpaper.jpg", "s": "https://radiorecord.hostingradio.ru/ultra96.aacp", "g": ["HOUSE"], "c": "#ffffff"}, {"t": "VIP House", "d": "Изысканный саунд закрытых вечеринок", "i": "https://www.radiorecord.ru/upload/stations_images/vip_image600_colored_fill.png?a=acf9d89f0f47d88bca8dcdc40c89c455", "b": "https://www.radiorecord.ru/upload/iblock/4d2/VIPhouse.jpeg", "s": "https://radiorecord.hostingradio.ru/vip96.aacp", "g": ["HOUSE"], "c": "#ff6000"}, {"t": "Breaks", "d": "Лучшее из breakbeat, nu breaks и jungle", "i": "https://www.radiorecord.ru/upload/stations_images/brks_image600_colored_fill.png?a=0aa3b1bdf9fc14b36283dc6da3d46368", "b": "https://www.radiorecord.ru/upload/iblock/3b6/breaks.jpeg", "s": "https://radiorecord.hostingradio.ru/brks96.aacp", "g": ["BASS", "BREAKS"], "c": "#ff6000"}, {"t": "Liquid Funk", "d": "Атмосферный drum'n'bass", "i": "https://www.radiorecord.ru/upload/stations_images/liquidfunk_image600_colored_fill.png?a=b4c492909fd0d50b986c0bcfb01ae9d9", "b": "https://www.radiorecord.ru/upload/iblock/8db/liquidfunk.jpeg", "s": "https://radiorecord.hostingradio.ru/liquidfunk96.aacp", "g": ["DRUM"], "c": "#ffffff"}, {"t": "Workout", "d": "Бит для спортивного тонуса", "i": "https://www.radiorecord.ru/upload/stations_images/workout_image600_colored_fill.png?a=d5bbfa7e5fd5ec228aa85d61d4f71da2", "b": "https://www.radiorecord.ru/upload/iblock/80c/workout.jpeg", "s": "https://radiorecord.hostingradio.ru/workout96.aacp", "g": ["HOUSE", "HARD", "Спорт"], "c": "#ff6000"}, {"t": "EDM", "d": "Музыка стадионов. ", "i": "https://www.radiorecord.ru/upload/stations_images/club_image600_colored_fill.png?a=d1a0d750540ea47f126e919514a2e971", "b": "https://www.radiorecord.ru/upload/iblock/b8d/edm.jpeg", "s": "https://radiorecord.hostingradio.ru/club96.aacp", "g": ["HOUSE", "Спорт"], "c": "#ff6000"}, {"t": "Bass House", "d": "Современный house с характерным басом: Malaa, Volac, Valentino Khan", "i": "https://www.radiorecord.ru/upload/stations_images/jackin_image600_colored_fill.png?a=cd07856ee6784b5f48636f38464e22e8", "b": "https://www.radiorecord.ru/upload/iblock/63e/12301.jpg", "s": "https://radiorecord.hostingradio.ru/jackin96.aacp", "g": ["BASS", "HOUSE"], "c": "#ff6000"}, {"t": "GOA/PSY", "d": "Психоделический и Goa-trance", "i": "https://www.radiorecord.ru/upload/stations_images/goa_image600_colored_fill.png?a=3912a2cd4748fadee00b8d6676c5380b", "b": "https://www.radiorecord.ru/upload/iblock/46d/goapsy.jpeg", "s": "https://radiorecord.hostingradio.ru/goa96.aacp", "g": ["HARD", "TRANCE"], "c": "#ff6000"}, {"t": "10's Dance", "d": "Танцевальные хиты десятых", "i": "https://www.radiorecord.ru/upload/stations_images/2010_image600_colored_fill.png?a=20ca949d239e60b17aa9dc04b9a2d40a", "b": "https://www.radiorecord.ru/upload/iblock/71c/10s.jpeg", "s": "https://radiorecord.hostingradio.ru/201096.aacp", "g": ["HOUSE", "POP", "Эпохи"], "c": "#ffffff"}, {"t": "Trancehouse", "d": "Trancehouse - сочетание трансовой мелодики и хаусового бита.", "i": "https://www.radiorecord.ru/upload/stations_images/trancehouse_image600_colored_fill.png?a=681faab870cf8bb3e3f5f226bcfe239d", "b": "https://www.radiorecord.ru/upload/iblock/e4e/trancehouse2.jpeg", "s": "https://radiorecord.hostingradio.ru/trancehouse96.aacp", "g": ["CHILL", "HOUSE", "TRANCE"], "c": "#ff6000"}, {"t": "Black Rap", "d": "Рэп на английском", "i": "https://www.radiorecord.ru/upload/stations_images/yo_image600_colored_fill.png?a=51d4553786ca1e86f0b226d229a43911", "b": "https://www.radiorecord.ru/upload/iblock/67d/blackrap.jpeg", "s": "https://radiorecord.hostingradio.ru/yo96.aacp", "g": ["RAP/URBAN"], "c": "#ff6000"}, {"t": "Techno", "d": "Техно для тех, кто любит пожёстче", "i": "https://www.radiorecord.ru/upload/stations_images/techno_image600_colored_fill.png?a=9dadd3d6b2c597b1f55360fa70e241ae", "b": "https://www.radiorecord.ru/upload/iblock/a2d/techno.jpeg", "s": "https://radiorecord.hostingradio.ru/techno96.aacp", "g": ["HARD", "TECHNO"], "c": "#ff6000"}, {"t": "Tropical", "d": "Жаркий и солнечный house", "i": "https://www.radiorecord.ru/upload/stations_images/trop_image600_colored_fill.png?a=b3020dc37f601adf22cc0a6ae00447d2", "b": "https://www.radiorecord.ru/upload/iblock/3c4/tropical.jpeg", "s": "https://radiorecord.hostingradio.ru/trop96.aacp", "g": ["CHILL", "HOUSE", "Лето"], "c": "#ff6000"}, {"t": "Lo-Fi", "d": "Ламповый бит и треск винила. В стиле Nujabes и J Dilla", "i": "https://www.radiorecord.ru/upload/stations_images/lofi_image600_colored_fill.png?a=861ae1a11cd3d16b3a5d9246983044d4", "b": "https://www.radiorecord.ru/upload/iblock/b00/lofi.jpeg", "s": "https://radiorecord.hostingradio.ru/lofi96.aacp", "g": ["CHILL", "Сон"], "c": "#ff6000"}, {"t": "Tech House", "d": "На стыке хауса и техно. В стиле Fisher и Dont Blink", "i": "https://www.radiorecord.ru/upload/stations_images/techouse_image600_colored_fill.png?a=d80827e6430b60cffbb3ce64d8baa5ac", "b": "https://www.radiorecord.ru/upload/iblock/3aa/2572005.jpg", "s": "https://radiorecord.hostingradio.ru/techouse96.aacp", "g": ["HOUSE"], "c": "#ff6000"}, {"t": "Trap", "d": "Главные Trap-хиты: Yellow Claw, Apashe, DJ Snake", "i": "https://www.radiorecord.ru/upload/stations_images/trap_image600_colored_fill.png?a=c0e6f3c89a085ab4d06924a5dab9124c", "b": "https://www.radiorecord.ru/upload/iblock/3f7/trap.jpeg", "s": "https://radiorecord.hostingradio.ru/trap96.aacp", "g": ["BASS", "RAP/URBAN", "Спорт"], "c": "#ff6000"}, {"t": "Technopop", "d": "Технопоп эпохи 90-х: E-Type, Masterboy, Culture Beat", "i": "https://www.radiorecord.ru/upload/stations_images/technopop_image600_colored_fill.png?a=6ad027e6d732612197f1cb726d2b3273", "b": "https://www.radiorecord.ru/upload/iblock/c2e/5833545.jpg", "s": "https://radiorecord.hostingradio.ru/technopop96.aacp", "g": ["OLDSCHOOL"], "c": "#ff6000"}, {"t": "70's Dance", "d": "Легендарный грув. Abba, Boney M, Bee Gees", "i": "https://www.radiorecord.ru/upload/stations_images/1970_image600_colored_fill.png?a=5f86112ce6bb30ad0d35a752a7b5198e", "b": "https://www.radiorecord.ru/upload/iblock/278/5884275.jpg", "s": "https://radiorecord.hostingradio.ru/197096.aacp", "g": ["POP", "Эпохи"], "c": "#ffffff"}, {"t": "Dream Dance", "d": "Мелодичный trance 90х-00х: Robert Miles, ATB, Blank&Jones", "i": "https://www.radiorecord.ru/upload/stations_images/dream_image600_colored_fill.png?a=a03304ae591d8c1a29ed6771f2bfcaee", "b": "https://www.radiorecord.ru/upload/iblock/624/dreamdance.jpeg", "s": "https://radiorecord.hostingradio.ru/dream96.aacp", "g": ["OLDSCHOOL", "TRANCE"], "c": "#ff6000"}, {"t": "Neurofunk", "d": "Технологичный и стремительный бит: Black Sun Empire, Dimension, Camo & Krooked", "i": "https://www.radiorecord.ru/upload/stations_images/neurofunk_image600_colored_fill.png?a=84bbb5a2e3a5de86ce5846fd728dfe20", "b": "https://www.radiorecord.ru/upload/iblock/7a5/neurofunk.jpeg", "s": "https://radiorecord.hostingradio.ru/neurofunk96.aacp", "g": ["DRUM"], "c": "#ff6000"}, {"t": "Ambient", "d": "Атмосферный саунд", "i": "https://www.radiorecord.ru/upload/stations_images/ambient_image600_colored_fill.png?a=cee8fa934626d4370d35b85aac623c70", "b": "https://www.radiorecord.ru/upload/iblock/f47/ambient.jpeg", "s": "https://radiorecord.hostingradio.ru/ambient96.aacp", "g": ["CHILL", "Сон"], "c": "#ffffff"}, {"t": "Record Classix", "d": "Золотые танцевальные хиты Рекорда | hosted by MC Жан", "i": "https://www.radiorecord.ru/upload/stations_images/recordclassix_image600_colored_fill.png?a=ca7cb0112cf822a8473c491b396e3b67", "b": "https://www.radiorecord.ru/upload/iblock/edd/!_classix.jpg", "s": "https://radiorecord.hostingradio.ru/classix96.aacp", "g": ["HOUSE", "OLDSCHOOL", "Радиошоу"], "c": "#ffffff"}, {"t": "Record Club Show", "d": "Радиошоу об актуальной клубной музыке | hosted by Tim Vox", "i": "https://www.radiorecord.ru/upload/stations_images/recordclubshow_image600_colored_fill.png?a=fa3129ee0bbd92a557f16e4e58a5199a", "b": "https://www.radiorecord.ru/upload/iblock/cc0/!_recordclubshow.jpg", "s": "https://radiorecord.hostingradio.ru/clubshow96.aacp", "g": ["HOUSE", "Радиошоу"], "c": "#ffffff"}, {"t": "Eurodance", "d": "Дискотечные бэнгеры 90-х: Culture Beat, Haddaway, La Bouche", "i": "https://www.radiorecord.ru/upload/stations_images/eurodance_image600_colored_fill.png?a=2808ef347ea5633861a8dd792d2173e7", "b": "https://www.radiorecord.ru/upload/iblock/eaf/eurodance.jpeg", "s": "https://radiorecord.hostingradio.ru/eurodance96.aacp", "g": ["OLDSCHOOL", "POP"], "c": "#ff6000"}, {"t": "Lo-Fi House", "d": "Ламповый бит в стиле DJ Seinfeld & Bruce Trail.", "i": "https://www.radiorecord.ru/upload/stations_images/lo-fi-house_image600_colored_fill.png?a=81bd17cea7a546318a25b37be680263f", "b": "https://www.radiorecord.ru/upload/iblock/f9a/lf360.jpg", "s": "https://radiorecord.hostingradio.ru/lofihouse96.aacp", "g": ["CHILL", "HOUSE", "Сон"], "c": "#ffffff"}, {"t": "House Hits", "d": "Свежие house-новинки", "i": "https://www.radiorecord.ru/upload/stations_images/househits_image600_colored_fill.png?a=5a8bd1c683d61f7de8f13ad53245c97a", "b": "https://www.radiorecord.ru/upload/iblock/e48/househits.jpeg", "s": "https://radiorecord.hostingradio.ru/househits96.aacp", "g": ["HOUSE"], "c": "#ff6000"}, {"t": "Uplifting", "d": "Атмосферный и космический trance", "i": "https://www.radiorecord.ru/upload/stations_images/uplift_image600_colored_fill.png?a=7dfb9a8d2d6926523742e254aaecca85", "b": "https://www.radiorecord.ru/upload/iblock/1da/uplifting.jpeg", "s": "https://radiorecord.hostingradio.ru/uplift96.aacp", "g": ["HARD", "TRANCE"], "c": "#ff6000"}, {"t": "Feel", "d": "Главное trance-радиошоу России от DJ Feel", "i": "https://www.radiorecord.ru/upload/stations_images/feel_image600_colored_fill.png?a=d69a413086e080afc02431eccef62a55", "b": "https://www.radiorecord.ru/upload/iblock/ce9/2735861.jpg", "s": "https://radiorecord.hostingradio.ru/feel96.aacp", "g": ["TRANCE", "Радиошоу"], "c": "#ffffff"}, {"t": "Tiesto", "d": "Лучшие треки, ремиксы и коллабы ", "i": "https://www.radiorecord.ru/upload/stations_images/tiesto_image600_colored_fill.png?a=c8bb665e6026f6f1d33e8eea07c428a2", "b": "https://www.radiorecord.ru/upload/iblock/8f8/wp2495121.jpg", "s": "https://radiorecord.hostingradio.ru/tiesto96.aacp", "g": ["HOUSE", "POP"], "c": "#ffffff"}, {"t": "A State of Trance", "d": "Легендарное радиошоу Армина ван Бюрена", "i": "https://www.radiorecord.ru/upload/stations_images/a-state-of-trance_image600_colored_fill.png?a=081cdb563a05b3e28faa109859cdbe84", "b": "https://www.radiorecord.ru/upload/iblock/11a/8811149.jpg", "s": "https://radiorecord.hostingradio.ru/asot96.aacp", "g": ["TRANCE", "Радиошоу"], "c": "#ffffff"}, {"t": "Веснушка FM", "d": "Первоапрельский спецпроект: песни детства", "i": "https://www.radiorecord.ru/upload/stations_images/deti_image600_colored_fill.png?a=e3a05d0580a8c66f397392c02f19dbd9", "b": "https://www.radiorecord.ru/upload/iblock/a23/vsmbl.jpeg", "s": "https://radiorecord.hostingradio.ru/deti96.aacp", "g": ["RUSSIAN", "Прикол"], "c": "#ff6000"}, {"t": "Симфония FM", "d": "Первоапрельский спецпроект: Моцарт, Бетховен, Чайковский & co.", "i": "https://www.radiorecord.ru/upload/stations_images/symph_image600_colored_fill.png?a=af3c8785a28e8587d52dc93858b0895a", "b": "https://www.radiorecord.ru/upload/iblock/4ec/symphony.jpeg", "s": "https://radiorecord.hostingradio.ru/symph96.aacp", "g": ["Прикол", "Сон"], "c": "#ff6000"}, {"t": "Minimal/Tech", "d": "Саунд изысканных и дорогих party", "i": "https://www.radiorecord.ru/upload/stations_images/mini_image600_colored_fill.png?a=184c9744be6a1f44c776bdb457053f3f", "b": "https://www.radiorecord.ru/upload/iblock/07f/minimaltechno.jpeg", "s": "https://radiorecord.hostingradio.ru/mini96.aacp", "g": ["HOUSE"], "c": "#ffffff"}, {"t": "TOP 100 EDM", "d": "Актуальный топ электронной музыки", "i": "https://www.radiorecord.ru/upload/stations_images/top-100-edm_image600_colored_fill.png?a=392bf6a75cf4fa4ce741a60892992cba", "b": "https://www.radiorecord.ru/upload/iblock/38c/61678.jpg", "s": "https://radiorecord.hostingradio.ru/top100edm96.aacp", "g": ["HOUSE", "TECHNO"], "c": "#ff6000"}, {"t": "Dream Pop", "d": "Лёгкий вайб для отдыха и хорошего настроения", "i": "https://www.radiorecord.ru/upload/stations_images/dream-pop_image600_colored_fill.png?a=447a220be1ce5dcfa05bcdcaa907f189", "b": "https://www.radiorecord.ru/upload/iblock/55e/dreampop.jpeg", "s": "https://radiorecord.hostingradio.ru/dreampop96.aacp", "g": ["CHILL", "Лето"], "c": "#ffffff"}, {"t": "House Classics", "d": "Золотой фонд мелодичных house-хитов", "i": "https://www.radiorecord.ru/upload/stations_images/houseclss_image600_colored_fill.png?a=a20d9f2231a21f633241bd86a27e4c9f", "b": "https://www.radiorecord.ru/upload/iblock/bde/houseclassics.jpeg", "s": "https://radiorecord.hostingradio.ru/houseclss96.aacp", "g": ["HOUSE", "OLDSCHOOL"], "c": "#ff6000"}, {"t": "David Guetta", "d": "Лучшие треки, ремиксы и коллабы", "i": "https://www.radiorecord.ru/upload/stations_images/guetta_image600_colored_fill.png?a=d33fd5395a6dcf178eda3c4f6fd0ef27", "b": "https://www.radiorecord.ru/upload/iblock/ecc/david-guetta-blue--logo-4k-superstars-french-djs-blue-brickwall.jpg", "s": "https://radiorecord.hostingradio.ru/guetta96.aacp", "g": ["HOUSE", "POP"], "c": "#ffffff"}, {"t": "DJ Цветкоff", "d": "Радиошоу ди-джея Цветкова", "i": "https://www.radiorecord.ru/upload/stations_images/tsvetkov_image600_colored_fill.png?a=31d2765a1e4146f9ce3834e14dc22746", "b": "https://www.radiorecord.ru/upload/iblock/ba4/tsvetkoff.jpeg", "s": "https://radiorecord.hostingradio.ru/tsvetkov96.aacp", "g": ["Радиошоу"], "c": "#ffffff"}, {"t": "Disco/Funk", "d": "Disco-саунд нового тысячелетия", "i": "https://www.radiorecord.ru/upload/stations_images/discofunk_image600_colored_fill.png?a=50ff33233cecc7b9d90d26805e8a2870", "b": "https://www.radiorecord.ru/upload/iblock/8be/disco.jpeg", "s": "https://radiorecord.hostingradio.ru/discofunk96.aacp", "g": ["HOUSE"], "c": "#ff6000"}, {"t": "Hard Bass", "d": "Расколбас родившийся в Петербурге.", "i": "https://www.radiorecord.ru/upload/stations_images/hbass_image600_colored_fill.png?a=c2653c0ccac5a60152139bf15b3bae3a", "b": "https://www.radiorecord.ru/upload/iblock/11e/hardbass.jpeg", "s": "https://radiorecord.hostingradio.ru/hbass96.aacp", "g": ["BASS", "HARD", "OLDSCHOOL"], "c": "#ff6000"}, {"t": "Afro House", "d": "Этно-ритмы на стыке Kwaito & soulful house.", "i": "https://www.radiorecord.ru/upload/stations_images/afro_image600_colored_fill.png?a=dec486947ceb2b3e970064f7df486098", "b": "https://www.radiorecord.ru/upload/iblock/b70/afro.jpg", "s": "https://radiorecord.hostingradio.ru/afro96.aacp", "g": ["HOUSE", "Лето"], "c": "#ffffff"}, {"t": "Rave FM", "d": "Первоапрельский спецпроект", "i": "https://www.radiorecord.ru/upload/stations_images/rave_image600_colored_fill.png?a=0371492320e617a0dbbc891f9ddfc948", "b": "https://www.radiorecord.ru/upload/iblock/ea0/5210215.jpg", "s": "https://radiorecord.hostingradio.ru/rave96.aacp", "g": ["HARD", "OLDSCHOOL", "Прикол"], "c": "#ff6000"}, {"t": "Nu Dance", "d": "Дэнс на скорости 150 bpm в стиле Oliver Tree & Hardwell.", "i": "https://www.radiorecord.ru/upload/stations_images/nu-dance_image600_colored_fill.png?a=d9b19b0a12904fca45892fade237f3b3", "b": "https://www.radiorecord.ru/upload/iblock/6fe/nudance2.jpg", "s": "https://radiorecord.hostingradio.ru/nudance96.aacp", "g": ["TECHNO", "Спорт"], "c": "#ffffff"}, {"t": "60's Dance", "d": "Танцевальная музыка эпохи рок-н-ролла", "i": "https://www.radiorecord.ru/upload/stations_images/cadillac_image600_colored_fill.png?a=6564a296ce42eaa1ef9abf8bf1c52a8f", "b": "https://www.radiorecord.ru/upload/iblock/ea2/v1046-046a.jpg", "s": "https://radiorecord.hostingradio.ru/cadillac96.aacp", "g": ["POP", "Эпохи"], "c": "#ffffff"}, {"t": "Lady Waks", "d": "Радиошоу от первой леди breaks-ритмов", "i": "https://www.radiorecord.ru/upload/stations_images/lady-waks_image600_colored_fill.png?a=1d7a489c542e1e147c52624a6077c8f8", "b": "https://www.radiorecord.ru/upload/iblock/61d/5441686.jpg", "s": "https://radiorecord.hostingradio.ru/ladywaks96.aacp", "g": ["BREAKS", "Радиошоу"], "c": "#ffffff"}, {"t": "Dancecore", "d": "Dance на скорости до 150bpm", "i": "https://www.radiorecord.ru/upload/stations_images/dc_image600_colored_fill.png?a=1dc372645956dec8601acf6dc47916f4", "b": "https://www.radiorecord.ru/upload/iblock/68e/dancecore.jpeg", "s": "https://radiorecord.hostingradio.ru/dc96.aacp", "g": ["OLDSCHOOL"], "c": "#ff6000"}, {"t": "Future House", "d": "Future и Jackin' house: Don Diablo, Tchami, Oliver Heldens", "i": "https://www.radiorecord.ru/upload/stations_images/fut_image600_colored_fill.png?a=a26f6c5a594af7e536a384e9f705b6e4", "b": "https://www.radiorecord.ru/upload/iblock/068/futurehouse.jpeg", "s": "https://radiorecord.hostingradio.ru/fut96.aacp", "g": ["HOUSE"], "c": "#ff6000"}, {"t": "Darkside", "d": "Тёмная сторона drum'n'bass: Noisia, Panacea, Limewax", "i": "https://www.radiorecord.ru/upload/stations_images/darkside_image600_colored_fill.png?a=0cebd16d5f64fe36742c5b2d1086fdf8", "b": "https://www.radiorecord.ru/upload/iblock/3ae/darkside.jpeg", "s": "https://radiorecord.hostingradio.ru/darkside96.aacp", "g": ["DRUM"], "c": "#ff6000"}, {"t": "Future Rave", "d": "Включай и ты на рейве!", "i": "https://www.radiorecord.ru/upload/stations_images/futurerave_image600_colored_fill.png?a=a8654c92d9a6695c26cd49ae4b520a2d", "b": "https://www.radiorecord.ru/upload/iblock/bfa/futurerave.jpeg", "s": "https://radiorecord.hostingradio.ru/futurerave96.aacp", "g": ["HOUSE", "HARD", "TECHNO", "TRANCE"], "c": "#ffffff"}, {"t": "Reggae", "d": "Танцевальный вайб с берегов Ямайки", "i": "https://www.radiorecord.ru/upload/stations_images/reggae_image600_colored_fill.png?a=dfdd413b7b92c82485bd044564ab841d", "b": "https://www.radiorecord.ru/upload/iblock/5dd/reggae.jpeg", "s": "https://radiorecord.hostingradio.ru/reggae96.aacp", "g": ["OLDSCHOOL", "Лето"], "c": "#ff6000"}, {"t": "Electro", "d": "Лучшее в Electro-house: Wolfgang Gartner, Knife Party, Curbi", "i": "https://www.radiorecord.ru/upload/stations_images/elect_image600_colored_fill.png?a=26bcf263648f04bc4761dac2a851502e", "b": "https://www.radiorecord.ru/upload/iblock/b65/508.jpg", "s": "https://radiorecord.hostingradio.ru/elect96.aacp", "g": ["HOUSE"], "c": "#ff6000"}, {"t": "Hardstyle", "d": "Маршевый бас и мелодичный лид: бескомпромиссная смесь", "i": "https://www.radiorecord.ru/upload/stations_images/teo_image600_colored_fill.png?a=9437ab4585ced8084099074b16d83c4c", "b": "https://www.radiorecord.ru/upload/iblock/61e/hardstyle.jpeg", "s": "https://radiorecord.hostingradio.ru/teo96.aacp", "g": ["HARD"], "c": "#ff6000"}, {"t": "Dubstep", "d": "Басы на максимум!", "i": "https://www.radiorecord.ru/upload/stations_images/dub_image600_colored_fill.png?a=e7999d521c5d247c8a9745e2dbdd9970", "b": "https://www.radiorecord.ru/upload/iblock/7da/2144037.jpg", "s": "https://radiorecord.hostingradio.ru/dub96.aacp", "g": ["BASS", "Спорт"], "c": "#ff6000"}, {"t": "Progressive", "d": "Лучшее из progressive trance & house", "i": "https://www.radiorecord.ru/upload/stations_images/progr_image600_colored_fill.png?a=8aec28f66765c913eb447c55823b6edf", "b": "https://www.radiorecord.ru/upload/iblock/d9a/progressive.jpeg", "s": "https://radiorecord.hostingradio.ru/progr96.aacp", "g": ["HOUSE"], "c": "#ff6000"}, {"t": "Nejtrino & Baur", "d": "Радиошоу от резидентов Радио Record", "i": "https://www.radiorecord.ru/upload/stations_images/nejtrinobaur_image600_colored_fill.png?a=5b02cdae3c5a656726f38971634e5163", "b": "https://www.radiorecord.ru/upload/iblock/055/nejtrinobaur.jpeg", "s": "https://radiorecord.hostingradio.ru/nejtrinobaur96.aacp", "g": ["Радиошоу"], "c": "#ffffff"}, {"t": "Synthwave", "d": "Вайб в стиле электронной музыки 80-х", "i": "https://www.radiorecord.ru/upload/stations_images/synth_image600_colored_fill.png?a=f07a8e3bb6e08e27e0367568ce562fdf", "b": "https://www.radiorecord.ru/upload/iblock/20b/synthwave.jpeg", "s": "https://radiorecord.hostingradio.ru/synth96.aacp", "g": ["OLDSCHOOL", "POP"], "c": "#ff6000"}, {"t": "Latina Dance", "d": "Despacito, Gazolina, Danza Kuduro и подобное", "i": "https://www.radiorecord.ru/upload/stations_images/latina_image600_colored_fill.png?a=c29809095b22052ee94b14f6a211344c", "b": "https://www.radiorecord.ru/upload/iblock/34d/latinadance.jpeg", "s": "https://radiorecord.hostingradio.ru/latina96.aacp", "g": ["POP", "Лето"], "c": "#ffffff"}, {"t": "DJ Gvozd", "d": "Легендарное радиошоу о d'n'b музыке", "i": "https://www.radiorecord.ru/upload/stations_images/dj-gvozd_image600_colored_fill.png?a=dd6e8d3291b34d5f8d47e037b3de84ac", "b": "https://www.radiorecord.ru/upload/iblock/ac9/!_gvozd.jpg", "s": "https://radiorecord.hostingradio.ru/djgvozd96.aacp", "g": ["DRUM", "Радиошоу"], "c": "#ffffff"}, {"t": "EDM Classics", "d": "Фестивальные гимны", "i": "https://www.radiorecord.ru/upload/stations_images/edmhits_image600_colored_fill.png?a=43bcd185c1ba682a891e7035447ab204", "b": "https://www.radiorecord.ru/upload/iblock/cf2/edmhits.jpeg", "s": "https://radiorecord.hostingradio.ru/edmhits96.aacp", "g": ["HOUSE"], "c": "#ff5f00"}, {"t": "Tecktonik", "d": "Стиль, породивший танцевальный бум 2000-х", "i": "https://www.radiorecord.ru/upload/stations_images/tecktonik_image600_colored_fill.png?a=bf38e736b14f64a669f4cbdfa4514d94", "b": "https://www.radiorecord.ru/upload/iblock/70f/tecktonic.jpeg", "s": "https://radiorecord.hostingradio.ru/tecktonik96.aacp", "g": ["HOUSE", "OLDSCHOOL"], "c": "#ff6000"}, {"t": "Jungle", "d": "История и современность jungle-музыки: DJ Hype, Shy FX, Ed Rush", "i": "https://www.radiorecord.ru/upload/stations_images/jungle_image600_colored_fill.png?a=af618a0dda5f7ebb10e3f4527626e369", "b": "https://www.radiorecord.ru/upload/iblock/93f/jungle.jpeg", "s": "https://radiorecord.hostingradio.ru/jungle96.aacp", "g": ["DRUM"], "c": "#ff6000"}, {"t": "Hypnotic", "d": "Идеальный бэкграунд для работы или поездки в авто", "i": "https://www.radiorecord.ru/upload/stations_images/hypno_image600_colored_fill.png?a=cf7f982b803b310349d231494a5f1f7e", "b": "https://www.radiorecord.ru/upload/iblock/03c/hypnotic.jpeg", "s": "https://radiorecord.hostingradio.ru/hypno96.aacp", "g": ["HOUSE", "OLDSCHOOL"], "c": "#ff6000"}, {"t": "UK Garage", "d": "Атмосфера клубов восточного Лондона конца 90-х", "i": "https://www.radiorecord.ru/upload/stations_images/uk-garage_image600_colored_fill.png?a=0d89875fc1bd8608e973fc4e88e95e02", "b": "https://www.radiorecord.ru/upload/iblock/167/ukgarage.jpeg", "s": "https://radiorecord.hostingradio.ru/ukgarage96.aacp", "g": ["BREAKS", "HOUSE"], "c": "#ff6000"}, {"t": "Гастарбайтер FM", "d": "Первоапрельский спецпроект", "i": "https://www.radiorecord.ru/upload/stations_images/gast_image600_colored_fill.png?a=63c2ccb6a2d9c249d19108870d780977", "b": "https://www.radiorecord.ru/upload/iblock/2c1/gaterbaiter.jpeg", "s": "https://radiorecord.hostingradio.ru/gast96.aacp", "g": ["POP", "Прикол"], "c": "#ff6000"}, {"t": "Midtempo", "d": "Dance на минималках", "i": "https://www.radiorecord.ru/upload/stations_images/mt_image600_colored_fill.png?a=eee7e5e0a5fdff18972f0dcf2887df61", "b": "https://www.radiorecord.ru/upload/iblock/11b/midtempo.jpeg", "s": "https://radiorecord.hostingradio.ru/mt96.aacp", "g": ["BASS"], "c": "#ff6000"}, {"t": "Future Bass", "d": "Flume, Illenium, Marshmello", "i": "https://www.radiorecord.ru/upload/stations_images/fbass_image600_colored_fill.png?a=6ac678c875fc6d2ef606cb240a9fd8f2", "b": "https://www.radiorecord.ru/upload/iblock/4c1/futurebass.jpeg", "s": "https://radiorecord.hostingradio.ru/fbass96.aacp", "g": ["BASS"], "c": "#ff6000"}, {"t": "Martin Garrix", "d": "Радиошоу STMPD от Martin Garrix", "i": "https://www.radiorecord.ru/upload/stations_images/martingarrix_image600_colored_fill.png?a=25779dc4b24b44b6faac9efcbe6802bf", "b": "https://www.radiorecord.ru/upload/iblock/c57/martingarrix.jpeg", "s": "https://radiorecord.hostingradio.ru/martingarrix96.aacp", "g": ["Радиошоу"], "c": "#ffffff"}, {"t": "Oliver Heldens", "d": "Радиошоу Heldeep от знаменитого голландского DJ", "i": "https://www.radiorecord.ru/upload/stations_images/oliverheldens_image600_colored_fill.png?a=7affceb8dd2272fbe716585e2eabbf44", "b": "https://www.radiorecord.ru/upload/iblock/84b/oliverheldens.png", "s": "https://radiorecord.hostingradio.ru/oliverheldens96.aacp", "g": ["Радиошоу"], "c": "#ffffff"}, {"t": "Moombahton", "d": "Синтез house- и reggae-ритмов.", "i": "https://www.radiorecord.ru/upload/stations_images/mmbt_image600_colored_fill.png?a=44cdb91db317865209a04ff3a19eabc3", "b": "https://www.radiorecord.ru/upload/iblock/f9a/moombathon.jpg", "s": "https://radiorecord.hostingradio.ru/mmbt96.aacp", "g": ["POP"], "c": "#ff6000"}, {"t": "2-step", "d": "Атмосферные синкопированные ритмы", "i": "https://www.radiorecord.ru/upload/stations_images/2step_image600_colored_fill.png?a=c5cbe274a67279498c766d6085c11ecb", "b": "https://www.radiorecord.ru/upload/iblock/486/5171514.jpg", "s": "https://radiorecord.hostingradio.ru/2step96.aacp", "g": ["BASS", "BREAKS", "OLDSCHOOL"], "c": "#ffffff"}, {"t": "Complextro", "d": "Синтез house и dubstep", "i": "https://www.radiorecord.ru/upload/stations_images/complextro_image600_colored_fill.png?a=ec6358105fa4e1e0dea968051549262c", "b": "https://www.radiorecord.ru/upload/iblock/fe6/complextro.jpeg", "s": "https://radiorecord.hostingradio.ru/complextro96.aacp", "g": ["BASS", "HOUSE", "HARD"], "c": "#ff6000"}, {"t": "Groove/Tribal", "d": "Этнический бит", "i": "https://www.radiorecord.ru/upload/stations_images/groovetribal_image600_colored_fill.png?a=992d43b8f8334c5206b5bc7483051917", "b": "https://www.radiorecord.ru/upload/iblock/3e8/groovetribal.jpeg", "s": "https://radiorecord.hostingradio.ru/groovetribal96.aacp", "g": ["HOUSE"], "c": "#ff6000"}, {"t": "Christmas Chill", "d": "Downtempo-бит для тёплого новогоднего уюта", "i": "https://www.radiorecord.ru/upload/stations_images/christmas-chill_image600_colored_fill.png?a=4c9ec969cf1a3f7c2761d7442e3f76f8", "b": "https://www.radiorecord.ru/upload/iblock/0fb/christmaschill.jpeg", "s": "https://radiorecord.hostingradio.ru/christmaschill96.aacp", "g": ["CHILL", "Сон", "Новый год"], "c": "#ffffff"}, {"t": "Christmas", "d": "Популярные новогодние и рождественские треки", "i": "https://www.radiorecord.ru/upload/stations_images/christmas-radio_image600_colored_fill.png?a=c5a1636b42a3adf3a12ea2bbdb197939", "b": "https://www.radiorecord.ru/upload/iblock/2d1/christmas.jpeg", "s": "https://radiorecord.hostingradio.ru/christmas96.aacp", "g": ["OLDSCHOOL", "POP", "RUSSIAN", "Новый год"], "c": "#ffffff"}, {"t": "Русская Зима", "d": "Родные согревающие песни", "i": "https://www.radiorecord.ru/upload/stations_images/ruszima_image600_colored_fill.png?a=c79b236e79530d4c71ed9a538d34b27e", "b": "https://www.radiorecord.ru/upload/iblock/854/kanada-yoho-national-park-zima-les-gory-ozero-sneg-derevia-d.jpg", "s": "https://radiorecord.hostingradio.ru/ruszima96.aacp", "g": ["RUSSIAN", "Новый год"], "c": "#ffffff"}];
+const GENRES = ["Все","BASS","BREAKS","CHILL","DRUM","HARD","HOUSE","OLDSCHOOL","POP","RAP/URBAN","RUSSIAN","TECHNO","TRANCE"];
+let mode='phone', cur=-1, playing=false, genre='Все';
+const $=id=>document.getElementById(id);
+const audio=$('audio');
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function cardHTML(s,i){
+  return `<div class="card focusable${i===cur?' playing':''}" data-i="${i}" onclick="playStation(${i})" style="background:radial-gradient(circle at 50% 34%, ${s.c}2e 0%, transparent 72%),#12141d">
+    <img class="lg" src="${esc(s.i)}" alt="" loading="lazy" onerror="this.style.display='none'">
+    <div class="eq"><i></i><i></i><i></i></div>
+    <div class="pl">${i===cur&&playing?'⏸':'▶'}</div>
+    <div class="tx"><b>${esc(s.t)}</b><span>${esc(s.d||'Radio Record')}</span></div>
+  </div>`;
+}
+function renderRow(){
+  $('rowCnt').textContent = STATIONS.length + ' станций';
+  $('rowRadio').innerHTML = STATIONS.slice(0,10).map(cardHTML).join('') +
+    `<div class="morecard focusable" onclick="goAll()"><span class="arr">→</span><b>Ещё</b><span>Все ${STATIONS.length} станций</span></div>`;
+}
+function renderChips(){
+  $('chips').innerHTML = GENRES.map(g=>`<button class="chip focusable${genre===g?' on':''}" onclick="setGenre('${g}')">${g}</button>`).join('');
+}
+function filtered(){
+  const q=$('q').value.trim().toLowerCase();
+  return STATIONS.map((s,i)=>({s,i})).filter(({s})=>(genre==='Все'||s.g.includes(genre))&&(!q||s.t.toLowerCase().includes(q)||(s.d||'').toLowerCase().includes(q)));
+}
+function renderAll(){
+  renderChips();
+  const list=filtered();
+  $('allCnt').textContent = list.length + ' из ' + STATIONS.length;
+  $('grid').innerHTML = list.map(({s,i})=>cardHTML(s,i)).join('');
+  $('empty').style.display = list.length?'none':'block';
+}
+function setGenre(g){genre=g;renderAll();}
+function goAll(){$('viewHome').classList.remove('show');$('viewAll').classList.add('show');renderAll();if(mode==='tv')focusFirst();}
+function goHome(){$('viewAll').classList.remove('show');$('viewHome').classList.add('show');if(mode==='tv')focusFirst();}
+function syncUI(){
+  document.querySelectorAll('.card').forEach(c=>{
+    const on=+c.dataset.i===cur;
+    c.classList.toggle('playing',on&&playing);
+    const b=c.querySelector('.pl'); if(b) b.textContent = on?(playing?'⏸':'▶'):'▶';
+  });
+  const s=STATIONS[cur];
+  if(cur>=0&&s){
+    $('mini').classList.add('show'); $('mini').classList.toggle('playing',playing);
+    $('mImg').src=s.i; $('mTitle').textContent=s.t;
+    $('mSub').textContent=(s.d||'Radio Record')+' · '+(s.g[0]||'');
+    $('mPlay').textContent=playing?'⏸':'▶';
+    $('fImg').src=s.i; $('fTitle').textContent=s.t;
+    $('fSub').textContent=s.d||'Radio Record';
+    $('fBg').style.backgroundImage=`url("${s.b}")`;
+    $('fPlay').textContent=playing?'⏸':'▶';
+    $('full').classList.toggle('paused',!playing);
+  }
+}
+function playStation(i){
+  cur=i; const s=STATIONS[i];
+  audio.src=s.s; audio.play().catch(()=>{});
+  playing=true; syncUI();
+}
+function togglePlay(){
+  if(cur<0) return playStation(0);
+  playing=!playing;
+  if(playing) audio.play().catch(()=>{}); else audio.pause();
+  syncUI();
+}
+function stopRadio(){audio.pause();playing=false;cur=-1;$('mini').classList.remove('show');closeFull();document.querySelectorAll('.card.playing').forEach(c=>c.classList.remove('playing'));}
+function stepStation(d){
+  if(cur<0) return playStation(0);
+  playStation((cur+d+STATIONS.length)%STATIONS.length);
+}
+function setFocus(el){document.querySelectorAll('.focused').forEach(e=>e.classList.remove('focused'));if(el)el.classList.add('focused');}
+function openFull(){if(cur<0)return;$('full').classList.add('show');syncUI();if(mode==='tv')setFocus($('fPlay'));}
+function closeFull(){$('full').classList.remove('show');if(mode==='tv'&&cur>=0){const vis=[...document.querySelectorAll('.card[data-i="'+cur+'"]')].find(c=>c.offsetParent!==null);if(vis)setFocus(vis);}}
+$('mini').addEventListener('click',e=>{if(e.target.closest('button'))return;openFull();});
+audio.addEventListener('error',()=>{playing=false;syncUI();});
+function setMode(m){
+  mode=m;
+  $('segPhone').classList.toggle('on',m==='phone');
+  $('segTv').classList.toggle('on',m==='tv');
+  $('hintPhone').style.display=m==='phone'?'block':'none';
+  $('hintTv').style.display=m==='tv'?'block':'none';
+  $('remote').style.display=m==='tv'?'block':'none';
+  const st=$('stage'); st.classList.toggle('phone',m==='phone'); st.classList.toggle('tv',m==='tv');
+  fit(); if(m==='tv') focusFirst();
+}
+function fit(){
+  const w=document.querySelector('.stage-wrap').clientWidth-40;
+  const base=mode==='phone'?390:1280;
+  $('stage').style.transform=`scale(${Math.min(1,w/base)})`;
+  document.querySelector('.stage-wrap').style.height=($('stage').offsetHeight*Math.min(1,w/base)+20)+'px';
+}
+/* ---- TV focus: nearest neighbour ---- */
+function focusables(){
+  const vis=el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&el.offsetParent!==null;};
+  return [...document.querySelectorAll('#stage .focusable')].filter(el=>vis(el)&&!el.closest('.view:not(.show)')&&!el.closest('#full:not(.show)')&&!el.closest('#mini:not(.show)'));
+}
+function focusFirst(){
+  const f=focusables(); document.querySelectorAll('.focused').forEach(e=>e.classList.remove('focused'));
+  if(f.length) f[0].classList.add('focused');
+}
+function moveFocus(dir){
+  const f=focusables(); if(!f.length) return;
+  let curEl=document.querySelector('.focused');
+  if(!curEl||!f.includes(curEl)){focusFirst();return;}
+  const r=curEl.getBoundingClientRect();
+  const cx=r.left+r.width/2, cy=r.top+r.height/2;
+  let best=null,bestScore=1e9;
+  for(const el of f){
+    if(el===curEl) continue;
+    const b=el.getBoundingClientRect(), ex=b.left+b.width/2, ey=b.top+b.height/2;
+    const dx=ex-cx, dy=ey-cy;
+    if(dir==='left'&&dx>=-4) continue; if(dir==='right'&&dx<=4) continue;
+    if(dir==='up'&&dy>=-4) continue; if(dir==='down'&&dy<=4) continue;
+    const main=dir==='left'||dir==='right'?Math.abs(dx):Math.abs(dy);
+    const cross=dir==='left'||dir==='right'?Math.abs(dy):Math.abs(dx);
+    const score=main+cross*2.2;
+    if(score<bestScore){bestScore=score;best=el;}
+  }
+  if(best){document.querySelectorAll('.focused').forEach(e=>e.classList.remove('focused'));best.classList.add('focused');best.scrollIntoView({block:'nearest',inline:'nearest'});}
+}
+function remoteKey(k){
+  if(k==='left')moveFocus('left');
+  else if(k==='right')moveFocus('right');
+  else if(k==='up')moveFocus('up');
+  else if(k==='down')moveFocus('down');
+  else if(k==='ok'){const f=document.querySelector('.focused');if(f)f.click();}
+  else if(k==='back'){if($('full').classList.contains('show'))closeFull();else if($('viewAll').classList.contains('show'))goHome();}
+  else if(k==='play')togglePlay();
+  else if(k==='next')stepStation(1);
+  else if(k==='prev')stepStation(-1);
+}
+document.addEventListener('keydown',e=>{
+  if(mode!=='tv') return;
+  const k=e.key;
+  if(k==='ArrowLeft'){remoteKey('left');e.preventDefault();}
+  else if(k==='ArrowRight'){remoteKey('right');e.preventDefault();}
+  else if(k==='ArrowUp'){remoteKey('up');e.preventDefault();}
+  else if(k==='ArrowDown'){remoteKey('down');e.preventDefault();}
+  else if(k==='Enter'){remoteKey('ok');e.preventDefault();}
+  else if(k==='Backspace'||k==='Escape'){remoteKey('back');e.preventDefault();}
+  else if(k==='MediaPlayPause'){remoteKey('play');e.preventDefault();}
+  else if(k==='MediaTrackNext'){remoteKey('next');e.preventDefault();}
+  else if(k==='MediaTrackPrevious'){remoteKey('prev');e.preventDefault();}
+});
+window.addEventListener('resize',fit);
+renderRow(); renderAll(); fit();
+</script>
+</body>
+</html>
