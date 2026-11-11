@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawflix — welcome: чернила вместо видео (превью v1)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0b0e14; color: #fff; font-family: "Manrope", system-ui, sans-serif; min-height: 100vh; padding: 18px 16px 32px; }
+  h1 { font-size: 19px; font-weight: 800; }
+  .sub { color: rgba(255,255,255,.6); font-size: 14px; margin-top: 6px; max-width: 720px; line-height: 1.5; }
+  .sub b { color: #F7C948; font-weight: 600; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 16px 0; }
+  .bar button { font: inherit; font-size: 14px; font-weight: 600; color: rgba(255,255,255,.8);
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); border-radius: 999px;
+    padding: 8px 16px; cursor: pointer; }
+  .bar button.on { background: #F7C948; border-color: #F7C948; color: #1A1405; }
+  /* ===== Рамка-эмулятор ===== */
+  .frame { position: relative; margin: 0 auto; overflow: hidden; border-radius: 18px;
+    border: 1px solid rgba(255,255,255,.14); background: #04060F; box-shadow: 0 18px 60px rgba(0,0,0,.55); }
+  .frame.phone { width: min(390px, 100%); aspect-ratio: 390 / 844; }
+  .frame.tv { width: min(1060px, 100%); aspect-ratio: 16 / 9; }
+  canvas#ink { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .shade { position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 75% 60% at 50% 46%, rgba(8,12,24,0) 0%, rgba(4,7,16,.55) 100%); }
+  /* ===== Welcome-колонка (упрощённо: фон — предмет превью, панель как в 2.51) ===== */
+  .col { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+  .frame.tv .col { transform: scale(.82); }
+  .cat { width: 62%; max-width: 270px; margin-bottom: -8px; position: relative; z-index: 3; filter: drop-shadow(0 10px 24px rgba(0,0,0,.5)); }
+  .frame.tv .cat { width: 26%; max-width: 360px; }
+  .panel { background: rgba(5,9,20,.88); border: 1px solid rgba(247,201,72,.22); border-radius: 24px;
+    padding: 30px 30px 26px; display: flex; flex-direction: column; align-items: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,.5); backdrop-filter: blur(6px); }
+  .logo { display: flex; align-items: baseline; font-weight: 800; font-size: 44px; letter-spacing: .01em; line-height: 1; }
+  .frame.tv .logo { font-size: 40px; }
+  .logo .p { color: #F7C948; font-size: 64px; line-height: .8; }
+  .frame.tv .logo .p { font-size: 60px; }
+  .logo .aw { color: #fff; } .logo .flix { color: #F7C948; }
+  .rule { width: 72px; height: 3px; background: linear-gradient(90deg, transparent, #F7C948, transparent); margin-top: 16px; border-radius: 2px; }
+  .tag { color: rgba(247,201,72,.75); font-size: 12px; letter-spacing: .42em; margin-top: 12px; font-weight: 600; }
+  .phrase { color: #E9DDBA; font-size: 15px; margin-top: 26px; min-height: 22px; text-align: center; }
+  .trail { display: flex; gap: 10px; margin-top: 10px; }
+  .trail i { width: 14px; height: 14px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: #F7C948; opacity: .9; }
+  .trail i:nth-child(odd) { transform: translateY(5px); }
+  .trail i:nth-child(even) { transform: translateY(-5px); }
+  .pct { color: #F7C948; font-size: 14px; margin-top: 12px; font-weight: 600; }
+  .btn { margin-top: 26px; background: #F7C948; color: #1A1405; font-weight: 800; font-size: 18px;
+    border-radius: 999px; padding: 14px 30px; display: flex; gap: 10px; align-items: center; }
+  .note { color: rgba(255,255,255,.45); font-size: 13px; margin: 14px auto 0; max-width: 720px; line-height: 1.5; text-align: center; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+  <h1>Welcome: чернила вместо видео — v1</h1>
+  <p class="sub">Замена для <b>welcome_ink.mp4 (9,3 МБ)</b>, убранного в 2.51. Тот же мотив — цветные чернила в воде, — но живым canvas: <b>эта страница ~15 КБ</b>, в APK добавила бы почти ничего. Цвета — из палитры pawflix (золото, розовый, фиолет), чернила медленно плывут и распускаются. Панель и котик — упрощённо, как в 2.51; предмет превью — только фон.</p>
+  <div class="bar">
+    <button id="bPhone" class="on">📱 Телефон</button>
+    <button id="bTv">📺 ТВ</button>
+    <button id="bPause">⏸ Пауза</button>
+    <button id="bPanel">🙈 Без панели</button>
+  </div>
+  <div class="frame phone" id="frame">
+    <canvas id="ink"></canvas>
+    <div class="shade"></div>
+    <div class="col" id="col">
+      <img class="cat" src="welcome-cat-v1.png" alt="котик pawflix">
+      <div class="panel">
+        <div class="logo"><span class="p">P</span><span class="aw">aw</span><span class="flix">flix</span></div>
+        <div class="rule"></div>
+        <div class="tag">КИНО С УСАМИ</div>
+        <div class="phrase">Греем попкорн. Кот уже попробовал. Весь.</div>
+        <div class="trail"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="pct">0%</div>
+        <div class="btn">▶&nbsp; Мяу, поехали!</div>
+      </div>
+    </div>
+  </div>
+  <p class="note">Если эффект нравится — следующим шагом портирую его в WelcomeView как нативный Canvas (без WebView и без видео). Если слишком пёстрый — скажи, сделаю спокойнее: только золото на тёмном, или медленнее в два раза.</p>
+<script>
+(function () {
+  var cv = document.getElementById('ink'), ctx = cv.getContext('2d');
+  var frame = document.getElementById('frame');
+  var PALETTE = [
+    [247, 201, 72],   /* золото pawflix */
+    [255, 92, 168],   /* розовый */
+    [124, 92, 255],   /* фиолет */
+    [55, 200, 180],   /* бирюза — как чернила в видео */
+    [90, 140, 255]    /* синий */
+  ];
+  var blobs = [], running = true, raf = 0, last = 0;
+  function resize() {
+    var r = frame.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    cv.width = Math.max(2, Math.round(r.width * dpr));
+    cv.height = Math.max(2, Math.round(r.height * dpr));
+  }
+  function spawn(alpha0) {
+    var c = PALETTE[(Math.random() * PALETTE.length) | 0];
+    return {
+      x: Math.random(), y: Math.random(),
+      r: 0.10 + Math.random() * 0.22,          /* доля меньшей стороны */
+      vx: (Math.random() - .5) * 0.00012, vy: (Math.random() - .5) * 0.00010,
+      c: c, a: 0, peak: 0.10 + Math.random() * 0.12,
+      age: 0, life: 14000 + Math.random() * 16000, wob: Math.random() * 6.28
+    };
+  }
+  function init() {
+    blobs = [];
+    for (var i = 0; i < 13; i++) { var b = spawn(); b.age = Math.random() * b.life; blobs.push(b); }
+  }
+  function tick(t) {
+    raf = requestAnimationFrame(tick);
+    if (!running) { last = t; return; }
+    var dt = Math.min(50, t - (last || t)); last = t;
+    var W = cv.width, H = cv.height, m = Math.min(W, H);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#04060F'; ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+    for (var i = 0; i < blobs.length; i++) {
+      var b = blobs[i];
+      b.age += dt; b.x += b.vx * dt; b.y += b.vy * dt; b.wob += dt * 0.0004;
+      if (b.x < -0.3) b.x = 1.3; if (b.x > 1.3) b.x = -0.3;
+      if (b.y < -0.3) b.y = 1.3; if (b.y > 1.3) b.y = -0.3;
+      var ph = b.age / b.life;
+      b.a = ph < 0.25 ? b.peak * (ph / 0.25) : (ph > 0.7 ? b.peak * (1 - (ph - 0.7) / 0.3) : b.peak);
+      if (ph >= 1) { blobs[i] = spawn(); continue; }
+      var r = b.r * m * (1 + 0.12 * Math.sin(b.wob));
+      var g = ctx.createRadialGradient(b.x * W, b.y * H, 0, b.x * W, b.y * H, r);
+      g.addColorStop(0, 'rgba(' + b.c[0] + ',' + b.c[1] + ',' + b.c[2] + ',' + b.a + ')');
+      g.addColorStop(0.55, 'rgba(' + b.c[0] + ',' + b.c[1] + ',' + b.c[2] + ',' + (b.a * 0.45) + ')');
+      g.addColorStop(1, 'rgba(' + b.c[0] + ',' + b.c[1] + ',' + b.c[2] + ',0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(b.x * W, b.y * H, r, 0, 6.2832); ctx.fill();
+    }
+  }
+  document.getElementById('bPhone').onclick = function () {
+    frame.className = 'frame phone';
+    this.classList.add('on'); document.getElementById('bTv').classList.remove('on'); resize();
+  };
+  document.getElementById('bTv').onclick = function () {
+    frame.className = 'frame tv';
+    this.classList.add('on'); document.getElementById('bPhone').classList.remove('on'); resize();
+  };
+  document.getElementById('bPause').onclick = function () {
+    running = !running; this.textContent = running ? '⏸ Пауза' : '▶ Пуск';
+  };
+  document.getElementById('bPanel').onclick = function () {
+    var col = document.getElementById('col'), off = col.classList.toggle('hidden');
+    this.textContent = off ? '🐾 С панелью' : '🙈 Без панели';
+  };
+  document.addEventListener('visibilitychange', function () { last = 0; });
+  window.addEventListener('resize', resize);
+  resize(); init();
+  raf = requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
