@@ -1,5 +1,5 @@
 {
-  "versionCode": 25,
-  "versionName": "1.22-dev",
-  "notes": "Подписи убраны у всех трёх иконок панели плеера (аудио, субтитры, PiP) — только иконки, без текста."
+  "versionCode": 26,
+  "versionName": "1.23-dev",
+  "notes": "Плеер принимает DASH/HLS по MIME-типу интента (application/dash+xml, application/x-mpegURL): фильтр плеера и определение типа в buildMediaItem."
 }
