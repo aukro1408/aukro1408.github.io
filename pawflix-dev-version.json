@@ -1,5 +1,5 @@
 {
-  "version_code": 273,
-  "version_name": "2.73-dev",
-  "notes": "Zetflix: 10-я строка Custom-хаба (официальный API zetflix.kim/api/v1, три плеера VideoHub/NextEmbed/Alloha, внешний плеер, сериалы); отступ Стриминги-Радио сжат"
+  "version_code": 274,
+  "version_name": "2.74-dev",
+  "notes": "Zetflix починен: Плеер 1 нативный через VideoHub plapi (озвучки/серии, прямая ссылка), Плеер 3 — перепись хоста Alloha на новый, внешний плеер ловит и прямые mp4; Плеер 2 без изменений"
 }
