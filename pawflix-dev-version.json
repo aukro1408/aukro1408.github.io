@@ -1,5 +1,4 @@
 {
-  "version_code": 274,
-  "version_name": "2.74-dev",
-  "notes": "Zetflix починен: Плеер 1 нативный через VideoHub plapi (озвучки/серии, прямая ссылка), Плеер 3 — перепись хоста Alloha на новый, внешний плеер ловит и прямые mp4; Плеер 2 без изменений"
+  "version_code": 275,
+  "version_name": "2.75-dev"
 }
