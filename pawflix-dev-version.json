@@ -1,1 +1,5 @@
-{"version_code": 302, "version_name": "3.02-dev", "notes": "Seasonvar удалён полностью по слову Denis; добавлен UAFlix (uafix.net → zetvideo.net, прямые .m3u8, фильмы и сериалы, карточки серий v3 как в VideoHubSeries); исправлена обводка карточек серий в фокусе — кольцо 4dp #F7C948 теперь рисуется поверх кадра."}
+{
+  "version_code": 303,
+  "version_name": "3.03-dev",
+  "notes": "Фикс UAFlix (баг Denis 19:31 «Прямая ссылка не получена»): embed zetvideo требует Referer https://uafix.net/ — fetchHtml теперь шлёт Referer всегда; guard «404 Not Found» в resolveVodToBest; регрессионный тест (Uaflix 60 PASS)."
+}
