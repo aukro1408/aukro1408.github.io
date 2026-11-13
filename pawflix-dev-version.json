@@ -1,1 +1,1 @@
-{"version_code": 305, "version_name": "3.05-dev", "notes": "Ashdi — 13-я строка Custom (фильмы + сериалы): прямые .m3u8 с ashdi.vip через uafilmy.com, выбор озвучки, сериалы — нативные карточки серий, резолв только свежий (токен ротируется при каждой загрузке embed)."}
+{"version_code": 306, "version_name": "3.06-dev", "notes": "Ashdi — фикс чёрного пустого экрана (баг 3.05: в init не было addView(scroll) — у FrameLayout не было ни одного ребёнка); + регрессионный тест в TestAshdi.kt."}
