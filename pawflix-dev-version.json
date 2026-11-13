@@ -1,5 +1,1 @@
-{
-  "version_code": 303,
-  "version_name": "3.03-dev",
-  "notes": "Фикс UAFlix (баг Denis 19:31 «Прямая ссылка не получена»): embed zetvideo требует Referer https://uafix.net/ — fetchHtml теперь шлёт Referer всегда; guard «404 Not Found» в resolveVodToBest; регрессионный тест (Uaflix 60 PASS)."
-}
+{"version_code": 304, "version_name": "3.04-dev", "notes": "UAFlix: поиск больше не авто-открывает первое совпадение — при нескольких совпадениях (напр. «Астрал»: 8 частей) показывается список «Выберите:»; авто-открытие только при единственном совпадении."}
