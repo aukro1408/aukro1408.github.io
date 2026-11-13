@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Кадри — страница фильма v1 (Backrooms)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #07080d; color: #fff; font-family: 'Nunito', system-ui, sans-serif; min-height: 100vh; }
+  /* переключатель Телефон / ТВ */
+  .switch { position: fixed; top: 12px; right: 12px; z-index: 20; display: flex; background: rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.2); border-radius: 99px; padding: 3px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .switch button { border: 0; background: transparent; color: #fff; font-family: inherit; font-size: 13px; font-weight: 700; padding: 7px 14px; border-radius: 99px; cursor: pointer; }
+  .switch button.on { background: #f7c948; color: #1a1405; }
+  /* шапка телефона: вертикальный постер 2:3 от верхней кромки, инфа на градиенте 170px */
+  .phone-head { position: relative; }
+  .phone-head .poster { width: 100%; max-width: 480px; margin: 0 auto; display: block; aspect-ratio: 2/3; object-fit: cover; object-position: top; }
+  .phone-head::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 170px; background: linear-gradient(180deg, transparent, rgba(7,8,13,.92)); }
+  .phone-head .info { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 14px; }
+  /* шапка ТВ: бэкдроп 16:9, инфа на нём, затемнение 40px под низом инфы */
+  .tv-head { display: none; position: relative; }
+  .tv-head .backdrop { grid-area: 1/1; width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+  .tv-head .info { grid-area: 1/1; align-self: end; margin-bottom: 20px; padding: 64px 14px 14px; z-index: 2; }
+  .tv-head::after { content: ''; grid-area: 1/1; align-self: end; height: 40px; background: linear-gradient(180deg, transparent, #07080d); z-index: 1; }
+  body.tv .phone-head { display: none; }
+  body.tv .tv-head { display: grid; }
+  h1 { font-family: 'Manrope', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.15; }
+  .badge { display: inline-flex; margin-top: 10px; height: 26px; padding: 0 10px; border-radius: 13px; background: #f7c948; color: #1a1304; font-size: 13px; font-weight: 700; align-items: center; gap: 4px; }
+  .facts { margin-top: 8px; font-size: 14px; color: #fff; }
+  .genres { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .genres span { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16); color: #fff; font-size: 13px; font-weight: 700; padding: 7px 14px; border-radius: 99px; }
+  .watch { margin-top: 14px; width: 164px; height: 56px; border-radius: 28px; border: 1px solid #f7c948; background: #12131a; color: #fff; font-family: inherit; font-size: 17px; font-weight: 700; cursor: pointer; }
+  .sec { padding: 4px 14px 24px; }
+  .sec h2 { font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .sec h2::before { content: ''; width: 4px; height: 20px; background: #f7c948; border-radius: 2px; }
+  .count { font-size: 13px; font-weight: 700; color: #1a1304; background: #f7c948; border-radius: 99px; padding: 3px 10px; }
+  .desc-wrap { padding: 20px 14px 8px; }
+  .desc { font-size: 15px; line-height: 1.5; color: rgba(255,255,255,.85); }
+  /* карусель кадров */
+  .kadry { display: flex; gap: 12px; overflow-x: auto; padding: 4px 14px 8px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .kadry::-webkit-scrollbar { display: none; }
+  .kadr { flex: 0 0 240px; scroll-snap-align: start; border: 0; padding: 0; background: none; cursor: pointer; border-radius: 12px; overflow: hidden; }
+  .kadr img { width: 240px; height: 135px; object-fit: cover; display: block; background: #1a1c26; }
+  .kadr:focus-visible { outline: 3px solid #f7c948; outline-offset: 2px; }
+  body.tv .kadr { flex-basis: 320px; }
+  body.tv .kadr img { width: 320px; height: 180px; }
+  .kadry-note { padding: 0 14px 24px; font-size: 13px; color: rgba(255,255,255,.55); }
+  /* лайтбокс на весь экран */
+  .lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.94); display: none; align-items: center; justify-content: center; }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 100vw; max-height: 100vh; object-fit: contain; }
+  .lb-close { position: absolute; top: 14px; right: 14px; z-index: 2; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(0,0,0,.5); color: #fff; font-size: 22px; cursor: pointer; }
+  .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 48px; height: 48px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(0,0,0,.5); color: #fff; font-size: 24px; cursor: pointer; }
+  .lb-prev { left: 14px; } .lb-next { right: 14px; }
+  .lb-count { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 2; font-size: 14px; font-weight: 700; background: rgba(0,0,0,.55); padding: 6px 14px; border-radius: 99px; }
+  .foot { padding: 0 14px 32px; font-size: 13px; color: rgba(255,255,255,.5); line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="switch"><button id="btnPhone" class="on" onclick="setMode(false)">Телефон</button><button id="btnTv" onclick="setMode(true)">ТВ</button></div>
+
+<!-- шапка телефона -->
+<div class="phone-head">
+  <img class="poster" src="https://image.tmdb.org/t/p/w500/oBY8IQb9NpzbkCo0xzpz7Q1DCu.jpg" alt="Backrooms — постер">
+  <div class="info">
+    <h1>Закулисье реальности</h1>
+    <span class="badge">★ TMDB 7.0</span>
+    <div class="facts">2026 · 110 мин · Backrooms</div>
+    <div class="genres"><span>ужасы</span><span>детектив</span><span>фантастика</span></div>
+    <button class="watch" type="button">▶ Смотреть</button>
+  </div>
+</div>
+
+<!-- шапка ТВ -->
+<div class="tv-head">
+  <img class="backdrop" src="https://image.tmdb.org/t/p/w1280/QNE9Ihuas4duMHJYGQgAcuRtXz.jpg" alt="Backrooms — бэкдроп">
+  <div class="info">
+    <h1>Закулисье реальности</h1>
+    <span class="badge">★ TMDB 7.0</span>
+    <div class="facts">2026 · 110 мин · Backrooms</div>
+    <div class="genres"><span>ужасы</span><span>детектив</span><span>фантастика</span></div>
+    <button class="watch" type="button">▶ Смотреть</button>
+  </div>
+</div>
+
+<div class="desc-wrap">
+  <p class="desc">Когда неудачливый продавец мебели Кларк обнаруживает скрытый портал в другое измерение в подвале своего магазина, он оказывается в бесконечном лабиринте извилистых жёлтых коридоров. В этом мире время и пространство не подчиняются логике, а нечто жуткое может скрываться за каждым углом.</p>
+</div>
+
+<div class="sec">
+  <h2>Кадри <span class="count">174</span></h2>
+  <div class="kadry" id="kadry"></div>
+  <p class="kadry-note">В превью — 13 кадров из 174. В приложении ряд покажет все, листается горизонтально, тап — на весь экран.</p>
+</div>
+
+<p class="foot">Превью v1 · Кадры — из TMDB (тот же источник и ключ, что у постеров и бэкдропов), до 3840×2160. Новый источник не нужен. Ряд стоит под описанием, перед остальными секциями страницы фильма.</p>
+
+<div class="lightbox" id="lightbox">
+  <button class="lb-close" type="button" onclick="closeLb()" aria-label="Закрыть">✕</button>
+  <button class="lb-nav lb-prev" type="button" onclick="stepLb(-1)" aria-label="Назад">‹</button>
+  <img id="lbImg" src="" alt="Кадр из фильма">
+  <button class="lb-nav lb-next" type="button" onclick="stepLb(1)" aria-label="Вперёд">›</button>
+  <div class="lb-count" id="lbCount"></div>
+</div>
+
+<script>
+  // Кадры Backrooms (TMDB 1083381), топ по голосам + единственный русскоязычный бэкдроп.
+  // thumbs w780, полный экран w1280 (в нативе — original, до 3840×2160).
+  var FRAMES = [
+    '/QNE9Ihuas4duMHJYGQgAcuRtXz.jpg',
+    '/ezDDB2CwgzBqJwxu2fFG6i2CuDd.jpg',
+    '/dqmMWNWfLnExDRpMtIMqI97GQFR.jpg',
+    '/wjwMC7u3xWKkrronolBqsIy4L0L.jpg',
+    '/2aA8iPlMCks3k131ymFBAY6FL0b.jpg',
+    '/hdb37RqVWtUWksDnqXmbVq1CADF.jpg',
+    '/rlMxiz5CBVApEYOruqClw5pEun3.jpg',
+    '/2DgwyfAq7wxs4Rv1DP5psakZBW4.jpg',
+    '/qxotJ8dEQzhPY8WuSup4HWfHukq.jpg',
+    '/liDNdp04oJZGg6FQA5LOCUbrcsi.jpg',
+    '/bSGaA5w2ldjwznBnNlZgvQn0p2h.jpg',
+    '/neRLILl7WyqOjkaIhqFBkYxLxxp.jpg',
+    '/QDvqEdHfkCOZi6ItMCFOnyG8z8.jpg'
+  ];
+  var TOTAL = 174, cur = 0;
+  var row = document.getElementById('kadry');
+  FRAMES.forEach(function (p, i) {
+    var b = document.createElement('button');
+    b.className = 'kadr'; b.type = 'button';
+    b.setAttribute('aria-label', 'Кадр ' + (i + 1));
+    var im = document.createElement('img');
+    im.src = 'https://image.tmdb.org/t/p/w780' + p;
+    im.alt = 'Кадр ' + (i + 1) + ' из фильма Backrooms';
+    im.loading = 'lazy';
+    b.appendChild(im);
+    b.onclick = function () { openLb(i); };
+    row.appendChild(b);
+  });
+  function openLb(i) {
+    cur = i;
+    document.getElementById('lbImg').src = 'https://image.tmdb.org/t/p/w1280' + FRAMES[cur];
+    document.getElementById('lbCount').textContent = (cur + 1) + ' / ' + TOTAL;
+    document.getElementById('lightbox').classList.add('open');
+  }
+  function closeLb() { document.getElementById('lightbox').classList.remove('open'); }
+  function stepLb(d) { openLb((cur + d + FRAMES.length) % FRAMES.length); }
+  document.getElementById('lightbox').addEventListener('click', function (e) { if (e.target === this) closeLb(); });
+  document.addEventListener('keydown', function (e) {
+    if (!document.getElementById('lightbox').classList.contains('open')) return;
+    if (e.key === 'Escape') closeLb();
+    if (e.key === 'ArrowLeft') stepLb(-1);
+    if (e.key === 'ArrowRight') stepLb(1);
+  });
+  function setMode(tv) {
+    document.body.classList.toggle('tv', tv);
+    document.getElementById('btnPhone').classList.toggle('on', !tv);
+    document.getElementById('btnTv').classList.toggle('on', tv);
+  }
+</script>
+</body>
+</html>
