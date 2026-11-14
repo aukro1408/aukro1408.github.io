@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IPTV в pawflix — макет v3</title>
+<!-- v3: иконка IPTV Gold из файла Denis 1:1, маленькая, слева от «Детские каналы» -->
+<style>
+  /* Иконка IPTV Gold — из файла Denis 1:1 (ушки анимированы) */
+  .row-icon{flex:none; display:flex; align-items:center; margin-right:10px;}
+  .row-icon svg{height:24px; width:auto; overflow:visible; display:block;}
+  .tv .row-icon svg{height:32px;}
+  .row-icon .ear-left{transform-box:view-box;transform-origin:48px 65px;animation:leftEar 6s ease-in-out infinite}
+  .row-icon .ear-right{transform-box:view-box;transform-origin:134px 65px;animation:rightEar 7s ease-in-out infinite}
+  @keyframes leftEar{0%,100%{transform:rotate(0)}22%{transform:rotate(-5deg)}48%{transform:rotate(1deg)}72%{transform:rotate(-2deg)}}
+  @keyframes rightEar{0%,100%{transform:rotate(0)}25%{transform:rotate(3.5deg)}52%{transform:rotate(-1deg)}78%{transform:rotate(2deg)}}
+  @media(prefers-reduced-motion:reduce){.row-icon .ear-left,.row-icon .ear-right{animation:none}}
+</style>
+<style>
+  :root{
+    --bg:#07080D; --panel:#0E1018; --glass:rgba(255,255,255,.06);
+    --gold:#F7C948; --text:#F4F4F6; --mute:#8B8FA3; --pink:#FF5CA8; --violet:#7C5CFF;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  body{background:#111; color:var(--text); font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif; min-height:100vh;}
+  .toolbar{display:flex; gap:10px; align-items:center; justify-content:center; padding:14px 10px; position:sticky; top:0; z-index:50; background:#111;}
+  .toolbar b{font-size:14px; color:#ddd;}
+  .seg{display:flex; background:#222; border-radius:999px; padding:3px;}
+  .seg button{border:0; background:transparent; color:#bbb; font-size:14px; padding:7px 16px; border-radius:999px; cursor:pointer;}
+  .seg button.on{background:var(--gold); color:#111; font-weight:700;}
+  .toolbar .note{font-size:12px; color:#888;}
+  /* ---------- frame ---------- */
+  .stage{display:flex; justify-content:center; padding:6px 0 40px;}
+  .phone{width:400px; max-width:96vw; height:780px; background:var(--bg); border-radius:28px; overflow:hidden; position:relative; box-shadow:0 0 0 6px #222, 0 20px 60px rgba(0,0,0,.6);}
+  .tv{width:1120px; max-width:96vw; height:660px; background:var(--bg); border-radius:14px; overflow:hidden; position:relative; box-shadow:0 0 0 6px #222, 0 20px 60px rgba(0,0,0,.6);}
+  .screen{position:absolute; inset:0; overflow-y:auto; scrollbar-width:none;}
+  .screen::-webkit-scrollbar{display:none;}
+  .view{display:none;}
+  .view.on{display:block;}
+  /* ---------- dock ---------- */
+  .dock{display:flex; align-items:center; gap:4px; padding:12px 14px 6px; position:sticky; top:0; z-index:20; background:linear-gradient(#07080D 70%, transparent);}
+  .dock .logo{font-weight:900; font-size:19px; margin-right:10px;}
+  .dock .logo span{color:var(--gold);}
+  .dock button{border:0; background:transparent; color:var(--mute); font-size:13px; padding:7px 10px; border-radius:999px; cursor:pointer;}
+  .dock button.on{background:rgba(247,201,72,.14); color:var(--gold); font-weight:700;}
+  .tv .dock{padding:16px 22px 8px;}
+  .tv .dock .logo{font-size:26px;}
+  .tv .dock button{font-size:17px; padding:9px 14px;}
+  /* ---------- hero (упрощённо) ---------- */
+  .hero{margin:6px 14px 0; height:170px; border-radius:18px; background:linear-gradient(120deg,#1b1030,#3d1030 55%,#0c2a33); position:relative; overflow:hidden;}
+  .hero .h-title{position:absolute; left:18px; bottom:44px; font-size:26px; font-weight:900;}
+  .hero .h-sub{position:absolute; left:18px; bottom:20px; font-size:13px; color:#cfc8e8;}
+  .hero .h-pill{position:absolute; left:18px; top:16px; background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.25); font-size:11px; padding:5px 10px; border-radius:999px;}
+  .tv .hero{margin:8px 22px 0; height:230px;}
+  .tv .hero .h-title{font-size:38px; bottom:56px; left:26px;}
+  .tv .hero .h-sub{font-size:17px; bottom:26px; left:26px;}
+  /* ---------- rows ---------- */
+  .row{margin-top:22px;}
+  .row-head{display:flex; align-items:center; padding:0 16px; gap:0;}
+  .stripe{width:5px; height:14px; background:#fff; border-radius:2px; flex:none;}
+  .row-head h2{font-size:20px; font-weight:800; margin-left:12px;}
+  .row-head .count{color:var(--mute); font-size:13px; margin-left:8px;}
+  .row-head .more{color:var(--gold); font-size:15px; margin-left:12px; cursor:pointer; background:none; border:0;}
+  .row-head .shuffle{margin-left:auto; background:var(--glass); border:1px solid rgba(255,255,255,.12); color:var(--text); font-size:12px; padding:6px 10px; border-radius:999px; cursor:pointer;}
+  .tv .row-head{padding:0 22px;}
+  .tv .stripe{width:7px; height:19px;}
+  .tv .row-head h2{font-size:27px;}
+  .tv .row-head .count{font-size:17px;}
+  .tv .row-head .more{font-size:19px;}
+  .tv .row-head .shuffle{font-size:15px; padding:8px 14px;}
+  .rail{display:flex; gap:14px; overflow-x:auto; padding:14px 16px 4px; scrollbar-width:none;}
+  .rail::-webkit-scrollbar{display:none;}
+  .tv .rail{gap:19px; padding:19px 22px 6px;}
+  .card{flex:none; width:148px; height:148px; border-radius:16px; position:relative; overflow:hidden; cursor:pointer; border:2px solid transparent;}
+  .card .nm{position:absolute; left:0; right:0; bottom:0; padding:34px 10px 10px; font-weight:800; font-size:15px; line-height:1.15; background:linear-gradient(transparent, rgba(0,0,0,.72));}
+  .card .live{position:absolute; top:8px; left:8px; background:#E4444E; color:#fff; font-size:10px; font-weight:700; padding:3px 7px; border-radius:999px;}
+  .card .epg{position:absolute; top:8px; right:8px; background:rgba(0,0,0,.5); color:#fff; font-size:10px; padding:3px 7px; border-radius:999px;}
+  .tv .card{width:196px; height:196px; border-radius:20px;}
+  .tv .card .nm{font-size:20px; padding:44px 14px 14px;}
+  .card.more-tile{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; background:var(--panel); border:2px dashed rgba(247,201,72,.55); color:var(--gold);}
+  .card.more-tile .big{font-size:26px; font-weight:800;}
+  .card.more-tile .small{font-size:12px; color:var(--mute);}
+  .tv .card.more-tile .big{font-size:32px;}
+  .tv .card.more-tile .small{font-size:15px;}
+  .card:focus, .card.focused{outline:none; border-color:var(--gold); box-shadow:0 0 0 2px var(--gold);}
+  .mini{flex:none; width:110px; height:64px; border-radius:12px; background:var(--panel); display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--mute);}
+  .tv .mini{width:150px; height:86px; font-size:15px;}
+  /* ---------- IPTV page ---------- */
+  .page-head{display:flex; align-items:center; gap:12px; padding:16px 16px 0;}
+  .page-head .back{background:var(--glass); border:1px solid rgba(255,255,255,.12); color:var(--text); width:38px; height:38px; border-radius:12px; font-size:18px; cursor:pointer; flex:none;}
+  .page-head .logo{width:40px; height:40px; border-radius:13px; background:linear-gradient(135deg,#FF8A3D,#E4444E); display:flex; align-items:center; justify-content:center; font-size:20px; flex:none;}
+  .page-head h1{font-size:20px; font-weight:800;}
+  .page-head .sub{font-size:12px; color:var(--mute);}
+  .tv .page-head{padding:20px 22px 0;}
+  .tv .page-head .back{width:48px; height:48px; font-size:22px;}
+  .tv .page-head h1{font-size:26px;}
+  .tv .page-head .sub{font-size:15px;}
+  .pills{display:flex; gap:8px; overflow-x:auto; padding:14px 16px 0; scrollbar-width:none;}
+  .pills::-webkit-scrollbar{display:none;}
+  .pills button{flex:none; border:1px solid rgba(255,255,255,.14); background:var(--glass); color:var(--text); font-size:13px; padding:9px 16px; border-radius:999px; cursor:pointer;}
+  .pills button.on{background:rgba(247,201,72,.16); border-color:var(--gold); color:var(--gold); font-weight:700;}
+  .tv .pills button{font-size:16px; padding:11px 20px;}
+  .cat{margin:10px 16px 0; background:var(--glass); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer;}
+  .cat .ic{width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:19px; flex:none;}
+  .cat .t{font-size:16px; font-weight:700;}
+  .cat .c{font-size:12px; color:var(--mute);}
+  .cat .arr{margin-left:auto; color:var(--mute); font-size:18px;}
+  .tv .cat{margin:12px 22px 0; padding:18px 20px;}
+  .tv .cat .ic{width:52px; height:52px; font-size:24px;}
+  .tv .cat .t{font-size:20px;}
+  .tv .cat .c{font-size:15px;}
+  .ch{margin:10px 16px 0; background:var(--glass); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:12px 14px; display:flex; gap:12px; cursor:pointer; align-items:flex-start;}
+  .ch .logo-box{width:56px; height:56px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:20px; color:#fff; flex:none;}
+  .ch .body{flex:1; min-width:0;}
+  .ch .nm{font-size:15px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .ch .now{font-size:12px; color:#E8D9B0; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .ch .now b{color:var(--gold); font-weight:600;}
+  .ch .bar{height:3px; background:rgba(255,255,255,.14); border-radius:99px; margin-top:7px; overflow:hidden;}
+  .ch .bar i{display:block; height:100%; background:linear-gradient(90deg,#FF8A3D,#F7C948); border-radius:99px;}
+  .ch .next{font-size:12px; color:var(--mute); margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .ch .side{display:flex; flex-direction:column; align-items:center; gap:8px; flex:none; padding-top:2px;}
+  .ch .side span{font-size:17px; color:var(--mute);}
+  .ch .side span.fav{color:var(--gold);}
+  .tv .ch{margin:12px 22px 0; padding:16px 18px;}
+  .tv .ch .logo-box{width:72px; height:72px; font-size:26px;}
+  .tv .ch .nm{font-size:19px;}
+  .tv .ch .now, .tv .ch .next{font-size:15px;}
+  .hint{margin:18px 16px 26px; font-size:12px; color:var(--mute); line-height:1.5;}
+  .tv .hint{font-size:14px; margin:20px 22px 30px;}
+  .foot-note{text-align:center; color:#555; font-size:11px; padding:18px 0 26px;}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <b>IPTV в pawflix — макет v3</b>
+  <div class="seg">
+    <button id="segPhone" class="on" onclick="setMode('phone')">📱 Телефон</button>
+    <button id="segTv" onclick="setMode('tv')">📺 ТВ</button>
+  </div>
+  <span class="note">тап по карточке / «Ещё» — открывает страницу IPTV</span>
+</div>
+
+<div class="stage">
+  <div id="frame" class="phone">
+
+    <!-- ============ ГЛАВНАЯ ============ -->
+    <div class="screen">
+      <div class="view on" id="view-home">
+        <div class="dock">
+          <div class="logo">paw<span>flix</span></div>
+          <button class="on">Главная</button><button>Коллекции</button><button>Каталог</button><button>Поиск</button><button onclick="goSettings()">Настройки</button>
+        </div>
+        <div class="hero">
+          <div class="h-pill">✦ Пик недели</div>
+          <div class="h-title">Обитель зла</div>
+          <div class="h-sub">2026 · ужасы · 1 ч 42 мин</div>
+        </div>
+
+        <div class="row">
+          <div class="row-head"><span class="stripe"></span><h2>Стриминги</h2><span class="count">9 сервисов</span></div>
+          <div class="rail">
+            <div class="mini">Netflix</div><div class="mini">Kinopoisk</div><div class="mini">Okko</div><div class="mini">Ivi</div><div class="mini">Amediateka</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="row-head"><span class="stripe"></span><h2>Радио</h2><span class="count">117 станций</span><button class="more" onclick="goIptv()">Ещё ›</button></div>
+          <div class="rail">
+            <div class="card" style="background:linear-gradient(135deg,#E4444E,#8B1E3F)"><div class="nm">Record</div></div>
+            <div class="card" style="background:linear-gradient(135deg,#2D7DFF,#1B2A6B)"><div class="nm">DFM</div></div>
+            <div class="card" style="background:linear-gradient(135deg,#FF9A3D,#E4444E)"><div class="nm">Energy</div></div>
+            <div class="card" style="background:linear-gradient(135deg,#7C5CFF,#3D2A8B)"><div class="nm">Europa+</div></div>
+            <div class="card" style="background:linear-gradient(135deg,#3ECF6E,#0E5B33)"><div class="nm">Радио 7</div></div>
+          </div>
+        </div>
+
+        <!-- ======= НОВЫЙ РЯД: IPTV / Детские каналы ======= -->
+        <div class="row" id="iptv-row">
+          <div class="row-head">
+            <span class="row-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 190" role="img" aria-label="IPTV Gold logo">
+<defs>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#FFE78A"/>
+    <stop offset="45%" stop-color="#F5C94F"/>
+    <stop offset="100%" stop-color="#D99A20"/>
+  </linearGradient>
+  <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#FFF3B8"/>
+    <stop offset="100%" stop-color="#E7AD32"/>
+  </linearGradient>
+</defs>
+<g fill="none" stroke="url(#gold)" stroke-linecap="round" stroke-linejoin="round">
+  <g class="ear-left">
+    <path d="M37 65 L48 13 Q50 7 56 12 L91 48" stroke-width="8"/>
+    <path d="M49 34 L76 59" stroke-width="3" opacity=".65"/>
+  </g>
+  <g class="ear-right">
+    <path d="M91 48 L127 12 Q133 7 135 14 L146 65" stroke-width="8"/>
+    <path d="M134 34 L106 59" stroke-width="3" opacity=".65"/>
+  </g>
+  <path d="M39 66 Q26 75 26 96 V139 Q26 169 58 169 H126 Q158 169 158 139 V96 Q158 75 145 66 Q133 57 119 59 H65 Q51 57 39 66Z" stroke-width="8"/>
+  <path d="M43 91 Q43 76 59 76 H125 Q141 76 141 91 V137 Q141 153 125 153 H59 Q43 153 43 137Z" stroke-width="1.8" opacity=".55"/>
+  <path d="M82 94 Q78 91 78 99 V130 Q78 138 85 134 L115 116 Q122 112 115 108Z" fill="url(#shine)" stroke="none"/>
+  <path d="M65 160 H119" stroke-width="2" opacity=".8"/>
+</g>
+<g fill="none" stroke="url(#gold)" stroke-width="3.5" stroke-linecap="round">
+  <path d="M153 28 Q166 39 153 50" opacity=".9"/>
+  <path d="M164 18 Q184 39 164 60" opacity=".55"/>
+</g>
+<text x="197" y="169" font-family="Arial, Helvetica, sans-serif"
+      font-size="112" font-weight="800" letter-spacing="-5">
+  <tspan fill="#FFFFFF">IP</tspan><tspan fill="url(#gold)">TV</tspan>
+</text>
+<path d="M201 181 H530" stroke="url(#gold)" stroke-width="2.5"
+      stroke-linecap="round" opacity=".7"/>
+</svg></span><h2 id="iptvRowTitle">Детские каналы</h2><span class="count" id="iptvCount">48 каналов · IPTV</span>
+          </div>
+          <div class="rail" id="iptvRail"></div>
+        </div>
+
+        <div class="row">
+          <div class="row-head"><span class="stripe"></span><h2>История</h2></div>
+          <div class="rail">
+            <div class="mini">Друзья S1E1</div><div class="mini">Астрал 6</div><div class="mini">Обитель зла</div>
+          </div>
+        </div>
+        <div class="foot-note">макет v3 · иконка IPTV Gold из твоего файла, маленькая, слева от «Детские каналы»</div>
+      </div>
+
+      <!-- ============ СТРАНИЦА IPTV ============ -->
+      <div class="view" id="view-iptv">
+        <div class="page-head">
+          <button class="back" onclick="goHome()">‹</button>
+          <div class="logo">📺</div>
+          <div><h1>IPTV</h1><div class="sub" id="plName">Плейлист · 214 каналов</div></div>
+        </div>
+        <div class="pills">
+          <button>🔍 Поиск</button><button>↻ Обновить</button><button>Плейлист</button><button class="on">EPG</button><button>Архив</button>
+        </div>
+        <div id="cats"></div>
+        <div id="channels" style="display:none"></div>
+        <div class="hint" id="pageHint">Как в Zaprudna44: категории из плейлиста, у канала — что идёт сейчас, прогресс передачи, «Далее», архив и звезда в избранное. Тап по категории открывает каналы.</div>
+      </div>
+
+      <!-- ============ НАСТРОЙКИ → IPTV ============ -->
+      <div class="view" id="view-settings">
+        <div class="page-head">
+          <button class="back" onclick="goHome()">‹</button>
+          <div class="logo">⚙️</div>
+          <div><h1>Настройки</h1><div class="sub">IPTV</div></div>
+        </div>
+        <div style="padding:16px 16px 0; font-size:13px; color:var(--mute)">ПЛЕЙЛИСТЫ</div>
+        <div class="cat" onclick="this.style.borderColor='#F7C948'">
+          <div class="ic" style="background:linear-gradient(135deg,#2D7DFF,#7C5CFF)">📺</div>
+          <div><div class="t">only4tv</div><div class="c">активный · 214 каналов</div></div>
+          <div class="arr">●</div>
+        </div>
+        <div class="cat" onclick="this.style.borderColor='#F7C948'">
+          <div class="ic" style="background:linear-gradient(135deg,#3ECF6E,#0E9E5B)">➕</div>
+          <div><div class="t">Добавить плейлист</div><div class="c">ссылка на m3u</div></div>
+          <div class="arr">›</div>
+        </div>
+        <div style="padding:18px 16px 0; font-size:13px; color:var(--mute)">КАТЕГОРИЯ НА ГЛАВНОЙ</div>
+        <div class="cat" onclick="cycleCat(this)">
+          <div class="ic" style="background:linear-gradient(135deg,#FF9A3D,#FF5C5C)">🧒</div>
+          <div><div class="t" id="pinnedCat">Детские</div><div class="c">ряд на главной показывает эту категорию · тап — сменить</div></div>
+          <div class="arr">›</div>
+        </div>
+        <div style="padding:18px 16px 0; font-size:13px; color:var(--mute)">СКРЫТЫЕ КАТЕГОРИИ</div>
+        <div id="hideList"></div>
+        <div style="padding:18px 16px 0; font-size:13px; color:var(--mute)">ЗАЩИТА</div>
+        <div class="cat">
+          <div class="ic" style="background:linear-gradient(135deg,#F7C948,#B8860B)">🔒</div>
+          <div><div class="t">PIN-код для скрытых категорий</div><div class="c">установлен · •••••• · тап — сменить</div></div>
+          <div class="arr">›</div>
+        </div>
+        <div class="hint">Скрытая категория не показывается ни на главной, ни на странице IPTV. Открыть её можно только после ввода PIN-кода.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* v1 */
+const KIDS = [
+  {n:"Карусель", g:"linear-gradient(135deg,#FF9A3D,#FF5C5C)", now:"Спокойной ночи, малыши!", t:"20:30–20:45", p:62, next:"Маша и Медведь · 20:45"},
+  {n:"Мульт", g:"linear-gradient(135deg,#3ECF6E,#0E9E5B)", now:"Смешарики", t:"19:00–19:25", p:40, next:"Фиксики · 19:25"},
+  {n:"СТС Kids", g:"linear-gradient(135deg,#B45CFF,#FF5CA8)", now:"Три кота", t:"18:40–19:05", p:78, next:"Лунтик · 19:05"},
+  {n:"Nickelodeon", g:"linear-gradient(135deg,#FF7A00,#FFB800)", now:"Губка Боб", t:"19:10–19:35", p:30, next:"Мой шумный дом · 19:35"},
+  {n:"Cartoon Network", g:"linear-gradient(135deg,#222,#4A4A6A)", now:"Удивительный мир Гамбола", t:"19:00–19:30", p:55, next:"Время приключений · 19:30"},
+  {n:"Disney", g:"linear-gradient(135deg,#2D7DFF,#7C5CFF)", now:"Гравити Фолз", t:"18:30–19:00", p:85, next:"Финес и Ферб · 19:00"},
+  {n:"TiJi", g:"linear-gradient(135deg,#E4444E,#FF8A3D)", now:"Октонавты", t:"19:05–19:20", p:48, next:"Пожарный Сэм · 19:20"},
+  {n:"Мультимания", g:"linear-gradient(135deg,#00B8C4,#0077FF)", now:"Барбоскины", t:"19:15–19:40", p:22, next:"Маша и Медведь · 19:40"},
+  {n:"Детский мир", g:"linear-gradient(135deg,#5CB8FF,#2D7DFF)", now:"Ну, погоди!", t:"19:20–19:35", p:70, next:"Простоквашино · 19:35"},
+  {n:"Рыжий", g:"linear-gradient(135deg,#FF6B35,#F7C948)", now:"Щенячий патруль", t:"19:00–19:25", p:44, next:"Вспыш и чудо-машинки · 19:25"},
+  {n:"JimJam", g:"linear-gradient(135deg,#F7C948,#FF9A3D)", now:"Боб-строитель", t:"18:50–19:10", p:90, next:"Томас и друзья · 19:10"},
+  {n:"Boomerang", g:"linear-gradient(135deg,#7C5CFF,#2D7DFF)", now:"Том и Джерри", t:"19:05–19:30", p:36, next:"Скуби-Ду · 19:30"},
+  {n:"Disney Junior", g:"linear-gradient(135deg,#FF5CA8,#B45CFF)", now:"Микки Маус: клуб", t:"19:10–19:35", p:28, next:"София Прекрасная · 19:35"},
+  {n:"Мама", g:"linear-gradient(135deg,#C98BFF,#7C5CFF)", now:"Школа волшебства", t:"19:00–19:20", p:64, next:"Сказки на ночь · 19:20"},
+  {n:"Ani", g:"linear-gradient(135deg,#8B5CF6,#EC4899)", now:"Леди Баг", t:"19:15–19:40", p:52, next:"Винкс · 19:40"},
+  {n:"В гостях у сказки", g:"linear-gradient(135deg,#F7C948,#B8860B)", now:"Сказка на ночь", t:"19:30–20:00", p:18, next:"Спокойной ночи, малыши! · 20:00"},
+];
+const CATS = [
+  {n:"Детские", c:"48 каналов", ic:"🧒", g:"linear-gradient(135deg,#FF9A3D,#FF5C5C)"},
+  {n:"Избранное", c:"0 каналов", ic:"⭐", g:"linear-gradient(135deg,#F7C948,#B8860B)"},
+  {n:"Новости", c:"32 канала", ic:"📰", g:"linear-gradient(135deg,#2D7DFF,#7C5CFF)"},
+  {n:"Фильмы", c:"64 канала", ic:"🎬", g:"linear-gradient(135deg,#B45CFF,#FF5CA8)"},
+  {n:"Спорт", c:"18 каналов", ic:"⚽", g:"linear-gradient(135deg,#3ECF6E,#0E9E5B)"},
+  {n:"Музыка", c:"25 каналов", ic:"🎵", g:"linear-gradient(135deg,#00B8C4,#0077FF)"},
+  {n:"Познавательные", c:"21 канал", ic:"🔭", g:"linear-gradient(135deg,#5CB8FF,#2D7DFF)"},
+];
+let pool = [...KIDS];
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function renderRow(){
+  const rail = document.getElementById('iptvRail');
+  const ten = pool.slice(0,10);
+  rail.innerHTML = ten.map(k=>`
+    <div class="card" style="background:${k.g}" onclick="goIptv()" tabindex="0">
+      <span class="live">● LIVE</span>
+      <div class="nm">${k.n}</div>
+    </div>`).join('') + `
+    <div class="card more-tile" onclick="goIptv()" tabindex="0">
+      <div class="big">Ещё ›</div><div class="small">все 48 каналов</div>
+    </div>`;
+}
+function shuffleRow(){ shuffle(pool); renderRow(); }
+function renderCats(){
+  document.getElementById('cats').innerHTML = CATS.map((c,i)=>`
+    <div class="cat" onclick="openCat(${i})">
+      <div class="ic" style="background:${c.g}">${c.ic}</div>
+      <div><div class="t">${c.n}</div><div class="c">${c.c}</div></div>
+      <div class="arr">›</div>
+    </div>`).join('');
+}
+function openCat(i){
+  const c = CATS[i];
+  const list = (c.n === "Детские") ? KIDS.slice(0,12) : KIDS.slice(0,6);
+  document.getElementById('cats').style.display = 'none';
+  const ch = document.getElementById('channels');
+  ch.style.display = 'block';
+  ch.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 0">
+      <button onclick="backCats()" style="background:var(--glass);border:1px solid rgba(255,255,255,.12);color:var(--text);border-radius:12px;width:34px;height:34px;cursor:pointer">‹</button>
+      <div style="font-size:18px;font-weight:800">${c.n}</div>
+      <div style="color:var(--mute);font-size:13px">${c.c}</div>
+    </div>` +
+    list.map((k,idx)=>`
+    <div class="ch" onclick="this.querySelector('.nm').style.color='#F7C948'">
+      <div class="logo-box" style="background:${k.g}">${k.n[0]}</div>
+      <div class="body">
+        <div class="nm">${k.n}</div>
+        <div class="now">${k.now} &nbsp;<b>${k.t}</b></div>
+        <div class="bar"><i style="width:${k.p}%"></i></div>
+        <div class="next">Далее: ${k.next}</div>
+      </div>
+      <div class="side"><span title="Архив">🕐</span><span class="${idx===0?'fav':''}">${idx===0?'★':'☆'}</span></div>
+    </div>`).join('');
+  document.getElementById('pageHint').textContent = 'Тап по каналу — открывает плеер (в приложении — встроенный/внешний, как у остальных строк). 🕐 — архив передач, ★ — в избранное.';
+}
+function backCats(){
+  document.getElementById('channels').style.display = 'none';
+  document.getElementById('cats').style.display = 'block';
+  document.getElementById('pageHint').textContent = 'Как в Zaprudna44: категории из плейлиста, у канала — что идёт сейчас, прогресс передачи, «Далее», архив и звезда в избранное. Тап по категории открывает каналы.';
+}
+function goIptv(){
+  document.getElementById('view-home').classList.remove('on');
+  document.getElementById('view-settings').classList.remove('on');
+  document.getElementById('view-iptv').classList.add('on');
+  document.querySelector('.screen').scrollTop = 0;
+  backCats();
+}
+function goHome(){
+  document.getElementById('view-iptv').classList.remove('on');
+  document.getElementById('view-settings').classList.remove('on');
+  document.getElementById('view-home').classList.add('on');
+  document.querySelector('.screen').scrollTop = 0;
+}
+function goSettings(){
+  document.getElementById('view-home').classList.remove('on');
+  document.getElementById('view-iptv').classList.remove('on');
+  document.getElementById('view-settings').classList.add('on');
+  document.querySelector('.screen').scrollTop = 0;
+  renderHideList();
+}
+const HIDE_CATS = [
+  {n:"18+", hidden:true}, {n:"Детские", hidden:false}, {n:"Новости", hidden:false},
+  {n:"Фильмы", hidden:false}, {n:"Спорт", hidden:false}, {n:"Музыка", hidden:false},
+  {n:"Познавательные", hidden:false},
+];
+function renderHideList(){
+  document.getElementById('hideList').innerHTML = HIDE_CATS.map((c,i)=>`
+    <div class="cat" onclick="toggleHide(${i}, this)">
+      <div class="ic" style="background:${c.hidden?'linear-gradient(135deg,#444,#222)':'linear-gradient(135deg,#3ECF6E,#0E9E5B)'}">${c.hidden?'🙈':'👁️'}</div>
+      <div><div class="t">${c.n}</div><div class="c">${c.hidden?'скрыта · нужен PIN-код':'показывается'}</div></div>
+      <div class="arr">${c.hidden?'Скрыта':'Видна'}</div>
+    </div>`).join('');
+}
+function toggleHide(i, el){
+  HIDE_CATS[i].hidden = !HIDE_CATS[i].hidden;
+  renderHideList();
+}
+const PIN_CATS = ["Детские","Новости","Фильмы","Спорт","Музыка","Познавательные"];
+let pinIdx = 0;
+function cycleCat(el){
+  pinIdx = (pinIdx + 1) % PIN_CATS.length;
+  const name = PIN_CATS[pinIdx];
+  document.getElementById('pinnedCat').textContent = name;
+  document.getElementById('iptvRowTitle').textContent = name === "Детские" ? "Детские каналы" : name;
+}
+function setMode(m){
+  const f = document.getElementById('frame');
+  f.className = m;
+  document.getElementById('segPhone').classList.toggle('on', m==='phone');
+  document.getElementById('segTv').classList.toggle('on', m==='tv');
+}
+/* ТВ: стрелки двигают золотую обводку по карточкам ряда */
+document.addEventListener('keydown', e=>{
+  if(document.getElementById('frame').className !== 'tv') return;
+  const cards = [...document.querySelectorAll('#view-home.on .card')];
+  if(!cards.length) return;
+  let cur = cards.findIndex(c=>c.classList.contains('focused'));
+  if(e.key==='ArrowRight'){ cur = Math.min((cur<0?0:cur+1), cards.length-1); }
+  else if(e.key==='ArrowLeft'){ cur = Math.max((cur<0?0:cur-1), 0); }
+  else if(e.key==='Enter' && cur>=0){ cards[cur].click(); return; }
+  else return;
+  cards.forEach(c=>c.classList.remove('focused'));
+  cards[cur].classList.add('focused');
+  cards[cur].scrollIntoView({inline:'center', block:'nearest'});
+});
+shuffle(pool); renderRow(); renderCats();
+</script>
+</body>
+</html>
