@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<!-- Превью hero v2 для ТВ (только ТВ, телефон не трогаем).
+     Что взято из превью v1: ТОЛЬКО постеры (бэкдропы TMDB w1280) и эффекты
+     (затемнение слева, переход в фон снизу, свечение от постера).
+     Контент hero — КАК СЕЙЧАС в pawflix: плашка статуса, логотип TMDB
+     (или градиентный текст), мета «★ рейтинг · год · жанры · время · возраст»,
+     описание 2 строки, БЕЛАЯ кнопка «Смотреть», полоски-точки.
+     Навбар — новый, как предложил Denis: просто надписи, под выбранной —
+     полоска нашего золотого #F7C948. Пилюля-док с иконками убрана.
+     Приблизительно (точный вид — из кода): стиль плашки статуса и цвета
+     возраста (12+ зелёный, 16+ оранжевый). Данные — настоящие TMDB. -->
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawflix — hero v2 (TV)</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+@property --ambient {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #243b42;
+}
+
+:root {
+  --ambient: #4c3315;
+  --bg: #080a0b;
+  --gold: #f7c948;
+  --muted: #888b8d;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: white;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+.app {
+  width: 100%;
+  height: 100vh;
+  min-width: 1100px;
+  background:
+    radial-gradient(
+      ellipse at 72% 52%,
+      color-mix(in srgb, var(--ambient) 20%, transparent),
+      transparent 65%
+    ),
+    var(--bg);
+  transition: background 1.8s ease;
+}
+
+/* MAIN */
+
+.main {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 48px;
+}
+
+/* TOP NAVIGATION — надписи, под выбранной золотая полоска */
+
+.topbar {
+  position: absolute;
+  top: 0;
+  left: 48px;
+  right: 48px;
+  z-index: 8;
+  height: 85px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  color: var(--gold);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.categories {
+  display: flex;
+  align-items: center;
+  gap: 37px;
+}
+
+.categories button {
+  border: 0;
+  background: transparent;
+  color: rgba(255,255,255,.65);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 10px 0;
+  position: relative;
+}
+
+.categories button.active,
+.categories button:hover {
+  color: white;
+}
+
+.categories button.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--gold);
+  border-radius: 5px;
+}
+
+/* HERO */
+
+.hero {
+  position: relative;
+  height: 65vh;
+  min-height: 510px;
+  max-height: 690px;
+  margin: 0 -48px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  overflow: hidden;
+}
+
+.backdrop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+  position: absolute;
+  inset: 0;
+  transition: opacity 1.3s ease;
+}
+
+.backdrop img.next {
+  opacity: 0;
+}
+
+.backdrop img.next.show {
+  opacity: 1;
+}
+
+.backdrop img.current.hide {
+  opacity: 0;
+}
+
+/* Главная система затемнения */
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    linear-gradient(
+      90deg,
+      #080a0b 0%,
+      rgba(8,10,11,.97) 9%,
+      rgba(8,10,11,.83) 28%,
+      rgba(8,10,11,.32) 57%,
+      rgba(8,10,11,.02) 100%
+    );
+}
+
+/* Переход картинки в фон снизу */
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(
+      0deg,
+      #080a0b 0%,
+      rgba(8,10,11,.92) 9%,
+      rgba(8,10,11,.55) 26%,
+      transparent 58%
+    );
+}
+
+/* Цветное свечение от постера */
+
+.ambient-glow {
+  position: absolute;
+  z-index: -1;
+  bottom: -120px;
+  right: 5%;
+  width: 75%;
+  height: 320px;
+  background: radial-gradient(
+    ellipse,
+    color-mix(in srgb, var(--ambient) 38%, transparent),
+    transparent 70%
+  );
+  filter: blur(55px);
+  opacity: .65;
+  transition: background 1.5s ease;
+  pointer-events: none;
+}
+
+.hero-content {
+  position: absolute;
+  left: 90px;
+  bottom: 65px;
+  width: 510px;
+  max-width: 43%;
+  z-index: 3;
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid rgba(247,201,72,.5);
+  background: rgba(247,201,72,.08);
+  color: var(--gold);
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-bottom: 18px;
+}
+
+.hero-logo {
+  display: block;
+  max-width: 480px;
+  max-height: 110px;
+  object-fit: contain;
+  object-position: left center;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 3px 20px rgba(0,0,0,.4));
+}
+
+.hero-title {
+  font-size: 39px;
+  line-height: 1.17;
+  font-weight: 800;
+  letter-spacing: -.7px;
+  margin: 0 0 16px;
+  background: linear-gradient(180deg, #ffffff, #f7c948);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+
+.hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ccc;
+  font-size: 13px;
+  margin-bottom: 17px;
+}
+
+.hero-rating {
+  color: var(--gold);
+  font-weight: 800;
+}
+
+.age-12 {
+  color: #7ed957;
+  font-weight: 700;
+}
+
+.age-16 {
+  color: #f5a623;
+  font-weight: 700;
+}
+
+.hero-description {
+  color: rgba(255,255,255,.65);
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 25px;
+  max-width: 440px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.watch {
+  border: none;
+  padding: 14px 28px;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #111111;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 6px 25px rgba(0,0,0,.35);
+}
+
+/* PROGRESS */
+
+.hero-progress {
+  display: flex;
+  gap: 5px;
+  margin-top: 30px;
+}
+
+.hero-progress span {
+  width: 27px;
+  height: 3px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.3);
+  overflow: hidden;
+}
+
+.hero-progress span.active {
+  background: var(--gold);
+}
+
+/* POSTER SECTION */
+
+.movies {
+  position: relative;
+  z-index: 4;
+  margin-top: -8px;
+  padding-bottom: 25px;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 21px;
+}
+
+.section-stripe {
+  width: 4px;
+  height: 22px;
+  background: var(--gold);
+  border-radius: 2px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.section-more {
+  margin-left: auto;
+  color: var(--gold);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.poster-track {
+  display: flex;
+  gap: 22px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  padding: 8px 0 16px;
+}
+
+.poster-track::-webkit-scrollbar {
+  display: none;
+}
+
+.movie {
+  flex: 0 0 145px;
+  width: 145px;
+  position: relative;
+  cursor: pointer;
+  transition: transform .3s;
+}
+
+.movie img {
+  width: 145px;
+  height: 210px;
+  object-fit: cover;
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,.09);
+  box-shadow: 0 10px 24px rgba(0,0,0,.4);
+  transition: .3s;
+}
+
+.movie:hover img,
+.movie:focus img {
+  border-color: var(--gold);
+  box-shadow: 0 0 25px color-mix(in srgb,var(--ambient) 55%,transparent);
+  transform: translateY(-5px);
+}
+
+.movie:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 5px;
+  border-radius: 10px;
+}
+
+.movie-name {
+  font-size: 12px;
+  color: #ddd;
+  margin-top: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* RESPONSIBLE FOCUS */
+
+button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <main class="main">
+
+    <header class="topbar">
+      <div class="brand">pawflix</div>
+
+      <nav class="categories">
+        <button class="active">Главная</button>
+        <button>Коллекции</button>
+        <button>Каталог</button>
+        <button>Поиск</button>
+        <button>Настройки</button>
+      </nav>
+    </header>
+
+    <section class="hero">
+
+      <div class="backdrop">
+        <img class="current"
+          id="heroImage"
+          src="https://image.tmdb.org/t/p/w1280/zGLHX92Gk96O1DJvLil7ObJTbaL.jpg"
+          alt="Фоновое изображение фильма">
+
+        <img class="next"
+          id="nextImage"
+          src=""
+          alt="">
+      </div>
+
+      <div class="ambient-glow"></div>
+
+      <div class="hero-content">
+
+        <div class="kicker" id="heroKicker">ПРЕМЬЕРА</div>
+
+        <img class="hero-logo" id="heroLogo"
+          src="https://image.tmdb.org/t/p/w500/vqMWWNZvzTSM81D9KNikCN9djw1.png"
+          alt="">
+
+        <h1 class="hero-title" id="heroTitle" style="display:none">
+          Фантастические твари: Тайны Дамблдора
+        </h1>
+
+        <div class="hero-meta" id="heroMeta"></div>
+
+        <p class="hero-description" id="heroDescription">
+          Профессор Альбус Дамблдор узнает, что могущественный темный волшебник Геллерт Грин-де-Вальд планирует захватить власть над миром. Понимая, что не сможет остановить его в одиночку, Дамблдор просит магозоолога Ньюта Саламандера возглавить команду из выдающихся волшебников и одного отважного магла-пекаря.
+        </p>
+
+        <div class="hero-actions">
+          <button class="watch">Смотреть</button>
+        </div>
+
+        <div class="hero-progress" id="heroProgress">
+          <span class="active"></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="movies">
+      <div class="section-head">
+        <span class="section-stripe"></span>
+        <h2 class="section-title">Пик недели</h2>
+        <span class="section-more">Ещё ›</span>
+      </div>
+
+      <div class="poster-track">
+
+        <div class="movie" tabindex="0">
+          <img src="https://image.tmdb.org/t/p/w500/jrgifaYeUtTnaH7NF5Drkgjg2MB.jpg">
+          <div class="movie-name">Fantastic Beasts</div>
+        </div>
+
+        <div class="movie" tabindex="0">
+          <img src="https://image.tmdb.org/t/p/w500/d5NXSklXo0qyIYkgV94XAgMIckC.jpg">
+          <div class="movie-name">Dune</div>
+        </div>
+
+        <div class="movie" tabindex="0">
+          <img src="https://image.tmdb.org/t/p/w500/ptpr0kGAckfQkJeJIt8st5dglvd.jpg">
+          <div class="movie-name">Oppenheimer</div>
+        </div>
+
+        <div class="movie" tabindex="0">
+          <img src="https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg">
+          <div class="movie-name">The Batman</div>
+        </div>
+
+        <div class="movie" tabindex="0">
+          <img src="https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg">
+          <div class="movie-name">Interstellar</div>
+        </div>
+
+        <div class="movie" tabindex="0">
+          <img src="https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg">
+          <div class="movie-name">Poor Things</div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+const films = [
+  {
+    title: "Фантастические твари: Тайны Дамблдора",
+    year: "2022",
+    rating: "6.6",
+    genre: "Фэнтези · Приключения",
+    runtime: "2 ч 22 мин",
+    age: "12+",
+    kicker: "ПРЕМЬЕРА",
+    description:
+      "Профессор Альбус Дамблдор узнает, что могущественный темный волшебник Геллерт Грин-де-Вальд планирует захватить власть над миром. Понимая, что не сможет остановить его в одиночку, Дамблдор просит магозоолога Ньюта Саламандера возглавить команду из выдающихся волшебников и одного отважного магла-пекаря.",
+    image: "https://image.tmdb.org/t/p/w1280/zGLHX92Gk96O1DJvLil7ObJTbaL.jpg",
+    logo: "https://image.tmdb.org/t/p/w500/vqMWWNZvzTSM81D9KNikCN9djw1.png",
+    color: "#4c3315"
+  },
+  {
+    title: "Дюна: Часть вторая",
+    year: "2024",
+    rating: "8.1",
+    genre: "Фантастика · Приключения",
+    runtime: "2 ч 46 мин",
+    age: "12+",
+    kicker: "СЕЙЧАС В КИНО",
+    description:
+      "Герцог Пол Атрейдес присоединяется к фременам, чтобы стать Муад Дибом, одновременно пытаясь остановить наступление войны.",
+    image: "https://image.tmdb.org/t/p/w1280/eZ239CUp1d6OryZEBPnO2n87gMG.jpg",
+    logo: "https://image.tmdb.org/t/p/w500/uo5HZB1p4mvDqJq59wENcOcjvpR.png",
+    color: "#443f36"
+  },
+  {
+    title: "Интерстеллар",
+    year: "2014",
+    rating: "8.5",
+    genre: "Приключения · Драма · Фантастика",
+    runtime: "2 ч 49 мин",
+    age: "12+",
+    kicker: "НОВИНКА",
+    description:
+      "Когда засуха, пыльные бури и вымирание растений приводят человечество к продовольственному кризису, коллектив исследователей и учёных отправляется сквозь червоточину в путешествие, чтобы превзойти прежние ограничения для космических путешествий человека и найти планету с подходящими для человечества условиями.",
+    image: "https://image.tmdb.org/t/p/w1280/8sNiAPPYU14PUepFNeSNGUTiHW.jpg",
+    logo: "https://image.tmdb.org/t/p/w500/8YGHe69tPNbSaMbUwSo3AHkELKJ.png",
+    color: "#45353e"
+  },
+  {
+    title: "Бэтмен",
+    year: "2022",
+    rating: "7.7",
+    genre: "Криминал · Детектив · Триллер",
+    runtime: "2 ч 56 мин",
+    age: "16+",
+    kicker: "СЕЙЧАС В КИНО",
+    description:
+      "После двух лет поисков правосудия на улицах Готэма для своих сограждан Бэтмен становится олицетворением беспощадного возмездия. Когда в городе происходит серия жестоких нападений на представителей элиты, загадочные улики приводят Брюса Уэйна в самые темные закоулки преступного мира.",
+    image: "https://image.tmdb.org/t/p/w1280/rvtdN5XkWAfGX6xDuPL6yYS2seK.jpg",
+    logo: "https://image.tmdb.org/t/p/w500/gfrpD647kBwVgtDCUGzvPZ8Jl6v.png",
+    color: "#690a0b"
+  }
+];
+
+const kicker = document.getElementById("heroKicker");
+const logo = document.getElementById("heroLogo");
+const title = document.getElementById("heroTitle");
+const meta = document.getElementById("heroMeta");
+const description = document.getElementById("heroDescription");
+
+const heroImage = document.getElementById("heroImage");
+const nextImage = document.getElementById("nextImage");
+
+const progress = [...document.querySelectorAll(
+  "#heroProgress span"
+)];
+
+let index = 0;
+let timer;
+let busy = false;
+let logoFor = null;
+
+const INTERVAL = 10000;
+
+function ageClass(age) {
+  return age === "16+" ? "age-16" : "age-12";
+}
+
+function updateText(film) {
+  kicker.textContent = film.kicker;
+  title.textContent = film.title;
+  meta.innerHTML =
+    '<span class="hero-rating">★ ' + film.rating + '</span>' +
+    '<span>·</span><span>' + film.year + '</span>' +
+    '<span>·</span><span>' + film.genre + '</span>' +
+    '<span>·</span><span>' + film.runtime + '</span>' +
+    '<span>·</span><span class="' + ageClass(film.age) + '">' + film.age + '</span>';
+  description.textContent = film.description;
+
+  // Логотип TMDB вместо текста, как в приложении; нет логотипа — градиентный текст.
+  logoFor = film.logo;
+  logo.style.display = "none";
+  title.style.display = "none";
+  logo.src = film.logo;
+  if (logo.complete && logo.naturalWidth > 0) {
+    logo.style.display = "block";
+  }
+}
+
+logo.onload = () => {
+  if (logo.src !== logoFor) return;
+  logo.style.display = "block";
+  title.style.display = "none";
+};
+
+logo.onerror = () => {
+  if (logo.src !== logoFor) return;
+  logo.style.display = "none";
+  title.style.display = "block";
+};
+
+function changeSlide(direction = 1) {
+  if (busy) return;
+
+  busy = true;
+
+  index = (index + direction + films.length) % films.length;
+
+  const film = films[index];
+
+  // Сначала подготавливаем следующее изображение
+  nextImage.classList.remove("show");
+  nextImage.src = film.image;
+
+  nextImage.onload = () => {
+    // Текст и цвет меняются вместе со слайдом
+    updateText(film);
+
+    document.documentElement.style.setProperty(
+      "--ambient",
+      film.color
+    );
+
+    progress.forEach((item, i) => {
+      item.classList.toggle("active", i === index);
+    });
+
+    // Плавное перекрытие изображений
+    nextImage.classList.add("show");
+    heroImage.classList.add("hide");
+
+    setTimeout(() => {
+      heroImage.src = film.image;
+      heroImage.classList.remove("hide");
+      nextImage.classList.remove("show");
+
+      busy = false;
+    }, 1400);
+  };
+
+  nextImage.onerror = () => {
+    busy = false;
+  };
+}
+
+// Автоматическая смена
+function startAuto() {
+  clearInterval(timer);
+
+  timer = setInterval(() => {
+    changeSlide(1);
+  }, INTERVAL);
+}
+
+// Пульт ТВ: стрелки переключают слайд, только пока фокус НЕ на карточках ряда —
+// на ряду стрелки ходят по карточкам, иначе пульт не сможет дойти до последней.
+document.addEventListener("keydown", e => {
+  const onRow = document.activeElement
+    && document.activeElement.closest(".poster-track");
+
+  if (onRow) return;
+
+  if (e.key === "ArrowRight") {
+    changeSlide(1);
+    startAuto();
+  }
+
+  if (e.key === "ArrowLeft") {
+    changeSlide(-1);
+    startAuto();
+  }
+});
+
+startAuto();
+
+// Навбар: тап по пункту двигает золотую полоску
+document.querySelectorAll(".categories button").forEach(button => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll(".categories button")
+      .forEach(item => item.classList.remove("active"));
+
+    button.classList.add("active");
+  });
+});
+
+// Ряд скроллится за фокусом пульта
+document.querySelectorAll(".movie").forEach(card => {
+  card.addEventListener("focus", () => {
+    card.scrollIntoView({ block: "nearest", inline: "nearest" });
+  });
+});
+
+// Первый слайд: мета и логотип сразу
+updateText(films[0]);
+</script>
+
+</body>
+</html>
