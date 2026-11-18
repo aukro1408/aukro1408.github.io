@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<!-- Превью hero для ТВ (только ТВ, телефон не трогаем).
+     База — файл Denis 1:1. Что доработано:
+     1. Фоны hero — не Unsplash, а настоящие бэкдропы TMDB w1280 этих же фильмов.
+     2. 4-й слайд: «The Last Kingdom 2026» (такого фильма нет) → «The Batman» 2022.
+     3. Рейтинги — настоящие TMDB (6.6 / 8.1 / 8.5 / 7.7), а не из демо.
+     4. Цвета ambient — не подобраны на глаз, а высчитаны из самих бэкдропов.
+     5. Стрелки влево/вправо больше не перехватываются, когда фокус на карточке
+        ряда — пульт ходит по карточкам, слайд переключается только с hero.
+     6. Ряд постеров скроллится за фокусом пульта (scrollIntoView), скроллбар скрыт. -->
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cinematic TV Interface</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+@property --ambient {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #243b42;
+}
+
+:root {
+  --ambient: #243b42;
+  --bg: #080a0b;
+  --yellow: #e8ae43;
+  --muted: #888b8d;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: white;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+.app {
+  width: 100%;
+  height: 100vh;
+  min-width: 1100px;
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  background:
+    radial-gradient(
+      ellipse at 72% 52%,
+      color-mix(in srgb, var(--ambient) 20%, transparent),
+      transparent 65%
+    ),
+    var(--bg);
+  transition: background 1.8s ease;
+}
+
+/* SIDEBAR */
+
+.sidebar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 0;
+  background: rgba(0,0,0,.25);
+}
+
+.logo {
+  width: 35px;
+  height: 35px;
+  border-radius: 11px;
+  background: var(--yellow);
+  color: #17120a;
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+  font-weight: 900;
+  margin-bottom: 55px;
+}
+
+.side-icons {
+  display: flex;
+  flex-direction: column;
+  gap: 27px;
+}
+
+.side-icon {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  background: transparent;
+  color: #777d80;
+  font-size: 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: .25s;
+}
+
+.side-icon.active {
+  color: white;
+  background: rgba(255,255,255,.09);
+}
+
+.side-icon:focus-visible {
+  outline: 2px solid var(--yellow);
+}
+
+/* MAIN */
+
+.main {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 48px;
+}
+
+/* TOP NAVIGATION */
+
+.topbar {
+  position: absolute;
+  top: 0;
+  left: 48px;
+  right: 48px;
+  z-index: 8;
+  height: 85px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  color: var(--yellow);
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.categories {
+  display: flex;
+  align-items: center;
+  gap: 37px;
+}
+
+.categories button {
+  border: 0;
+  background: transparent;
+  color: rgba(255,255,255,.65);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 10px 0;
+  position: relative;
+}
+
+.categories button.active,
+.categories button:hover {
+  color: white;
+}
+
+.categories button.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 35%;
+  width: 30%;
+  height: 3px;
+  background: var(--yellow);
+  border-radius: 5px;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 23px;
+  color: #aaa;
+  font-size: 19px;
+}
+
+/* HERO */
+
+.hero {
+  position: relative;
+  height: 65vh;
+  min-height: 510px;
+  max-height: 690px;
+  margin: 0 -48px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  overflow: hidden;
+}
+
+.backdrop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+  position: absolute;
+  inset: 0;
+  transition: opacity 1.3s ease;
+}
+
+.backdrop img.next {
+  opacity: 0;
+}
+
+.backdrop img.next.show {
+  opacity: 1;
+}
+
+.backdrop img.current.hide {
+  opacity: 0;
+}
+
+/* Главная система затемнения */
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    linear-gradient(
+      90deg,
+      #080a0b 0%,
+      rgba(8,10,11,.97) 9%,
+      rgba(8,10,11,.83) 28%,
+      rgba(8,10,11,.32) 57%,
+      rgba(8,10,11,.02) 100%
+    );
+}
+
+/* Переход картинки в фон снизу */
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(
+      0deg,
+      #080a0b 0%,
+      rgba(8,10,11,.92) 9%,
+      rgba(8,10,11,.55) 26%,
+      transparent 58%
+    );
+}
+
+/* Цветное свечение от постера */
+
+.ambient-glow {
+  position: absolute;
+  z-index: -1;
+  bottom: -120px;
+  right: 5%;
+  width: 75%;
+  height: 320px;
+  background: radial-gradient(
+    ellipse,
+    color-mix(in srgb, var(--ambient) 38%, transparent),
+    transparent 70%
+  );
+  filter: blur(55px);
+  opacity: .65;
+  transition: background 1.5s ease;
+  pointer-events: none;
+}
+
+.hero-content {
+  position: absolute;
+  left: 90px;
+  bottom: 65px;
+  width: 510px;
+  max-width: 43%;
+  z-index: 3;
+}
+
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(218,62,57,.13);
+  border: 1px solid rgba(255,80,80,.22);
+  color: #ff7777;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+}
+
+.live::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: #f45c58;
+  border-radius: 50%;
+}
+
+.hero-title {
+  font-size: 39px;
+  line-height: 1.17;
+  font-weight: 800;
+  letter-spacing: -.7px;
+  margin: 0 0 16px;
+  text-shadow: 0 3px 20px rgba(0,0,0,.4);
+}
+
+.hero-description {
+  color: rgba(255,255,255,.65);
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 25px;
+  max-width: 440px;
+}
+
+.hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #ccc;
+  font-size: 13px;
+  margin-bottom: 17px;
+}
+
+.hero-rating {
+  color: #f4c24d;
+  font-weight: 800;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.watch {
+  border: none;
+  padding: 14px 28px;
+  border-radius: 9px;
+  background: linear-gradient(135deg,#f2bb54,#dc9130);
+  color: #17120b;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 6px 25px rgba(222,157,59,.18);
+}
+
+.add {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255,255,255,.4);
+  border-radius: 9px;
+  background: rgba(0,0,0,.15);
+  color: white;
+  font-size: 23px;
+  cursor: pointer;
+}
+
+/* PROGRESS */
+
+.hero-progress {
+  display: flex;
+  gap: 5px;
+  margin-top: 30px;
+}
+
+.hero-progress span {
+  width: 27px;
+  height: 3px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.3);
+  overflow: hidden;
+}
+
+.hero-progress span.active {
+  background: var(--yellow);
+}
+
+/* POSTER SECTION */
+
+.movies {
+  position: relative;
+  z-index: 4;
+  margin-top: -8px;
+  padding-bottom: 25px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 21px;
+}
+
+.poster-track {
+  display: flex;
+  gap: 22px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  padding: 8px 0 16px;
+}
+
+.poster-track::-webkit-scrollbar {
+  display: none;
+}
+
+.movie {
+  flex: 0 0 145px;
+  width: 145px;
+  position: relative;
+  cursor: pointer;
+  transition: transform .3s;
+}
+
+.movie img {
+  width: 145px;
+  height: 210px;
+  object-fit: cover;
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,.09);
+  box-shadow: 0 10px 24px rgba(0,0,0,.4);
+  transition: .3s;
+}
+
+.movie:hover img,
+.movie:focus img {
+  border-color: var(--yellow);
+  box-shadow: 0 0 25px color-mix(in srgb,var(--ambient) 55%,transparent);
+  transform: translateY(-5px);
+}
+
+.movie:focus-visible {
+  outline: 2px solid var(--yellow);
+  outline-offset: 5px;
+  border-radius: 10px;
+}
+
+.movie-name {
+  font-size: 12px;
+  color: #ddd;
+  margin-top: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* RESPONSIBLE FOCUS */
+
+button:focus-visible {
+  outline: 2px solid var(--yellow);
+  outline-offset: 4px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="logo">▶</div>
+
+    <div class="side-icons">
+      <button class="side-icon active" title="Главная">⌂</button>
+      <button class="side-icon" title="Поиск">⌕</button>
+      <button class="side-icon" title="Избранное">♡</button>
+      <button class="side-icon" title="История">◷</button>
+      <button class="side-icon" title="Настройки">⚙</button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <header class="topbar">
+      <div class="brand">TVMOV</div>
+
+      <nav class="categories">
+        <button class="active">Movies</button>
+        <button>TV Shows</button>
+        <button>Series</button>
+        <button>Animations</button>
+      </nav>
+
+      <div class="top-actions">
+        <span>⌕</span>
+        <span>♧</span>
+        <span>◉</span>
+      </div>
+    </header>
+
+    <section class="hero">
+
+      <div class="backdrop">
+        <img class="current"
+          id="heroImage"
+          src="https://image.tmdb.org/t/p/w1280/zGLHX92Gk96O1DJvLil7ObJTbaL.jpg"
+          alt="Фоновое изображение фильма">
+
+        <img class="next"
+          id="nextImage"
+          src=""
+          alt="">
+      </div>
+
+      <div class="ambient-glow"></div>
+
+      <div class="hero-content">
+
+        <div class="live">LIVE</div>
+
+        <h1 class="hero-title" id="heroTitle">
+          Fantastic Beasts: The Secrets of Dumbledore
+        </h1>
+
+        <div class="hero-meta">
+          <span class="hero-rating" id="heroRating">★ 6.6</span>
+          <span id="heroYear">2022</span>
+          <span>·</span>
+          <span id="heroGenre">Fantasy · Adventure</span>
+          <span>·</span>
+          <span>16+</span>
+        </div>
+
+        <p class="hero-description" id="heroDescription">
+          Professor Albus Dumbledore knows the powerful,
+          dark wizard Gellert Grindelwald is moving to seize
+          control of the wizarding world.
+        </p>
+
+        <div class="hero-actions">
+          <button class="watch">Watch Now</button>
+          <button class="add">+</button>
+        </div>
+
+        <div class="hero-progress" id="heroProgress">
+          <span class="active"></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="movies">
+      <h2 class="section-title">Popular Movies</h2>
+
+      <div class="poster-track">
+
+        <div class="movie" tabindex="0">
+          <img src="https://image.tmdb.org/t/p/w500/jrgifaYeUtTnaH7NF5Drkgjg2MB.jpg">
+          <div class="movie-name">Fantastic Beasts</div>
+        </div>
+
+        <div class="movie" tabindex="0">
+          <img src="https://image.tmdb.org/t/p/w500/d5NXSklXo0qyIYkgV94XAgMIckC.jpg">
+          <div class="movie-name">Dune</div>
+        </div>
+
+        <div class="movie" tabindex="0">
+          <img src="https://image.tmdb.org/t/p/w500/ptpr0kGAckfQkJeJIt8st5dglvd.jpg">
+          <div class="movie-name">Oppenheimer</div>
+        </div>
+
+        <div class="movie" tabindex="0">
+          <img src="https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg">
+          <div class="movie-name">The Batman</div>
+        </div>
+
+        <div class="movie" tabindex="0">
+          <img src="https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg">
+          <div class="movie-name">Interstellar</div>
+        </div>
+
+        <div class="movie" tabindex="0">
+          <img src="https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg">
+          <div class="movie-name">Poor Things</div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+const films = [
+  {
+    title: "Fantastic Beasts: The Secrets of Dumbledore",
+    year: "2022",
+    rating: "★ 6.6",
+    genre: "Fantasy · Adventure",
+    description:
+      "Professor Albus Dumbledore knows the powerful, dark wizard Gellert Grindelwald is moving to seize control of the wizarding world.",
+    image: "https://image.tmdb.org/t/p/w1280/zGLHX92Gk96O1DJvLil7ObJTbaL.jpg",
+    color: "#4c3315"
+  },
+  {
+    title: "Dune: Part Two",
+    year: "2024",
+    rating: "★ 8.1",
+    genre: "Sci-Fi · Adventure",
+    description:
+      "Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family.",
+    image: "https://image.tmdb.org/t/p/w1280/eZ239CUp1d6OryZEBPnO2n87gMG.jpg",
+    color: "#443f36"
+  },
+  {
+    title: "Interstellar",
+    year: "2014",
+    rating: "★ 8.5",
+    genre: "Sci-Fi · Drama",
+    description:
+      "A team of explorers travels beyond this galaxy to discover whether mankind has a future among the stars.",
+    image: "https://image.tmdb.org/t/p/w1280/8sNiAPPYU14PUepFNeSNGUTiHW.jpg",
+    color: "#45353e"
+  },
+  {
+    title: "The Batman",
+    year: "2022",
+    rating: "★ 7.7",
+    genre: "Crime · Mystery",
+    description:
+      "When a sadistic serial killer begins murdering key political figures in Gotham, Batman is forced to investigate the city's hidden corruption.",
+    image: "https://image.tmdb.org/t/p/w1280/rvtdN5XkWAfGX6xDuPL6yYS2seK.jpg",
+    color: "#690a0b"
+  }
+];
+
+const title = document.getElementById("heroTitle");
+const year = document.getElementById("heroYear");
+const rating = document.getElementById("heroRating");
+const genre = document.getElementById("heroGenre");
+const description = document.getElementById("heroDescription");
+
+const heroImage = document.getElementById("heroImage");
+const nextImage = document.getElementById("nextImage");
+
+const progress = [...document.querySelectorAll(
+  "#heroProgress span"
+)];
+
+let index = 0;
+let timer;
+let busy = false;
+
+const INTERVAL = 10000;
+
+function updateText(film) {
+  title.textContent = film.title;
+  year.textContent = film.year;
+  rating.textContent = film.rating;
+  genre.textContent = film.genre;
+  description.textContent = film.description;
+}
+
+function changeSlide(direction = 1) {
+  if (busy) return;
+
+  busy = true;
+
+  index = (index + direction + films.length) % films.length;
+
+  const film = films[index];
+
+  // Сначала подготавливаем следующее изображение
+  nextImage.classList.remove("show");
+  nextImage.src = film.image;
+
+  nextImage.onload = () => {
+    // Текст и цвет меняются вместе со слайдом
+    updateText(film);
+
+    document.documentElement.style.setProperty(
+      "--ambient",
+      film.color
+    );
+
+    progress.forEach((item, i) => {
+      item.classList.toggle("active", i === index);
+    });
+
+    // Плавное перекрытие изображений
+    nextImage.classList.add("show");
+    heroImage.classList.add("hide");
+
+    setTimeout(() => {
+      heroImage.src = film.image;
+      heroImage.classList.remove("hide");
+      nextImage.classList.remove("show");
+
+      busy = false;
+    }, 1400);
+  };
+
+  nextImage.onerror = () => {
+    busy = false;
+  };
+}
+
+// Автоматическая смена
+function startAuto() {
+  clearInterval(timer);
+
+  timer = setInterval(() => {
+    changeSlide(1);
+  }, INTERVAL);
+}
+
+// Пульт ТВ: стрелки переключают слайд, только пока фокус НЕ на карточках ряда —
+// на ряду стрелки ходят по карточкам, иначе пульт не сможет дойти до последней.
+document.addEventListener("keydown", e => {
+  const onRow = document.activeElement
+    && document.activeElement.closest(".poster-track");
+
+  if (onRow) return;
+
+  if (e.key === "ArrowRight") {
+    changeSlide(1);
+    startAuto();
+  }
+
+  if (e.key === "ArrowLeft") {
+    changeSlide(-1);
+    startAuto();
+  }
+});
+
+startAuto();
+
+// Боковая навигация
+document.querySelectorAll(".side-icon").forEach(button => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll(".side-icon")
+      .forEach(item => item.classList.remove("active"));
+
+    button.classList.add("active");
+  });
+});
+
+// Ряд скроллится за фокусом пульта
+document.querySelectorAll(".movie").forEach(card => {
+  card.addEventListener("focus", () => {
+    card.scrollIntoView({ block: "nearest", inline: "nearest" });
+  });
+});
+</script>
+
+</body>
+</html>
