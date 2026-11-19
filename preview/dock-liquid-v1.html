@@ -107,7 +107,7 @@
       <li>На телефоне: тот же эластичный thumb, иконка «выскакивает» с поворотом, тик-вибрация на нажатии (на устройстве).</li>
       <li>Бонус в файле: helper <b>DockView.transition()</b> — слайд + фейд контента при смене категории (пока никуда не подключён).</li>
     </ul>
-    <p style="margin-top:10px"><span class="warn">Два момента на подумать:</span> полоска тут <b>4dp</b> — чуть толще нынешних 3dp, и на всю ширину надписи; свечения/размытия у ТВ-полоски в этом варианте нет — только градиент (свечение есть только у пилюли на телефоне).</p>
+    <p style="margin-top:10px"><span class="warn">Обновлено 11:28:</span> полоска укорочена — <b>60% ширины надписи, по центру</b> (была на всю ширину). Толщина 4dp, градиент как в варианте Denis; небольшое свечение под полоской добавится в сборке 3.62.</p>
   </div>
 </div>
 
@@ -155,7 +155,8 @@ function linear(el, toX, toW, dur) {
 function stripeGeom(i) {
   const bar = topbar.getBoundingClientRect();
   const r = labels[i].getBoundingClientRect();
-  return { x: r.left - bar.left, w: r.width };
+  /* короче надписи: 60% ширины, по центру (решение Denis 11:28) */
+  return { x: (r.left - bar.left) + r.width * 0.2, w: r.width * 0.6 };
 }
 function placeStripe(i, instant) {
   const g = stripeGeom(i);
