@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawflix — навбар «капля» · вариант Denis</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #080A0B; color: #fff; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; min-height: 100vh; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 28px 24px 64px; }
+  h1 { font-size: 20px; font-weight: 800; }
+  .sub { color: #9aa0a6; font-size: 14px; margin: 6px 0 22px; line-height: 1.5; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tabs button, .mode button { font: inherit; font-size: 14px; font-weight: 700; padding: 9px 16px; border-radius: 999px; border: 1px solid #2a3138; background: #14181b; color: #cfd4d8; cursor: pointer; }
+  .tabs button.on, .mode button.on { background: #F7C948; border-color: #F7C948; color: #2A1C04; }
+  .mode { display: flex; gap: 8px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+  .mode .lbl { color: #9aa0a6; font-size: 13px; margin-right: 2px; }
+  .hint { color: #7d838a; font-size: 13px; margin-top: 14px; line-height: 1.5; }
+  .hint b { color: #c9ced3; }
+  kbd { background: #22282d; border: 1px solid #3a4148; border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; font: inherit; font-size: 12px; }
+
+  /* ── ТВ ── */
+  .tv { background: linear-gradient(180deg, #10151a 0%, #0b0e10 55%, #080A0B 100%); border-radius: 16px; overflow: hidden; border: 1px solid #1e2428; position: relative; }
+  .tv-hero { height: 360px; position: relative; background:
+    radial-gradient(90% 130% at 72% 0%, rgba(247,201,72,.16) 0%, rgba(58,47,16,0) 55%),
+    radial-gradient(70% 90% at 20% 10%, rgba(70,110,160,.20) 0%, rgba(70,110,160,0) 60%),
+    linear-gradient(180deg, rgba(8,10,11,0) 30%, rgba(8,10,11,.55) 75%, #080A0B 100%); }
+  .tv-hero .fake-title { position: absolute; left: 48px; bottom: 78px; font-size: 46px; font-weight: 800; letter-spacing: .5px; }
+  .tv-hero .fake-sub { position: absolute; left: 48px; bottom: 44px; color: #b8bec4; font-size: 16px; }
+  .topbar { position: absolute; top: 0; left: 0; right: 0; height: 96px; }
+  .brand { position: absolute; left: 24px; top: 0; height: 96px; line-height: 96px; color: #F7C948; font-size: 33px; font-weight: 800; }
+  .row { position: absolute; right: 24px; top: 0; height: 96px; display: flex; align-items: center; }
+  .row span { font-size: 24px; font-weight: 700; padding: 0 27px; color: rgba(255,255,255,.65); cursor: pointer; display: inline-block; transition: color .3s, transform .26s cubic-bezier(.34,1.56,.64,1); user-select: none; }
+  .row span.on { color: #fff; transform: scale(1.06); }
+  .stripe { position: absolute; height: 6px; border-radius: 3px; background: linear-gradient(90deg, #FFE590, #F7C948, #E3A62A); top: 78px; left: 0; width: 0; }
+  .stripe.now { background: #F7C948; height: 5px; }
+
+  /* ── Телефон ── */
+  .phone-stage { display: none; background: linear-gradient(180deg, #10151a, #080A0B); border-radius: 16px; border: 1px solid #1e2428; padding: 90px 20px 40px; position: relative; overflow: hidden; }
+  .phone-stage .fake-content { height: 300px; border-radius: 12px; background: radial-gradient(80% 100% at 70% 0%, rgba(247,201,72,.12), transparent 60%), #12161a; margin-bottom: 110px; }
+  .pill-wrap { position: relative; width: min(688px, 100%); margin: 0 auto; height: 96px; }
+  .pill { position: absolute; inset: 0; border-radius: 48px; background: linear-gradient(180deg, rgba(38,33,26,.92), rgba(17,14,10,.92)); border: 1px solid rgba(255,255,255,.20); box-shadow: 0 6px 20px rgba(0,0,0,.45); }
+  .thumb { position: absolute; top: 9px; height: 78px; border-radius: 39px; background: linear-gradient(135deg, #FFE590, #F7C948, #E3A62A); box-shadow: 0 10px 30px rgba(247,201,72,.35); left: 9px; width: 0; }
+  .pill-btns { position: absolute; inset: 0; display: flex; padding: 9px; gap: 6px; }
+  .pill-btns button { flex: 1; border: 0; background: transparent; font: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; color: #ECE6D8; border-radius: 39px; transition: color .3s; }
+  .pill-btns button.on { color: #2A1C04; }
+  .pill-btns button svg { width: 30px; height: 30px; flex: none; }
+  .pill-btns button span { font-size: 24px; font-weight: 700; }
+  .pill-note { text-align: center; color: #7d838a; font-size: 13px; margin-top: 26px; }
+
+  .notes { margin-top: 28px; border-top: 1px solid #1e2428; padding-top: 18px; color: #b8bec4; font-size: 14px; line-height: 1.65; }
+  .notes b { color: #fff; }
+  .notes li { margin: 4px 0 4px 18px; }
+  .notes .warn { color: #F7C948; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Навбар «капля» — вариант Denis</h1>
+  <p class="sub">DockView_3_73bx.kt · золотая полоска тянется как капля: передний край улетает вперёд с пружинкой, задний догоняет. Нажимай на разделы или листай стрелками — полоска всегда идёт с текущей позиции, без скачка назад.</p>
+
+  <div class="tabs">
+    <button id="tabTv" class="on" onclick="showView('tv')">ТВ — строка</button>
+    <button id="tabPhone" onclick="showView('phone')">Телефон — пилюля</button>
+  </div>
+
+  <div class="mode">
+    <span class="lbl">Движение полоски:</span>
+    <button id="modeDrop" class="on" onclick="setMode('drop')">Капля (вариант Denis)</button>
+    <button id="modeNow" onclick="setMode('now')">Как сейчас в 3.61</button>
+  </div>
+
+  <!-- ТВ -->
+  <div class="tv" id="tvView">
+    <div class="tv-hero">
+      <div class="fake-title">НАДЕЖДА</div>
+      <div class="fake-sub">Фантастика · 2025 · 16+</div>
+    </div>
+    <div class="topbar" id="topbar">
+      <div class="brand">pawflix</div>
+      <div class="row" id="row">
+        <span data-i="0" class="on">Главная</span><span data-i="1">Коллекции</span><span data-i="2">Каталог</span><span data-i="3">Поиск</span><span data-i="4">Настройки</span>
+      </div>
+      <div class="stripe" id="stripe"></div>
+    </div>
+  </div>
+
+  <!-- Телефон -->
+  <div class="phone-stage" id="phoneView">
+    <div class="fake-content"></div>
+    <div class="pill-wrap" id="pillWrap">
+      <div class="pill"></div>
+      <div class="thumb" id="thumb"></div>
+      <div class="pill-btns" id="pillBtns"></div>
+    </div>
+    <div class="pill-note">Пилюля тоже переехала на «каплю»: thumb тянется эластично, иконка новой вкладки «выскакивает» с поворотом.</div>
+  </div>
+
+  <p class="hint">Управление: клик по разделу — выбрать · <kbd>←</kbd> <kbd>→</kbd> — листать фокус (полоска следует за фокусом, а при потере фокуса возвращается к выбранному) · режим «Как сейчас в 3.61» показывает тот самый скачок: полоска мгновенно прыгает к выбранной вкладке, а потом линейно едет к новой.</p>
+
+  <div class="notes">
+    <b>Что в этом варианте нового по сравнению с 3.61:</b>
+    <ul>
+      <li>Полоска-«капля»: 560&nbsp;мс, передний край с овершутом, задний догоняет — ширина растягивается и пружинит.</li>
+      <li>Скачка назад больше нет: при потере фокуса полоска тоже анимируется (из текущей позиции), а не снапится.</li>
+      <li>Выбранная надпись чуть больше (×1.06) с пружинкой; цвета перетекают плавно (300&nbsp;мс), а не щёлкают.</li>
+      <li>На телефоне: тот же эластичный thumb, иконка «выскакивает» с поворотом, тик-вибрация на нажатии (на устройстве).</li>
+      <li>Бонус в файле: helper <b>DockView.transition()</b> — слайд + фейд контента при смене категории (пока никуда не подключён).</li>
+    </ul>
+    <p style="margin-top:10px"><span class="warn">Два момента на подумать:</span> полоска тут <b>4dp</b> — чуть толще нынешних 3dp, и на всю ширину надписи; свечения/размытия у ТВ-полоски в этом варианте нет — только градиент (свечение есть только у пилюли на телефоне).</p>
+  </div>
+</div>
+
+<script>
+const labels = [...document.querySelectorAll('#row span')];
+const stripe = document.getElementById('stripe');
+const topbar = document.getElementById('topbar');
+let mode = 'drop';
+let selected = 0, focus = 0;
+
+function overshoot(t, tension) { t -= 1; return t * t * ((tension + 1) * t + tension) + 1; }
+
+/* elastic() из варианта Denis — 1:1: ведущий край fast (overshoot 1.35), ведомый slow (smoothstep) */
+function elastic(el, toX, toW, dur, done) {
+  cancelAnimationFrame(el._raf);
+  const fromX = parseFloat(el.style.left) || 0;
+  const fromW = parseFloat(el.style.width) || 0;
+  const fromR = fromX + fromW, toR = toX + toW;
+  const minW = Math.min(fromW, toW) * 0.9;
+  const right = toX >= fromX;
+  const t0 = performance.now();
+  (function frame(now) {
+    const p = Math.min(1, (now - t0) / dur);
+    const fast = overshoot(p, 1.35);
+    const slow = p * p * (3 - 2 * p);
+    const l = fromX + (toX - fromX) * (right ? slow : fast);
+    const r = fromR + (toR - fromR) * (right ? fast : slow);
+    el.style.left = l + 'px';
+    el.style.width = Math.max(r - l, minW) + 'px';
+    if (p < 1) el._raf = requestAnimationFrame(frame); else if (done) done();
+  })(t0);
+}
+function linear(el, toX, toW, dur) {
+  cancelAnimationFrame(el._raf);
+  const fromX = parseFloat(el.style.left) || 0;
+  const fromW = parseFloat(el.style.width) || 0;
+  const t0 = performance.now();
+  (function frame(now) {
+    const p = Math.min(1, (now - t0) / dur);
+    el.style.left = (fromX + (toX - fromX) * p) + 'px';
+    el.style.width = (fromW + (toW - fromW) * p) + 'px';
+    if (p < 1) el._raf = requestAnimationFrame(frame);
+  })(t0);
+}
+function stripeGeom(i) {
+  const bar = topbar.getBoundingClientRect();
+  const r = labels[i].getBoundingClientRect();
+  return { x: r.left - bar.left, w: r.width };
+}
+function placeStripe(i, instant) {
+  const g = stripeGeom(i);
+  if (instant) { stripe.style.left = g.x + 'px'; stripe.style.width = g.w + 'px'; return; }
+  if (mode === 'drop') elastic(stripe, g.x, g.w, 560); else linear(stripe, g.x, g.w, 450);
+}
+function paintLabels() {
+  labels.forEach((el, i) => el.classList.toggle('on', i === focus));
+}
+function moveFocus(i, isClick) {
+  if (i === focus && !isClick) return;
+  const prev = focus; focus = i;
+  if (isClick) selected = i;
+  paintLabels();
+  if (mode === 'now' && prev !== i) {
+    /* 3.61: потеря фокуса — мгновенный снап к выбранной, потом линейно к новой */
+    const g = stripeGeom(selected); stripe.style.left = g.x + 'px'; stripe.style.width = g.w + 'px';
+  }
+  placeStripe(i);
+}
+labels.forEach((el, i) => el.addEventListener('click', () => moveFocus(i, true)));
+document.addEventListener('keydown', e => {
+  if (document.getElementById('tvView').style.display === 'none') return;
+  if (e.key === 'ArrowRight') moveFocus(Math.min(4, focus + 1));
+  if (e.key === 'ArrowLeft') moveFocus(Math.max(0, focus - 1));
+  if (e.key === 'Enter') { selected = focus; }
+});
+function setMode(m) {
+  mode = m;
+  document.getElementById('modeDrop').classList.toggle('on', m === 'drop');
+  document.getElementById('modeNow').classList.toggle('on', m === 'now');
+  stripe.classList.toggle('now', m === 'now');
+  placeStripe(focus, true);
+}
+
+/* ── Телефон: пилюля ── */
+const ICONS = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>',
+  layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 10 5.5-10 5.5L2 7.5 12 2Z"/><path d="m2 12.5 10 5.5 10-5.5"/><path d="m2 17.5 10 5.5 10-5.5"/></svg>',
+  grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  sliders: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h13M21 18h-1"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="19" cy="18" r="2"/></svg>'
+};
+const TABS = [['Главная', 'home'], ['Коллекции', 'layers'], ['Каталог', 'grid'], ['Поиск', 'search'], ['Настройки', 'sliders']];
+const pillBtns = document.getElementById('pillBtns');
+const thumb = document.getElementById('thumb');
+let pillSel = 0;
+TABS.forEach(([label, icon], i) => {
+  const b = document.createElement('button');
+  b.innerHTML = ICONS[icon] + '<span>' + label + '</span>';
+  if (i === 0) b.classList.add('on');
+  b.addEventListener('click', () => movePill(i));
+  pillBtns.appendChild(b);
+});
+function pillGeom(i) {
+  const btn = pillBtns.children[i].getBoundingClientRect();
+  const wrap = document.getElementById('pillWrap').getBoundingClientRect();
+  return { x: btn.left - wrap.left, w: btn.width };
+}
+function movePill(i, instant) {
+  if (i === pillSel && !instant) return;
+  const dir = i > pillSel ? 1 : -1;
+  pillSel = i;
+  [...pillBtns.children].forEach((b, j) => b.classList.toggle('on', j === i));
+  const g = pillGeom(i);
+  if (instant) { thumb.style.left = g.x + 'px'; thumb.style.width = g.w + 'px'; return; }
+  elastic(thumb, g.x, g.w, 560);
+  const icon = pillBtns.children[i].querySelector('svg');
+  icon.animate(
+    [{ transform: 'scale(.7) rotate(' + (-16 * dir) + 'deg)' }, { transform: 'scale(1) rotate(0deg)' }],
+    { duration: 480, easing: 'cubic-bezier(.34,1.56,.64,1)' }
+  );
+}
+function showView(v) {
+  document.getElementById('tvView').style.display = v === 'tv' ? '' : 'none';
+  document.getElementById('phoneView').style.display = v === 'phone' ? '' : 'none';
+  document.getElementById('tabTv').classList.toggle('on', v === 'tv');
+  document.getElementById('tabPhone').classList.toggle('on', v === 'phone');
+  if (v === 'phone') requestAnimationFrame(() => movePill(pillSel, true));
+  else requestAnimationFrame(() => placeStripe(focus, true));
+}
+window.addEventListener('load', () => { placeStripe(0, true); });
+window.addEventListener('resize', () => { placeStripe(focus, true); if (document.getElementById('phoneView').style.display !== 'none') movePill(pillSel, true); });
+</script>
+</body>
+</html>
