@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>pawflix — навбар без блюра: варианты 3, 4, 5 — v1</title>
+<style>
+  :root {
+    --bg: #09090b;
+    --card: #141416;
+    --gold: #F7C948;
+    --icon-inactive: rgba(255,255,255,0.55);
+    --border: rgba(255,255,255,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: #000;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 20px 12px 40px;
+  }
+  .page-title { max-width: 480px; margin: 0 auto 6px; font-size: 20px; font-weight: 800; }
+  .page-sub { max-width: 480px; margin: 0 auto 24px; font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.45; }
+  .variant-label { max-width: 400px; margin: 28px auto 10px; font-size: 15px; font-weight: 700; }
+  .variant-label .num { color: var(--gold); }
+  .variant-note { max-width: 400px; margin: 0 auto 10px; font-size: 12px; color: rgba(255,255,255,0.5); line-height: 1.4; }
+
+  /* Телефонная рамка: внутри скроллится контент, навбар закреплён снизу */
+  .phone {
+    max-width: 400px; height: 620px; margin: 0 auto;
+    border: 1px solid rgba(255,255,255,0.14); border-radius: 28px;
+    overflow: hidden; position: relative; background: var(--bg);
+  }
+  .screen { height: 100%; overflow-y: auto; padding-bottom: 96px; scrollbar-width: none; }
+  .screen::-webkit-scrollbar { display: none; }
+
+  .app-header { padding: 18px 16px 6px; display: flex; align-items: center; justify-content: space-between; }
+  .app-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+  .app-logo .paw { color: #E2E8F0; }
+  .app-logo .flix { color: var(--gold); }
+  .bell { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.14);
+          background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; }
+  .bell svg { width: 18px; height: 18px; stroke: rgba(255,255,255,0.8); fill: none; stroke-width: 1.8; }
+
+  .hero { margin: 10px 16px 0; height: 210px; border-radius: 20px; position: relative; overflow: hidden;
+          background: linear-gradient(135deg, #3b2d5c, #7a2e4f 55%, #c75b39); }
+  .hero .tag { position: absolute; top: 14px; left: 14px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--gold); }
+  .hero .name { position: absolute; left: 14px; bottom: 34px; font-size: 26px; font-weight: 800; }
+  .hero .meta { position: absolute; left: 14px; bottom: 14px; font-size: 12px; color: rgba(255,255,255,0.75); }
+  .hero .age { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.55); border-radius: 8px;
+               padding: 3px 8px; font-size: 12px; font-weight: 700; color: #ff6b6b; }
+
+  .row-title { padding: 20px 16px 10px; font-size: 16px; font-weight: 700; }
+  .row { display: flex; gap: 10px; padding: 0 16px; overflow-x: auto; scrollbar-width: none; }
+  .row::-webkit-scrollbar { display: none; }
+  .poster { flex: 0 0 118px; }
+  .poster .art { height: 168px; border-radius: 14px; position: relative; overflow: hidden; }
+  .poster .art .rate { position: absolute; left: 8px; bottom: 8px; background: rgba(0,0,0,0.6); border-radius: 7px;
+                       padding: 2px 7px; font-size: 11px; font-weight: 700; color: var(--gold); }
+  .poster .t { margin-top: 7px; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .poster .y { font-size: 11px; color: rgba(255,255,255,0.5); }
+  .g1 { background: linear-gradient(160deg, #274156, #4a7fa5); }
+  .g2 { background: linear-gradient(160deg, #5c2e2e, #a5533c); }
+  .g3 { background: linear-gradient(160deg, #2e5c46, #57a773); }
+  .g4 { background: linear-gradient(160deg, #4b3a6b, #8a6fc9); }
+  .g5 { background: linear-gradient(160deg, #6b5a2e, #c9a44a); }
+  .g6 { background: linear-gradient(160deg, #2e3a5c, #4a6ba5); }
+
+  /* ---------- Навбар: общий каркас ---------- */
+  .navbar {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 72px; display: flex; align-items: flex-start; padding-top: 10px;
+  }
+  .navbar .item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;
+                  color: var(--icon-inactive); font-size: 10px; font-weight: 600; }
+  .navbar .item svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+  .navbar .item.active { color: var(--gold); }
+  .navbar .dot { width: 4px; height: 4px; border-radius: 50%; background: transparent; }
+  .navbar .item.active .dot { background: var(--gold); }
+
+  /* Вариант 3 — полупрозрачный фон без блюра */
+  .nav-v3 { background: rgba(14,14,14,0.55); border-top: 1px solid var(--border); }
+
+  /* Вариант 4 — градиент-затемнение: контент растворяется под навбаром */
+  .nav-v4 { background: linear-gradient(to top, #09090b 62%, rgba(9,9,11,0.72) 82%, rgba(9,9,11,0) 100%);
+            height: 118px; align-items: flex-end; padding-top: 0; padding-bottom: 12px; }
+
+  /* Вариант 5 — непрозрачный навбар */
+  .nav-v5 { background: var(--card); border-top: 1px solid rgba(255,255,255,0.08); }
+</style>
+</head>
+<body>
+  <div class="page-title">Навбар без блюра — варианты 3, 4, 5</div>
+  <div class="page-sub">Каждый вариант — в своей рамке, контент внутри скроллится: видно, как карточки проходят под навбаром. Навбар во всех трёх — те же 5 пунктов, активный золотой с точкой.</div>
+
+  <!-- ================= Вариант 3 ================= -->
+  <div class="variant-label"><span class="num">Вариант 3</span> — полупрозрачный фон</div>
+  <div class="variant-note">Тёмная подложка 55% + линия сверху. Контент под навбаром виден, но приглушён, не размыт.</div>
+  <div class="phone">
+    <div class="screen">
+      <div class="app-header"><div class="app-logo"><span class="paw">Paw</span><span class="flix">flix</span></div>
+        <div class="bell"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg></div></div>
+      <div class="hero"><div class="tag">НОВИНКА</div><div class="age">18+</div><div class="name">Казнифейс</div><div class="meta">2026 · Ужасы · ★ 7,4</div></div>
+      <div class="row-title">Стриминги</div>
+      <div class="row">
+        <div class="poster"><div class="art g1"><span class="rate">★ 8,5</span></div><div class="t">Извне</div><div class="y">2022</div></div>
+        <div class="poster"><div class="art g2"><span class="rate">★ 7,6</span></div><div class="t">Полуночная месса</div><div class="y">2021</div></div>
+        <div class="poster"><div class="art g3"><span class="rate">★ 7,4</span></div><div class="t">Террор</div><div class="y">2018</div></div>
+        <div class="poster"><div class="art g4"><span class="rate">★ 8,2</span></div><div class="t">Призраки дома</div><div class="y">2018</div></div>
+      </div>
+      <div class="row-title">Радио</div>
+      <div class="row">
+        <div class="poster"><div class="art g5"></div><div class="t">Европа Плюс</div><div class="y">FM</div></div>
+        <div class="poster"><div class="art g6"></div><div class="t">Ретро FM</div><div class="y">FM</div></div>
+        <div class="poster"><div class="art g2"></div><div class="t">Наше Радио</div><div class="y">FM</div></div>
+        <div class="poster"><div class="art g3"></div><div class="t">Love Radio</div><div class="y">FM</div></div>
+      </div>
+      <div class="row-title">История</div>
+      <div class="row">
+        <div class="poster"><div class="art g4"><span class="rate">★ 9,0</span></div><div class="t">Во все тяжкие</div><div class="y">2008</div></div>
+        <div class="poster"><div class="art g1"><span class="rate">★ 8,7</span></div><div class="t">Доктор Хаус</div><div class="y">2004</div></div>
+        <div class="poster"><div class="art g6"><span class="rate">★ 8,9</span></div><div class="t">Фарго</div><div class="y">2014</div></div>
+        <div class="poster"><div class="art g5"><span class="rate">★ 8,4</span></div><div class="t">Канал Ноль</div><div class="y">2016</div></div>
+      </div>
+    </div>
+    <div class="navbar nav-v3">
+      <div class="item active"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Главная<span class="dot"></span></div>
+      <div class="item"><svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>Подборки<span class="dot"></span></div>
+      <div class="item"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Каталог<span class="dot"></span></div>
+      <div class="item"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Поиск<span class="dot"></span></div>
+      <div class="item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.51 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.24.6.86 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"/></svg>Настройки<span class="dot"></span></div>
+    </div>
+  </div>
+
+  <!-- ================= Вариант 4 ================= -->
+  <div class="variant-label"><span class="num">Вариант 4</span> — градиент-затемнение</div>
+  <div class="variant-note">Навбар стоит на плавном затемнении снизу вверх: контент растворяется под ним, без резкой границы.</div>
+  <div class="phone">
+    <div class="screen">
+      <div class="app-header"><div class="app-logo"><span class="paw">Paw</span><span class="flix">flix</span></div>
+        <div class="bell"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg></div></div>
+      <div class="hero"><div class="tag">НОВИНКА</div><div class="age">18+</div><div class="name">Казнифейс</div><div class="meta">2026 · Ужасы · ★ 7,4</div></div>
+      <div class="row-title">Стриминги</div>
+      <div class="row">
+        <div class="poster"><div class="art g1"><span class="rate">★ 8,5</span></div><div class="t">Извне</div><div class="y">2022</div></div>
+        <div class="poster"><div class="art g2"><span class="rate">★ 7,6</span></div><div class="t">Полуночная месса</div><div class="y">2021</div></div>
+        <div class="poster"><div class="art g3"><span class="rate">★ 7,4</span></div><div class="t">Террор</div><div class="y">2018</div></div>
+        <div class="poster"><div class="art g4"><span class="rate">★ 8,2</span></div><div class="t">Призраки дома</div><div class="y">2018</div></div>
+      </div>
+      <div class="row-title">Радио</div>
+      <div class="row">
+        <div class="poster"><div class="art g5"></div><div class="t">Европа Плюс</div><div class="y">FM</div></div>
+        <div class="poster"><div class="art g6"></div><div class="t">Ретро FM</div><div class="y">FM</div></div>
+        <div class="poster"><div class="art g2"></div><div class="t">Наше Радио</div><div class="y">FM</div></div>
+        <div class="poster"><div class="art g3"></div><div class="t">Love Radio</div><div class="y">FM</div></div>
+      </div>
+      <div class="row-title">История</div>
+      <div class="row">
+        <div class="poster"><div class="art g4"><span class="rate">★ 9,0</span></div><div class="t">Во все тяжкие</div><div class="y">2008</div></div>
+        <div class="poster"><div class="art g1"><span class="rate">★ 8,7</span></div><div class="t">Доктор Хаус</div><div class="y">2004</div></div>
+        <div class="poster"><div class="art g6"><span class="rate">★ 8,9</span></div><div class="t">Фарго</div><div class="y">2014</div></div>
+        <div class="poster"><div class="art g5"><span class="rate">★ 8,4</span></div><div class="t">Канал Ноль</div><div class="y">2016</div></div>
+      </div>
+    </div>
+    <div class="navbar nav-v4">
+      <div class="item active"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Главная<span class="dot"></span></div>
+      <div class="item"><svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>Подборки<span class="dot"></span></div>
+      <div class="item"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Каталог<span class="dot"></span></div>
+      <div class="item"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Поиск<span class="dot"></span></div>
+      <div class="item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.51 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.24.6.86 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"/></svg>Настройки<span class="dot"></span></div>
+    </div>
+  </div>
+
+  <!-- ================= Вариант 5 ================= -->
+  <div class="variant-label"><span class="num">Вариант 5</span> — непрозрачный навбар</div>
+  <div class="variant-note">Сплошной тёмный фон в цвет карточек + тонкая линия сверху. Контент под навбаром не виден вовсе.</div>
+  <div class="phone">
+    <div class="screen">
+      <div class="app-header"><div class="app-logo"><span class="paw">Paw</span><span class="flix">flix</span></div>
+        <div class="bell"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg></div></div>
+      <div class="hero"><div class="tag">НОВИНКА</div><div class="age">18+</div><div class="name">Казнифейс</div><div class="meta">2026 · Ужасы · ★ 7,4</div></div>
+      <div class="row-title">Стриминги</div>
+      <div class="row">
+        <div class="poster"><div class="art g1"><span class="rate">★ 8,5</span></div><div class="t">Извне</div><div class="y">2022</div></div>
+        <div class="poster"><div class="art g2"><span class="rate">★ 7,6</span></div><div class="t">Полуночная месса</div><div class="y">2021</div></div>
+        <div class="poster"><div class="art g3"><span class="rate">★ 7,4</span></div><div class="t">Террор</div><div class="y">2018</div></div>
+        <div class="poster"><div class="art g4"><span class="rate">★ 8,2</span></div><div class="t">Призраки дома</div><div class="y">2018</div></div>
+      </div>
+      <div class="row-title">Радио</div>
+      <div class="row">
+        <div class="poster"><div class="art g5"></div><div class="t">Европа Плюс</div><div class="y">FM</div></div>
+        <div class="poster"><div class="art g6"></div><div class="t">Ретро FM</div><div class="y">FM</div></div>
+        <div class="poster"><div class="art g2"></div><div class="t">Наше Радио</div><div class="y">FM</div></div>
+        <div class="poster"><div class="art g3"></div><div class="t">Love Radio</div><div class="y">FM</div></div>
+      </div>
+      <div class="row-title">История</div>
+      <div class="row">
+        <div class="poster"><div class="art g4"><span class="rate">★ 9,0</span></div><div class="t">Во все тяжкие</div><div class="y">2008</div></div>
+        <div class="poster"><div class="art g1"><span class="rate">★ 8,7</span></div><div class="t">Доктор Хаус</div><div class="y">2004</div></div>
+        <div class="poster"><div class="art g6"><span class="rate">★ 8,9</span></div><div class="t">Фарго</div><div class="y">2014</div></div>
+        <div class="poster"><div class="art g5"><span class="rate">★ 8,4</span></div><div class="t">Канал Ноль</div><div class="y">2016</div></div>
+      </div>
+    </div>
+    <div class="navbar nav-v5">
+      <div class="item active"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Главная<span class="dot"></span></div>
+      <div class="item"><svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>Подборки<span class="dot"></span></div>
+      <div class="item"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Каталог<span class="dot"></span></div>
+      <div class="item"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Поиск<span class="dot"></span></div>
+      <div class="item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.51 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.24.6.86 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"/></svg>Настройки<span class="dot"></span></div>
+    </div>
+  </div>
+</body>
+</html>
