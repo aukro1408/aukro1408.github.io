@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawflix — навбар: варианты цвета</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #05060a; color: #fff; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; padding: 20px 12px 40px; }
+  h1 { font-size: 20px; text-align: center; margin-bottom: 6px; }
+  .sub { text-align: center; color: #9a9aa5; font-size: 13px; margin-bottom: 22px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; }
+  .frame-wrap { width: 330px; }
+  .frame-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+  .frame-title span { color: #F7C948; }
+  .phone { position: relative; height: 520px; border-radius: 26px; overflow: hidden; border: 1px solid #2a2d38; background: #07080D; }
+  .content { position: absolute; inset: 0; overflow-y: auto; padding: 16px 14px 110px; scrollbar-width: none; }
+  .content::-webkit-scrollbar { display: none; }
+  .hero { height: 190px; border-radius: 16px; background: linear-gradient(135deg, #3a2b12, #141a2e 60%, #0b0e18); margin-bottom: 14px; display: flex; align-items: flex-end; padding: 14px; }
+  .hero b { font-size: 17px; }
+  .row-title { font-size: 13px; color: #c9c9d2; margin: 12px 0 8px; font-weight: 600; }
+  .cards { display: flex; gap: 9px; }
+  .card { flex: 0 0 86px; height: 124px; border-radius: 10px; }
+  .c1 { background: linear-gradient(160deg, #274060, #101623); }
+  .c2 { background: linear-gradient(160deg, #4a2b3a, #180f16); }
+  .c3 { background: linear-gradient(160deg, #2b4a3a, #0f1812); }
+  .c4 { background: linear-gradient(160deg, #54431c, #1a1508); }
+  .nav { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; display: flex; align-items: stretch; z-index: 5; }
+  .item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10px; color: #8b8b96; position: relative; }
+  .item svg { width: 21px; height: 21px; fill: currentColor; }
+  .item.active { color: #F7C948; }
+  .dot { width: 4px; height: 4px; border-radius: 50%; background: #F7C948; }
+  .note { font-size: 12px; color: #9a9aa5; margin-top: 8px; line-height: 1.45; }
+  /* Вариант 1 — плотнее */
+  .v1 .nav { background: rgba(14,14,14,0.85); border-top: 1px solid rgba(255,255,255,0.12); }
+  /* Вариант 2 — тёмно-синий графит */
+  .v2 .nav { background: rgba(13,17,23,0.88); border-top: 1px solid rgba(255,255,255,0.12); }
+  /* Вариант 3 — тёплый тёмный */
+  .v3 .nav { background: rgba(23,19,16,0.88); border-top: 1px solid rgba(255,255,255,0.12); }
+  /* Вариант 4 — градиент */
+  .v4 .nav { background: linear-gradient(to top, rgba(10,10,12,0.97) 55%, rgba(10,10,12,0.55) 82%, rgba(10,10,12,0)); border-top: none; height: 84px; padding-top: 20px; }
+  /* Вариант 5 — золотая линия */
+  .v5 .nav { background: rgba(14,14,14,0.55); border-top: 1px solid rgba(247,201,72,0.55); }
+  /* Вариант 6 — золотая пилюля под активным */
+  .v6 .nav { background: rgba(14,14,14,0.55); border-top: 1px solid rgba(255,255,255,0.12); }
+  .v6 .item.active::before { content: ""; position: absolute; width: 52px; height: 40px; border-radius: 20px; background: rgba(247,201,72,0.16); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+  /* Вариант 7 — комбо 2+5 */
+  .v7 .nav { background: rgba(13,17,23,0.88); border-top: 1px solid rgba(247,201,72,0.55); }
+</style>
+</head>
+<body>
+<h1>pawflix — цвет нижнего навбара</h1>
+<div class="sub">Контент в каждой рамке скроллится под навбаром. Активный пункт — Главная.</div>
+<div class="grid" id="grid"></div>
+<script>
+const variants = [
+  { cls: "v1", title: "Вариант 1 · Плотнее", note: "Тот же чёрный, но 0.85 вместо 0.55 — контент под навбаром почти не виден." },
+  { cls: "v2", title: "Вариант 2 · Тёмно-синий графит", note: "#0D1117 на 0.88 — холодный тёмный в тон приложения." },
+  { cls: "v3", title: "Вариант 3 · Тёплый тёмный", note: "#171310 на 0.88 — коричневато-чёрный, родной для золота." },
+  { cls: "v4", title: "Вариант 4 · Градиент", note: "Сверху прозрачно, к низу плотный тёмный — мягкий переход в контент." },
+  { cls: "v5", title: "Вариант 5 · Золотая линия", note: "Фон как сейчас (0.55), сверху тонкая золотая черта вместо белой." },
+  { cls: "v6", title: "Вариант 6 · Золотая пилюля", note: "Фон как сейчас, за активной иконкой мягкая золотая подложка." },
+  { cls: "v7", title: "Вариант 7 · Комбо 2+5", note: "Тёмно-синий графит + золотая линия сверху." }
+];
+const icons = {
+  home: '<svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9a1 1 0 0 1-1 1h-4v-6h-2v6H7a1 1 0 0 1-1-1v-9H3z"/></svg>',
+  coll: '<svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>',
+  cat: '<svg viewBox="0 0 24 24"><path d="M4 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v3H4zM4 10h16v3H4zM4 15h16v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/></svg>',
+  search: '<svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 1 0 4.6 13.3l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"/></svg>',
+  gear: '<svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm9.4 4a7.6 7.6 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7.7 7.7 0 0 0-2-1.2L16.5 3h-4l-.4 2.6a7.7 7.7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7.7 7.7 0 0 0 2 1.2l.4 2.6h4l.4-2.6a7.7 7.7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>'
+};
+const items = [
+  { icon: icons.home, label: "Главная", active: true },
+  { icon: icons.coll, label: "Подборки" },
+  { icon: icons.cat, label: "Каталог" },
+  { icon: icons.search, label: "Поиск" },
+  { icon: icons.gear, label: "Настройки" }
+];
+function contentHTML() {
+  let rows = "";
+  const titles = ["Стриминги", "Радио", "IPTV", "Скоро выйдет", "История"];
+  for (const t of titles) {
+    rows += '<div class="row-title">' + t + '</div><div class="cards"><div class="card c1"></div><div class="card c2"></div><div class="card c3"></div><div class="card c4"></div></div>';
+  }
+  return '<div class="hero"><b>Интерстеллар</b></div>' + rows;
+}
+function navHTML() {
+  return items.map(i =>
+    '<div class="item' + (i.active ? " active" : "") + '">' + i.icon + "<span>" + i.label + "</span>" + (i.active ? '<div class="dot"></div>' : "") + "</div>"
+  ).join("");
+}
+document.getElementById("grid").innerHTML = variants.map(v =>
+  '<div class="frame-wrap"><div class="frame-title"><span>' + v.title.split(" · ")[0] + '</span> · ' + v.title.split(" · ")[1] + '</div>' +
+  '<div class="phone ' + v.cls + '"><div class="content">' + contentHTML() + '</div><div class="nav">' + navHTML() + "</div></div>" +
+  '<div class="note">' + v.note + "</div></div>"
+).join("");
+</script>
+</body>
+</html>
