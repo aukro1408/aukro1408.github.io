@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawflix — главная ТВ: ряд меняется на месте (макет v2)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0a0c; color: #e8e8ea; font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; padding: 18px 14px 40px; }
+  h1 { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .sub { color: #9a9aa2; font-size: 13px; margin-bottom: 14px; max-width: 760px; line-height: 1.45; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+  .controls .lbl { color: #9a9aa2; font-size: 12px; margin-right: 2px; }
+  button.ctl { background: #1b1b1f; color: #e8e8ea; border: 1px solid #33333a; border-radius: 999px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
+  button.ctl.on { background: #F7C948; color: #111; border-color: #F7C948; font-weight: 600; }
+
+  .tv { width: min(1100px, 100%); aspect-ratio: 16/9; border-radius: 14px; overflow: hidden; position: relative; background: #000; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+  .tv .backdrop { position: absolute; inset: 0; background-size: cover; background-position: center 20%; transition: background-image .5s; }
+  .tv .shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(5,6,10,.88) 0%, rgba(5,6,10,.55) 45%, rgba(5,6,10,.08) 75%), linear-gradient(0deg, rgba(5,6,10,.88) 0%, rgba(5,6,10,0) 42%); }
+  .tv .topbar { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 26px; padding: 16px 26px; z-index: 5; }
+  .logo { font-size: 21px; font-weight: 800; }
+  .logo .paw { color: #E2E8F0; } .logo .flix { color: #F7C948; }
+  .tabs { display: flex; gap: 20px; font-size: 14px; color: #cfcfd6; }
+  .tabs span { padding-bottom: 3px; }
+  .tabs .act { color: #fff; border-bottom: 2px solid #fff; }
+  .tv .hero { position: absolute; left: 26px; top: 19%; max-width: 52%; z-index: 4; }
+  .badge { display: inline-block; background: rgba(20,90,140,.85); color: #bfe6ff; font-size: 11.5px; padding: 4px 10px; border-radius: 999px; margin-bottom: 10px; }
+  .hero h2 { font-size: clamp(22px, 3.4vw, 40px); font-weight: 800; line-height: 1.08; margin-bottom: 8px; }
+  .hero .meta { font-size: 13px; color: #d7d7de; margin-bottom: 8px; }
+  .hero .meta b { color: #F7C948; }
+  .hero .desc { font-size: 13.5px; line-height: 1.45; color: #e6e6eb; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 14px; }
+  .hero .btns { display: flex; gap: 10px; }
+  .btn { border: none; border-radius: 8px; padding: 9px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn.watch { background: #fff; color: #111; }
+  .btn.about { background: rgba(70,90,120,.55); color: #fff; }
+
+  /* ONE row, fixed place, swaps in place */
+  .rowwrap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 0 26px 18px; }
+  .rowhead { display: flex; align-items: baseline; gap: 12px; margin-bottom: 9px; }
+  .rowhead h3 { font-size: 16px; font-weight: 700; text-shadow: 0 1px 6px rgba(0,0,0,.8); }
+  .rowhead .cnt { font-size: 11.5px; color: #b9b9c2; }
+  .cards { display: flex; gap: 10px; overflow: hidden; }
+  .card { flex: 0 0 auto; width: 108px; }
+  .card img { width: 108px; height: 162px; object-fit: cover; border-radius: 8px; display: block; }
+  .card.focus img { outline: 2px solid #F7C948; outline-offset: 2px; }
+  .card .t { font-size: 11px; margin-top: 5px; color: #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 4px rgba(0,0,0,.9); }
+  .card .y { font-size: 10.5px; color: #b9b9c2; }
+  .swap-anim { animation: swapIn .28s ease; }
+  @keyframes swapIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+  .remote { display: flex; gap: 8px; margin-top: 14px; align-items: center; flex-wrap: wrap; }
+  .remote .lbl { color: #9a9aa2; font-size: 12px; }
+  button.rbtn { background: #1b1b1f; color: #e8e8ea; border: 1px solid #33333a; border-radius: 10px; padding: 10px 18px; font-size: 15px; cursor: pointer; }
+  button.rbtn:active { background: #F7C948; color: #111; }
+</style>
+</head>
+<body>
+<h1>pawflix — главная ТВ: ряд меняется на месте</h1>
+<p class="sub">Макет v2, только ТВ. Фон и hero стоят неподвижно. Внизу один ряд на фиксированном месте: стрелка вниз — на его месте появляется следующий ряд, вверх — предыдущий. Никакой прокрутки списка и обрезанных постеров. Управлять можно кнопками ниже или стрелками клавиатуры.</p>
+
+<div class="controls">
+  <span class="lbl">Hero-фильм:</span>
+  <button class="ctl on" data-hero="0" onclick="setHero(0)">Одиссея</button>
+  <button class="ctl" data-hero="1" onclick="setHero(1)">Человек-паук</button>
+  <button class="ctl" data-hero="2" onclick="setHero(2)">Обитель зла</button>
+</div>
+
+<div class="tv" id="tvFrame">
+  <div class="backdrop" id="tvBackdrop"></div>
+  <div class="shade"></div>
+  <div class="topbar">
+    <div class="logo"><span class="paw">Paw</span><span class="flix">flix</span></div>
+    <div class="tabs"><span>Поиск</span><span class="act">Главная</span><span>Фильмы</span><span>Сериалы</span><span>Настройки</span></div>
+  </div>
+  <div class="hero">
+    <span class="badge">● Кино ИИ выбрал на сегодня</span>
+    <h2 id="tvTitle"></h2>
+    <div class="meta" id="tvMeta"></div>
+    <div class="desc" id="tvDesc"></div>
+    <div class="btns"><button class="btn watch">▶ Смотреть</button><button class="btn about">О фильме</button></div>
+  </div>
+  <div class="rowwrap">
+    <div class="rowhead"><h3 id="rowTitle"></h3><span class="cnt" id="rowCnt"></span></div>
+    <div class="cards" id="rowCards"></div>
+  </div>
+</div>
+
+<div class="remote">
+  <span class="lbl">Пульт:</span>
+  <button class="rbtn" onclick="moveRow(-1)">▲ Вверх</button>
+  <button class="rbtn" onclick="moveRow(1)">▼ Вниз</button>
+  <button class="rbtn" onclick="moveFocus(-1)">◀</button>
+  <button class="rbtn" onclick="moveFocus(1)">▶</button>
+</div>
+
+<script>
+const IMG = "https://image.tmdb.org/t/p/";
+const heroes = [
+  { title: "Одиссея", meta: "<b>★ 8.0</b> · 2026 · Фильм · Приключения, Фэнтези", desc: "Эпическое путешествие Одиссея домой после Троянской войны: море, чудовища и боги, которые не спешат отпускать героя.", backdrop: IMG+"w1280/c7btGYblBnfAaw713WvFM0Kimc7.jpg" },
+  { title: "Человек-паук: Новый день", meta: "<b>★ 8.5</b> · 2026 · Фильм · Боевик, Приключения", desc: "Питер Паркер начинает с чистого листа в городе, который его забыл, — и сразу получает врага, которого не ждал.", backdrop: IMG+"w1280/r08LxMJCbf1SiJIWeyH9aJmdqwC.jpg" },
+  { title: "Обитель зла", meta: "<b>★ 7.5</b> · 2026 · Фильм · Ужасы, Боевик", desc: "Новая глава культовой франшизы: вирус вырвался наружу, и выжившим остаётся только бежать — или сражаться.", backdrop: IMG+"w1280/vqNSvCFknXObgqn7nOFrJVEeGht.jpg" }
+];
+const films = [
+  ["Железный человек","2008","/wAKZudQn0HEXqLvaGN6BEripHbv.jpg"],
+  ["Шамбала. Конец времён","2024","/bPUyxoWGPlBKpH54XKc4PqP2gtR.jpg"],
+  ["Голодные игры: Рассвет жатвы","2026","/tD4kBIthK1NFxesGT5Pj42fM5u5.jpg"],
+  ["Сердце зверя","2026","/wCG46u8xNG86WFKVyk6yGGeJYzG.jpg"],
+  ["Мстители: Доктор Дум","2026","/7zNm2hn9mfrapLLDHxGUJtm06wu.jpg"],
+  ["Чужая мама","2026","/3LijuwABdxSALffLCO3YybqFKVP.jpg"],
+  ["Надежда","2026","/2h3a7i3mSd1ZhK7sYEzDRgdtvvl.jpg"],
+  ["Апокалипсис Z: Новый мир","2026","/a29RggDhzZ4y6gBGNpSbgnfGOBX.jpg"],
+  ["Телохранительница","2026","/1RQFu2dzuwIm03XSN3BDf3GOfWg.jpg"],
+  ["Одиссея","2026","/n7NR7SH7CyiiF70yN96r3d1jWr0.jpg"]
+];
+const rowsData = [
+  ["Продолжить просмотр", films.slice(0,7)],
+  ["Стриминги", films.slice(3,10)],
+  ["Скоро выйдет", films.slice(2,9)],
+  ["История", films.slice(1,8)],
+  ["Избранное", films.slice(4,10)]
+];
+let rowIdx = 0, focusIdx = 0;
+
+function renderRow(anim) {
+  const [name, list] = rowsData[rowIdx];
+  document.getElementById('rowTitle').textContent = name;
+  document.getElementById('rowCnt').textContent = "ряд " + (rowIdx+1) + " из " + rowsData.length;
+  const box = document.getElementById('rowCards');
+  box.innerHTML = list.map((f,i) =>
+    '<div class="card'+(i===focusIdx?' focus':'')+'"><img src="'+IMG+'w342'+f[2]+'" alt=""><div class="t">'+f[0]+'</div><div class="y">'+f[1]+'</div></div>'
+  ).join('');
+  if (anim) { box.classList.remove('swap-anim'); void box.offsetWidth; box.classList.add('swap-anim'); }
+}
+function moveRow(d) {
+  const n = Math.min(rowsData.length-1, Math.max(0, rowIdx + d));
+  if (n === rowIdx) return;
+  rowIdx = n; focusIdx = 0; renderRow(true);
+}
+function moveFocus(d) {
+  const len = rowsData[rowIdx][1].length;
+  focusIdx = Math.min(len-1, Math.max(0, focusIdx + d));
+  renderRow(false);
+}
+function setHero(i) {
+  const h = heroes[i];
+  document.getElementById('tvBackdrop').style.backgroundImage = "url('"+h.backdrop+"')";
+  document.getElementById('tvTitle').textContent = h.title;
+  document.getElementById('tvMeta').innerHTML = h.meta;
+  document.getElementById('tvDesc').textContent = h.desc;
+  document.querySelectorAll('[data-hero]').forEach(b => b.classList.toggle('on', +b.dataset.hero === i));
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown') { moveRow(1); e.preventDefault(); }
+  else if (e.key === 'ArrowUp') { moveRow(-1); e.preventDefault(); }
+  else if (e.key === 'ArrowRight') { moveFocus(1); e.preventDefault(); }
+  else if (e.key === 'ArrowLeft') { moveFocus(-1); e.preventDefault(); }
+});
+setHero(0); renderRow(false);
+</script>
+</body>
+</html>
